@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Partner Portal</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 720px; margin: 20px auto; }
+    label { display: block; margin-top: 12px; }
+    input, button { padding: 8px; width: 100%; box-sizing: border-box; }
+    button { margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>Partner Assignments</h1>
+  <label>Partner ID
+    <input id="partner_id" type="number" />
+  </label>
+  <button onclick="loadAssignments()">Load Assignments</button>
+  <div id="status"></div>
+  <table id="table" style="display:none;">
+    <thead>
+      <tr><th>Campaign</th><th>Status</th><th>Event</th><th>Starts At</th></tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <script>
+    async function loadAssignments() {
+      const pid = document.getElementById('partner_id').value.trim();
+      if (!pid) {
+        document.getElementById('status').innerText = 'Enter partner ID';
+        return;
+      }
+      const res = await fetch('/api/v1/partners/' + pid + '/assignments');
+      const data = await res.json();
+      if (!data.data) {
+        document.getElementById('status').innerText = JSON.stringify(data);
+        return;
+      }
+      document.getElementById('status').innerText = '';
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = '';
+      data.data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${row.campaign_title || ''}</td><td>${row.status || ''}</td><td>${row.event_name || ''}</td><td>${row.starts_at || ''}</td>`;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('table').style.display = 'table';
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+

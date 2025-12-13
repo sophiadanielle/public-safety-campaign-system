@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Event Check-in</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 520px; margin: 20px auto; }
+    label { display: block; margin-top: 12px; }
+    input, button { padding: 8px; width: 100%; box-sizing: border-box; }
+    button { margin-top: 16px; }
+    .status { margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Event Check-in</h1>
+  <p>Enter your details to check in.</p>
+  <label>Full Name
+    <input id="full_name" type="text" />
+  </label>
+  <label>Contact (optional)
+    <input id="contact" type="text" />
+  </label>
+  <label>Channel (sms/email/push/other)
+    <input id="channel" type="text" value="other" />
+  </label>
+  <button onclick="checkIn()">Check In</button>
+  <div class="status" id="status"></div>
+
+  <script>
+    function getEventId() {
+      const params = new URLSearchParams(location.search);
+      return params.get('event_id');
+    }
+
+    async function checkIn() {
+      const eventId = getEventId();
+      if (!eventId) {
+        document.getElementById('status').innerText = 'Missing event_id in URL.';
+        return;
+      }
+      const payload = {
+        full_name: document.getElementById('full_name').value.trim(),
+        contact: document.getElementById('contact').value.trim(),
+        channel: document.getElementById('channel').value.trim() || 'other'
+      };
+      const res = await fetch('/api/v1/events/' + eventId + '/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      document.getElementById('status').innerText = text;
+    }
+  </script>
+</body>
+</html>
+
+

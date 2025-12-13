@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Survey Response</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 720px; margin: 20px auto; }
+    label { display: block; margin-top: 12px; }
+    input, textarea, select, button { padding: 8px; width: 100%; box-sizing: border-box; }
+    button { margin-top: 12px; }
+    .status { margin-top: 12px; white-space: pre-wrap; }
+    .question { border: 1px solid #ddd; padding: 10px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1 id="surveyTitle">Survey</h1>
+  <div id="questions"></div>
+  <button onclick="submitResponse()">Submit</button>
+  <div class="status" id="status"></div>
+
+  <script>
+    function getSurveyId() {
+      const params = new URLSearchParams(location.search);
+      return params.get('survey_id');
+    }
+
+    async function loadSurvey() {
+      const id = getSurveyId();
+      if (!id) {
+        document.getElementById('status').innerText = 'Missing survey_id';
+        return;
+      }
+      const res = await fetch('/api/v1/surveys/' + id);
+      const data = await res.json();
+      if (!data.data) {
+        document.getElementById('status').innerText = 'Survey not found';
+        return;
+      }
+      const survey = data.data;
+      document.getElementById('surveyTitle').innerText = survey.title || 'Survey';
+      const container = document.getElementById('questions');
+      container.innerHTML = '';
+      (survey.questions || []).forEach(q => {
+        const wrap = document.createElement('div');
+        wrap.className = 'question';
+        const label = document.createElement('label');
+        label.textContent = q.question_text;
+        wrap.appendChild(label);
+        let input;
+        if (q.question_type === 'text') {
+          input = document.createElement('textarea');
+        } else if (q.question_type === 'single_choice') {
+          input = document.createElement('select');
+          const opts = JSON.parse(q.options_json || '[]');
+          opts.forEach(o => {
+            const opt = document.createElement('option');
+            opt.value = o;
+            opt.textContent = o;
+            input.appendChild(opt);
+          });
+        } else if (q.question_type === 'multiple_choice') {
+          input = document.createElement('select');
+          input.multiple = true;
+          const opts = JSON.parse(q.options_json || '[]');
+          opts.forEach(o => {
+            const opt = document.createElement('option');
+            opt.value = o;
+            opt.textContent = o;
+            input.appendChild(opt);
+          });
+        } else if (q.question_type === 'rating') {
+          input = document.createElement('input');
+          input.type = 'number';
+          input.min = 1;
+          input.max = 5;
+        } else {
+          input = document.createElement('input');
+        }
+        input.dataset.qid = q.id;
+        wrap.appendChild(input);
+        container.appendChild(wrap);
+      });
+    }
+
+    async function submitResponse() {
+      const id = getSurveyId();
+      const inputs = document.querySelectorAll('[data-qid]');
+      const responses = {};
+      inputs.forEach(el => {
+        const qid = el.dataset.qid;
+        if (el.tagName === 'SELECT' && el.multiple) {
+          responses[qid] = Array.from(el.selectedOptions).map(o => o.value);
+        } else {
+          responses[qid] = el.value;
+        }
+      });
+      const res = await fetch('/api/v1/surveys/' + id + '/responses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ responses })
+      });
+      const text = await res.text();
+      document.getElementById('status').innerText = text;
+    }
+
+    loadSurvey();
+  </script>
+</body>
+</html>
+
+

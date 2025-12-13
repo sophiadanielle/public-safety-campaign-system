@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Survey Builder</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 720px; margin: 20px auto; }
+    label { display: block; margin-top: 12px; }
+    input, textarea, select, button { padding: 8px; width: 100%; box-sizing: border-box; }
+    button { margin-top: 12px; }
+    .status { margin-top: 12px; white-space: pre-wrap; }
+    .question { border: 1px solid #ddd; padding: 10px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Survey Builder</h1>
+  <p>Use JWT to create surveys and add questions.</p>
+  <label>JWT Token
+    <input id="token" type="text" placeholder="Bearer token" />
+  </label>
+  <h3>Create Survey</h3>
+  <label>Title
+    <input id="title" type="text" />
+  </label>
+  <label>Description
+    <textarea id="description"></textarea>
+  </label>
+  <label>Campaign ID (optional)
+    <input id="campaign_id" type="number" />
+  </label>
+  <button onclick="createSurvey()">Create Survey</button>
+
+  <div class="status" id="status"></div>
+
+  <div id="questionSection" style="display:none;">
+    <h3>Add Question</h3>
+    <label>Question Text
+      <input id="question_text" type="text" />
+    </label>
+    <label>Question Type
+      <select id="question_type">
+        <option value="text">text</option>
+        <option value="single_choice">single_choice</option>
+        <option value="multiple_choice">multiple_choice</option>
+        <option value="rating">rating</option>
+      </select>
+    </label>
+    <label>Options (comma-separated for choice/rating)
+      <input id="options" type="text" />
+    </label>
+    <button onclick="addQuestion()">Add Question</button>
+    <button onclick="publishSurvey()">Publish Survey</button>
+  </div>
+
+  <script>
+    let currentSurveyId = null;
+
+    function getToken() {
+      return document.getElementById('token').value.trim();
+    }
+
+    async function createSurvey() {
+      const res = await fetch('/api/v1/surveys', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + getToken()
+        },
+        body: JSON.stringify({
+          title: document.getElementById('title').value.trim(),
+          description: document.getElementById('description').value.trim(),
+          campaign_id: parseInt(document.getElementById('campaign_id').value, 10) || null
+        })
+      });
+      const text = await res.text();
+      document.getElementById('status').innerText = text;
+      try {
+        const data = JSON.parse(text);
+        if (data.id) {
+          currentSurveyId = data.id;
+          document.getElementById('questionSection').style.display = 'block';
+        }
+      } catch (e) {}
+    }
+
+    async function addQuestion() {
+      if (!currentSurveyId) return;
+      const optsRaw = document.getElementById('options').value.trim();
+      const opts = optsRaw ? optsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const res = await fetch('/api/v1/surveys/' + currentSurveyId + '/questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + getToken()
+        },
+        body: JSON.stringify({
+          question_text: document.getElementById('question_text').value.trim(),
+          question_type: document.getElementById('question_type').value,
+          options: opts
+        })
+      });
+      const text = await res.text();
+      document.getElementById('status').innerText = text;
+    }
+
+    async function publishSurvey() {
+      if (!currentSurveyId) return;
+      const res = await fetch('/api/v1/surveys/' + currentSurveyId + '/publish', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + getToken()
+        }
+      });
+      const text = await res.text();
+      document.getElementById('status').innerText = text;
+    }
+  </script>
+</body>
+</html>
+
+

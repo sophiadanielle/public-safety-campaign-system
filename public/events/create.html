@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Event</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 640px; margin: 20px auto; }
+    label { display: block; margin-top: 12px; }
+    input, button { padding: 8px; width: 100%; box-sizing: border-box; }
+    button { margin-top: 16px; }
+    .status { margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Create Event</h1>
+  <p>Provide details and submit. Requires an API token (JWT).</p>
+  <label>JWT Token
+    <input id="token" type="text" placeholder="Bearer token" />
+  </label>
+  <label>Name
+    <input id="name" type="text" />
+  </label>
+  <label>Campaign ID (optional)
+    <input id="campaign_id" type="number" />
+  </label>
+  <label>Location
+    <input id="location" type="text" />
+  </label>
+  <label>Starts At (YYYY-MM-DD HH:MM:SS)
+    <input id="starts_at" type="text" />
+  </label>
+  <label>Ends At (YYYY-MM-DD HH:MM:SS)
+    <input id="ends_at" type="text" />
+  </label>
+  <button onclick="createEvent()">Create</button>
+  <div class="status" id="status"></div>
+
+  <script>
+    async function createEvent() {
+      const token = document.getElementById('token').value.trim();
+      const payload = {
+        name: document.getElementById('name').value.trim(),
+        campaign_id: parseInt(document.getElementById('campaign_id').value, 10) || null,
+        location: document.getElementById('location').value.trim(),
+        starts_at: document.getElementById('starts_at').value.trim(),
+        ends_at: document.getElementById('ends_at').value.trim() || null,
+      };
+      const res = await fetch('/api/v1/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      document.getElementById('status').innerText = text;
+    }
+  </script>
+</body>
+</html>
+
+
