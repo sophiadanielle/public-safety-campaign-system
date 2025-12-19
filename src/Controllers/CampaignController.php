@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Services\AutoMLService;
 use PDO;
 use RuntimeException;
 
 class CampaignController
 {
+    private AutoMLService $autoMLService;
+
     public function __construct(
         private PDO $pdo,
         private string $jwtSecret,
@@ -16,11 +19,19 @@ class CampaignController
         private string $jwtAudience,
         private int $jwtExpirySeconds
     ) {
+        $this->autoMLService = new AutoMLService($pdo);
     }
 
     public function index(?array $user, array $params = []): array
     {
-        $stmt = $this->pdo->query('SELECT id, title, description, status, start_date, end_date, owner_id, created_at, objectives, location, assigned_staff, barangay_target_zones, budget, staff_count, materials_json FROM campaigns ORDER BY created_at DESC');
+        $stmt = $this->pdo->query('
+            SELECT id, title, description, category, geographic_scope, status, 
+                   start_date, end_date, draft_schedule_datetime, ai_recommended_datetime, 
+                   final_schedule_datetime, owner_id, created_at, objectives, location, 
+                   assigned_staff, barangay_target_zones, budget, staff_count, materials_json 
+            FROM campaigns 
+            ORDER BY created_at DESC
+        ');
         return ['data' => $stmt->fetchAll()];
     }
 
@@ -45,6 +56,13 @@ class CampaignController
             return ['error' => 'Invalid status'];
         }
 
+        $category = trim($input['category'] ?? '');
+        $allowedCategories = ['fire', 'flood', 'earthquake', 'health', 'road safety', 'general'];
+        if ($category && !in_array(strtolower($category), $allowedCategories, true)) {
+            http_response_code(422);
+            return ['error' => 'Invalid category. Must be one of: ' . implode(', ', $allowedCategories)];
+        }
+        $geographicScope = trim($input['geographic_scope'] ?? '');
         $objectives = $input['objectives'] ?? null;
         $location = $input['location'] ?? null;
         $assignedStaff = isset($input['assigned_staff']) ? json_encode($input['assigned_staff']) : null;
@@ -52,14 +70,30 @@ class CampaignController
         $budget = isset($input['budget']) ? (float) $input['budget'] : null;
         $staffCount = isset($input['staff_count']) ? (int) $input['staff_count'] : null;
         $materialsJson = isset($input['materials_json']) ? json_encode($input['materials_json']) : null;
+        $draftSchedule = $input['draft_schedule_datetime'] ?? null;
 
-        $stmt = $this->pdo->prepare('INSERT INTO campaigns (title, description, status, start_date, end_date, owner_id, objectives, location, assigned_staff, barangay_target_zones, budget, staff_count, materials_json) VALUES (:title, :description, :status, :start_date, :end_date, :owner_id, :objectives, :location, :assigned_staff, :barangay_target_zones, :budget, :staff_count, :materials_json)');
+        $stmt = $this->pdo->prepare('
+            INSERT INTO campaigns (
+                title, description, category, geographic_scope, status, 
+                start_date, end_date, draft_schedule_datetime, owner_id, 
+                objectives, location, assigned_staff, barangay_target_zones, 
+                budget, staff_count, materials_json
+            ) VALUES (
+                :title, :description, :category, :geographic_scope, :status,
+                :start_date, :end_date, :draft_schedule_datetime, :owner_id,
+                :objectives, :location, :assigned_staff, :barangay_target_zones,
+                :budget, :staff_count, :materials_json
+            )
+        ');
         $stmt->execute([
             'title' => $title,
             'description' => $description ?: null,
+            'category' => $category ?: null,
+            'geographic_scope' => $geographicScope ?: null,
             'status' => $status,
             'start_date' => $startDate ?: null,
             'end_date' => $endDate ?: null,
+            'draft_schedule_datetime' => $draftSchedule ?: null,
             'owner_id' => $ownerId,
             'objectives' => $objectives ?: null,
             'location' => $location ?: null,
@@ -70,7 +104,28 @@ class CampaignController
             'materials_json' => $materialsJson,
         ]);
 
-        return ['id' => (int) $this->pdo->lastInsertId(), 'message' => 'Campaign created'];
+        $campaignId = (int) $this->pdo->lastInsertId();
+
+        // Log integrations to internal and external subsystems
+        $this->logCampaignIntegrations($campaignId, [
+            'title' => $title,
+            'description' => $description,
+            'category' => $category,
+            'geographic_scope' => $geographicScope,
+            'status' => $status,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'draft_schedule_datetime' => $draftSchedule,
+            'objectives' => $objectives,
+            'location' => $location,
+            'assigned_staff' => $assignedStaff ? json_decode($assignedStaff, true) : [],
+            'barangay_target_zones' => $barangayTargetZones ? json_decode($barangayTargetZones, true) : [],
+            'budget' => $budget,
+            'staff_count' => $staffCount,
+            'materials_json' => $materialsJson ? json_decode($materialsJson, true) : [],
+        ]);
+
+        return ['id' => $campaignId, 'message' => 'Campaign created'];
     }
 
     public function show(?array $user, array $params = []): array
@@ -142,6 +197,24 @@ class CampaignController
         if (isset($input['materials_json'])) {
             $fields[] = 'materials_json = :materials_json';
             $bindings['materials_json'] = json_encode($input['materials_json']);
+        }
+        if (isset($input['category'])) {
+            $allowedCategories = ['fire', 'flood', 'earthquake', 'health', 'road safety', 'general'];
+            $category = trim($input['category']);
+            if ($category && !in_array(strtolower($category), $allowedCategories, true)) {
+                http_response_code(422);
+                return ['error' => 'Invalid category. Must be one of: ' . implode(', ', $allowedCategories)];
+            }
+            $fields[] = 'category = :category';
+            $bindings['category'] = $category ?: null;
+        }
+        if (isset($input['geographic_scope'])) {
+            $fields[] = 'geographic_scope = :geographic_scope';
+            $bindings['geographic_scope'] = trim($input['geographic_scope']) ?: null;
+        }
+        if (isset($input['draft_schedule_datetime'])) {
+            $fields[] = 'draft_schedule_datetime = :draft_schedule_datetime';
+            $bindings['draft_schedule_datetime'] = $input['draft_schedule_datetime'] ?: null;
         }
 
         if (empty($fields)) {
@@ -288,9 +361,178 @@ class CampaignController
         return ['message' => 'Segments synced', 'count' => count($segmentIds)];
     }
 
+    /**
+     * Request AI-recommended posting time for a campaign
+     */
+    public function requestAIRecommendation(?array $user, array $params = []): array
+    {
+        $campaignId = (int) ($params['id'] ?? 0);
+        $campaign = $this->findCampaign($campaignId);
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $features = $input['features'] ?? [];
+
+        try {
+            $prediction = $this->autoMLService->predict($campaignId, $features);
+            
+            // Save AI recommendation to campaign
+            $stmt = $this->pdo->prepare('
+                UPDATE campaigns 
+                SET ai_recommended_datetime = :ai_recommended_datetime 
+                WHERE id = :id
+            ');
+            $stmt->execute([
+                'id' => $campaignId,
+                'ai_recommended_datetime' => $prediction['suggested_datetime'],
+            ]);
+
+            // Save prediction record
+            $predictionId = $this->autoMLService->savePrediction($campaignId, $prediction);
+
+            return [
+                'prediction_id' => $predictionId,
+                'prediction' => $prediction,
+                'message' => 'AI recommendation generated',
+            ];
+        } catch (RuntimeException $e) {
+            http_response_code(400);
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Accept or override AI recommendation
+     */
+    public function setFinalSchedule(?array $user, array $params = []): array
+    {
+        $campaignId = (int) ($params['id'] ?? 0);
+        $this->findCampaign($campaignId);
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $finalSchedule = $input['final_schedule_datetime'] ?? null;
+        $useAIRecommendation = $input['use_ai_recommendation'] ?? false;
+
+        if ($useAIRecommendation) {
+            // Use AI recommendation
+            $stmt = $this->pdo->prepare('
+                UPDATE campaigns 
+                SET final_schedule_datetime = ai_recommended_datetime,
+                    draft_schedule_datetime = ai_recommended_datetime
+                WHERE id = :id AND ai_recommended_datetime IS NOT NULL
+            ');
+            $stmt->execute(['id' => $campaignId]);
+            
+            if ($stmt->rowCount() === 0) {
+                http_response_code(400);
+                return ['error' => 'No AI recommendation available. Request one first.'];
+            }
+        } elseif ($finalSchedule) {
+            // Override with manual schedule
+            $stmt = $this->pdo->prepare('
+                UPDATE campaigns 
+                SET final_schedule_datetime = :final_schedule_datetime,
+                    draft_schedule_datetime = :final_schedule_datetime
+                WHERE id = :id
+            ');
+            $stmt->execute([
+                'id' => $campaignId,
+                'final_schedule_datetime' => $finalSchedule,
+            ]);
+        } else {
+            http_response_code(422);
+            return ['error' => 'Either use_ai_recommendation or final_schedule_datetime is required'];
+        }
+
+        return ['message' => 'Final schedule set successfully'];
+    }
+
+    /**
+     * Get calendar view of campaigns
+     */
+    public function calendar(?array $user, array $params = []): array
+    {
+        $startDate = $_GET['start'] ?? date('Y-m-01');
+        $endDate = $_GET['end'] ?? date('Y-m-t');
+
+        $stmt = $this->pdo->prepare('
+            SELECT 
+                id, title, description, status, category,
+                start_date, end_date, 
+                draft_schedule_datetime, ai_recommended_datetime, final_schedule_datetime,
+                location, geographic_scope
+            FROM campaigns
+            WHERE (start_date BETWEEN :start AND :end)
+               OR (end_date BETWEEN :start AND :end)
+               OR (start_date <= :start AND end_date >= :end)
+               OR (final_schedule_datetime BETWEEN :start AND :end)
+            ORDER BY start_date ASC, final_schedule_datetime ASC
+        ');
+        $stmt->execute(['start' => $startDate, 'end' => $endDate]);
+        $campaigns = $stmt->fetchAll();
+
+        return ['data' => $campaigns];
+    }
+
+    /**
+     * Check for scheduling conflicts with events
+     */
+    public function checkConflicts(?array $user, array $params = []): array
+    {
+        $campaignId = (int) ($params['id'] ?? 0);
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $proposedDatetime = $input['proposed_datetime'] ?? null;
+
+        if (!$proposedDatetime) {
+            http_response_code(422);
+            return ['error' => 'proposed_datetime is required'];
+        }
+
+        $campaign = $this->findCampaign($campaignId);
+        $proposedDate = date('Y-m-d', strtotime($proposedDatetime));
+
+        // Check for conflicts with other campaigns
+        $stmt = $this->pdo->prepare('
+            SELECT id, title, final_schedule_datetime, location
+            FROM campaigns
+            WHERE id != :id
+              AND final_schedule_datetime IS NOT NULL
+              AND DATE(final_schedule_datetime) = :proposed_date
+              AND status IN ("scheduled", "approved", "ongoing")
+        ');
+        $stmt->execute(['id' => $campaignId, 'proposed_date' => $proposedDate]);
+        $campaignConflicts = $stmt->fetchAll();
+
+        // Check for conflicts with events and seminars
+        $stmt = $this->pdo->prepare('
+            SELECT e.id, e.name, e.event_type, e.event_date, e.event_time, e.venue, e.location
+            FROM events e
+            WHERE e.event_date = :proposed_date
+              AND e.status IN ("scheduled", "ongoing")
+        ');
+        $stmt->execute(['proposed_date' => $proposedDate]);
+        $eventConflicts = $stmt->fetchAll();
+
+        $hasConflicts = !empty($campaignConflicts) || !empty($eventConflicts);
+
+        return [
+            'has_conflicts' => $hasConflicts,
+            'campaign_conflicts' => $campaignConflicts,
+            'event_conflicts' => $eventConflicts,
+            'proposed_datetime' => $proposedDatetime,
+        ];
+    }
+
     private function findCampaign(int $id): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, title, description, status, start_date, end_date, owner_id, objectives, location, assigned_staff, barangay_target_zones, budget, staff_count, materials_json FROM campaigns WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('
+            SELECT id, title, description, category, geographic_scope, status, 
+                   start_date, end_date, draft_schedule_datetime, 
+                   ai_recommended_datetime, final_schedule_datetime, 
+                   owner_id, objectives, location, assigned_staff, 
+                   barangay_target_zones, budget, staff_count, materials_json 
+            FROM campaigns 
+            WHERE id = :id LIMIT 1
+        ');
         $stmt->execute(['id' => $id]);
         $campaign = $stmt->fetch();
         if (!$campaign) {
@@ -345,6 +587,68 @@ class CampaignController
             @file_get_contents($url, false, $ctx);
         } catch (\Throwable $e) {
             // swallow to avoid breaking flow; logged via integration_logs
+        }
+    }
+
+    /**
+     * Record integration events for newly created campaigns.
+     * This captures both internal module coordination and
+     * external systems such as notification and training.
+     */
+    private function logCampaignIntegrations(int $campaignId, array $payload): void
+    {
+        // Fail-safe: if integration_logs table is missing or any error occurs,
+        // we don't want to block campaign creation. Just log and return.
+        try {
+            // Ensure integration_logs table exists
+            $check = $this->pdo->query("SHOW TABLES LIKE 'integration_logs'");
+            if (!$check || $check->rowCount() === 0) {
+                return;
+            }
+
+            $stmt = $this->pdo->prepare('INSERT INTO integration_logs (source, payload, status) VALUES (:source, :payload, :status)');
+        } catch (\Throwable $e) {
+            error_log('logCampaignIntegrations init failed: ' . $e->getMessage());
+            return;
+        }
+
+        // Core internal subsystems
+        $sources = [
+            // Content Repository (materials, themes, hazard type)
+            'content_repository',
+            // Target Audience Segmentation (risk profiles, segments)
+            'target_audience_segmentation',
+            // Event & Seminar Management (implementation logistics)
+            'event_seminar_management',
+            // School & NGO Collaboration (partner engagement)
+            'school_ngo_collaboration',
+            // Emergency Communication System (mass notification)
+            'emergency_communication_system',
+            // Disaster Preparedness Training and Simulation
+            'training_and_simulation',
+            // Community Policing & Surveillance (volunteers)
+            'community_policing_surveillance',
+            // Traffic & Transport Management (permits)
+            'traffic_transport_management',
+            // Fire & Rescue Services Management (scheduling)
+            'fire_rescue_management',
+        ];
+
+        foreach ($sources as $source) {
+            try {
+                $stmt->execute([
+                    'source' => $source,
+                    'payload' => json_encode([
+                        'campaign_id' => $campaignId,
+                        'source' => $source,
+                        'campaign' => $payload,
+                    ]),
+                    'status' => 'queued',
+                ]);
+            } catch (\Throwable $e) {
+                // Log but don't interrupt main flow
+                error_log('logCampaignIntegrations insert failed for source ' . $source . ': ' . $e->getMessage());
+            }
         }
     }
 }

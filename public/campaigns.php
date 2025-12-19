@@ -6,11 +6,28 @@ include __DIR__ . '/../header/includes/header.php';
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css" rel="stylesheet">
 <style>
+    @import url('../sidebar/css/sidebar.css');
+
     .campaign-page {
         max-width: 1600px;
         margin: 0 auto 48px;
         padding: 120px 24px 0;
         background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
+    }
+    .campaign-layout {
+        display: flex;
+        gap: 24px;
+        align-items: flex-start;
+    }
+    .campaign-sidebar {
+        flex-shrink: 0;
+        position: sticky;
+        top: 110px;
+        max-height: calc(100vh - 140px);
+    }
+    .campaign-main {
+        flex: 1;
+        min-width: 0;
     }
     .page-title {
         margin: 0 0 12px;
@@ -45,6 +62,8 @@ include __DIR__ . '/../header/includes/header.php';
         transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
+        /* When navigating via in-page anchors, keep the card title visible below the sticky header */
+        scroll-margin-top: 120px;
     }
     .card::before {
         content: '';
@@ -502,9 +521,131 @@ include __DIR__ . '/../header/includes/header.php';
         border-radius: 2px;
     }
     
+    /* Combobox Styles (Select-like with autocomplete) */
+    .combobox-wrapper {
+        position: relative;
+        width: 100%;
+    }
+    .combobox-input {
+        width: 100%;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px 40px 12px 16px;
+        font-size: 14px;
+        transition: all 0.2s;
+        background: #fafbfc;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+    }
+    .combobox-input:focus {
+        outline: none;
+        border-color: #4c8a89;
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(76, 138, 137, 0.1);
+    }
+    .combobox-arrow {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: #64748b;
+        font-size: 12px;
+    }
+    .combobox-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        width: 100%;
+        background: #fff;
+        border: 2px solid #4c8a89;
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        max-height: 160px; /* default dropdown height for all comboboxes */
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        box-sizing: border-box;
+        z-index: 1000;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+        display: none;
+        margin-top: -2px;
+    }
+    .combobox-options.active {
+        display: block;
+    }
+    .combobox-option {
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s;
+        color: #1e293b;
+        font-size: 14px;
+    }
+    .combobox-option:hover,
+    .combobox-option.selected {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        color: #0f172a;
+        font-weight: 600;
+    }
+    .combobox-option:last-child {
+        border-bottom: none;
+    }
+    .combobox-input.active {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        border-bottom-color: #4c8a89;
+    }
+    .combobox-input[readonly] {
+        cursor: pointer;
+        background: #fafbfc;
+    }
+    /* For multi-select comboboxes */
+    .combobox-multi .combobox-input {
+        padding-right: 16px;
+    }
+    .combobox-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 4px;
+    }
+    .combobox-tag {
+        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+        color: #0c4a6e;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .combobox-tag-remove {
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    /* Show only ~2 items at a time for Assigned Staff and Materials; others use default height */
+    .combobox-assigned .combobox-options,
+    .combobox-materials .combobox-options {
+        max-height: 80px;
+    }
+
+    
     @media (max-width: 768px) {
         .campaign-page {
             padding: 100px 16px 0;
+        }
+        .campaign-layout {
+            flex-direction: column;
+        }
+        .campaign-sidebar {
+            position: static;
+            max-height: none;
+            width: 100%;
         }
         .form-grid {
             grid-template-columns: 1fr;
@@ -528,8 +669,41 @@ include __DIR__ . '/../header/includes/header.php';
         <p class="page-subtitle">Plan, schedule, and track campaigns with timeline visualization, calendar views, and AI-powered optimization.</p>
     </header>
 
+    <div class="campaign-layout">
+        <aside class="sidebar campaign-sidebar">
+            <div class="sidebar-content">
+                <nav class="sidebar-nav">
+                    <div class="sidebar-section">
+                        <h3 class="sidebar-section-title">Campaign Features</h3>
+                        <ul class="sidebar-menu">
+                            <li class="sidebar-menu-item">
+                                <a href="#planning-section" class="sidebar-link">Plan New Campaign</a>
+                            </li>
+                            <li class="sidebar-menu-item">
+                                <a href="#automl-section" class="sidebar-link">AI-Powered Deployment Optimization</a>
+                            </li>
+                            <li class="sidebar-menu-item">
+                                <a href="#timeline-section" class="sidebar-link">Gantt Chart</a>
+                            </li>
+                            <li class="sidebar-menu-item">
+                                <a href="#resources-section" class="sidebar-link">Resource Allocation Microservices</a>
+                            </li>
+                            <li class="sidebar-menu-item">
+                                <a href="#list-section" class="sidebar-link">All Campaigns</a>
+                            </li>
+                            <li class="sidebar-menu-item">
+                                <a href="#segments-section" class="sidebar-link">Target Segments</a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+        </aside>
+
+        <div class="campaign-main">
+
     <!-- Planning Form -->
-    <section class="card">
+    <section class="card" id="planning-section">
         <div class="section-header">
             <h2 class="section-title analytics-accent">Plan New Campaign</h2>
         </div>
@@ -538,17 +712,48 @@ include __DIR__ . '/../header/includes/header.php';
             <div class="form-grid">
                 <div class="form-field">
                     <label for="title">Campaign Title *</label>
-                    <input id="title" type="text" placeholder="Fire Safety Week 2025" required>
-            </div>
+                    <div class="combobox-wrapper">
+                        <input type="text" class="combobox-input" id="title" placeholder="Select or type campaign title..." required autocomplete="off">
+                        <span class="combobox-arrow">▼</span>
+                        <div class="combobox-options" id="title_options"></div>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label for="category">Category *</label>
+                    <div class="combobox-wrapper">
+                        <input
+                            type="text"
+                            class="combobox-input"
+                            id="category"
+                            placeholder="Select or type category..."
+                            autocomplete="off"
+                            required
+                        >
+                        <span class="combobox-arrow">▼</span>
+                        <div class="combobox-options" id="category_options"></div>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <label for="geographic_scope">Geographic Scope / Barangay</label>
+                    <div class="combobox-wrapper">
+                        <input type="text" class="combobox-input" id="geographic_scope" placeholder="Select or type barangay..." autocomplete="off">
+                        <span class="combobox-arrow">▼</span>
+                        <div class="combobox-options" id="geographic_scope_options"></div>
+                    </div>
+                </div>
                 <div class="form-field">
                     <label for="status">Status</label>
-                    <select id="status">
-                        <option value="draft">Draft</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="ongoing">Ongoing</option>
-                        <option value="completed">Completed</option>
-                    </select>
+                    <div class="combobox-wrapper">
+                        <input
+                            type="text"
+                            class="combobox-input"
+                            id="status"
+                            placeholder="Select or type status..."
+                            autocomplete="off"
+                        >
+                        <span class="combobox-arrow">▼</span>
+                        <div class="combobox-options" id="status_options"></div>
+                    </div>
                 </div>
                 <div class="form-field">
                     <label for="start_date">Start Date</label>
@@ -559,8 +764,16 @@ include __DIR__ . '/../header/includes/header.php';
                     <input id="end_date" type="date">
                 </div>
                 <div class="form-field">
+                    <label for="draft_schedule_datetime">Draft Schedule (Date & Time)</label>
+                    <input id="draft_schedule_datetime" type="datetime-local">
+                </div>
+                <div class="form-field">
                     <label for="location">Location</label>
-                    <input id="location" type="text" placeholder="Barangay Hall, Quezon City">
+                    <div class="combobox-wrapper">
+                        <input type="text" class="combobox-input" id="location" placeholder="Select or type location..." autocomplete="off">
+                        <span class="combobox-arrow">▼</span>
+                        <div class="combobox-options" id="location_options"></div>
+                    </div>
                 </div>
                 <div class="form-field">
                     <label for="budget">Budget (PHP)</label>
@@ -571,8 +784,13 @@ include __DIR__ . '/../header/includes/header.php';
                     <input id="staff_count" type="number" placeholder="5">
                 </div>
                 <div class="form-field">
-                    <label for="barangay_zones">Barangay Target Zones (comma-separated)</label>
-                    <input id="barangay_zones" type="text" placeholder="Barangay 1, Barangay 2, Barangay 3">
+                    <label for="barangay_zones">Barangay Target Zones</label>
+                    <div class="combobox-wrapper combobox-multi">
+                        <input type="text" class="combobox-input" id="barangay_zones" placeholder="Select or type barangays..." autocomplete="off">
+                        <span class="combobox-arrow">▼</span>
+                        <div class="combobox-options" id="barangay_zones_options"></div>
+                        <div class="combobox-tags" id="barangay_zones_tags"></div>
+                    </div>
                 </div>
                 <div class="form-field full-width">
                     <label for="objectives">Objectives</label>
@@ -583,12 +801,24 @@ include __DIR__ . '/../header/includes/header.php';
                     <textarea id="description" rows="3" placeholder="Detailed description of the campaign..."></textarea>
                 </div>
                 <div class="form-field full-width">
-                    <label for="assigned_staff">Assigned Staff (JSON array of names/IDs)</label>
-                    <textarea id="assigned_staff" rows="2" placeholder='["John Doe", "Jane Smith"]'></textarea>
+                    <label for="assigned_staff">Assigned Staff</label>
+                    <div class="combobox-wrapper combobox-multi combobox-assigned">
+                        <input type="text" class="combobox-input" id="assigned_staff" placeholder="Select or type staff names..." autocomplete="off">
+                        <span class="combobox-arrow">▼</span>
+                        <div class="combobox-options" id="assigned_staff_options"></div>
+                        <div class="combobox-tags" id="assigned_staff_tags"></div>
+                    </div>
+                    <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">Select multiple staff members</small>
                 </div>
                 <div class="form-field full-width">
-                    <label for="materials_json">Materials (JSON object)</label>
-                    <textarea id="materials_json" rows="2" placeholder='{"posters": 100, "flyers": 500, "banners": 5}'></textarea>
+                    <label for="materials_json">Materials</label>
+                    <div class="combobox-wrapper combobox-multi combobox-materials">
+                        <input type="text" class="combobox-input" id="materials_json" placeholder="Select or type materials..." autocomplete="off">
+                        <span class="combobox-arrow">▼</span>
+                        <div class="combobox-options" id="materials_json_options"></div>
+                        <div class="combobox-tags" id="materials_json_tags"></div>
+                    </div>
+                    <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">Select multiple materials from Content Repository</small>
                 </div>
             </div>
             
@@ -601,17 +831,23 @@ include __DIR__ . '/../header/includes/header.php';
     </section>
 
     <!-- AutoML Panel -->
-    <section class="card">
+    <section class="card" id="automl-section">
         <div class="section-header">
             <h2 class="section-title analytics-accent">AI-Powered Deployment Optimization</h2>
         </div>
         <div class="automl-panel">
             <h3>Google AutoML Predictions</h3>
-            <p style="margin: 0 0 20px; opacity: 0.95;">Get AI-suggested optimal dates and times for campaign deployment based on historical data, audience engagement patterns, and performance analytics.</p>
-            <div class="form-grid" style="grid-template-columns: 1fr auto; gap: 16px;">
+            <p style="margin: 0 0 20px; opacity: 0.95;">Get AI-suggested optimal dates and times for campaign deployment based on real-time historical data, audience engagement patterns, and performance analytics.</p>
+            <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; gap: 16px;">
                 <div class="form-field">
                     <label for="automl_campaign_id" style="color: white; opacity: 0.95;">Campaign ID</label>
-                    <input id="automl_campaign_id" type="number" placeholder="Enter campaign ID" style="background: rgba(255,255,255,0.95); border: 2px solid rgba(255,255,255,0.3); color: #0f172a;">
+                    <select id="automl_campaign_id" style="background: rgba(255,255,255,0.95); border: 2px solid rgba(255,255,255,0.3); color: #0f172a;">
+                        <option value="">Select Campaign</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="automl_audience_segment" style="color: white; opacity: 0.95;">Audience Segment ID (Optional)</label>
+                    <input id="automl_audience_segment" type="number" placeholder="e.g., 1" style="background: rgba(255,255,255,0.95); border: 2px solid rgba(255,255,255,0.3); color: #0f172a;">
                 </div>
                 <div class="form-field" style="justify-content: flex-end; align-items: flex-end;">
                     <label style="color: white; opacity: 0; height: 0;">Action</label>
@@ -628,19 +864,24 @@ include __DIR__ . '/../header/includes/header.php';
                     <span id="pred_confidence">-</span>
                 </div>
                 <div class="prediction-item">
-                    <strong>🔍 Features Used:</strong>
-                    <span id="pred_features" style="font-size: 12px;">-</span>
+                    <strong>🔍 Model Source:</strong>
+                    <span id="pred_source">-</span>
                 </div>
                 <div class="prediction-item">
                     <strong>💡 Recommendation:</strong>
                     <span id="pred_recommendation" style="font-size: 13px;">Based on historical performance data</span>
+                </div>
+                <div style="margin-top: 16px; display: flex; gap: 12px;">
+                    <button type="button" class="btn btn-primary" onclick="acceptAIRecommendation()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5);">✓ Accept AI Recommendation</button>
+                    <button type="button" class="btn btn-secondary" onclick="checkConflicts()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5);">🔍 Check Conflicts</button>
+                    <button type="button" class="btn btn-secondary" onclick="overrideSchedule()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5);">✏️ Override Schedule</button>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Timeline & Calendar Tabs -->
-    <section class="card">
+    <section class="card" id="timeline-section">
         <div class="tabs">
             <button class="tab active" onclick="switchTab('gantt')">📊 Project Timeline</button>
             <button class="tab" onclick="switchTab('calendar')">📅 Scheduling Calendar</button>
@@ -667,7 +908,7 @@ include __DIR__ . '/../header/includes/header.php';
     </section>
 
     <!-- Resource Allocation -->
-    <section class="card">
+    <section class="card" id="resources-section">
         <div class="section-header">
             <h2 class="section-title analytics-accent">Resource Allocation Microservices</h2>
             <button class="btn btn-secondary" onclick="loadResources()">🔄 Refresh</button>
@@ -697,7 +938,7 @@ include __DIR__ . '/../header/includes/header.php';
     </section>
 
     <!-- Campaigns List -->
-    <section class="card">
+    <section class="card" id="list-section">
         <div class="section-header">
             <h2 class="section-title analytics-accent">All Campaigns</h2>
             <button class="btn btn-secondary" onclick="loadCampaigns()">🔄 Refresh</button>
@@ -711,21 +952,25 @@ include __DIR__ . '/../header/includes/header.php';
                 <tr>
                     <th>ID</th>
                     <th>Title</th>
+                    <th>Category</th>
                     <th>Status</th>
                     <th>Start</th>
                     <th>End</th>
+                    <th>Draft Schedule</th>
+                    <th>AI Recommended</th>
+                    <th>Final Schedule</th>
                     <th>Location</th>
                     <th>Budget</th>
                 </tr>
             </thead>
             <tbody id="campaignTable">
-                <tr><td colspan="7" style="text-align:center; padding:24px;">Loading...</td></tr>
+                <tr><td colspan="11" style="text-align:center; padding:24px;">Loading...</td></tr>
             </tbody>
         </table>
     </section>
 
     <!-- Target Segments -->
-    <section class="card">
+    <section class="card" id="segments-section">
         <div class="section-header">
             <h2 class="section-title analytics-accent">Target Segments</h2>
             <button class="btn btn-secondary" onclick="loadSegments()">🔄 Refresh</button>
@@ -745,6 +990,9 @@ include __DIR__ . '/../header/includes/header.php';
             <tbody id="segmentTable"><tr><td colspan="3" style="text-align:center; padding:16px;">No segments loaded.</td></tr></tbody>
         </table>
     </section>
+
+        </div> <!-- /.campaign-main -->
+    </div> <!-- /.campaign-layout -->
 </main>
 
 <?php include __DIR__ . '/../header/includes/footer.php'; ?>
@@ -752,38 +1000,520 @@ include __DIR__ . '/../header/includes/header.php';
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
 <script>
-    const token = localStorage.getItem('jwtToken') || '';
+// Get base path for API calls
+<?php
+require_once __DIR__ . '/../header/includes/path_helper.php';
+?>
+const basePath = '<?php echo $basePath; ?>';
+const apiBase = '<?php echo $apiPath; ?>';
+
+const token = localStorage.getItem('jwtToken') || '';
 let calendar, gantt;
 let activeCampaignId = null;
 let allCampaigns = [];
 
+// Require authentication for campaign module. If no token, send user to login.
+if (!token) {
+    window.location.href = basePath + '/public/index.php';
+}
+
+// Sample data for quick campaign creation (used as local combobox options)
+const SAMPLE_CAMPAIGN_TITLES = [
+    'Fire Safety Awareness Week',
+    'Earthquake Drill and Preparedness Campaign',
+    'Flood Preparedness and Evacuation Planning',
+    'Road Safety for Students',
+    'Dengue Prevention and Clean-Up Drive',
+    'Health & Wellness: Vaccination Drive',
+    'Community Disaster Preparedness Orientation',
+];
+
+const SAMPLE_BARANGAYS = [
+    'Barangay 1',
+    'Barangay 2',
+    'Barangay 3',
+    'Barangay 4',
+    'Barangay 5',
+    'Barangay Commonwealth',
+    'Barangay Batasan Hills',
+];
+
+const SAMPLE_LOCATIONS = [
+    'Barangay Hall',
+    'Covered Court',
+    'Barangay Gymnasium',
+    'Elementary School Grounds',
+    'High School Auditorium',
+    'Multi-purpose Hall',
+    'Community Center',
+];
+
+const SAMPLE_STAFF = [
+    'Barangay Captain',
+    'Barangay Health Worker',
+    'Barangay Tanod',
+    'SK Chairperson',
+    'DRRM Officer',
+    'School Principal',
+    'NGO Partner Volunteer',
+];
+
+const SAMPLE_MATERIALS = [
+    'Tarpaulin (3x6 ft)',
+    'Leaflets / Flyers',
+    'Megaphone',
+    'First Aid Kit',
+    'Projector and Screen',
+    'Sound System',
+    'Emergency Go Bag Sample',
+];
+
+// Reusable Combobox Component (Select-like with autocomplete or local samples)
+function initCombobox(inputId, optionsId, apiEndpoint, options = {}) {
+    const input = document.getElementById(inputId);
+    const optionsDiv = document.getElementById(optionsId);
+    const wrapper = input?.closest('.combobox-wrapper');
+    const tagsDiv = wrapper?.querySelector('.combobox-tags');
+    
+    if (!input || !optionsDiv) {
+        console.warn('Combobox: Element not found', inputId, optionsId);
+        return;
+    }
+    
+    // Mark as initialized
+    input.dataset.comboboxInit = 'true';
+    console.log('Combobox initialized for:', inputId);
+
+    const isMultiSelect = options.multiSelect || false;
+    const staticOptions = Array.isArray(options.staticOptions) ? options.staticOptions : null;
+    let selectedIndex = -1;
+    let suggestions = [];
+    let selectedValues = isMultiSelect ? [] : null;
+    let debounceTimer = null;
+    const minChars = options.minChars || 0; // Allow empty query to show all options
+    const delay = options.delay || 300;
+
+    // Show dropdown on focus/click
+    input.addEventListener('focus', function() {
+        // For static option lists, always show the full list on focus
+        if (staticOptions && staticOptions.length) {
+            fetchSuggestions('');
+            return;
+        }
+
+        const query = this.value.trim();
+        if (query.length >= minChars) {
+            fetchSuggestions(query);
+        } else {
+            // Show all options if empty or short
+            fetchSuggestions('');
+        }
+    });
+
+    // Handle input
+    input.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        // Clear previous timer
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+        }
+
+        // If query is too short, show all options
+        if (query.length < minChars) {
+            fetchSuggestions('');
+            return;
+        }
+
+        // Debounce API calls / filtering
+        debounceTimer = setTimeout(() => {
+            fetchSuggestions(query);
+        }, delay);
+    });
+
+    // Handle keyboard navigation
+    input.addEventListener('keydown', function(e) {
+        if (!optionsDiv.classList.contains('active')) {
+            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                e.preventDefault();
+                // For static option lists, open with full list when first activated
+                if (staticOptions && staticOptions.length) {
+                    fetchSuggestions('');
+                } else {
+                    fetchSuggestions(this.value.trim());
+                }
+            }
+            return;
+        }
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = Math.min(selectedIndex + 1, suggestions.length - 1);
+            updateSelected();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = Math.max(selectedIndex - 1, -1);
+            updateSelected();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+                selectOption(suggestions[selectedIndex]);
+            }
+        } else if (e.key === 'Escape') {
+            hideOptions();
+        }
+    });
+
+    // Handle blur (hide options after a delay to allow clicks)
+    input.addEventListener('blur', function() {
+        setTimeout(() => {
+            hideOptions();
+        }, 200);
+    });
+
+    // Handle click on arrow to toggle dropdown
+    const arrow = wrapper?.querySelector('.combobox-arrow');
+    if (arrow) {
+        arrow.addEventListener('click', function(e) {
+            e.preventDefault();
+            input.focus();
+            // For static lists, always show full options when arrow is clicked
+            if (staticOptions && staticOptions.length) {
+                fetchSuggestions('');
+                return;
+            }
+
+            const query = input.value.trim();
+            if (query.length >= minChars) {
+                fetchSuggestions(query);
+            } else {
+                fetchSuggestions('');
+            }
+        });
+    }
+
+    // Fetch suggestions from API or static options
+    async function fetchSuggestions(query) {
+        // If static options are provided, always show the full list and skip API calls
+        if (staticOptions && staticOptions.length) {
+            suggestions = staticOptions.slice(); // full list, no filtering
+            displayOptions();
+            return;
+        }
+
+        try {
+            // Build API URL using apiBase (which includes /index.php)
+            const url = apiBase + apiEndpoint + (query ? '?q=' + encodeURIComponent(query) : '?q=');
+            const res = await fetch(url, {
+                headers: { 
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!res.ok) {
+                console.error('Combobox API error:', res.status, res.statusText);
+                hideOptions();
+                return;
+            }
+            
+            const data = await res.json();
+            suggestions = data.data || [];
+            displayOptions();
+        } catch (err) {
+            console.error('Combobox error:', err);
+            hideOptions();
+        }
+    }
+
+    // Display options
+    function displayOptions() {
+        if (suggestions.length === 0) {
+            optionsDiv.innerHTML = '<div class="combobox-option" style="color: #94a3b8; font-style: italic;">No suggestions found</div>';
+        } else {
+            optionsDiv.innerHTML = '';
+        }
+        
+        selectedIndex = -1;
+        input.classList.add('active');
+
+        suggestions.forEach((suggestion, index) => {
+            const div = document.createElement('div');
+            div.className = 'combobox-option';
+            div.textContent = suggestion;
+            div.addEventListener('click', () => selectOption(suggestion));
+            optionsDiv.appendChild(div);
+        });
+
+        optionsDiv.classList.add('active');
+    }
+
+    // Update selected option highlight
+    function updateSelected() {
+        const items = optionsDiv.querySelectorAll('.combobox-option');
+        items.forEach((item, index) => {
+            if (index === selectedIndex) {
+                item.classList.add('selected');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('selected');
+            }
+        });
+    }
+
+    // Select an option
+    function selectOption(value) {
+        if (isMultiSelect) {
+            // Multi-select: add to selected values and show as tags
+            if (!selectedValues.includes(value)) {
+                selectedValues.push(value);
+                updateTags();
+            }
+            input.value = '';
+        } else {
+            // Single select: set value
+            input.value = value;
+            selectedValues = value;
+        }
+        
+        hideOptions();
+        input.focus();
+        
+        // Trigger input/change event for any handlers
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // Update tags display for multi-select
+    function updateTags() {
+        if (!tagsDiv || !isMultiSelect) return;
+        
+        tagsDiv.innerHTML = '';
+        selectedValues.forEach(value => {
+            const tag = document.createElement('div');
+            tag.className = 'combobox-tag';
+            tag.innerHTML = `
+                <span>${value}</span>
+                <span class="combobox-tag-remove" data-value="${value}">×</span>
+            `;
+            tag.querySelector('.combobox-tag-remove').addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeTag(value);
+            });
+            tagsDiv.appendChild(tag);
+        });
+    }
+
+    // Remove a tag
+    function removeTag(value) {
+        selectedValues = selectedValues.filter(v => v !== value);
+        updateTags();
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // Hide options
+    function hideOptions() {
+        optionsDiv.classList.remove('active');
+        input.classList.remove('active');
+        selectedIndex = -1;
+    }
+
+    // Expose selectedValues for form submission
+    input.getSelectedValues = () => isMultiSelect ? selectedValues : input.value;
+}
+
+// Initialize all combobox fields when DOM is ready
+(function() {
+    function initAllComboboxes() {
+        // Campaign Title
+        if (document.getElementById('title')) {
+            initCombobox('title', 'title_options', '/api/v1/autocomplete/campaign-titles', {
+                staticOptions: SAMPLE_CAMPAIGN_TITLES,
+            });
+        }
+        
+        // Category (single-select combobox)
+        if (document.getElementById('category')) {
+            initCombobox('category', 'category_options', '/api/v1/autocomplete/campaign-titles', {
+                staticOptions: ['fire', 'flood', 'earthquake', 'health', 'road safety', 'general'],
+            });
+        }
+        
+        // Barangay / Geographic Scope (single select)
+        if (document.getElementById('geographic_scope')) {
+            initCombobox('geographic_scope', 'geographic_scope_options', '/api/v1/autocomplete/barangays', {
+                staticOptions: SAMPLE_BARANGAYS,
+            });
+        }
+        
+        // Barangay Target Zones
+        if (document.getElementById('barangay_zones')) {
+            initCombobox('barangay_zones', 'barangay_zones_options', '/api/v1/autocomplete/barangays', {
+                multiSelect: true,
+                staticOptions: SAMPLE_BARANGAYS,
+            });
+        }
+        
+        // Location
+        if (document.getElementById('location')) {
+            initCombobox('location', 'location_options', '/api/v1/autocomplete/locations', {
+                staticOptions: SAMPLE_LOCATIONS,
+            });
+        }
+        
+        // Status (single-select combobox)
+        if (document.getElementById('status')) {
+            initCombobox('status', 'status_options', '/api/v1/autocomplete/campaign-titles', {
+                staticOptions: ['draft','pending','approved','ongoing','scheduled','completed','archived'],
+            });
+        }
+        
+        // Assigned Staff
+        if (document.getElementById('assigned_staff')) {
+            initCombobox('assigned_staff', 'assigned_staff_options', '/api/v1/autocomplete/staff', {
+                multiSelect: true,
+                staticOptions: SAMPLE_STAFF,
+            });
+        }
+        
+        // Materials
+        if (document.getElementById('materials_json')) {
+            initCombobox('materials_json', 'materials_json_options', '/api/v1/autocomplete/materials', {
+                multiSelect: true,
+                staticOptions: SAMPLE_MATERIALS,
+            });
+        }
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAllComboboxes);
+    } else {
+        // DOM already loaded, initialize immediately
+        setTimeout(initAllComboboxes, 100);
+    }
+})();
+
+// Also initialize on window load as a fallback
+window.addEventListener('load', function() {
+    // Double-check combobox is initialized
+    if (document.getElementById('title') && !document.getElementById('title').dataset.comboboxInit) {
+        console.log('Re-initializing comboboxes on window load...');
+        // Re-run initialization
+        if (typeof initCombobox === 'function') {
+            initCombobox('title', 'title_options', '/api/v1/autocomplete/campaign-titles');
+            initCombobox('geographic_scope', 'geographic_scope_options', '/api/v1/autocomplete/barangays');
+            initCombobox('barangay_zones', 'barangay_zones_options', '/api/v1/autocomplete/barangays', { multiSelect: true });
+            initCombobox('location', 'location_options', '/api/v1/autocomplete/locations');
+            initCombobox('assigned_staff', 'assigned_staff_options', '/api/v1/autocomplete/staff', { multiSelect: true });
+            initCombobox('materials_json', 'materials_json_options', '/api/v1/autocomplete/materials', { multiSelect: true });
+        }
+    }
+});
+
 // Form handling
 document.getElementById('planningForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const statusEl = document.getElementById('createStatus');
-    statusEl.style.display = 'block';
-    statusEl.className = 'status-text';
-    statusEl.textContent = 'Creating...';
+    const createStatusEl = document.getElementById('createStatus');
+    createStatusEl.style.display = 'block';
+    createStatusEl.className = 'status-text';
+    createStatusEl.textContent = 'Creating...';
     
     try {
-        const barangayZones = document.getElementById('barangay_zones').value.split(',').map(s => s.trim()).filter(Boolean);
-        let assignedStaff = [];
-        try {
-            assignedStaff = JSON.parse(document.getElementById('assigned_staff').value || '[]');
-        } catch (e) {}
-        let materialsJson = {};
-        try {
-            materialsJson = JSON.parse(document.getElementById('materials_json').value || '{}');
-        } catch (e) {}
+        // Get values from comboboxes (supports multi-select)
+        // Barangay zones (multi-select combobox)
+        const barangayZonesEl = document.getElementById('barangay_zones');
+        let barangayZones = [];
+        if (barangayZonesEl && typeof barangayZonesEl.getSelectedValues === 'function') {
+            barangayZones = barangayZonesEl.getSelectedValues();
+        } else if (barangayZonesEl?.value) {
+            barangayZones = barangayZonesEl.value.split(',').map(s => s.trim()).filter(Boolean);
+        }
         
+        // Assigned staff (multi-select combobox)
+        const assignedStaffEl = document.getElementById('assigned_staff');
+        let assignedStaff = [];
+        if (assignedStaffEl && typeof assignedStaffEl.getSelectedValues === 'function') {
+            assignedStaff = assignedStaffEl.getSelectedValues();
+        } else if (assignedStaffEl?.value) {
+            const staffInput = assignedStaffEl.value.trim();
+            assignedStaff = staffInput ? staffInput.split(',').map(s => s.trim()).filter(Boolean) : [];
+        }
+        
+        // Materials (multi-select combobox - convert to JSON object)
+        const materialsEl = document.getElementById('materials_json');
+        let materialsJson = {};
+        if (materialsEl && typeof materialsEl.getSelectedValues === 'function') {
+            const materialsList = materialsEl.getSelectedValues();
+            materialsList.forEach(mat => {
+                materialsJson[mat] = 1; // Default quantity
+            });
+        } else if (materialsEl?.value) {
+            const materialsInput = materialsEl.value.trim();
+            if (materialsInput) {
+                if (materialsInput.startsWith('{')) {
+                    try {
+                        materialsJson = JSON.parse(materialsInput);
+                    } catch (e) {
+                        const materialsList = materialsInput.split(',').map(s => s.trim()).filter(Boolean);
+                        materialsList.forEach(mat => {
+                            materialsJson[mat] = 1;
+                        });
+                    }
+                } else {
+                    const materialsList = materialsInput.split(',').map(s => s.trim()).filter(Boolean);
+                    materialsList.forEach(mat => {
+                        const match = mat.match(/^(.+?)\s*\((\d+)\)$/);
+                        if (match) {
+                            materialsJson[match[1].trim()] = parseInt(match[2]);
+                        } else {
+                            materialsJson[mat] = 1;
+                        }
+                    });
+                }
+            }
+        }
+        
+        // Get single-select combobox values
+        const titleEl = document.getElementById('title');
+        const title = (titleEl && typeof titleEl.getSelectedValues === 'function') 
+            ? titleEl.getSelectedValues() 
+            : titleEl?.value.trim() || '';
+        
+        const locationEl = document.getElementById('location');
+        const location = (locationEl && typeof locationEl.getSelectedValues === 'function') 
+            ? locationEl.getSelectedValues() 
+            : locationEl?.value.trim() || null;
+        
+        // Get geographic scope (single-select combobox)
+        const geographicScopeEl = document.getElementById('geographic_scope');
+        const geographicScope = (geographicScopeEl && typeof geographicScopeEl.getSelectedValues === 'function') 
+            ? geographicScopeEl.getSelectedValues() 
+            : geographicScopeEl?.value.trim() || null;
+
+        // Category (single-select combobox)
+        const categoryEl = document.getElementById('category');
+        const category = (categoryEl && typeof categoryEl.getSelectedValues === 'function')
+            ? categoryEl.getSelectedValues()
+            : (categoryEl?.value.trim() || null);
+
+        // Status (single-select combobox)
+        const statusEl = document.getElementById('status');
+        const status = (statusEl && typeof statusEl.getSelectedValues === 'function')
+            ? statusEl.getSelectedValues()
+            : (statusEl?.value.trim() || 'draft');
+
         const payload = {
-            title: document.getElementById('title').value.trim(),
+            title: title,
             description: document.getElementById('description').value.trim(),
-            status: document.getElementById('status').value,
+            category: category,
+            geographic_scope: geographicScope,
+            status: status,
             start_date: document.getElementById('start_date').value || null,
             end_date: document.getElementById('end_date').value || null,
+            draft_schedule_datetime: document.getElementById('draft_schedule_datetime').value || null,
             objectives: document.getElementById('objectives').value.trim() || null,
-            location: document.getElementById('location').value.trim() || null,
+            location: location,
             assigned_staff: assignedStaff,
             barangay_target_zones: barangayZones,
             budget: parseFloat(document.getElementById('budget').value) || null,
@@ -792,12 +1522,12 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
         };
         
         if (!payload.title) {
-            statusEl.textContent = 'Title is required.';
-            statusEl.className = 'status-text error';
+            createStatusEl.textContent = 'Title is required.';
+            createStatusEl.className = 'status-text error';
             return;
         }
         
-        const res = await fetch('/api/v1/campaigns', {
+        const res = await fetch(apiBase + '/api/v1/campaigns', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -808,20 +1538,20 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
         
         const data = await res.json();
         if (!res.ok) {
-            statusEl.textContent = data.error || 'Failed to create campaign.';
-            statusEl.className = 'status-text error';
+            createStatusEl.textContent = data.error || 'Failed to create campaign.';
+            createStatusEl.className = 'status-text error';
             return;
         }
         
-        statusEl.textContent = 'Campaign created successfully!';
-        statusEl.className = 'status-text success';
+        createStatusEl.textContent = 'Campaign created successfully!';
+        createStatusEl.className = 'status-text success';
         clearForm();
         loadCampaigns();
         refreshGantt();
         if (calendar) calendar.refetchEvents();
     } catch (err) {
-        statusEl.textContent = 'Network error. Please try again.';
-        statusEl.className = 'status-text error';
+        createStatusEl.textContent = 'Network error. Please try again.';
+        createStatusEl.className = 'status-text error';
     }
 });
 
@@ -831,25 +1561,35 @@ function clearForm() {
 }
 
 // AutoML
+let currentPrediction = null;
+let currentCampaignId = null;
+
 async function getAutoMLPrediction() {
     const cid = parseInt(document.getElementById('automl_campaign_id').value);
     if (!cid) {
-        alert('Please enter a campaign ID');
+        alert('Please select a campaign');
         return;
     }
     
+    currentCampaignId = cid;
     const resultDiv = document.getElementById('automlResult');
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = '<div style="text-align:center; padding:20px;">Loading prediction...</div>';
+    resultDiv.innerHTML = '<div style="text-align:center; padding:20px;">Loading prediction from real-time data...</div>';
     
     try {
-        const res = await fetch('/api/v1/automl/predict', {
+        const audienceSegmentId = document.getElementById('automl_audience_segment').value;
+        const features = {};
+        if (audienceSegmentId) {
+            features.audience_segment_id = parseInt(audienceSegmentId);
+        }
+        
+        const res = await fetch(apiBase + `/api/v1/campaigns/${cid}/ai-recommendation`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + token
             },
-            body: JSON.stringify({ campaign_id: cid })
+            body: JSON.stringify({ features })
         });
         const data = await res.json();
         
@@ -861,21 +1601,19 @@ async function getAutoMLPrediction() {
             return;
         }
         
-        const pred = data.prediction || {};
+        currentPrediction = data.prediction || {};
+        const pred = currentPrediction;
         const suggestedDateTime = pred.suggested_datetime || new Date().toISOString().slice(0, 16).replace('T', ' ');
         const confidence = pred.confidence_score ? (pred.confidence_score * 100).toFixed(1) + '%' : 'N/A';
-        const features = pred.features_used || {};
-        const featuresText = Object.keys(features).length > 0 
-            ? Object.entries(features).map(([k, v]) => `${k}: ${v}`).join(', ')
-            : 'Historical data, engagement patterns, time-based trends';
+        const modelSource = pred.model_source || 'unknown';
         
-        let recommendation = 'Optimal deployment time based on historical performance';
+        let recommendation = 'Optimal deployment time based on real-time historical performance data';
         if (pred.confidence_score && pred.confidence_score > 0.8) {
-            recommendation = 'High confidence recommendation - Strong historical match';
+            recommendation = 'High confidence recommendation - Strong historical match with similar campaigns';
         } else if (pred.confidence_score && pred.confidence_score > 0.6) {
-            recommendation = 'Moderate confidence - Good historical indicators';
+            recommendation = 'Moderate confidence - Good historical indicators from similar campaigns';
         } else if (pred.confidence_score) {
-            recommendation = 'Lower confidence - Consider additional factors';
+            recommendation = 'Lower confidence - Limited historical data, consider additional factors';
         }
         
         resultDiv.innerHTML = `
@@ -888,12 +1626,17 @@ async function getAutoMLPrediction() {
                 <span>${confidence}</span>
             </div>
             <div class="prediction-item">
-                <strong>🔍 Features Used:</strong>
-                <span style="font-size: 12px;">${featuresText}</span>
+                <strong>🔍 Model Source:</strong>
+                <span>${modelSource === 'google_automl' ? 'Google AutoML' : modelSource === 'heuristic_with_history' ? 'Heuristic (with historical data)' : 'Heuristic (fallback)'}</span>
             </div>
             <div class="prediction-item">
                 <strong>💡 Recommendation:</strong>
                 <span style="font-size: 13px;">${recommendation}</span>
+            </div>
+            <div style="margin-top: 16px; display: flex; gap: 12px;">
+                <button type="button" class="btn btn-primary" onclick="acceptAIRecommendation()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5);">✓ Accept AI Recommendation</button>
+                <button type="button" class="btn btn-secondary" onclick="checkConflicts()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5);">🔍 Check Conflicts</button>
+                <button type="button" class="btn btn-secondary" onclick="overrideSchedule()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5);">✏️ Override Schedule</button>
             </div>
         `;
     } catch (err) {
@@ -901,6 +1644,118 @@ async function getAutoMLPrediction() {
             <strong>Error:</strong>
             <span>Failed to get prediction: ${err.message}</span>
         </div>`;
+    }
+}
+
+async function acceptAIRecommendation() {
+    if (!currentCampaignId || !currentPrediction) {
+        alert('Please get a prediction first');
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + `/api/v1/campaigns/${currentCampaignId}/final-schedule`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ use_ai_recommendation: true })
+        });
+        const data = await res.json();
+        
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+        
+        alert('AI recommendation accepted! Final schedule has been set.');
+        loadCampaigns();
+        if (calendar) calendar.refetchEvents();
+    } catch (err) {
+        alert('Failed to accept recommendation: ' + err.message);
+    }
+}
+
+async function checkConflicts() {
+    if (!currentCampaignId || !currentPrediction) {
+        alert('Please get a prediction first');
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + `/api/v1/campaigns/${currentCampaignId}/check-conflicts`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ proposed_datetime: currentPrediction.suggested_datetime })
+        });
+        const data = await res.json();
+        
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+        
+        let message = `Conflict Check Results:\n\n`;
+        message += `Proposed: ${data.proposed_datetime}\n`;
+        message += `Has Conflicts: ${data.has_conflicts ? 'YES' : 'NO'}\n\n`;
+        
+        if (data.has_conflicts) {
+            if (data.campaign_conflicts && data.campaign_conflicts.length > 0) {
+                message += `Campaign Conflicts:\n`;
+                data.campaign_conflicts.forEach(c => {
+                    message += `- ${c.title} (${c.final_schedule_datetime})\n`;
+                });
+            }
+            if (data.event_conflicts && data.event_conflicts.length > 0) {
+                message += `\nEvent/Seminar Conflicts:\n`;
+                data.event_conflicts.forEach(e => {
+                    message += `- ${e.name} (${e.event_date} ${e.event_time}) at ${e.venue || 'N/A'}\n`;
+                });
+            }
+        } else {
+            message += 'No conflicts found! Safe to schedule.';
+        }
+        
+        alert(message);
+    } catch (err) {
+        alert('Failed to check conflicts: ' + err.message);
+    }
+}
+
+async function overrideSchedule() {
+    if (!currentCampaignId) {
+        alert('Please select a campaign first');
+        return;
+    }
+    
+    const manualDateTime = prompt('Enter manual schedule date & time (YYYY-MM-DD HH:MM:SS):');
+    if (!manualDateTime) return;
+    
+    try {
+        const res = await fetch(apiBase + `/api/v1/campaigns/${currentCampaignId}/final-schedule`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ final_schedule_datetime: manualDateTime })
+        });
+        const data = await res.json();
+        
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+        
+        alert('Manual schedule override successful!');
+        loadCampaigns();
+        if (calendar) calendar.refetchEvents();
+    } catch (err) {
+        alert('Failed to override schedule: ' + err.message);
     }
 }
 
@@ -1019,26 +1874,86 @@ function initCalendar() {
         aspectRatio: 1.8,
         events: async function(fetchInfo, successCallback, failureCallback) {
             try {
-                const res = await fetch('/api/v1/campaigns', {
+                const start = fetchInfo.startStr;
+                const end = fetchInfo.endStr;
+                const res = await fetch(apiBase + `/api/v1/campaigns/calendar?start=${start}&end=${end}`, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const data = await res.json();
-                const events = (data.data || [])
-                    .filter(c => c.start_date)
-                    .map(c => ({
-                        id: c.id,
-                        title: c.title,
-                        start: c.start_date,
-                        end: c.end_date ? new Date(new Date(c.end_date).getTime() + 86400000) : new Date(new Date(c.start_date).getTime() + 86400000),
-                        backgroundColor: getStatusColor(c.status),
-                        borderColor: getStatusColor(c.status),
-                        textColor: '#fff',
-                        extendedProps: {
-                            status: c.status,
-                            location: c.location,
-                            budget: c.budget
-                        }
-                    }));
+                const campaigns = data.data || [];
+                
+                const events = [];
+                
+                // Add campaign date ranges
+                campaigns.forEach(c => {
+                    if (c.start_date) {
+                        events.push({
+                            id: 'campaign-' + c.id,
+                            title: c.title + ' (Campaign)',
+                            start: c.start_date,
+                            end: c.end_date ? new Date(new Date(c.end_date).getTime() + 86400000) : new Date(new Date(c.start_date).getTime() + 86400000),
+                            backgroundColor: getStatusColor(c.status),
+                            borderColor: getStatusColor(c.status),
+                            textColor: '#fff',
+                            allDay: true,
+                            extendedProps: {
+                                type: 'campaign',
+                                status: c.status,
+                                location: c.location,
+                                budget: c.budget
+                            }
+                        });
+                    }
+                    
+                    // Add draft schedule
+                    if (c.draft_schedule_datetime) {
+                        events.push({
+                            id: 'draft-' + c.id,
+                            title: c.title + ' (Draft)',
+                            start: c.draft_schedule_datetime,
+                            backgroundColor: '#fbbf24',
+                            borderColor: '#f59e0b',
+                            textColor: '#000',
+                            extendedProps: {
+                                type: 'draft_schedule',
+                                campaign_id: c.id
+                            }
+                        });
+                    }
+                    
+                    // Add AI recommended schedule
+                    if (c.ai_recommended_datetime) {
+                        events.push({
+                            id: 'ai-' + c.id,
+                            title: c.title + ' (AI Recommended)',
+                            start: c.ai_recommended_datetime,
+                            backgroundColor: '#667eea',
+                            borderColor: '#764ba2',
+                            textColor: '#fff',
+                            extendedProps: {
+                                type: 'ai_recommended',
+                                campaign_id: c.id
+                            }
+                        });
+                    }
+                    
+                    // Add final approved schedule
+                    if (c.final_schedule_datetime) {
+                        events.push({
+                            id: 'final-' + c.id,
+                            title: c.title + ' (Final)',
+                            start: c.final_schedule_datetime,
+                            backgroundColor: '#10b981',
+                            borderColor: '#059669',
+                            textColor: '#fff',
+                            extendedProps: {
+                                type: 'final_schedule',
+                                campaign_id: c.id
+                            }
+                        });
+                    }
+                });
+                
                 successCallback(events);
             } catch (err) {
                 failureCallback(err);
@@ -1047,7 +1962,14 @@ function initCalendar() {
         eventClick: function(info) {
             const event = info.event;
             const extended = event.extendedProps;
-            alert(`Campaign: ${event.title}\nStatus: ${extended.status}\nLocation: ${extended.location || 'N/A'}\nBudget: ${extended.budget ? '₱' + parseFloat(extended.budget).toLocaleString() : 'N/A'}`);
+            let message = `Campaign: ${event.title}\n`;
+            message += `Type: ${extended.type || 'campaign'}\n`;
+            if (extended.status) message += `Status: ${extended.status}\n`;
+            if (extended.location) message += `Location: ${extended.location}\n`;
+            if (extended.budget) message += `Budget: ₱${parseFloat(extended.budget).toLocaleString()}\n`;
+            message += `Start: ${event.start.toLocaleString()}\n`;
+            if (event.end) message += `End: ${event.end.toLocaleString()}`;
+            alert(message);
         },
         eventDisplay: 'block',
         eventTimeFormat: {
@@ -1092,7 +2014,7 @@ function getStatusColor(status) {
 // Resources
 async function loadResources() {
     try {
-        const res = await fetch('/api/v1/campaigns', {
+        const res = await fetch(apiBase + '/api/v1/campaigns', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
@@ -1157,29 +2079,45 @@ async function loadResources() {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px;">Loading...</td></tr>';
     
     try {
-        const res = await fetch('/api/v1/campaigns', {
+        const res = await fetch(apiBase + '/api/v1/campaigns', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
         allCampaigns = data.data || [];
         
         if (!allCampaigns.length) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px;">No campaigns yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:24px;">No campaigns yet.</td></tr>';
             return;
         }
         
         tbody.innerHTML = '';
         const select = document.getElementById('active_campaign');
+        const automlSelect = document.getElementById('automl_campaign_id');
         select.innerHTML = '';
+        automlSelect.innerHTML = '<option value="">Select Campaign</option>';
         
         allCampaigns.forEach(c => {
             const tr = document.createElement('tr');
+            const formatDateTime = (dt) => {
+                if (!dt) return '-';
+                try {
+                    const d = new Date(dt);
+                    if (isNaN(d.getTime())) return dt; // Return as-is if invalid
+                    return d.toLocaleString('en-US', {dateStyle: 'short', timeStyle: 'short'});
+                } catch (e) {
+                    return dt; // Return as-is if parsing fails
+                }
+            };
             tr.innerHTML = `
                 <td>${c.id}</td>
                 <td>${c.title || ''}</td>
+                <td>${c.category || '-'}</td>
                 <td><span class="badge ${c.status || 'draft'}">${(c.status || 'draft').charAt(0).toUpperCase() + (c.status || 'draft').slice(1)}</span></td>
                 <td>${c.start_date || '-'}</td>
                 <td>${c.end_date || '-'}</td>
+                <td>${formatDateTime(c.draft_schedule_datetime)}</td>
+                <td>${formatDateTime(c.ai_recommended_datetime)}</td>
+                <td>${formatDateTime(c.final_schedule_datetime)}</td>
                 <td>${c.location || '-'}</td>
                 <td>${c.budget ? '₱' + parseFloat(c.budget).toLocaleString('en-US', {minimumFractionDigits: 2}) : '-'}</td>
             `;
@@ -1189,6 +2127,11 @@ async function loadResources() {
             opt.value = c.id;
             opt.textContent = `${c.id} - ${c.title || ''}`;
             select.appendChild(opt);
+            
+            const automlOpt = document.createElement('option');
+            automlOpt.value = c.id;
+            automlOpt.textContent = `${c.id} - ${c.title || ''}`;
+            automlSelect.appendChild(automlOpt);
         });
         
         if (!activeCampaignId && allCampaigns.length) {
@@ -1199,7 +2142,7 @@ async function loadResources() {
         refreshGantt();
         loadResources();
     } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:#dc2626;">Failed to load campaigns.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:24px; color:#dc2626;">Failed to load campaigns.</td></tr>';
     }
 }
 
@@ -1217,7 +2160,7 @@ async function loadSegments() {
     }
     
     try {
-        const res = await fetch('/api/v1/campaigns/' + cid + '/segments', {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + cid + '/segments', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
@@ -1263,7 +2206,7 @@ async function saveSegments() {
     statusEl.textContent = 'Saving...';
     
     try {
-        const res = await fetch('/api/v1/campaigns/' + cid + '/segments', {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + cid + '/segments', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1282,11 +2225,27 @@ async function saveSegments() {
 }
 
 // Initialize
-    loadCampaigns();
-loadResources();
-setTimeout(() => {
-    if (document.getElementById('gantt-tab').classList.contains('active')) {
-        refreshGantt();
+async function initializeCampaigns() {
+    await loadCampaigns();
+    loadResources();
+    
+    // Populate campaign dropdown for AI recommendations
+    const automlSelect = document.getElementById('automl_campaign_id');
+    if (allCampaigns.length > 0) {
+        allCampaigns.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = `${c.id} - ${c.title || 'Untitled'}`;
+            automlSelect.appendChild(opt);
+        });
     }
-}, 500);
+    
+    setTimeout(() => {
+        if (document.getElementById('gantt-tab').classList.contains('active')) {
+            refreshGantt();
+        }
+    }, 500);
+}
+
+initializeCampaigns();
 </script>

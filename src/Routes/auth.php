@@ -13,6 +13,11 @@ return [
     ],
     [
         'method' => 'POST',
+        'path' => '/api/v1/auth/register',
+        'handler' => [AuthController::class, 'register'],
+    ],
+    [
+        'method' => 'POST',
         'path' => '/api/v1/auth/refresh',
         'handler' => [AuthController::class, 'refresh'],
     ],

@@ -1,5 +1,5 @@
 -- Extend content schema to support visibility, tagging, and usage linkage
-USE campaign_db;
+USE LGU;
 
 -- Visibility on content items
 ALTER TABLE content_items

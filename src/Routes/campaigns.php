@@ -60,6 +60,30 @@ return [
         'handler' => [CampaignController::class, 'syncSegments'],
         'middleware' => JWTMiddleware::class,
     ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/campaigns/{id}/ai-recommendation',
+        'handler' => [CampaignController::class, 'requestAIRecommendation'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/campaigns/{id}/final-schedule',
+        'handler' => [CampaignController::class, 'setFinalSchedule'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/campaigns/calendar',
+        'handler' => [CampaignController::class, 'calendar'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/campaigns/{id}/check-conflicts',
+        'handler' => [CampaignController::class, 'checkConflicts'],
+        'middleware' => JWTMiddleware::class,
+    ],
 ];
 
 

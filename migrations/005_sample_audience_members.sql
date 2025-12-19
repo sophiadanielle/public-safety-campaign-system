@@ -1,5 +1,5 @@
 -- Sample audience members for testing segment evaluation
-USE campaign_db;
+USE LGU;
 
 INSERT INTO audience_segments (name, criteria) VALUES
 ('Sample Residents', JSON_OBJECT('channel', JSON_ARRAY('email','sms')))

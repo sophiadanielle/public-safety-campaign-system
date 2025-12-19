@@ -32,7 +32,6 @@
                     <?php
                         $page = basename($_SERVER['PHP_SELF']);
                         $links = [
-                            'login.php' => 'Login',
                             'campaigns.php' => 'Campaigns',
                             'content.php' => 'Content',
                             'segments.php' => 'Segments',

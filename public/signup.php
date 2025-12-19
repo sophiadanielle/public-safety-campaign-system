@@ -1,5 +1,6 @@
 <?php
 $pageTitle = 'Sign Up';
+$hideNav   = true;
 include __DIR__ . '/../header/includes/header.php';
 ?>
 
@@ -53,6 +54,30 @@ include __DIR__ . '/../header/includes/header.php';
         width: 100%;
         margin-top: 16px;
     }
+    .password-field {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 6px;
+    }
+    .password-field input {
+        margin-top: 0;
+        flex: 1;
+    }
+    .password-toggle {
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 8px 10px;
+        cursor: pointer;
+        font-size: 12px;
+        color: #475569;
+    }
+    .password-toggle:hover {
+        background: #e5edff;
+        border-color: #2563eb;
+        color: #1d4ed8;
+    }
     .status {
         margin-top: 12px;
         white-space: pre-wrap;
@@ -72,9 +97,18 @@ include __DIR__ . '/../header/includes/header.php';
                 <input id="email" type="email" placeholder="you@example.com">
             </label>
             <label>Password
-                <input id="password" type="password" placeholder="Password">
+                <div class="password-field">
+                    <input id="password" type="password" placeholder="Password">
+                    <button type="button" class="password-toggle" onclick="togglePassword('password', this)" aria-label="Toggle password visibility">
+                        Show
+                    </button>
+                </div>
             </label>
             <button class="btn btn-primary" onclick="signup()">Sign Up</button>
+            <p style="margin-top:12px; font-size:14px; color:#4b5563;">
+                Already have an account?
+                <a href="<?php echo htmlspecialchars($basePath . '/public/index.php'); ?>">Log in</a>
+            </p>
             <div id="status" class="status"></div>
         </div>
     </div>
@@ -83,12 +117,56 @@ include __DIR__ . '/../header/includes/header.php';
 <?php include __DIR__ . '/../header/includes/footer.php'; ?>
 
 <script>
+<?php
+require_once __DIR__ . '/../header/includes/path_helper.php';
+?>
+const basePath = '<?php echo $basePath; ?>';
+const apiBase = '<?php echo $apiPath; ?>';
+
+function togglePassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    btn.textContent = isPassword ? 'Hide' : 'Show';
+}
+
 async function signup() {
     const name = document.getElementById('name').value.trim();
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
-    // Placeholder: implement your signup endpoint when ready.
-    document.getElementById('status').textContent = 'Signup endpoint not implemented. Use login with seeded user for now.';
+
+    const statusEl = document.getElementById('status');
+    statusEl.style.color = '#0f172a';
+
+    if (!name || !email || !password) {
+        statusEl.textContent = 'Please fill in all fields.';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+
+    const res = await fetch(apiBase + '/api/v1/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+    });
+
+    try {
+        const data = await res.json();
+        if (data.token) {
+            localStorage.setItem('jwtToken', data.token);
+            statusEl.textContent = 'Account created! Redirecting...';
+            setTimeout(() => {
+                window.location.href = basePath + '/public/campaigns.php';
+            }, 1000);
+        } else {
+            statusEl.textContent = 'Error: ' + (data.error || JSON.stringify(data));
+            statusEl.style.color = '#dc2626';
+        }
+    } catch (e) {
+        statusEl.textContent = 'Error: Unable to parse response from server.';
+        statusEl.style.color = '#dc2626';
+    }
 }
 </script>
 

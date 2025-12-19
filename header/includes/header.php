@@ -9,9 +9,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Public Safety Campaign</title>
-    <link rel="icon" type="image/x-icon" href="/assets/header/images/favicon.ico">
-    <link rel="stylesheet" href="/assets/header/css/global.css">
+    <title><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) : 'Public Safety Campaign'; ?></title>
+    <?php
+    // Include path helper
+    require_once __DIR__ . '/path_helper.php';
+    ?>
+    <link rel="icon" type="image/x-icon" href="<?php echo htmlspecialchars($imgPath . '/favicon.ico'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/global.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/buttons.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/forms.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/cards.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/content.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script>
@@ -28,62 +36,67 @@
 <body>
     <header class="header">
         <div class="header-container">
-            <a href="/login.php" class="logo">
-                <img src="/assets/header/images/logo.svg" alt="Logo" class="logo-img">
+            <a href="<?php echo htmlspecialchars($publicPath . '/index.php'); ?>" class="logo">
+                <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Logo" class="logo-img">
             </a>
             
-            <nav class="nav-center">
-                <ul class="nav-menu">
-                    <?php
-                        $page = basename($_SERVER['PHP_SELF']);
-                        $links = [
-                            'login.php' => 'Login',
-                            'signup.php' => 'Sign Up',
-                            'campaigns.php' => 'Campaigns',
-                            'content.php' => 'Content',
-                            'segments.php' => 'Segments',
-                            'events.php' => 'Events',
-                            'surveys.php' => 'Surveys',
-                            'impact.php' => 'Impact',
-                            'partners.php' => 'Partners',
-                        ];
-                        foreach ($links as $href => $label):
-                            $active = $page === $href ? 'active' : '';
-                    ?>
-                        <li><a href="/<?php echo $href; ?>" class="nav-link <?php echo $active; ?>"><?php echo $label; ?></a></li>
-                    <?php endforeach; ?>
-                </ul>
-            </nav>
-            
-            <div class="nav-actions">
-                <a href="/login.php" class="btn btn-secondary">Login</a>
-                <a href="/campaigns.php" class="btn btn-primary">Dashboard</a>
-                <button class="mobile-menu-toggle" aria-label="Toggle mobile menu">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
+            <?php if (empty($hideNav)): ?>
+                <nav class="nav-center">
+                    <ul class="nav-menu">
+                        <?php
+                            $page = basename($_SERVER['PHP_SELF']);
+                            $links = [
+                                'campaigns.php' => 'Campaigns',
+                                'content.php' => 'Content',
+                                'segments.php' => 'Segments',
+                                'events.php' => 'Events',
+                                'surveys.php' => 'Surveys',
+                                'impact.php' => 'Impact',
+                                'partners.php' => 'Partners',
+                            ];
+                            foreach ($links as $href => $label):
+                                $active = $page === $href ? 'active' : '';
+                                $linkUrl = $publicPath . '/' . $href;
+                        ?>
+                            <li><a href="<?php echo htmlspecialchars($linkUrl); ?>" class="nav-link <?php echo $active; ?>"><?php echo $label; ?></a></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </nav>
+                
+                <div class="nav-actions">
+                    <a href="<?php echo htmlspecialchars($publicPath . '/campaigns.php'); ?>" class="btn btn-primary">Dashboard</a>
+                    <button type="button" class="btn btn-secondary" onclick="logout()">Logout</button>
+                    <button class="mobile-menu-toggle" aria-label="Toggle mobile menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
                 </div>
-        
-        <!-- Mobile Navigation -->
-        <div class="mobile-nav">
-            <div class="mobile-nav-header">
-                <a href="/login.php" class="logo">
-                    <img src="/assets/header/images/logo.svg" alt="" class="logo-img">
-                </a>
-                <button class="mobile-nav-close" aria-label="Close mobile menu">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <ul class="mobile-nav-menu">
-                <?php foreach ($links as $href => $label): ?>
-                    <li><a href="/<?php echo $href; ?>" class="mobile-nav-link <?php echo $page === $href ? 'active' : ''; ?>"><?php echo $label; ?></a></li>
-                <?php endforeach; ?>
-                <li class="mobile-nav-divider"></li>
-                <li><a href="/login.php" class="mobile-nav-link">Login</a></li>
-                <li><a href="/campaigns.php" class="mobile-nav-link">Dashboard</a></li>
-            </ul>
+            <?php endif; ?>
         </div>
         
-        <!-- Mobile Navigation Overlay -->
-        <div class="mobile-nav-overlay"></div>
+        <?php if (empty($hideNav)): ?>
+            <!-- Mobile Navigation -->
+            <div class="mobile-nav">
+                <div class="mobile-nav-header">
+                    <a href="<?php echo htmlspecialchars($publicPath . '/index.php'); ?>" class="logo">
+                        <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="" class="logo-img">
+                    </a>
+                    <button class="mobile-nav-close" aria-label="Close mobile menu">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <ul class="mobile-nav-menu">
+                    <?php foreach ($links as $href => $label): 
+                        $linkUrl = $publicPath . '/' . $href;
+                    ?>
+                        <li><a href="<?php echo htmlspecialchars($linkUrl); ?>" class="mobile-nav-link <?php echo $page === $href ? 'active' : ''; ?>"><?php echo $label; ?></a></li>
+                    <?php endforeach; ?>
+                    <li class="mobile-nav-divider"></li>
+                    <li><a href="<?php echo htmlspecialchars($publicPath . '/campaigns.php'); ?>" class="mobile-nav-link">Dashboard</a></li>
+                    <li><a href="#" class="mobile-nav-link" onclick="logout(); return false;">Logout</a></li>
+                </ul>
+            </div>
+            
+            <!-- Mobile Navigation Overlay -->
+            <div class="mobile-nav-overlay"></div>
+        <?php endif; ?>
     </header>

@@ -1,16 +1,92 @@
 <?php
-$pageTitle = 'Impact';
+$pageTitle = 'Impact Monitoring';
 include __DIR__ . '/../header/includes/header.php';
 ?>
 
-<main class="container mx-auto py-10">
-    <h1>Impact Dashboard</h1>
-    <section class="card" style="margin-top:12px;">
-        <label>Campaign ID <input id="campaign_id" type="number" value="1"></label>
-        <button class="btn btn-primary" style="margin-top:8px;" onclick="loadImpact()">Load</button>
-        <div class="cards" id="cards" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-top:12px;"></div>
-        <canvas id="chart" height="140" style="margin-top:20px;"></canvas>
-        <div class="status" id="status" style="margin-top:10px; white-space:pre-wrap;"></div>
+<style>
+    .impact-page {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+    .page-header {
+        margin-bottom: 32px;
+    }
+    .page-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 8px 0;
+    }
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+    }
+    .metric-card {
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        padding: 24px;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        transition: all 0.3s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        border-color: #4c8a89;
+    }
+    .metric-label {
+        font-size: 12px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .metric-value {
+        font-size: 32px;
+        font-weight: 800;
+        color: #0f172a;
+        background: linear-gradient(135deg, #4c8a89 0%, #667eea 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .chart-container {
+        margin-top: 32px;
+        padding: 24px;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+</style>
+
+<main class="impact-page">
+    <div class="page-header">
+        <h1>Impact Monitoring & Evaluation</h1>
+        <p>Track campaign performance, engagement metrics, and effectiveness</p>
+    </div>
+
+    <section class="card">
+        <h2 class="section-title">Campaign Impact Dashboard</h2>
+        <div class="form-grid" style="grid-template-columns: 200px auto;">
+            <div class="form-field">
+                <label>Campaign ID</label>
+                <input id="campaign_id" type="number" value="1">
+            </div>
+            <div class="form-field" style="align-items:flex-end;">
+                <button class="btn btn-primary" onclick="loadImpact()">Load Impact Data</button>
+            </div>
+        </div>
+        
+        <div class="metrics-grid" id="metricsCards"></div>
+        
+        <div class="chart-container">
+            <canvas id="chart" height="100"></canvas>
+        </div>
+        
+        <div class="status" id="status" style="margin-top:20px;"></div>
     </section>
 </main>
 
@@ -18,45 +94,102 @@ include __DIR__ . '/../header/includes/header.php';
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <script>
+<?php require_once __DIR__ . '/../header/includes/path_helper.php'; ?>
 const token = localStorage.getItem('jwtToken') || '';
+const apiBase = '<?php echo $apiPath; ?>';
 let chart;
+
 async function loadImpact() {
     const cid = document.getElementById('campaign_id').value;
-    const res = await fetch('/api/v1/campaigns/' + cid + '/impact', { headers: { 'Authorization': 'Bearer ' + token } });
-    const data = await res.json();
-    if (!data.data) { document.getElementById('status').textContent = JSON.stringify(data); return; }
-    const m = data.data;
-    renderCards(m);
-    renderChart(m);
-    document.getElementById('status').textContent = '';
+    const statusEl = document.getElementById('status');
+    statusEl.textContent = 'Loading...';
+    statusEl.style.color = '#64748b';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + cid + '/impact', { 
+            headers: { 'Authorization': 'Bearer ' + token } 
+        });
+        const data = await res.json();
+        
+        if (!data.data) {
+            statusEl.textContent = '✗ Error: ' + (data.error || 'No data available');
+            statusEl.style.color = '#dc2626';
+            return;
+        }
+        
+        const m = data.data;
+        renderCards(m);
+        renderChart(m);
+        statusEl.textContent = '✓ Impact data loaded successfully';
+        statusEl.style.color = '#166534';
+    } catch (err) {
+        statusEl.textContent = '✗ Network error: ' + err.message;
+        statusEl.style.color = '#dc2626';
+    }
 }
+
 function renderCards(m) {
-    const c = document.getElementById('cards');
-    c.innerHTML = '';
-    Object.entries(m).forEach(([k,v]) => {
+    const container = document.getElementById('metricsCards');
+    container.innerHTML = '';
+    
+    const metrics = [
+        { key: 'reach', label: 'Total Reach' },
+        { key: 'attendance_count', label: 'Attendance' },
+        { key: 'survey_responses', label: 'Survey Responses' },
+        { key: 'avg_rating', label: 'Avg Rating' },
+        { key: 'engagement_rate', label: 'Engagement Rate' }
+    ];
+    
+    metrics.forEach(metric => {
+        const value = m[metric.key] || 0;
         const div = document.createElement('div');
-        div.className='card';
-        div.style.padding='12px';
-        div.style.background='#f8fafc';
-        div.style.border='1px solid #e2e8f0';
-        div.style.borderRadius='10px';
-        div.innerHTML = `<div style="font-size:12px;color:#475569;">${k}</div><div style="font-size:20px;font-weight:800;">${v}</div>`;
-        c.appendChild(div);
+        div.className = 'metric-card';
+        div.innerHTML = `
+            <div class="metric-label">${metric.label}</div>
+            <div class="metric-value">${typeof value === 'number' && value < 1 ? (value * 100).toFixed(1) + '%' : value}</div>
+        `;
+        container.appendChild(div);
     });
 }
+
 function renderChart(m) {
     const ctx = document.getElementById('chart');
-    const labels = ['Reach','Attendance','Survey Responses'];
+    const labels = ['Reach', 'Attendance', 'Survey Responses'];
     const vals = [m.reach || 0, m.attendance_count || 0, m.survey_responses || 0];
+    
     if (chart) chart.destroy();
+    
     chart = new Chart(ctx, {
         type: 'bar',
-        data: { labels, datasets: [{ label:'Counts', data: vals, backgroundColor:'#2563eb' }]},
-        options: { responsive:true, scales:{ y:{ beginAtZero:true } } }
+        data: { 
+            labels, 
+            datasets: [{ 
+                label: 'Counts', 
+                data: vals, 
+                backgroundColor: ['#4c8a89', '#667eea', '#764ba2'],
+                borderRadius: 8
+            }]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: { 
+                y: { 
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                } 
+            } 
+        }
     });
 }
+
+// Load on page load
 loadImpact();
 </script>
-
-
-

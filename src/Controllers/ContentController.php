@@ -34,46 +34,73 @@ class ContentController
 
     public function index(?array $user, array $params = []): array
     {
-        $type = $_GET['type'] ?? null;
-        $tag = $_GET['tag'] ?? null;
-        $visibility = $_GET['visibility'] ?? null;
-        $q = $_GET['q'] ?? null;
+        try {
+            $type = $_GET['type'] ?? null;
+            $tag = $_GET['tag'] ?? null;
+            $visibility = $_GET['visibility'] ?? null;
+            $q = $_GET['q'] ?? null;
 
-        $sql = 'SELECT ci.id, ci.title, ci.body, ci.content_type, ci.visibility, ci.created_at, a.file_path, a.mime_type
-                FROM content_items ci
-                LEFT JOIN attachments a ON a.content_item_id = ci.id';
-        $where = [];
-        $bind = [];
+            // Base query - simplified to avoid issues with missing tables
+            $sql = 'SELECT ci.id, ci.title, ci.body, ci.content_type, ci.visibility, ci.created_at, 
+                           a.file_path, a.mime_type, ci.campaign_id
+                    FROM content_items ci
+                    LEFT JOIN attachments a ON a.content_item_id = ci.id';
+            $where = [];
+            $bind = [];
 
-        if ($type) {
-            $where[] = 'ci.content_type = :type';
-            $bind['type'] = $type;
+            if ($type) {
+                $where[] = 'ci.content_type = :type';
+                $bind['type'] = $type;
+            }
+            if ($visibility) {
+                $where[] = 'ci.visibility = :visibility';
+                $bind['visibility'] = $visibility;
+            }
+            if ($q) {
+                $where[] = '(ci.title LIKE :q OR ci.body LIKE :q)';
+                $bind['q'] = '%' . $q . '%';
+            }
+            
+            // Only add tag join if content_tags table exists and tag is provided
+            if ($tag) {
+                // Check if content_tags table exists first
+                $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'content_tags'");
+                if ($tableCheck && $tableCheck->rowCount() > 0) {
+                    $sql .= ' INNER JOIN content_tags ct ON ct.content_item_id = ci.id
+                              INNER JOIN tags t ON t.id = ct.tag_id';
+                    $where[] = 't.name = :tag';
+                    $bind['tag'] = $tag;
+                }
+            }
+
+            if ($where) {
+                $sql .= ' WHERE ' . implode(' AND ', $where);
+            }
+
+            $sql .= ' ORDER BY ci.created_at DESC';
+
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($bind);
+
+            $results = $stmt->fetchAll();
+            
+            // Ensure file_path is properly formatted
+            foreach ($results as &$result) {
+                if (isset($result['file_path']) && $result['file_path'] && !str_starts_with($result['file_path'], 'http')) {
+                    // Make sure path is relative
+                    $result['file_path'] = ltrim($result['file_path'], '/');
+                }
+            }
+
+            return ['data' => $results];
+        } catch (\PDOException $e) {
+            // Log error but return empty array instead of throwing
+            error_log('ContentController::index error: ' . $e->getMessage());
+            return ['data' => [], 'error' => 'Database error occurred'];
+        } catch (\Throwable $e) {
+            error_log('ContentController::index error: ' . $e->getMessage());
+            return ['data' => [], 'error' => 'An error occurred while loading content'];
         }
-        if ($visibility) {
-            $where[] = 'ci.visibility = :visibility';
-            $bind['visibility'] = $visibility;
-        }
-        if ($q) {
-            $where[] = '(ci.title LIKE :q OR ci.body LIKE :q)';
-            $bind['q'] = '%' . $q . '%';
-        }
-        if ($tag) {
-            $sql .= ' INNER JOIN content_tags ct ON ct.content_item_id = ci.id
-                      INNER JOIN tags t ON t.id = ct.tag_id';
-            $where[] = 't.name = :tag';
-            $bind['tag'] = $tag;
-        }
-
-        if ($where) {
-            $sql .= ' WHERE ' . implode(' AND ', $where);
-        }
-
-        $sql .= ' ORDER BY ci.created_at DESC';
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($bind);
-
-        return ['data' => $stmt->fetchAll()];
     }
 
     public function store(?array $user, array $params = []): array

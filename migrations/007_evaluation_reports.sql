@@ -1,5 +1,5 @@
 -- Evaluation reports table to store generated impact reports (HTML/PDF paths)
-USE campaign_db;
+USE LGU;
 
 CREATE TABLE IF NOT EXISTS evaluation_reports (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

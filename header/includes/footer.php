@@ -5,8 +5,14 @@
             <div class="footer-main">
                 <!-- Footer Brand Section -->
                 <div class="footer-brand">
-                    <a href="/login.php" class="footer-logo">
-                        <img src="/assets/header/images/logo.svg" alt="" class="logo-img">
+                    <?php
+                    // Include path helper if not already included
+                    if (!isset($basePath)) {
+                        require_once __DIR__ . '/path_helper.php';
+                    }
+                    ?>
+                    <a href="<?php echo htmlspecialchars($publicPath . '/index.php'); ?>" class="footer-logo">
+                        <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="" class="logo-img">
                     </a>
                     <p class="footer-description">
                         Building modern web applications with clean code, responsive design, and user-friendly interfaces. Your trusted partner for digital solutions.
@@ -31,10 +37,10 @@
                 <div class="footer-column">
                     <h4>Navigation</h4>
                     <ul class="footer-links">
-                        <li><a href="/login.php" class="footer-link">Home</a></li>
-                        <li><a href="#buttons" class="footer-link">Components</a></li>
-                        <li><a href="#forms" class="footer-link">Forms</a></li>
-                        <li><a href="#datatables" class="footer-link">Data Tables</a></li>
+                        <li><a href="<?php echo htmlspecialchars($publicPath . '/index.php'); ?>" class="footer-link">Home</a></li>
+                        <li><a href="<?php echo htmlspecialchars($publicPath . '/campaigns.php'); ?>" class="footer-link">Campaigns</a></li>
+                        <li><a href="<?php echo htmlspecialchars($publicPath . '/content.php'); ?>" class="footer-link">Content</a></li>
+                        <li><a href="<?php echo htmlspecialchars($publicPath . '/events.php'); ?>" class="footer-link">Events</a></li>
                     </ul>
                 </div>
                 
@@ -184,8 +190,10 @@
         // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (!href || href === '#') return;
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
+                const target = document.querySelector(href);
                 if (target) {
                     target.scrollIntoView({
                         behavior: 'smooth',
@@ -193,14 +201,31 @@
                     });
                     
                     // Close mobile menu if open
-                    if (mobileNav.classList.contains('active')) {
+                    if (mobileNav && mobileNav.classList.contains('active')) {
                         mobileNav.classList.remove('active');
-                        mobileNavOverlay.classList.remove('active');
+                        if (mobileNavOverlay) {
+                            mobileNavOverlay.classList.remove('active');
+                        }
                         document.body.style.overflow = '';
                     }
                 }
             });
         });
+
+        // Global logout helper available on all pages
+        (function () {
+            try {
+                if (typeof window.logout !== 'function') {
+                    const basePath = '<?php echo $basePath; ?>';
+                    window.logout = function () {
+                        try {
+                            localStorage.removeItem('jwtToken');
+                        } catch (e) {}
+                        window.location.href = basePath + '/public/index.php';
+                    };
+                }
+            } catch (e) {}
+        })();
 
         // Header scroll effect - disabled to keep header always on top
         // let lastScrollTop = 0;

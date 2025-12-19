@@ -32,19 +32,52 @@ class EventController
         $location = $input['location'] ?? null;
         $startsAt = $input['starts_at'] ?? null;
         $endsAt = $input['ends_at'] ?? null;
+        $eventType = $input['event_type'] ?? 'seminar';
+        $description = $input['description'] ?? null;
+        $eventDate = $input['event_date'] ?? null;
+        $eventTime = $input['event_time'] ?? null;
+        $venue = $input['venue'] ?? null;
+        $facilitators = isset($input['facilitators']) ? json_encode($input['facilitators']) : null;
+        $status = $input['status'] ?? 'scheduled';
 
         if (!$name || !$startsAt) {
             http_response_code(422);
             return ['error' => 'name and starts_at are required'];
         }
 
-        $stmt = $this->pdo->prepare('INSERT INTO events (campaign_id, name, location, starts_at, ends_at) VALUES (:campaign_id, :name, :location, :starts_at, :ends_at)');
+        // If event_date/time not explicitly provided, derive from starts_at
+        if (!$eventDate || !$eventTime) {
+            $ts = strtotime($startsAt);
+            if ($ts !== false) {
+                $eventDate = $eventDate ?: date('Y-m-d', $ts);
+                $eventTime = $eventTime ?: date('H:i:s', $ts);
+            }
+        }
+
+        $stmt = $this->pdo->prepare('
+            INSERT INTO events (
+                campaign_id, name, event_type, description,
+                event_date, event_time, location, venue,
+                facilitators, starts_at, ends_at, status
+            ) VALUES (
+                :campaign_id, :name, :event_type, :description,
+                :event_date, :event_time, :location, :venue,
+                :facilitators, :starts_at, :ends_at, :status
+            )
+        ');
         $stmt->execute([
             'campaign_id' => $campaignId ?: null,
             'name' => $name,
+            'event_type' => $eventType,
+            'description' => $description ?: null,
+            'event_date' => $eventDate ?: null,
+            'event_time' => $eventTime ?: null,
             'location' => $location ?: null,
+            'venue' => $venue ?: null,
+            'facilitators' => $facilitators,
             'starts_at' => $startsAt,
             'ends_at' => $endsAt ?: null,
+            'status' => $status,
         ]);
 
         return ['id' => (int) $this->pdo->lastInsertId(), 'message' => 'Event created'];
