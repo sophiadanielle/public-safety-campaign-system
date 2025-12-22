@@ -17,7 +17,10 @@
     <div class="sidebar-header">
         <div class="sidebar-brand">
             <div class="brand-logo">
-                <img src="/assets/header/images/logo.svg" alt="" class="logo-img">
+                <?php
+                require_once __DIR__ . '/../../header/includes/path_helper.php';
+                ?>
+                <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="" class="logo-img">
             </div>
         </div>
     </div>
@@ -31,20 +34,39 @@
                 <ul class="sidebar-menu">
                     <?php
                         $page = basename($_SERVER['PHP_SELF']);
-                        $links = [
-                            'campaigns.php' => 'Campaigns',
-                            'content.php' => 'Content',
-                            'segments.php' => 'Segments',
-                            'events.php' => 'Events',
-                            'surveys.php' => 'Surveys',
-                            'impact.php' => 'Impact',
-                            'partners.php' => 'Partners'
-                        ];
-                        foreach ($links as $href => $label):
+                        require_once __DIR__ . '/../../header/includes/path_helper.php';
+                        
+                        // Add Dashboard as first item
+                        $dashboardActive = $page === 'index.php' || $page === 'dashboard.php' || $page === 'campaigns.php';
+                        $dashboardUrl = $publicPath . '/campaigns.php';
                     ?>
                     <li class="sidebar-menu-item">
-                        <a href="/<?php echo $href; ?>" class="sidebar-link <?php echo $page === $href ? 'active' : ''; ?>">
-                            <span><?php echo $label; ?></span>
+                        <a href="<?php echo htmlspecialchars($dashboardUrl); ?>" class="sidebar-link <?php echo $dashboardActive ? 'active' : ''; ?>" data-module="dashboard">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <?php
+                        $links = [
+                            'campaigns.php' => ['label' => 'Campaigns', 'icon' => 'fa-bullhorn'],
+                            'content.php' => ['label' => 'Content', 'icon' => 'fa-file-alt'],
+                            'segments.php' => ['label' => 'Segments', 'icon' => 'fa-users'],
+                            'events.php' => ['label' => 'Events', 'icon' => 'fa-calendar'],
+                            'surveys.php' => ['label' => 'Surveys', 'icon' => 'fa-clipboard-list'],
+                            'impact.php' => ['label' => 'Impact', 'icon' => 'fa-chart-line'],
+                            'partners.php' => ['label' => 'Partners', 'icon' => 'fa-handshake']
+                        ];
+                        foreach ($links as $href => $item):
+                            $linkUrl = $publicPath . '/' . $href;
+                            $isActive = $page === $href;
+                            $moduleName = str_replace('.php', '', $href);
+                    ?>
+                    <li class="sidebar-menu-item">
+                        <a href="<?php echo htmlspecialchars($linkUrl); ?>" class="sidebar-link <?php echo $isActive ? 'active' : ''; ?>" data-module="<?php echo htmlspecialchars($moduleName); ?>">
+                            <?php if (isset($item['icon'])): ?>
+                                <i class="fas <?php echo htmlspecialchars($item['icon']); ?>"></i>
+                            <?php endif; ?>
+                            <span><?php echo htmlspecialchars($item['label']); ?></span>
                         </a>
                     </li>
                     <?php endforeach; ?>
@@ -139,6 +161,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 icon.classList.add('fa-chevron-up');
             }
         }
+    });
+    
+    // Handle module sidebar visibility based on active module
+    const moduleLinks = document.querySelectorAll('.sidebar-link[data-module]');
+    moduleLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            const module = this.getAttribute('data-module');
+            // Module sidebar visibility is handled by body class set in each page
+            // This ensures the sidebar shows/hides correctly when navigating
+        });
     });
 });
 </script>

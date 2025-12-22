@@ -12,9 +12,12 @@
  */
 ?>
 
-<link rel="stylesheet" href="css/notification-modal.css">;
-<link rel="stylesheet" href="css/message-modal.css">;
-<link rel="stylesheet" href="css/message-content-modal.css">;
+<?php
+require_once __DIR__ . '/../../header/includes/path_helper.php';
+?>
+<link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/notification-modal.css'); ?>">
+<link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/message-modal.css'); ?>">
+<link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/message-content-modal.css'); ?>">
 
 <!-- Admin Header Component -->
 <header class="admin-header">

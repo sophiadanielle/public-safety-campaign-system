@@ -1,33 +1,97 @@
 <?php
 $pageTitle = 'Campaign Planning';
-include __DIR__ . '/../header/includes/header.php';
+// Custom header setup for sidebar + admin-header layout
+require_once __DIR__ . '/../header/includes/path_helper.php';
 ?>
-
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css" rel="stylesheet">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($pageTitle); ?> - Public Safety Campaign</title>
+    <link rel="icon" type="image/x-icon" href="<?php echo htmlspecialchars($imgPath . '/favicon.ico'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/global.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/buttons.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/forms.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/cards.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/content.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/sidebar.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/admin-header.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/module-sidebar.css'); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css" rel="stylesheet">
+    <script>
+        // Force light theme
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+    </script>
+</head>
+<body class="has-module-sidebar" data-module="campaigns">
+    <?php include __DIR__ . '/../sidebar/includes/sidebar.php'; ?>
+    <?php include __DIR__ . '/../sidebar/includes/admin-header.php'; ?>
+    
+    <?php
+    // Include module sidebar for campaigns
+    $moduleName = 'campaigns';
+    include __DIR__ . '/../sidebar/includes/module-sidebar.php';
+    ?>
+    
+    <!-- Main Content Wrapper - accounts for sidebar (280px), module sidebar (260px), and header (70px) -->
+    <main class="main-content-wrapper">
+        <div class="campaign-page">
 <style>
-    @import url('../sidebar/css/sidebar.css');
+    /* Main content wrapper - accounts for fixed sidebar, module sidebar, and header */
+    .main-content-wrapper {
+        margin-left: 540px; /* 280px main sidebar + 260px module sidebar */
+        margin-top: 70px;
+        min-height: calc(100vh - 70px);
+        transition: margin-left 0.3s ease;
+    }
+    
+    /* When module sidebar is hidden (on other pages) */
+    body:not(.has-module-sidebar) .main-content-wrapper {
+        margin-left: 280px;
+    }
+    
+    /* Make sidebar visible by default on desktop */
+    @media (min-width: 769px) {
+        .sidebar {
+            transform: translateX(0) !important;
+        }
+    }
+    
+    /* Responsive: hide sidebar on mobile, adjust main content */
+    @media (max-width: 1024px) {
+        .main-content-wrapper {
+            margin-left: 280px !important; /* Only main sidebar on tablet */
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .main-content-wrapper {
+            margin-left: 0 !important;
+        }
+        .sidebar {
+            transform: translateX(-100%);
+        }
+        .sidebar.sidebar-open {
+            transform: translateX(0);
+        }
+    }
 
     .campaign-page {
         max-width: 1600px;
-        margin: 0 auto 48px;
-        padding: 120px 24px 0;
+        margin: 0 auto;
+        padding: 24px;
         background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
     }
     .campaign-layout {
-        display: flex;
-        gap: 24px;
-        align-items: flex-start;
-    }
-    .campaign-sidebar {
-        flex-shrink: 0;
-        position: sticky;
-        top: 110px;
-        max-height: calc(100vh - 140px);
+        display: block; /* Changed from flex since sidebar is now fixed */
     }
     .campaign-main {
-        flex: 1;
-        min-width: 0;
+        width: 100%;
     }
     .page-title {
         margin: 0 0 12px;
@@ -63,7 +127,7 @@ include __DIR__ . '/../header/includes/header.php';
         position: relative;
         overflow: hidden;
         /* When navigating via in-page anchors, keep the card title visible below the sticky header */
-        scroll-margin-top: 120px;
+        scroll-margin-top: 90px;
     }
     .card::before {
         content: '';
@@ -640,12 +704,7 @@ include __DIR__ . '/../header/includes/header.php';
             padding: 100px 16px 0;
         }
         .campaign-layout {
-            flex-direction: column;
-        }
-        .campaign-sidebar {
-            position: static;
-            max-height: none;
-            width: 100%;
+            display: block;
         }
         .form-grid {
             grid-template-columns: 1fr;
@@ -670,36 +729,7 @@ include __DIR__ . '/../header/includes/header.php';
     </header>
 
     <div class="campaign-layout">
-        <aside class="sidebar campaign-sidebar">
-            <div class="sidebar-content">
-                <nav class="sidebar-nav">
-                    <div class="sidebar-section">
-                        <h3 class="sidebar-section-title">Campaign Features</h3>
-                        <ul class="sidebar-menu">
-                            <li class="sidebar-menu-item">
-                                <a href="#planning-section" class="sidebar-link">Plan New Campaign</a>
-                            </li>
-                            <li class="sidebar-menu-item">
-                                <a href="#automl-section" class="sidebar-link">AI-Powered Deployment Optimization</a>
-                            </li>
-                            <li class="sidebar-menu-item">
-                                <a href="#timeline-section" class="sidebar-link">Gantt Chart</a>
-                            </li>
-                            <li class="sidebar-menu-item">
-                                <a href="#resources-section" class="sidebar-link">Resource Allocation Microservices</a>
-                            </li>
-                            <li class="sidebar-menu-item">
-                                <a href="#list-section" class="sidebar-link">All Campaigns</a>
-                            </li>
-                            <li class="sidebar-menu-item">
-                                <a href="#segments-section" class="sidebar-link">Target Segments</a>
-                            </li>
-                        </ul>
-                    </div>
-                </nav>
-            </div>
-        </aside>
-
+        <!-- Module sidebar is now handled by module-sidebar.php component -->
         <div class="campaign-main">
 
     <!-- Planning Form -->
@@ -993,9 +1023,8 @@ include __DIR__ . '/../header/includes/header.php';
 
         </div> <!-- /.campaign-main -->
     </div> <!-- /.campaign-layout -->
-</main>
-
-<?php include __DIR__ . '/../header/includes/footer.php'; ?>
+        </div> <!-- /.campaign-page -->
+    </main> <!-- /.main-content-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
@@ -2249,3 +2278,5 @@ async function initializeCampaigns() {
 
 initializeCampaigns();
 </script>
+</body>
+</html>

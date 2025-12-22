@@ -1,0 +1,184 @@
+/* ===================================
+   MODULE SUB-SIDEBAR STYLES
+   =================================== */
+
+/* Module Sidebar Variables */
+:root {
+    --module-sidebar-width: 260px;
+    --module-sidebar-bg: #ffffff;
+    --module-sidebar-border: #e2e8f0;
+    --module-sidebar-text: #1e293b;
+    --module-sidebar-text-secondary: #64748b;
+    --module-sidebar-hover-bg: rgba(76, 138, 137, 0.08);
+    --module-sidebar-active-bg: rgba(76, 138, 137, 0.15);
+    --module-sidebar-active-text: #4c8a89;
+    --module-sidebar-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Module Sidebar Container */
+.module-sidebar {
+    position: fixed;
+    top: 70px; /* Below admin header */
+    left: 280px; /* Next to main sidebar */
+    width: var(--module-sidebar-width);
+    height: calc(100vh - 70px);
+    background-color: var(--module-sidebar-bg);
+    border-right: 1px solid var(--module-sidebar-border);
+    z-index: 998;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: var(--module-sidebar-transition);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Module Sidebar Header */
+.module-sidebar-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--module-sidebar-border);
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--module-sidebar-bg);
+}
+
+.module-sidebar-title {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--module-sidebar-text);
+    font-style: italic;
+}
+
+/* Module Sidebar Content */
+.module-sidebar-content {
+    padding: 1rem 0;
+}
+
+/* Module Sidebar Navigation */
+.module-sidebar-nav {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Module Sidebar Menu */
+.module-sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.module-sidebar-menu-item {
+    margin-bottom: 0.25rem;
+}
+
+/* Module Sidebar Link */
+.module-sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    color: var(--module-sidebar-text);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: var(--module-sidebar-transition);
+    border-left: 3px solid transparent;
+    position: relative;
+}
+
+.module-sidebar-link i {
+    font-size: 0.875rem;
+    width: 18px;
+    text-align: center;
+    color: var(--module-sidebar-text-secondary);
+    transition: var(--module-sidebar-transition);
+}
+
+.module-sidebar-link:hover {
+    background-color: var(--module-sidebar-hover-bg);
+    color: var(--module-sidebar-active-text);
+    border-left-color: var(--module-sidebar-active-text);
+}
+
+.module-sidebar-link:hover i {
+    color: var(--module-sidebar-active-text);
+}
+
+.module-sidebar-link.active {
+    background-color: var(--module-sidebar-active-bg);
+    color: var(--module-sidebar-active-text);
+    border-left-color: var(--module-sidebar-active-text);
+    font-weight: 600;
+}
+
+.module-sidebar-link.active i {
+    color: var(--module-sidebar-active-text);
+}
+
+.module-sidebar-link span {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .module-sidebar {
+        width: 240px;
+        left: 280px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .module-sidebar {
+        transform: translateX(-100%);
+        left: 280px;
+    }
+    
+    .module-sidebar.module-sidebar-open {
+        transform: translateX(0);
+    }
+    
+    /* Adjust main content when module sidebar is hidden */
+    body:not(.module-sidebar-open) .main-content-wrapper {
+        margin-left: 280px !important;
+    }
+    
+    body.module-sidebar-open .main-content-wrapper {
+        margin-left: 520px !important; /* 280px main + 240px module */
+    }
+}
+
+@media (max-width: 768px) {
+    .module-sidebar {
+        left: 0;
+        width: 280px;
+        z-index: 1001; /* Above main sidebar */
+    }
+    
+    body.module-sidebar-open .main-content-wrapper {
+        margin-left: 0 !important;
+    }
+}
+
+/* Scrollbar Styling */
+.module-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.module-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.module-sidebar::-webkit-scrollbar-thumb {
+    background: var(--module-sidebar-border);
+    border-radius: 3px;
+}
+
+.module-sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--module-sidebar-text-secondary);
+}
