@@ -49,6 +49,12 @@ return [
         'middleware' => JWTMiddleware::class,
     ],
     [
+        'method' => 'POST',
+        'path' => '/api/v1/campaigns/{id}/schedules/{sid}/resend',
+        'handler' => [CampaignController::class, 'resendSchedule'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
         'method' => 'GET',
         'path' => '/api/v1/campaigns/{id}/segments',
         'handler' => [CampaignController::class, 'listSegments'],
@@ -58,6 +64,12 @@ return [
         'method' => 'POST',
         'path' => '/api/v1/campaigns/{id}/segments',
         'handler' => [CampaignController::class, 'syncSegments'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/campaigns/{id}/content',
+        'handler' => [CampaignController::class, 'listContent'],
         'middleware' => JWTMiddleware::class,
     ],
     [

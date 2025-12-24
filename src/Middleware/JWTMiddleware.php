@@ -46,10 +46,41 @@ class JWTMiddleware
 
     private static function getBearerToken(): ?string
     {
-        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-        if (stripos($header, 'Bearer ') === 0) {
+        // Try multiple methods to get Authorization header (different server configurations)
+        $header = '';
+        
+        // Method 1: Standard HTTP_AUTHORIZATION (works with most servers)
+        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $header = $_SERVER['HTTP_AUTHORIZATION'];
+        }
+        // Method 2: REDIRECT_HTTP_AUTHORIZATION (when using mod_rewrite)
+        elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+            $header = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+        }
+        // Method 3: Use getallheaders() function (Apache)
+        elseif (function_exists('getallheaders')) {
+            $headers = getallheaders();
+            if (isset($headers['Authorization'])) {
+                $header = $headers['Authorization'];
+            } elseif (isset($headers['authorization'])) {
+                $header = $headers['authorization'];
+            }
+        }
+        // Method 4: Use apache_request_headers() (Apache)
+        elseif (function_exists('apache_request_headers')) {
+            $headers = apache_request_headers();
+            if (isset($headers['Authorization'])) {
+                $header = $headers['Authorization'];
+            } elseif (isset($headers['authorization'])) {
+                $header = $headers['authorization'];
+            }
+        }
+        
+        // Extract Bearer token
+        if ($header && stripos($header, 'Bearer ') === 0) {
             return trim(substr($header, 7));
         }
+        
         return null;
     }
 }

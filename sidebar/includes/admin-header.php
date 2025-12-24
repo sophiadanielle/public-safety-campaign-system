@@ -52,11 +52,11 @@ require_once __DIR__ . '/../../header/includes/path_helper.php';
         
         <div class="user-profile" id="userProfileBtn">
             <div class="user-info">
-                <div class="user-name">Admin User</div>
-                <div class="user-role">Administrator</div>
+                <div class="user-name" id="headerUserName">Loading...</div>
+                <div class="user-role" id="headerUserRole">Loading...</div>
             </div>
             <div class="user-avatar">
-                <img src="https://ui-avatars.com/api/?name=Admin+User&background=4c8a89&color=fff&size=128" alt="Admin User" class="avatar-img">
+                <img id="headerUserAvatar" src="https://ui-avatars.com/api/?name=User&background=4c8a89&color=fff&size=128" alt="User" class="avatar-img">
             </div>
             <i class="fas fa-chevron-down dropdown-icon"></i>
         </div>
@@ -68,11 +68,11 @@ require_once __DIR__ . '/../../header/includes/path_helper.php';
     <div class="dropdown-header">
         <div class="dropdown-user-info">
             <div class="dropdown-user-avatar">
-                <img src="https://ui-avatars.com/api/?name=Admin+User&background=4c8a89&color=fff&size=128" alt="Admin User">
+                <img id="dropdownUserAvatar" src="https://ui-avatars.com/api/?name=User&background=4c8a89&color=fff&size=128" alt="User">
             </div>
             <div class="dropdown-user-details">
-                <div class="dropdown-user-name">Admin User</div>
-                <div class="dropdown-user-email">admin@example.com</div>
+                <div class="dropdown-user-name" id="dropdownUserName">Loading...</div>
+                <div class="dropdown-user-email" id="dropdownUserEmail">Loading...</div>
             </div>
         </div>
     </div>
@@ -89,7 +89,7 @@ require_once __DIR__ . '/../../header/includes/path_helper.php';
     </div>
     
     <div class="dropdown-footer">
-        <a href="#" class="dropdown-item logout-item">
+        <a href="#" class="dropdown-item logout-item" id="logoutBtn">
             <i class="fas fa-sign-out-alt"></i>
             <span>Logout</span>
         </a>
@@ -247,6 +247,163 @@ require_once __DIR__ . '/../../header/includes/path_helper.php';
 <script>
 // Admin Header functionality
 document.addEventListener('DOMContentLoaded', function() {
+    // Load current user information
+    async function loadCurrentUser() {
+        try {
+            const token = localStorage.getItem('jwtToken') || '';
+            console.log('loadCurrentUser - Token:', token ? 'EXISTS (length: ' + token.length + ')' : 'MISSING');
+            if (!token || token.trim() === '') {
+                // Token check already handled by auth guard - just return
+                console.warn('loadCurrentUser - No token available');
+                return;
+            }
+            
+            const apiBase = '<?php echo $apiPath; ?>';
+            const apiUrl = apiBase + '/api/v1/users/me';
+            console.log('loadCurrentUser - Calling API:', apiUrl);
+            console.log('loadCurrentUser - Token being sent:', token ? 'EXISTS (length: ' + token.length + ')' : 'MISSING');
+            console.log('loadCurrentUser - Token first 20 chars:', token ? token.substring(0, 20) + '...' : 'N/A');
+            console.log('loadCurrentUser - Authorization header:', 'Bearer ' + (token ? token.substring(0, 20) + '...' : 'MISSING'));
+            
+            // Ensure token is not empty before making request
+            if (!token || token.trim() === '') {
+                console.error('loadCurrentUser() - Token is empty, cannot make API call');
+                console.error('loadCurrentUser() - localStorage keys:', Object.keys(localStorage));
+                return;
+            }
+            
+            const res = await fetch(apiUrl, {
+                headers: { 
+                    'Authorization': 'Bearer ' + token.trim(),
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            console.log('loadCurrentUser - Response status:', res.status);
+            console.log('loadCurrentUser - Response URL:', res.url);
+            
+            if (!res.ok) {
+                if (res.status === 401) {
+                    // Token expired or invalid - try to use cached user data from localStorage
+                    console.warn('401 Unauthorized - Attempting to use cached user data');
+                    try {
+                        const cachedUserStr = localStorage.getItem('currentUser');
+                        if (cachedUserStr) {
+                            const cachedUser = JSON.parse(cachedUserStr);
+                            console.log('Using cached user data from localStorage:', cachedUser);
+                            updateUserDisplay(cachedUser);
+                            return;
+                        }
+                    } catch (e) {
+                        console.error('Error reading cached user data:', e);
+                    }
+                    
+                    // Try to get response body for more info
+                    try {
+                        const errorData = await res.json();
+                        console.error('Error response:', errorData);
+                    } catch (e) {
+                        console.error('Could not parse error response');
+                    }
+                    
+                    // If no cached data, show default user
+                    updateUserDisplay({ name: 'User', email: '', role_id: null });
+                    return;
+                }
+                throw new Error('Failed to load user info');
+            }
+            
+            const data = await res.json();
+            const user = data.user || data.data || data;
+            
+            // Store user data in localStorage for fallback
+            if (user) {
+                try {
+                    localStorage.setItem('currentUser', JSON.stringify(user));
+                } catch (e) {
+                    console.warn('Could not store user data in localStorage:', e);
+                }
+            }
+            
+            updateUserDisplay(user);
+        } catch (err) {
+            console.error('Failed to load user info:', err);
+            // Try to use cached user data from localStorage as fallback
+            try {
+                const cachedUserStr = localStorage.getItem('currentUser');
+                if (cachedUserStr) {
+                    const cachedUser = JSON.parse(cachedUserStr);
+                    console.log('Using cached user data:', cachedUser);
+                    updateUserDisplay(cachedUser);
+                    return;
+                }
+            } catch (e) {
+                console.error('Error reading cached user data:', e);
+            }
+            // Keep default "Loading..." text on error if no cache
+        }
+    }
+    
+    // Helper function to update user display
+    function updateUserDisplay(user) {
+        if (!user) {
+            user = { name: 'User', email: '', role_id: null };
+        }
+        
+        // Update header user info
+        const userNameEl = document.getElementById('headerUserName');
+        const userRoleEl = document.getElementById('headerUserRole');
+        const userAvatarEl = document.getElementById('headerUserAvatar');
+        
+        if (userNameEl) userNameEl.textContent = user.name || 'User';
+        if (userRoleEl) {
+            // Map role_id to role name
+            const roleNames = {
+                1: 'Administrator',
+                2: 'Barangay Admin',
+                3: 'Campaign Creator',
+                4: 'Staff'
+            };
+            userRoleEl.textContent = roleNames[user.role_id] || user.role || 'User';
+        }
+        if (userAvatarEl) {
+            const encodedName = encodeURIComponent(user.name || 'User');
+            userAvatarEl.src = `https://ui-avatars.com/api/?name=${encodedName}&background=4c8a89&color=fff&size=128`;
+            userAvatarEl.alt = user.name || 'User';
+        }
+        
+        // Update dropdown user info
+        const dropdownNameEl = document.getElementById('dropdownUserName');
+        const dropdownEmailEl = document.getElementById('dropdownUserEmail');
+        const dropdownAvatarEl = document.getElementById('dropdownUserAvatar');
+        
+        if (dropdownNameEl) dropdownNameEl.textContent = user.name || 'User';
+        if (dropdownEmailEl) dropdownEmailEl.textContent = user.email || '';
+        if (dropdownAvatarEl) {
+            const encodedName = encodeURIComponent(user.name || 'User');
+            dropdownAvatarEl.src = `https://ui-avatars.com/api/?name=${encodedName}&background=4c8a89&color=fff&size=128`;
+            dropdownAvatarEl.alt = user.name || 'User';
+        }
+    }
+    
+    // Load user info on page load
+    loadCurrentUser();
+    
+    // Logout functionality
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            try {
+                localStorage.removeItem('jwtToken');
+                localStorage.removeItem('currentUser');
+            } catch (e) {
+                console.error('Error clearing localStorage:', e);
+            }
+            const basePath = '<?php echo $basePath; ?>';
+            window.location.href = basePath + '/index.php';
+        });
+    }
     const menuToggle = document.getElementById('menuToggle');
     
     // Toggle sidebar from header menu button

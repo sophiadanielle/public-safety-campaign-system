@@ -38,11 +38,16 @@ class CampaignController
     public function store(?array $user, array $params = []): array
     {
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
-        $title = trim($input['title'] ?? '');
-        $description = trim($input['description'] ?? '');
-        $status = $input['status'] ?? 'draft';
-        $startDate = $input['start_date'] ?? null;
-        $endDate = $input['end_date'] ?? null;
+        
+        // Log received input for debugging
+        error_log('Campaign creation - Received input: ' . json_encode($input));
+        
+        // Use ONLY the values from input - no hardcoded defaults except for status
+        $title = isset($input['title']) ? trim((string)$input['title']) : '';
+        $description = isset($input['description']) ? trim((string)$input['description']) : null;
+        $status = isset($input['status']) ? trim((string)$input['status']) : 'draft';
+        $startDate = isset($input['start_date']) && $input['start_date'] ? trim((string)$input['start_date']) : null;
+        $endDate = isset($input['end_date']) && $input['end_date'] ? trim((string)$input['end_date']) : null;
         $ownerId = $user['id'] ?? null;
 
         if (!$title) {
@@ -50,27 +55,48 @@ class CampaignController
             return ['error' => 'Title is required'];
         }
 
-        $allowedStatus = ['draft','pending','approved','ongoing','completed','scheduled','active','archived'];
+        // Validate date range: start_date must not be later than end_date
+        if ($startDate && $endDate) {
+            $startTimestamp = strtotime($startDate);
+            $endTimestamp = strtotime($endDate);
+            if ($startTimestamp > $endTimestamp) {
+                http_response_code(422);
+                return ['error' => 'Start date must not be later than end date'];
+            }
+        }
+
+        $allowedStatus = ['draft','pending','approved','ongoing','completed','scheduled','published','active','archived'];
         if (!in_array($status, $allowedStatus, true)) {
             http_response_code(422);
             return ['error' => 'Invalid status'];
         }
 
-        $category = trim($input['category'] ?? '');
-        $allowedCategories = ['fire', 'flood', 'earthquake', 'health', 'road safety', 'general'];
+        // Use actual input values - no defaults
+        $category = isset($input['category']) && $input['category'] ? trim((string)$input['category']) : null;
+        $allowedCategories = ['fire', 'flood', 'earthquake', 'health', 'road safety'];
         if ($category && !in_array(strtolower($category), $allowedCategories, true)) {
             http_response_code(422);
             return ['error' => 'Invalid category. Must be one of: ' . implode(', ', $allowedCategories)];
         }
-        $geographicScope = trim($input['geographic_scope'] ?? '');
-        $objectives = $input['objectives'] ?? null;
-        $location = $input['location'] ?? null;
-        $assignedStaff = isset($input['assigned_staff']) ? json_encode($input['assigned_staff']) : null;
-        $barangayTargetZones = isset($input['barangay_target_zones']) ? json_encode($input['barangay_target_zones']) : null;
-        $budget = isset($input['budget']) ? (float) $input['budget'] : null;
-        $staffCount = isset($input['staff_count']) ? (int) $input['staff_count'] : null;
-        $materialsJson = isset($input['materials_json']) ? json_encode($input['materials_json']) : null;
-        $draftSchedule = $input['draft_schedule_datetime'] ?? null;
+        $geographicScope = isset($input['geographic_scope']) && $input['geographic_scope'] ? trim((string)$input['geographic_scope']) : null;
+        $objectives = isset($input['objectives']) && $input['objectives'] ? trim((string)$input['objectives']) : null;
+        $location = isset($input['location']) && $input['location'] ? trim((string)$input['location']) : null;
+        $assignedStaff = isset($input['assigned_staff']) && !empty($input['assigned_staff']) ? json_encode($input['assigned_staff']) : null;
+        $barangayTargetZones = isset($input['barangay_target_zones']) && !empty($input['barangay_target_zones']) ? json_encode($input['barangay_target_zones']) : null;
+        
+        // Validate geographic scope is Quezon City only (soft validation - assumes all barangays are QC)
+        // In production, validate against a barangay database to ensure they belong to Quezon City
+        if ($geographicScope && stripos($geographicScope, 'quezon city') === false && stripos($geographicScope, 'qc') === false) {
+            // Allow barangay names but note they should be validated against QC barangay list
+        }
+        // Use actual input values - convert to null if empty/zero
+        $budget = isset($input['budget']) && $input['budget'] !== null && $input['budget'] !== '' ? (float) $input['budget'] : null;
+        $staffCount = isset($input['staff_count']) && $input['staff_count'] !== null && $input['staff_count'] !== '' ? (int) $input['staff_count'] : null;
+        $materialsJson = isset($input['materials_json']) && !empty($input['materials_json']) ? json_encode($input['materials_json']) : null;
+        // NOTE: draft_schedule_datetime is NOT set during initial creation per sequence diagram
+        // Schedule must be set via AI recommendation flow (Steps 3-9) - user requests prediction, then confirms
+        // Ignore draft_schedule_datetime if provided during creation to enforce proper flow
+        $draftSchedule = null;
 
         $stmt = $this->pdo->prepare('
             INSERT INTO campaigns (
@@ -93,7 +119,7 @@ class CampaignController
             'status' => $status,
             'start_date' => $startDate ?: null,
             'end_date' => $endDate ?: null,
-            'draft_schedule_datetime' => $draftSchedule ?: null,
+            'draft_schedule_datetime' => null, // Schedule must be set via AI recommendation flow (Steps 3-9)
             'owner_id' => $ownerId,
             'objectives' => $objectives ?: null,
             'location' => $location ?: null,
@@ -125,6 +151,9 @@ class CampaignController
             'materials_json' => $materialsJson ? json_decode($materialsJson, true) : [],
         ]);
 
+        // Log audit entry
+        $this->logAudit($ownerId, 'campaign', 'create', $campaignId, ['title' => $title, 'status' => $status]);
+
         return ['id' => $campaignId, 'message' => 'Campaign created'];
     }
 
@@ -144,7 +173,7 @@ class CampaignController
         $fields = [];
         $bindings = ['id' => $id];
 
-        $allowedStatus = ['draft','pending','approved','ongoing','completed','scheduled','active','archived'];
+        $allowedStatus = ['draft','pending','approved','ongoing','completed','scheduled','published','active','archived'];
 
         if (isset($input['title'])) {
             $fields[] = 'title = :title';
@@ -169,6 +198,16 @@ class CampaignController
         if (isset($input['end_date'])) {
             $fields[] = 'end_date = :end_date';
             $bindings['end_date'] = $input['end_date'] ?: null;
+        }
+        
+        // Validate date range if both dates are provided
+        if (isset($input['start_date']) && isset($input['end_date']) && $input['start_date'] && $input['end_date']) {
+            $startTimestamp = strtotime($input['start_date']);
+            $endTimestamp = strtotime($input['end_date']);
+            if ($startTimestamp > $endTimestamp) {
+                http_response_code(422);
+                return ['error' => 'Start date must not be later than end date'];
+            }
         }
         if (isset($input['objectives'])) {
             $fields[] = 'objectives = :objectives';
@@ -199,7 +238,7 @@ class CampaignController
             $bindings['materials_json'] = json_encode($input['materials_json']);
         }
         if (isset($input['category'])) {
-            $allowedCategories = ['fire', 'flood', 'earthquake', 'health', 'road safety', 'general'];
+            $allowedCategories = ['fire', 'flood', 'earthquake', 'health', 'road safety'];
             $category = trim($input['category']);
             if ($category && !in_array(strtolower($category), $allowedCategories, true)) {
                 http_response_code(422);
@@ -225,7 +264,28 @@ class CampaignController
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($bindings);
 
-        return ['message' => 'Campaign updated'];
+        // Log audit entry
+        $this->logAudit($user['id'] ?? null, 'campaign', 'update', $id, ['fields_updated' => array_keys($input)]);
+
+        return ['message' => 'Campaign updated', 'id' => $id];
+    }
+
+    /**
+     * List content items linked to a campaign
+     */
+    public function listContent(?array $user, array $params = []): array
+    {
+        $campaignId = (int) ($params['id'] ?? 0);
+        $this->findCampaign($campaignId);
+
+        $stmt = $this->pdo->prepare('
+            SELECT ci.id, ci.title, ci.body, ci.content_type, ci.created_at
+            FROM content_items ci
+            WHERE ci.campaign_id = :cid
+            ORDER BY ci.created_at DESC
+        ');
+        $stmt->execute(['cid' => $campaignId]);
+        return ['data' => $stmt->fetchAll()];
     }
 
     public function addSchedule(?array $user, array $params = []): array
@@ -243,15 +303,22 @@ class CampaignController
             return ['error' => 'scheduled_at and channel are required'];
         }
 
-        $stmt = $this->pdo->prepare('INSERT INTO campaign_schedules (campaign_id, scheduled_at, channel, notes) VALUES (:campaign_id, :scheduled_at, :channel, :notes)');
+        // Insert schedule with status 'pending'
+        $stmt = $this->pdo->prepare('INSERT INTO campaign_schedules (campaign_id, scheduled_at, channel, notes, status) VALUES (:campaign_id, :scheduled_at, :channel, :notes, :status)');
         $stmt->execute([
             'campaign_id' => $campaignId,
             'scheduled_at' => $scheduledAt,
             'channel' => $channel,
             'notes' => $notes ?: null,
+            'status' => 'pending',
         ]);
 
-        return ['id' => (int) $this->pdo->lastInsertId(), 'message' => 'Schedule created'];
+        $scheduleId = (int) $this->pdo->lastInsertId();
+        
+        // Log audit entry
+        $this->logAudit($user['id'] ?? null, 'campaign_schedule', 'create', $scheduleId, ['campaign_id' => $campaignId, 'scheduled_at' => $scheduledAt]);
+
+        return ['id' => $scheduleId, 'message' => 'Schedule created'];
     }
 
     public function listSchedules(?array $user, array $params = []): array
@@ -259,7 +326,24 @@ class CampaignController
         $campaignId = (int) ($params['id'] ?? 0);
         $this->findCampaign($campaignId);
 
-        $stmt = $this->pdo->prepare('SELECT id, scheduled_at, channel, notes, created_at FROM campaign_schedules WHERE campaign_id = :campaign_id ORDER BY scheduled_at ASC');
+        // Get schedules with status and last posting attempt from notification_logs
+        $stmt = $this->pdo->prepare('
+            SELECT 
+                cs.id, 
+                cs.scheduled_at, 
+                cs.channel, 
+                cs.notes, 
+                cs.status,
+                cs.created_at,
+                MAX(nl.created_at) as last_posting_attempt
+            FROM campaign_schedules cs
+            LEFT JOIN notification_logs nl ON nl.campaign_id = cs.campaign_id 
+                AND nl.channel = cs.channel 
+                AND DATE(nl.created_at) = DATE(cs.scheduled_at)
+            WHERE cs.campaign_id = :campaign_id 
+            GROUP BY cs.id, cs.scheduled_at, cs.channel, cs.notes, cs.status, cs.created_at
+            ORDER BY cs.scheduled_at ASC
+        ');
         $stmt->execute(['campaign_id' => $campaignId]);
         return ['data' => $stmt->fetchAll()];
     }
@@ -272,39 +356,64 @@ class CampaignController
         $this->findCampaign($campaignId);
         $schedule = $this->findSchedule($campaignId, $scheduleId);
 
-        // Simulate sending by inserting a notification_log entry and integration log
-        $stmt = $this->pdo->prepare('INSERT INTO notification_logs (campaign_id, audience_member_id, channel, status, response_message) VALUES (:campaign_id, NULL, :channel, :status, :response_message)');
-        $stmt->execute([
-            'campaign_id' => $campaignId,
-            'channel' => $schedule['channel'],
-            'status' => 'sent',
-            'response_message' => 'delivered',
-        ]);
+        try {
+            // Simulate sending by inserting a notification_log entry and integration log
+            $stmt = $this->pdo->prepare('INSERT INTO notification_logs (campaign_id, audience_member_id, channel, status, response_message) VALUES (:campaign_id, NULL, :channel, :status, :response_message)');
+            $stmt->execute([
+                'campaign_id' => $campaignId,
+                'channel' => $schedule['channel'],
+                'status' => 'sent',
+                'response_message' => 'delivered',
+            ]);
 
-        $payload = [
-            'campaign_id' => $campaignId,
-            'schedule_id' => $scheduleId,
-            'channel' => $schedule['channel'],
-            'scheduled_at' => $schedule['scheduled_at'],
-        ];
-        $log = $this->pdo->prepare('INSERT INTO integration_logs (source, payload, status) VALUES (:source, :payload, :status)');
-        $log->execute([
-            'source' => 'notification_dispatch',
-            'payload' => json_encode($payload),
-            'status' => 'queued',
-        ]);
+            $payload = [
+                'campaign_id' => $campaignId,
+                'schedule_id' => $scheduleId,
+                'channel' => $schedule['channel'],
+                'scheduled_at' => $schedule['scheduled_at'],
+            ];
+            $log = $this->pdo->prepare('INSERT INTO integration_logs (source, payload, status) VALUES (:source, :payload, :status)');
+            $log->execute([
+                'source' => 'notification_dispatch',
+                'payload' => json_encode($payload),
+                'status' => 'queued',
+            ]);
 
-        // Fire outbound webhook if configured
-        $webhookUrl = getenv('NOTIFY_WEBHOOK_URL') ?: null;
-        if ($webhookUrl) {
-            $this->dispatchWebhook($webhookUrl, $payload);
+            // Fire outbound webhook if configured
+            $webhookUrl = getenv('NOTIFY_WEBHOOK_URL') ?: null;
+            $webhookSuccess = true;
+            if ($webhookUrl) {
+                $webhookSuccess = $this->dispatchWebhook($webhookUrl, $payload);
+            }
+
+            // Update schedule status to 'sent' on success, 'failed' on failure
+            $scheduleStatus = $webhookSuccess ? 'sent' : 'failed';
+            $updateStmt = $this->pdo->prepare('UPDATE campaign_schedules SET status = :status WHERE id = :id');
+            $updateStmt->execute([
+                'id' => $scheduleId,
+                'status' => $scheduleStatus,
+            ]);
+
+            // Log audit entry
+            $this->logAudit($user['id'] ?? null, 'campaign_schedule', 'send', $scheduleId, ['campaign_id' => $campaignId, 'status' => $scheduleStatus]);
+
+            return [
+                'message' => $scheduleStatus === 'sent' ? 'Schedule sent successfully' : 'Schedule sent but webhook failed',
+                'status' => $scheduleStatus,
+                'notification_log_id' => (int) $this->pdo->lastInsertId(),
+                'integration_log_id' => (int) $this->pdo->lastInsertId(),
+            ];
+        } catch (\Exception $e) {
+            // Update schedule status to 'failed' on error
+            $updateStmt = $this->pdo->prepare('UPDATE campaign_schedules SET status = :status WHERE id = :id');
+            $updateStmt->execute([
+                'id' => $scheduleId,
+                'status' => 'failed',
+            ]);
+
+            http_response_code(500);
+            return ['error' => 'Failed to send schedule: ' . $e->getMessage(), 'status' => 'failed'];
         }
-
-        return [
-            'message' => 'Schedule sent (simulated)',
-            'notification_log_id' => (int) $this->pdo->lastInsertId(),
-            'integration_log_id' => (int) $this->pdo->lastInsertId(),
-        ];
     }
 
     public function listSegments(?array $user, array $params = []): array
@@ -373,7 +482,9 @@ class CampaignController
         $features = $input['features'] ?? [];
 
         try {
+            error_log("Requesting AI recommendation for Campaign ID: $campaignId");
             $prediction = $this->autoMLService->predict($campaignId, $features);
+            error_log("AI prediction received: " . json_encode($prediction));
             
             // Save AI recommendation to campaign
             $stmt = $this->pdo->prepare('
@@ -395,8 +506,13 @@ class CampaignController
                 'message' => 'AI recommendation generated',
             ];
         } catch (RuntimeException $e) {
+            error_log("AI recommendation error: " . $e->getMessage());
             http_response_code(400);
             return ['error' => $e->getMessage()];
+        } catch (\Exception $e) {
+            error_log("AI recommendation exception: " . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to generate AI recommendation: ' . $e->getMessage()];
         }
     }
 
@@ -417,7 +533,12 @@ class CampaignController
             $stmt = $this->pdo->prepare('
                 UPDATE campaigns 
                 SET final_schedule_datetime = ai_recommended_datetime,
-                    draft_schedule_datetime = ai_recommended_datetime
+                    draft_schedule_datetime = ai_recommended_datetime,
+                    status = CASE 
+                        WHEN status = "draft" THEN "scheduled"
+                        WHEN status IN ("pending", "approved") THEN "published"
+                        ELSE status
+                    END
                 WHERE id = :id AND ai_recommended_datetime IS NOT NULL
             ');
             $stmt->execute(['id' => $campaignId]);
@@ -431,7 +552,12 @@ class CampaignController
             $stmt = $this->pdo->prepare('
                 UPDATE campaigns 
                 SET final_schedule_datetime = :final_schedule_datetime,
-                    draft_schedule_datetime = :final_schedule_datetime
+                    draft_schedule_datetime = :final_schedule_datetime,
+                    status = CASE 
+                        WHEN status = "draft" THEN "scheduled"
+                        WHEN status IN ("pending", "approved") THEN "published"
+                        ELSE status
+                    END
                 WHERE id = :id
             ');
             $stmt->execute([
@@ -442,6 +568,12 @@ class CampaignController
             http_response_code(422);
             return ['error' => 'Either use_ai_recommendation or final_schedule_datetime is required'];
         }
+
+        // Log audit entry for schedule approval
+        $this->logAudit($user['id'] ?? null, 'campaign', 'schedule_approved', $campaignId, [
+            'final_schedule_datetime' => $finalSchedule ?? 'ai_recommended',
+            'use_ai_recommendation' => $useAIRecommendation
+        ]);
 
         return ['message' => 'Final schedule set successfully'];
     }
@@ -544,7 +676,7 @@ class CampaignController
 
     private function findSchedule(int $campaignId, int $scheduleId): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, campaign_id, scheduled_at, channel, notes FROM campaign_schedules WHERE id = :sid AND campaign_id = :cid LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, campaign_id, scheduled_at, channel, notes, status FROM campaign_schedules WHERE id = :sid AND campaign_id = :cid LIMIT 1');
         $stmt->execute(['sid' => $scheduleId, 'cid' => $campaignId]);
         $schedule = $stmt->fetch();
         if (!$schedule) {
@@ -552,6 +684,34 @@ class CampaignController
             throw new RuntimeException('Schedule not found');
         }
         return $schedule;
+    }
+
+    /**
+     * Re-send a failed schedule
+     */
+    public function resendSchedule(?array $user, array $params = []): array
+    {
+        $campaignId = (int) ($params['id'] ?? 0);
+        $scheduleId = (int) ($params['sid'] ?? 0);
+
+        $this->findCampaign($campaignId);
+        $schedule = $this->findSchedule($campaignId, $scheduleId);
+
+        // Only allow re-sending failed schedules
+        if ($schedule['status'] !== 'failed') {
+            http_response_code(422);
+            return ['error' => 'Can only re-send failed schedules. Current status: ' . $schedule['status']];
+        }
+
+        // Reset status to pending and call sendSchedule logic
+        $updateStmt = $this->pdo->prepare('UPDATE campaign_schedules SET status = :status WHERE id = :id');
+        $updateStmt->execute([
+            'id' => $scheduleId,
+            'status' => 'pending',
+        ]);
+
+        // Call sendSchedule logic
+        return $this->sendSchedule($user, $params);
     }
 
     private function assertSegments(array $ids): void
@@ -568,7 +728,7 @@ class CampaignController
         }
     }
 
-    private function dispatchWebhook(string $url, array $payload): void
+    private function dispatchWebhook(string $url, array $payload): bool
     {
         $secret = getenv('NOTIFY_WEBHOOK_SECRET') ?: 'demo_secret';
         $json = json_encode($payload);
@@ -584,9 +744,39 @@ class CampaignController
         ];
         $ctx = stream_context_create($opts);
         try {
-            @file_get_contents($url, false, $ctx);
+            $result = @file_get_contents($url, false, $ctx);
+            return $result !== false;
         } catch (\Throwable $e) {
             // swallow to avoid breaking flow; logged via integration_logs
+            return false;
+        }
+    }
+
+    /**
+     * Log audit entry for campaign operations
+     */
+    private function logAudit(?int $userId, string $entityType, string $action, int $entityId, array $details = []): void
+    {
+        try {
+            $check = $this->pdo->query("SHOW TABLES LIKE 'audit_logs'");
+            if (!$check || $check->rowCount() === 0) {
+                return;
+            }
+
+            $stmt = $this->pdo->prepare('
+                INSERT INTO audit_logs (user_id, entity_type, action, entity_id, details, created_at)
+                VALUES (:user_id, :entity_type, :action, :entity_id, :details, NOW())
+            ');
+            $stmt->execute([
+                'user_id' => $userId,
+                'entity_type' => $entityType,
+                'action' => $action,
+                'entity_id' => $entityId,
+                'details' => json_encode($details),
+            ]);
+        } catch (\Throwable $e) {
+            // Fail silently - audit logging should not break main operations
+            error_log('Audit log failed: ' . $e->getMessage());
         }
     }
 

@@ -29,6 +29,18 @@
     overflow-x: hidden;
     transition: var(--module-sidebar-transition);
     box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+    display: none; /* Hidden by default */
+}
+
+/* Show module sidebar only when body has the corresponding module class */
+body.module-campaign .module-sidebar[data-module="campaigns"],
+body.module-content .module-sidebar[data-module="content"],
+body.module-segments .module-sidebar[data-module="segments"],
+body.module-events .module-sidebar[data-module="events"],
+body.module-surveys .module-sidebar[data-module="surveys"],
+body.module-impact .module-sidebar[data-module="impact"],
+body.module-partners .module-sidebar[data-module="partners"] {
+    display: block !important;
 }
 
 /* Module Sidebar Header */

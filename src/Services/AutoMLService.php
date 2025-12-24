@@ -18,8 +18,13 @@ class AutoMLService
         ?string $googleAutoMLEndpoint = null,
         ?string $googleApiKey = null
     ) {
-        $this->googleAutoMLEndpoint = $googleAutoMLEndpoint ?? getenv('GOOGLE_AUTOML_ENDPOINT');
-        $this->googleApiKey = $googleApiKey ?? getenv('GOOGLE_AUTOML_API_KEY');
+        // getenv() returns false if not found, so we need to convert to string or null
+        $envEndpoint = getenv('GOOGLE_AUTOML_ENDPOINT');
+        $this->googleAutoMLEndpoint = $googleAutoMLEndpoint ?? ($envEndpoint !== false ? (string)$envEndpoint : null);
+        
+        $envApiKey = getenv('GOOGLE_AUTOML_API_KEY');
+        $this->googleApiKey = $googleApiKey ?? ($envApiKey !== false ? (string)$envApiKey : null);
+        
         $this->useGoogleAutoML = !empty($this->googleAutoMLEndpoint) && !empty($this->googleApiKey);
     }
 
@@ -45,9 +50,17 @@ class AutoMLService
 
         // Use Google AutoML if configured, otherwise use heuristic
         if ($this->useGoogleAutoML) {
-            return $this->predictWithGoogleAutoML($preparedFeatures);
+            error_log("Using Google AutoML for prediction (Campaign ID: $campaignId)");
+            try {
+                return $this->predictWithGoogleAutoML($preparedFeatures);
+            } catch (\Exception $e) {
+                error_log("Google AutoML prediction failed: " . $e->getMessage());
+                // Fallback to heuristics on exception
+                return $this->predictWithHeuristics($campaignId, $preparedFeatures);
+            }
         }
 
+        error_log("Using heuristic prediction (Google AutoML not configured) (Campaign ID: $campaignId)");
         return $this->predictWithHeuristics($campaignId, $preparedFeatures);
     }
 
@@ -241,6 +254,11 @@ class AutoMLService
         curl_close($ch);
 
         if ($error || $httpCode !== 200) {
+            // Log error for debugging
+            error_log("Google AutoML API error: HTTP $httpCode" . ($error ? " - $error" : ""));
+            error_log("AutoML Endpoint: " . ($this->googleAutoMLEndpoint ?? 'NOT SET'));
+            error_log("Response: " . ($response ? substr($response, 0, 500) : 'EMPTY'));
+            
             // Fallback to heuristics if AutoML fails
             return $this->predictWithHeuristics(0, $features);
         }

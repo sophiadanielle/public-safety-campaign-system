@@ -9,6 +9,69 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?> - Public Safety Campaign</title>
+    <?php
+    require_once __DIR__ . '/../header/includes/path_helper.php';
+    ?>
+    <script>
+        // Auth guard - MUST be first script executed
+        (function () {
+            const basePath = '<?php echo $basePath; ?>';
+            
+            // Check if we just logged in (URL parameter) - this bypasses Tracking Prevention blocking
+            const urlParams = new URLSearchParams(window.location.search);
+            const justLoggedIn = urlParams.has('logged_in') || urlParams.has('signed_up');
+            console.log('Auth guard - Just logged in:', justLoggedIn);
+            
+            function checkAuth(retryCount) {
+                retryCount = retryCount || 0;
+                const maxRetries = justLoggedIn ? 20 : 5; // More retries if just logged in
+                
+                try {
+                    const token = localStorage.getItem('jwtToken');
+                    console.log('Auth guard - Attempt ' + (retryCount + 1) + ' - Token:', token ? 'EXISTS (length: ' + token.length + ')' : 'MISSING');
+                    
+                    if (token && token.trim() !== '') {
+                        console.log('Token found - access granted');
+                        console.log('Token value (first 50 chars):', token.substring(0, 50) + '...');
+                        // Remove URL parameter if present
+                        if (justLoggedIn) {
+                            const cleanUrl = window.location.pathname;
+                            window.history.replaceState({}, '', cleanUrl);
+                            console.log('URL parameter removed, clean URL:', cleanUrl);
+                        }
+                        return;
+                    }
+                    
+                    // Token not found - retry if we haven't exceeded max retries
+                    if (retryCount < maxRetries) {
+                        const delay = justLoggedIn ? 300 : 100; // Longer delay if just logged in
+                        console.log('Token not found, retrying in ' + delay + 'ms... (attempt ' + (retryCount + 1) + '/' + maxRetries + ')');
+                        setTimeout(function() {
+                            checkAuth(retryCount + 1);
+                        }, delay);
+                        return;
+                    }
+                    
+                    // Max retries exceeded - redirect to login
+                    console.error('No token found after ' + maxRetries + ' attempts - redirecting to login');
+                    window.location.replace(basePath + '/index.php');
+                } catch (e) {
+                    console.error('Auth guard error:', e);
+                    // If error accessing localStorage and we just logged in, retry
+                    if (justLoggedIn && retryCount < maxRetries) {
+                        setTimeout(function() {
+                            checkAuth(retryCount + 1);
+                        }, 300);
+                    } else {
+                        window.location.replace(basePath + '/index.php');
+                    }
+                }
+            }
+            
+            // Start checking
+            checkAuth(0);
+        })();
+    </script>
     <link rel="icon" type="image/x-icon" href="<?php echo htmlspecialchars($imgPath . '/favicon.ico'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/global.css'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/buttons.css'); ?>">
@@ -17,7 +80,6 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/content.css'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/sidebar.css'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/admin-header.css'); ?>">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/module-sidebar.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css" rel="stylesheet">
@@ -26,33 +88,33 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         // Force light theme
         document.documentElement.setAttribute('data-theme', 'light');
         localStorage.setItem('theme', 'light');
+        
+        // IMMEDIATE DEBUG: Check localStorage access right away
+        console.log('=== IMMEDIATE CHECK (before any scripts) ===');
+        console.log('localStorage available:', typeof(Storage) !== 'undefined');
+        try {
+            const immediateToken = localStorage.getItem('jwtToken');
+            console.log('Token check (immediate):', immediateToken ? 'FOUND (length: ' + immediateToken.length + ')' : 'NOT FOUND');
+            console.log('All localStorage keys (immediate):', Object.keys(localStorage));
+        } catch (e) {
+            console.error('Error accessing localStorage (immediate):', e);
+        }
     </script>
 </head>
-<body class="has-module-sidebar" data-module="campaigns">
+<body class="module-campaign" data-module="campaigns">
     <?php include __DIR__ . '/../sidebar/includes/sidebar.php'; ?>
     <?php include __DIR__ . '/../sidebar/includes/admin-header.php'; ?>
     
-    <?php
-    // Include module sidebar for campaigns
-    $moduleName = 'campaigns';
-    include __DIR__ . '/../sidebar/includes/module-sidebar.php';
-    ?>
-    
-    <!-- Main Content Wrapper - accounts for sidebar (280px), module sidebar (260px), and header (70px) -->
+    <!-- Main Content Wrapper - accounts for sidebar (280px) and header (70px) -->
     <main class="main-content-wrapper">
         <div class="campaign-page">
 <style>
-    /* Main content wrapper - accounts for fixed sidebar, module sidebar, and header */
+    /* Main content wrapper - accounts for fixed sidebar and header */
     .main-content-wrapper {
-        margin-left: 540px; /* 280px main sidebar + 260px module sidebar */
+        margin-left: 280px; /* Main sidebar only */
         margin-top: 70px;
         min-height: calc(100vh - 70px);
         transition: margin-left 0.3s ease;
-    }
-    
-    /* When module sidebar is hidden (on other pages) */
-    body:not(.has-module-sidebar) .main-content-wrapper {
-        margin-left: 280px;
     }
     
     /* Make sidebar visible by default on desktop */
@@ -65,7 +127,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     /* Responsive: hide sidebar on mobile, adjust main content */
     @media (max-width: 1024px) {
         .main-content-wrapper {
-            margin-left: 280px !important; /* Only main sidebar on tablet */
+            margin-left: 280px !important;
         }
     }
     
@@ -116,6 +178,21 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         font-size: 16px;
         line-height: 1.6;
     }
+    /* Ensure list section card allows horizontal scrolling */
+    #list-section.card {
+        overflow-x: visible;
+        overflow-y: visible;
+    }
+    
+    /* Ensure table wrapper inside list section is not clipped */
+    #list-section .table-wrapper {
+        margin-left: -28px;
+        margin-right: -28px;
+        padding-left: 28px;
+        padding-right: 28px;
+        width: calc(100% + 56px);
+    }
+    
     .card {
         background: #fff;
         border: 1px solid #e2e8f0;
@@ -492,21 +569,69 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         content: '✗';
     }
     
+    /* Table wrapper for horizontal scrolling */
+    .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+        margin-top: 20px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #f1f5f9;
+        position: relative;
+        padding-right: 0; /* Ensure no padding cuts off content */
+    }
+    
+    /* Ensure table wrapper doesn't clip content */
+    .table-wrapper::after {
+        content: '';
+        display: block;
+        width: 1px;
+        height: 1px;
+        clear: both;
+    }
+    
+    /* Add padding to the right of the wrapper to ensure Actions column is fully visible */
+    .table-wrapper::before {
+        content: '';
+        display: block;
+        width: 0;
+        height: 0;
+    }
+    
+    .table-wrapper::-webkit-scrollbar {
+        height: 8px;
+    }
+    
+    .table-wrapper::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+    
+    .table-wrapper::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    
+    .table-wrapper::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    
     .data-table {
         width: 100%;
+        min-width: 1450px; /* Increased minimum width to ensure Actions column is fully visible */
         border-collapse: separate;
         border-spacing: 0;
-        margin-top: 20px;
         background: #fff;
         border-radius: 12px;
-        overflow: hidden;
+        overflow: visible; /* Changed from hidden to visible to prevent clipping */
         box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
     }
     .data-table thead {
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     }
     .data-table th {
-        padding: 16px;
+        padding: 16px 12px;
         text-align: left;
         font-weight: 700;
         color: #0f172a;
@@ -514,9 +639,110 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         text-transform: uppercase;
         letter-spacing: 0.5px;
         border-bottom: 2px solid #e2e8f0;
+        white-space: nowrap;
     }
+    
+    /* Responsive column widths */
+    .data-table th:nth-child(1), /* ID */
+    .data-table td:nth-child(1) {
+        width: 60px;
+        min-width: 60px;
+        max-width: 80px;
+    }
+    
+    .data-table th:nth-child(2), /* Title */
+    .data-table td:nth-child(2) {
+        width: 200px;
+        min-width: 150px;
+        max-width: 300px;
+        white-space: normal;
+        word-wrap: break-word;
+    }
+    
+    .data-table th:nth-child(3), /* Category */
+    .data-table td:nth-child(3) {
+        width: 120px;
+        min-width: 100px;
+        max-width: 150px;
+    }
+    
+    .data-table th:nth-child(4), /* Status */
+    .data-table td:nth-child(4) {
+        width: 100px;
+        min-width: 90px;
+        max-width: 120px;
+    }
+    
+    .data-table th:nth-child(5), /* Start */
+    .data-table th:nth-child(6), /* End */
+    .data-table td:nth-child(5),
+    .data-table td:nth-child(6) {
+        width: 110px;
+        min-width: 100px;
+        max-width: 130px;
+        white-space: nowrap;
+    }
+    
+    .data-table th:nth-child(7), /* Draft Schedule */
+    .data-table th:nth-child(8), /* AI Recommended */
+    .data-table th:nth-child(9), /* Final Schedule */
+    .data-table td:nth-child(7),
+    .data-table td:nth-child(8),
+    .data-table td:nth-child(9) {
+        width: 140px;
+        min-width: 120px;
+        max-width: 180px;
+        white-space: nowrap;
+        font-size: 12px;
+    }
+    
+    .data-table th:nth-child(10), /* Location */
+    .data-table td:nth-child(10) {
+        width: 150px;
+        min-width: 120px;
+        max-width: 200px;
+        white-space: normal;
+        word-wrap: break-word;
+    }
+    
+    .data-table th:nth-child(11), /* Budget */
+    .data-table td:nth-child(11) {
+        width: 100px;
+        min-width: 90px;
+        max-width: 120px;
+        text-align: right;
+    }
+    
+    .data-table th:nth-child(12), /* Actions */
+    .data-table td:nth-child(12) {
+        width: 200px;
+        min-width: 180px;
+        max-width: 220px;
+        white-space: nowrap;
+        position: sticky;
+        right: 0;
+        background: #fff;
+        z-index: 10;
+        padding-right: 20px;
+        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .data-table thead th:nth-child(12) {
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        z-index: 11;
+        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .data-table tbody tr:hover td:nth-child(12) {
+        background: #f8fafc;
+    }
+    
+    .data-table tbody tr:last-child td:nth-child(12) {
+        border-bottom: none;
+    }
+    
     .data-table td {
-        padding: 16px;
+        padding: 16px 12px;
         text-align: left;
         border-bottom: 1px solid #f1f5f9;
         color: #475569;
@@ -675,6 +901,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         flex-wrap: wrap;
         gap: 4px;
         margin-top: 4px;
+        width: 100%;
     }
     .combobox-tag {
         background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
@@ -686,18 +913,79 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         display: inline-flex;
         align-items: center;
         gap: 4px;
+        flex: 0 0 auto;
+        max-width: calc(25% - 3px); /* Allow 4 items per row */
+        min-width: calc(25% - 3px);
     }
     .combobox-tag-remove {
         cursor: pointer;
         font-weight: bold;
     }
 
-    /* Show only ~2 items at a time for Assigned Staff and Materials; others use default height */
+    /* Show 4 items per row for Assigned Staff tags */
+    .combobox-assigned .combobox-tags {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    
+    .combobox-assigned .combobox-tag {
+        flex: 0 0 calc(25% - 3px); /* 4 items per row: (100% - 12px) / 4 */
+        max-width: calc(25% - 3px);
+        min-width: 0; /* Allow shrinking if text is too long */
+        box-sizing: border-box;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Show 2 items per row for Materials tags */
+    .combobox-materials .combobox-tags {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    
+    .combobox-materials .combobox-tag {
+        flex: 0 0 calc(50% - 2px); /* 2 items per row: (100% - 4px) / 2 */
+        max-width: calc(50% - 2px);
+        min-width: 0; /* Allow shrinking if text is too long */
+        box-sizing: border-box;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Keep dropdown height reasonable */
     .combobox-assigned .combobox-options,
     .combobox-materials .combobox-options {
-        max-height: 80px;
+        max-height: 80px; /* Show only 2 items to prevent overlap with buttons */
     }
 
+    
+    /* Responsive table adjustments */
+    @media (max-width: 1400px) {
+        .data-table {
+            min-width: 1200px; /* Ensure Actions column is visible */
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 12px 8px;
+            font-size: 12px;
+        }
+        
+        .data-table th:nth-child(7),
+        .data-table th:nth-child(8),
+        .data-table th:nth-child(9),
+        .data-table td:nth-child(7),
+        .data-table td:nth-child(8),
+        .data-table td:nth-child(9) {
+            font-size: 11px;
+        }
+    }
     
     @media (max-width: 768px) {
         .campaign-page {
@@ -719,6 +1007,30 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             flex: 1;
             min-width: 120px;
         }
+        
+        /* Mobile: Ensure table wrapper is scrollable */
+        .table-wrapper {
+            margin-left: -16px;
+            margin-right: -16px;
+            padding: 0 16px;
+        }
+        
+        .data-table {
+            min-width: 1200px; /* Increased for mobile to ensure Actions column is visible */
+        }
+        
+        .data-table th:nth-child(12),
+        .data-table td:nth-child(12) {
+            min-width: 160px;
+            width: 180px;
+            padding-right: 12px;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 10px 6px;
+            font-size: 11px;
+        }
     }
 </style>
 
@@ -729,13 +1041,16 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     </header>
 
     <div class="campaign-layout">
-        <!-- Module sidebar is now handled by module-sidebar.php component -->
+        <!-- Campaign features are now in the main sidebar as nested submenu -->
         <div class="campaign-main">
 
     <!-- Planning Form -->
     <section class="card" id="planning-section">
-        <div class="section-header">
-            <h2 class="section-title analytics-accent">Plan New Campaign</h2>
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <h2 class="section-title analytics-accent" style="margin: 0;">Plan New Campaign</h2>
+            <button type="button" class="btn btn-secondary" onclick="showCampaignHowItWorks()" style="padding: 8px 16px; font-size: 13px;">
+                💡 How It Works
+            </button>
         </div>
         
         <form id="planningForm">
@@ -795,7 +1110,8 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                 </div>
                 <div class="form-field">
                     <label for="draft_schedule_datetime">Draft Schedule (Date & Time)</label>
-                    <input id="draft_schedule_datetime" type="datetime-local">
+                    <input id="draft_schedule_datetime" type="datetime-local" disabled title="Schedule will be set after requesting AI recommendation">
+                    <small style="display: block; margin-top: 4px; color: #64748b; font-size: 12px;">Schedule must be set via AI recommendation flow (Steps 3-9)</small>
                 </div>
                 <div class="form-field">
                     <label for="location">Location</label>
@@ -977,24 +1293,55 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             <label for="active_campaign">Active Campaign</label>
             <select id="active_campaign" onchange="onCampaignChange()"></select>
         </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Draft Schedule</th>
+                        <th>AI Recommended</th>
+                        <th>Final Schedule</th>
+                        <th>Location</th>
+                        <th>Budget</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="campaignTable">
+                    <tr><td colspan="12" style="text-align:center; padding:24px;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Schedule Management -->
+    <section class="card" id="schedule-management-section" style="display:none;">
+        <div class="section-header">
+            <h2 class="section-title analytics-accent">Schedule Management</h2>
+            <button class="btn btn-secondary" onclick="loadSchedules()">🔄 Refresh</button>
+        </div>
+        <div class="form-field" style="max-width: 300px; margin-bottom: 16px;">
+            <label for="schedule_campaign_id">Campaign ID</label>
+            <input id="schedule_campaign_id" type="number" placeholder="Enter campaign ID" onchange="loadSchedules()">
+        </div>
         <table class="data-table">
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Title</th>
-                    <th>Category</th>
+                    <th>Scheduled At</th>
+                    <th>Channel</th>
                     <th>Status</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th>Draft Schedule</th>
-                    <th>AI Recommended</th>
-                    <th>Final Schedule</th>
-                    <th>Location</th>
-                    <th>Budget</th>
+                    <th>Last Posting Attempt</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
-            <tbody id="campaignTable">
-                <tr><td colspan="11" style="text-align:center; padding:24px;">Loading...</td></tr>
+            <tbody id="scheduleTable">
+                <tr><td colspan="7" style="text-align:center; padding:24px;">Enter a Campaign ID to view schedules</td></tr>
             </tbody>
         </table>
     </section>
@@ -1021,6 +1368,31 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         </table>
     </section>
 
+    <!-- Linked Content -->
+    <section class="card" id="content-section">
+        <div class="section-header">
+            <h2 class="section-title analytics-accent">Linked Content</h2>
+            <button class="btn btn-secondary" onclick="loadCampaignContent()">🔄 Refresh</button>
+        </div>
+        <div class="form-field" style="max-width: 300px; margin-bottom: 16px;">
+            <label for="content_campaign_id">Campaign ID</label>
+            <input id="content_campaign_id" type="number" placeholder="Enter campaign ID" onchange="loadCampaignContent()">
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Content Type</th>
+                    <th>Created At</th>
+                </tr>
+            </thead>
+            <tbody id="contentTable">
+                <tr><td colspan="4" style="text-align:center; padding:24px;">Enter a Campaign ID to view linked content</td></tr>
+            </tbody>
+        </table>
+    </section>
+
         </div> <!-- /.campaign-main -->
     </div> <!-- /.campaign-layout -->
         </div> <!-- /.campaign-page -->
@@ -1029,22 +1401,31 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
 <script>
-// Get base path for API calls
-<?php
-require_once __DIR__ . '/../header/includes/path_helper.php';
-?>
+// Get base path for API calls (path_helper already included in head)
 const basePath = '<?php echo $basePath; ?>';
 const apiBase = '<?php echo $apiPath; ?>';
+console.log('BASE PATH:', basePath);
 
-const token = localStorage.getItem('jwtToken') || '';
+// Function to get fresh token from localStorage
+function getToken() {
+    try {
+        const token = localStorage.getItem('jwtToken') || '';
+        if (!token || token.trim() === '') {
+            console.warn('getToken() - No token found in localStorage');
+            console.warn('getToken() - localStorage keys:', Object.keys(localStorage));
+            return '';
+        }
+        return token.trim();
+    } catch (e) {
+        console.error('Error reading localStorage:', e);
+        return '';
+    }
+}
+
+
 let calendar, gantt;
 let activeCampaignId = null;
 let allCampaigns = [];
-
-// Require authentication for campaign module. If no token, send user to login.
-if (!token) {
-    window.location.href = basePath + '/public/index.php';
-}
 
 // Sample data for quick campaign creation (used as local combobox options)
 const SAMPLE_CAMPAIGN_TITLES = [
@@ -1057,14 +1438,44 @@ const SAMPLE_CAMPAIGN_TITLES = [
     'Community Disaster Preparedness Orientation',
 ];
 
+// Real Quezon City Barangays (16 official barangays - Quezon City ONLY)
 const SAMPLE_BARANGAYS = [
-    'Barangay 1',
-    'Barangay 2',
-    'Barangay 3',
-    'Barangay 4',
-    'Barangay 5',
-    'Barangay Commonwealth',
     'Barangay Batasan Hills',
+    'Barangay Commonwealth',
+    'Barangay Holy Spirit',
+    'Barangay Payatas',
+    'Barangay Bagong Silangan',
+    'Barangay Tandang Sora',
+    'Barangay UP Campus',
+    'Barangay Diliman',
+    'Barangay Matandang Balara',
+    'Barangay Loyola Heights',
+    'Barangay Cubao',
+    'Barangay Kamuning',
+    'Barangay Project 6',
+    'Barangay Project 8',
+    'Barangay Fairview',
+    'Barangay Nagkaisang Nayon',
+];
+
+// Real Quezon City Barangay Target Zones (sub-areas for planning and deployment)
+const SAMPLE_BARANGAY_ZONES = [
+    'Sitio Veterans Village (Batasan Hills)',
+    'IBP Road Area (Batasan Hills)',
+    'Don Antonio Heights (Commonwealth)',
+    'Litex Area (Commonwealth)',
+    'North Fairview Subdivision',
+    'Fairview Center Mall Area',
+    'UP Academic Oval Area',
+    'Teachers Village East',
+    'Teachers Village West',
+    'Araneta City Cubao Area',
+    'Kamias–E. Rodriguez Area',
+    'Balara Filters Area',
+    'Payatas A Proper',
+    'Payatas B Proper',
+    'Novaliches Proper',
+    'Nagkaisang Nayon',
 ];
 
 const SAMPLE_LOCATIONS = [
@@ -1235,7 +1646,7 @@ function initCombobox(inputId, optionsId, apiEndpoint, options = {}) {
             const url = apiBase + apiEndpoint + (query ? '?q=' + encodeURIComponent(query) : '?q=');
             const res = await fetch(url, {
                 headers: { 
-                    'Authorization': 'Bearer ' + token,
+                    'Authorization': 'Bearer ' + getToken(),
                     'Content-Type': 'application/json'
                 }
             });
@@ -1375,11 +1786,11 @@ function initCombobox(inputId, optionsId, apiEndpoint, options = {}) {
             });
         }
         
-        // Barangay Target Zones
+        // Barangay Target Zones (multi-select with real Quezon City sub-areas)
         if (document.getElementById('barangay_zones')) {
             initCombobox('barangay_zones', 'barangay_zones_options', '/api/v1/autocomplete/barangays', {
                 multiSelect: true,
-                staticOptions: SAMPLE_BARANGAYS,
+                staticOptions: SAMPLE_BARANGAY_ZONES,
             });
         }
         
@@ -1446,6 +1857,21 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
     const createStatusEl = document.getElementById('createStatus');
     createStatusEl.style.display = 'block';
     createStatusEl.className = 'status-text';
+    
+    // Check if token exists before proceeding
+    const currentToken = getToken();
+    console.log('Campaign creation - Token check:', currentToken ? 'EXISTS (length: ' + currentToken.length + ')' : 'MISSING');
+    if (!currentToken || currentToken.trim() === '') {
+        console.error('Campaign creation - No token found');
+        createStatusEl.textContent = 'Authorization token missing. Please log in again.';
+        createStatusEl.className = 'status-text error';
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+            window.location.href = basePath + '/index.php';
+        }, 2000);
+        return;
+    }
+    
     createStatusEl.textContent = 'Creating...';
     
     try {
@@ -1532,23 +1958,83 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
             ? statusEl.getSelectedValues()
             : (statusEl?.value.trim() || 'draft');
 
+        // Ensure we're using actual form values, not defaults or arrays
+        // Handle single-select comboboxes that might return arrays
+        let titleValue = title;
+        if (Array.isArray(title)) {
+            titleValue = title.length > 0 ? title[0] : '';
+        } else if (typeof title === 'string') {
+            titleValue = title.trim();
+        } else {
+            titleValue = '';
+        }
+        
+        let categoryValue = category;
+        if (Array.isArray(category)) {
+            categoryValue = category.length > 0 ? category[0] : null;
+        } else if (typeof category === 'string') {
+            categoryValue = category.trim() || null;
+        } else {
+            categoryValue = null;
+        }
+        
+        let geographicScopeValue = geographicScope;
+        if (Array.isArray(geographicScope)) {
+            geographicScopeValue = geographicScope.length > 0 ? geographicScope[0] : null;
+        } else if (typeof geographicScope === 'string') {
+            geographicScopeValue = geographicScope.trim() || null;
+        } else {
+            geographicScopeValue = null;
+        }
+        
+        let locationValue = location;
+        if (Array.isArray(location)) {
+            locationValue = location.length > 0 ? location[0] : null;
+        } else if (typeof location === 'string') {
+            locationValue = location.trim() || null;
+        } else {
+            locationValue = null;
+        }
+        
+        let statusValue = status;
+        if (Array.isArray(status)) {
+            statusValue = status.length > 0 ? status[0] : 'draft';
+        } else if (typeof status === 'string') {
+            statusValue = status.trim() || 'draft';
+        } else {
+            statusValue = 'draft';
+        }
+
+        // Get actual form field values (not defaults)
+        const descriptionValue = document.getElementById('description').value.trim();
+        const objectivesValue = document.getElementById('objectives').value.trim();
+        const startDateValue = document.getElementById('start_date').value;
+        const endDateValue = document.getElementById('end_date').value;
+        // NOTE: draft_schedule_datetime is NOT set during initial creation per sequence diagram
+        // Schedule should ONLY be set after user requests AI recommendation and confirms it (Step 9)
+        const budgetInput = document.getElementById('budget').value.trim();
+        const staffCountInput = document.getElementById('staff_count').value.trim();
+
         const payload = {
-            title: title,
-            description: document.getElementById('description').value.trim(),
-            category: category,
-            geographic_scope: geographicScope,
-            status: status,
-            start_date: document.getElementById('start_date').value || null,
-            end_date: document.getElementById('end_date').value || null,
-            draft_schedule_datetime: document.getElementById('draft_schedule_datetime').value || null,
-            objectives: document.getElementById('objectives').value.trim() || null,
-            location: location,
-            assigned_staff: assignedStaff,
-            barangay_target_zones: barangayZones,
-            budget: parseFloat(document.getElementById('budget').value) || null,
-            staff_count: parseInt(document.getElementById('staff_count').value) || null,
-            materials_json: materialsJson,
+            title: titleValue,
+            description: descriptionValue || null,
+            category: categoryValue,
+            geographic_scope: geographicScopeValue,
+            status: statusValue,
+            start_date: startDateValue || null,
+            end_date: endDateValue || null,
+            // draft_schedule_datetime: REMOVED - Schedule must be set via AI recommendation flow (Steps 3-9)
+            objectives: objectivesValue || null,
+            location: locationValue,
+            assigned_staff: assignedStaff.length > 0 ? assignedStaff : null,
+            barangay_target_zones: barangayZones.length > 0 ? barangayZones : null,
+            budget: budgetInput ? parseFloat(budgetInput) : null,
+            staff_count: staffCountInput ? parseInt(staffCountInput) : null,
+            materials_json: Object.keys(materialsJson).length > 0 ? materialsJson : null,
         };
+        
+        // Log the actual payload to verify real data is being sent
+        console.log('Campaign creation - Payload (actual form values):', JSON.stringify(payload, null, 2));
         
         if (!payload.title) {
             createStatusEl.textContent = 'Title is required.';
@@ -1556,19 +2042,91 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
             return;
         }
         
+        const token = getToken();
+        console.log('Campaign creation - Making API call with token (length:', token ? token.length : 0 + ')');
+        console.log('Campaign creation - API URL:', apiBase + '/api/v1/campaigns');
+        
         const res = await fetch(apiBase + '/api/v1/campaigns', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
+                'Authorization': 'Bearer ' + token.trim()
             },
             body: JSON.stringify(payload)
         });
         
-        const data = await res.json();
-        if (!res.ok) {
-            createStatusEl.textContent = data.error || 'Failed to create campaign.';
+        console.log('Campaign creation - Response status:', res.status);
+        console.log('Campaign creation - Response URL:', res.url);
+        
+        // Check if response is JSON and parse it
+        let data = {};
+        try {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                const responseText = await res.clone().text();
+                console.log('Campaign creation - Raw response:', responseText);
+                data = JSON.parse(responseText);
+                console.log('Campaign creation - Parsed response data:', data);
+            } else {
+                const text = await res.text();
+                console.error('Campaign creation - Non-JSON response:', text);
+                data = { error: text || 'Server returned non-JSON response' };
+            }
+        } catch (parseError) {
+            console.error('Campaign creation - Parse error:', parseError);
+            // Try to get error message from response
+            try {
+                const text = await res.text();
+                data = { error: text || parseError.message };
+            } catch (e) {
+                data = { error: parseError.message || 'Unable to parse server response' };
+            }
+            createStatusEl.textContent = 'Error: ' + data.error;
             createStatusEl.className = 'status-text error';
+            return;
+        }
+        
+        if (!res.ok) {
+            console.error('Campaign creation - API error:', res.status, data);
+            
+            // Handle 401 Unauthorized specifically
+            if (res.status === 401) {
+                console.error('Campaign creation - 401 Unauthorized error');
+                // Try to use cached user data - don't redirect immediately
+                const cachedUser = localStorage.getItem('currentUser');
+                if (cachedUser) {
+                    console.log('Token may be expired, but user is logged in. Please refresh the page.');
+                    createStatusEl.textContent = 'Session expired. Please refresh the page and try again.';
+                    createStatusEl.className = 'status-text error';
+                } else {
+                    createStatusEl.textContent = 'Authorization token missing or expired. Please log in again.';
+                    createStatusEl.className = 'status-text error';
+                    localStorage.removeItem('jwtToken');
+                    setTimeout(() => {
+                        window.location.href = basePath + '/index.php';
+                    }, 2000);
+                }
+                return;
+            }
+            
+            // Handle other error cases
+            if (data && data.error) {
+                const errorMsg = data.error.toLowerCase();
+                if (errorMsg.includes('authorization') || errorMsg.includes('token')) {
+                    createStatusEl.textContent = 'Authorization token missing or expired. Please log in again.';
+                    createStatusEl.className = 'status-text error';
+                    localStorage.removeItem('jwtToken');
+                    setTimeout(() => {
+                        window.location.href = basePath + '/index.php';
+                    }, 2000);
+                } else {
+                    createStatusEl.textContent = data.error || 'Failed to create campaign.';
+                    createStatusEl.className = 'status-text error';
+                }
+            } else {
+                createStatusEl.textContent = 'Failed to create campaign. Status: ' + res.status;
+                createStatusEl.className = 'status-text error';
+            }
             return;
         }
         
@@ -1585,6 +2143,19 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
 });
 
 function clearForm() {
+    // Reset form dataset
+    if (document.getElementById('planningForm')) {
+        delete document.getElementById('planningForm').dataset.campaignId;
+    }
+    
+    // Reset submit button
+    const submitBtn = document.querySelector('#planningForm button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.textContent = 'Create Campaign';
+        submitBtn.onclick = null; // Remove custom handler, use form's default submit
+    }
+    
+    // Clear form fields
     document.getElementById('planningForm').reset();
     document.getElementById('createStatus').style.display = 'none';
 }
@@ -1616,13 +2187,34 @@ async function getAutoMLPrediction() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
+                'Authorization': 'Bearer ' + getToken()
             },
             body: JSON.stringify({ features })
         });
+        
+        console.log('getAutoMLPrediction() - Response status:', res.status);
+        
+        if (!res.ok) {
+            const errorText = await res.text();
+            let errorData;
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (e) {
+                errorData = { error: errorText || `HTTP ${res.status}` };
+            }
+            console.error('getAutoMLPrediction() - API error:', res.status, errorData);
+            resultDiv.innerHTML = `<div class="prediction-item" style="color: #fee2e2; border-color: #fca5a5;">
+                <strong>Error:</strong>
+                <span>${errorData.error || `Failed to get prediction (${res.status})`}</span>
+            </div>`;
+            return;
+        }
+        
         const data = await res.json();
+        console.log('getAutoMLPrediction() - Received data:', data);
         
         if (data.error) {
+            console.error('getAutoMLPrediction() - Error in response:', data.error);
             resultDiv.innerHTML = `<div class="prediction-item" style="color: #fee2e2; border-color: #fca5a5;">
                 <strong>Error:</strong>
                 <span>${data.error}</span>
@@ -1687,7 +2279,7 @@ async function acceptAIRecommendation() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
+                'Authorization': 'Bearer ' + getToken()
             },
             body: JSON.stringify({ use_ai_recommendation: true })
         });
@@ -1717,7 +2309,7 @@ async function checkConflicts() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
+                'Authorization': 'Bearer ' + getToken()
             },
             body: JSON.stringify({ proposed_datetime: currentPrediction.suggested_datetime })
         });
@@ -1769,7 +2361,7 @@ async function overrideSchedule() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
+                'Authorization': 'Bearer ' + getToken()
             },
             body: JSON.stringify({ final_schedule_datetime: manualDateTime })
         });
@@ -1906,7 +2498,7 @@ function initCalendar() {
                 const start = fetchInfo.startStr;
                 const end = fetchInfo.endStr;
                 const res = await fetch(apiBase + `/api/v1/campaigns/calendar?start=${start}&end=${end}`, {
-                    headers: { 'Authorization': 'Bearer ' + token }
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
                 });
                 const data = await res.json();
                 const campaigns = data.data || [];
@@ -2044,7 +2636,7 @@ function getStatusColor(status) {
 async function loadResources() {
     try {
         const res = await fetch(apiBase + '/api/v1/campaigns', {
-            headers: { 'Authorization': 'Bearer ' + token }
+            headers: { 'Authorization': 'Bearer ' + getToken() }
         });
         const data = await res.json();
         const campaigns = data.data || [];
@@ -2107,15 +2699,39 @@ async function loadResources() {
     const tbody = document.getElementById('campaignTable');
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px;">Loading...</td></tr>';
     
+    // Check token before making API call
+    const token = getToken();
+    if (!token || token.trim() === '') {
+        console.error('loadCampaigns() - No token available, skipping API call');
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color: #dc2626;">Authentication required. Please refresh the page.</td></tr>';
+        return;
+    }
+    
     try {
+        console.log('loadCampaigns() - Making API call with token (length:', token.length + ')');
         const res = await fetch(apiBase + '/api/v1/campaigns', {
-            headers: { 'Authorization': 'Bearer ' + token }
+            headers: { 
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            }
         });
+        
+        console.log('loadCampaigns() - Response status:', res.status);
+        
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error('loadCampaigns() - API error:', res.status, errorText);
+            tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:24px; color: #dc2626;">Failed to load campaigns: ${res.status} ${errorText}</td></tr>`;
+            return;
+        }
+        
         const data = await res.json();
+        console.log('loadCampaigns() - Received data:', data);
         allCampaigns = data.data || [];
+        console.log('loadCampaigns() - Campaigns count:', allCampaigns.length);
         
         if (!allCampaigns.length) {
-            tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:24px;">No campaigns yet.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:24px;">No campaigns yet.</td></tr>';
             return;
         }
         
@@ -2149,6 +2765,10 @@ async function loadResources() {
                 <td>${formatDateTime(c.final_schedule_datetime)}</td>
                 <td>${c.location || '-'}</td>
                 <td>${c.budget ? '₱' + parseFloat(c.budget).toLocaleString('en-US', {minimumFractionDigits: 2}) : '-'}</td>
+                <td>
+                    <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">✏️ Edit</button>
+                    ${c.status !== 'archived' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px;">📦 Archive</button>` : '<span style="color: #9ca3af; font-size: 12px;">Archived</span>'}
+                </td>
             `;
             tbody.appendChild(tr);
             
@@ -2171,13 +2791,530 @@ async function loadResources() {
         refreshGantt();
         loadResources();
     } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:24px; color:#dc2626;">Failed to load campaigns.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:24px; color:#dc2626;">Failed to load campaigns.</td></tr>';
     }
 }
 
 function onCampaignChange() {
     activeCampaignId = parseInt(document.getElementById('active_campaign').value);
     loadSegments();
+}
+
+// Schedule Management
+async function loadSchedules() {
+    const campaignId = parseInt(document.getElementById('schedule_campaign_id')?.value || activeCampaignId);
+    if (!campaignId) {
+        document.getElementById('scheduleTable').innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px;">Enter a Campaign ID to view schedules</td></tr>';
+        return;
+    }
+    
+    const tbody = document.getElementById('scheduleTable');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px;">Loading...</td></tr>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId + '/schedules', {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        const schedules = data.data || [];
+        
+        if (!schedules.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px;">No schedules found for this campaign.</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        schedules.forEach(s => {
+            const tr = document.createElement('tr');
+            const formatDateTime = (dt) => {
+                if (!dt) return '-';
+                try {
+                    const d = new Date(dt);
+                    if (isNaN(d.getTime())) return dt;
+                    return d.toLocaleString('en-US', {dateStyle: 'short', timeStyle: 'short'});
+                } catch (e) {
+                    return dt;
+                }
+            };
+            
+            const statusBadge = {
+                'pending': '<span class="badge" style="background:#fbbf24; color:#92400e;">Pending</span>',
+                'sent': '<span class="badge" style="background:#10b981; color:#065f46;">Sent</span>',
+                'failed': '<span class="badge" style="background:#ef4444; color:#991b1b;">Failed</span>'
+            };
+            
+            tr.innerHTML = `
+                <td>${s.id}</td>
+                <td>${formatDateTime(s.scheduled_at)}</td>
+                <td>${s.channel || '-'}</td>
+                <td>${statusBadge[s.status] || s.status}</td>
+                <td>${formatDateTime(s.last_posting_attempt)}</td>
+                <td>${s.notes || '-'}</td>
+                <td>
+                    ${s.status === 'failed' ? `<button class="btn btn-secondary" onclick="resendSchedule(${campaignId}, ${s.id})" style="padding: 4px 8px; font-size: 12px;">🔄 Re-send</button>` : ''}
+                    ${s.status === 'pending' ? `<button class="btn btn-secondary" onclick="sendSchedule(${campaignId}, ${s.id})" style="padding: 4px 8px; font-size: 12px;">📤 Send</button>` : ''}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        // Show schedule management section
+        document.getElementById('schedule-management-section').style.display = 'block';
+        
+    } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:#dc2626;">Failed to load schedules: ' + err.message + '</td></tr>';
+    }
+}
+
+async function sendSchedule(campaignId, scheduleId) {
+    if (!confirm('Send this schedule now?')) return;
+    
+    const currentToken = getToken();
+    try {
+        const res = await fetch(apiBase + `/api/v1/campaigns/${campaignId}/schedules/${scheduleId}/send`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': 'Bearer ' + getToken()
+            }
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to send schedule'));
+            return;
+        }
+        alert('Schedule sent successfully!');
+        loadSchedules();
+    } catch (err) {
+        alert('Failed to send schedule: ' + err.message);
+    }
+}
+
+async function resendSchedule(campaignId, scheduleId) {
+    if (!confirm('Re-send this failed schedule?')) return;
+    
+    const currentToken = getToken();
+    try {
+        const res = await fetch(apiBase + `/api/v1/campaigns/${campaignId}/schedules/${scheduleId}/resend`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + getToken()
+            }
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to re-send schedule'));
+            return;
+        }
+        alert('Schedule re-sent successfully!');
+        loadSchedules();
+    } catch (err) {
+        alert('Failed to re-send schedule: ' + err.message);
+    }
+}
+
+// Load Campaign Content
+async function loadCampaignContent() {
+    const campaignId = parseInt(document.getElementById('content_campaign_id')?.value || activeCampaignId);
+    if (!campaignId) {
+        document.getElementById('contentTable').innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px;">Enter a Campaign ID to view linked content</td></tr>';
+        return;
+    }
+    
+    const tbody = document.getElementById('contentTable');
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px;">Loading...</td></tr>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId + '/content', {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        const contentItems = data.data || [];
+        
+        if (!contentItems.length) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px;">No content items linked to this campaign.</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        contentItems.forEach(item => {
+            const tr = document.createElement('tr');
+            const formatDateTime = (dt) => {
+                if (!dt) return '-';
+                try {
+                    const d = new Date(dt);
+                    if (isNaN(d.getTime())) return dt;
+                    return d.toLocaleString('en-US', {dateStyle: 'short', timeStyle: 'short'});
+                } catch (e) {
+                    return dt;
+                }
+            };
+            
+            tr.innerHTML = `
+                <td>${item.id}</td>
+                <td>${item.title || '-'}</td>
+                <td><span class="badge" style="background:#e0f2fe; color:#1d4ed8;">${item.content_type || 'text'}</span></td>
+                <td>${formatDateTime(item.created_at)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+    } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px; color:#dc2626;">Failed to load content: ' + err.message + '</td></tr>';
+    }
+}
+
+// Load Campaign Content
+async function loadCampaignContent() {
+    const campaignId = parseInt(document.getElementById('content_campaign_id')?.value || activeCampaignId);
+    if (!campaignId) {
+        document.getElementById('contentTable').innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px;">Enter a Campaign ID to view linked content</td></tr>';
+        return;
+    }
+    
+    const tbody = document.getElementById('contentTable');
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px;">Loading...</td></tr>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId + '/content', {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        const contentItems = data.data || [];
+        
+        if (!contentItems.length) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px;">No content items linked to this campaign.</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        contentItems.forEach(item => {
+            const tr = document.createElement('tr');
+            const formatDateTime = (dt) => {
+                if (!dt) return '-';
+                try {
+                    const d = new Date(dt);
+                    if (isNaN(d.getTime())) return dt;
+                    return d.toLocaleString('en-US', {dateStyle: 'short', timeStyle: 'short'});
+                } catch (e) {
+                    return dt;
+                }
+            };
+            
+            tr.innerHTML = `
+                <td>${item.id}</td>
+                <td>${item.title || '-'}</td>
+                <td><span class="badge" style="background:#e0f2fe; color:#1d4ed8;">${item.content_type || 'text'}</span></td>
+                <td>${formatDateTime(item.created_at)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+    } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px; color:#dc2626;">Failed to load content: ' + err.message + '</td></tr>';
+    }
+}
+
+// Edit Campaign
+async function editCampaign(campaignId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+        
+        const c = data.data;
+        
+        // Populate form with campaign data
+        if (document.getElementById('title')) {
+            document.getElementById('title').value = c.title || '';
+            // Trigger combobox update if needed
+            if (typeof document.getElementById('title').setSelectedValues === 'function') {
+                document.getElementById('title').setSelectedValues(c.title);
+            }
+        }
+        if (document.getElementById('description')) {
+            document.getElementById('description').value = c.description || '';
+        }
+        if (document.getElementById('category')) {
+            document.getElementById('category').value = c.category || '';
+            if (typeof document.getElementById('category').setSelectedValues === 'function') {
+                document.getElementById('category').setSelectedValues(c.category);
+            }
+        }
+        if (document.getElementById('geographic_scope')) {
+            document.getElementById('geographic_scope').value = c.geographic_scope || '';
+            if (typeof document.getElementById('geographic_scope').setSelectedValues === 'function') {
+                document.getElementById('geographic_scope').setSelectedValues(c.geographic_scope);
+            }
+        }
+        if (document.getElementById('status')) {
+            document.getElementById('status').value = c.status || 'draft';
+            if (typeof document.getElementById('status').setSelectedValues === 'function') {
+                document.getElementById('status').setSelectedValues(c.status);
+            }
+        }
+        if (document.getElementById('start_date')) {
+            document.getElementById('start_date').value = c.start_date || '';
+        }
+        if (document.getElementById('end_date')) {
+            document.getElementById('end_date').value = c.end_date || '';
+        }
+        if (document.getElementById('draft_schedule_datetime')) {
+            // Convert datetime to datetime-local format
+            if (c.draft_schedule_datetime) {
+                const dt = new Date(c.draft_schedule_datetime);
+                const localDateTime = dt.toISOString().slice(0, 16);
+                document.getElementById('draft_schedule_datetime').value = localDateTime;
+            }
+        }
+        if (document.getElementById('location')) {
+            document.getElementById('location').value = c.location || '';
+            if (typeof document.getElementById('location').setSelectedValues === 'function') {
+                document.getElementById('location').setSelectedValues(c.location);
+            }
+        }
+        if (document.getElementById('objectives')) {
+            document.getElementById('objectives').value = c.objectives || '';
+        }
+        if (document.getElementById('budget')) {
+            document.getElementById('budget').value = c.budget || '';
+        }
+        if (document.getElementById('staff_count')) {
+            document.getElementById('staff_count').value = c.staff_count || '';
+        }
+        
+        // Handle multi-select fields
+        if (c.assigned_staff) {
+            const staff = typeof c.assigned_staff === 'string' ? JSON.parse(c.assigned_staff) : c.assigned_staff;
+            if (Array.isArray(staff) && document.getElementById('assigned_staff')) {
+                if (typeof document.getElementById('assigned_staff').setSelectedValues === 'function') {
+                    document.getElementById('assigned_staff').setSelectedValues(staff);
+                }
+            }
+        }
+        if (c.barangay_target_zones) {
+            const zones = typeof c.barangay_target_zones === 'string' ? JSON.parse(c.barangay_target_zones) : c.barangay_target_zones;
+            if (Array.isArray(zones) && document.getElementById('barangay_zones')) {
+                if (typeof document.getElementById('barangay_zones').setSelectedValues === 'function') {
+                    document.getElementById('barangay_zones').setSelectedValues(zones);
+                }
+            }
+        }
+        if (c.materials_json) {
+            const materials = typeof c.materials_json === 'string' ? JSON.parse(c.materials_json) : c.materials_json;
+            if (typeof materials === 'object' && document.getElementById('materials_json')) {
+                const materialList = Object.keys(materials);
+                if (typeof document.getElementById('materials_json').setSelectedValues === 'function') {
+                    document.getElementById('materials_json').setSelectedValues(materialList);
+                }
+            }
+        }
+        
+        // Store campaign ID for update
+        document.getElementById('planningForm').dataset.campaignId = campaignId;
+        
+        // Change form button text
+        const submitBtn = document.querySelector('#planningForm button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.textContent = 'Update Campaign';
+            submitBtn.onclick = function(e) {
+                e.preventDefault();
+                updateCampaign(campaignId);
+            };
+        }
+        
+        // Scroll to form
+        document.getElementById('planning-section').scrollIntoView({ behavior: 'smooth' });
+        
+    } catch (err) {
+        alert('Failed to load campaign: ' + err.message);
+    }
+}
+
+// Update Campaign
+async function updateCampaign(campaignId) {
+    const createStatusEl = document.getElementById('createStatus');
+    createStatusEl.style.display = 'block';
+    createStatusEl.className = 'status-text';
+    
+    const currentToken = getToken();
+    if (!currentToken || currentToken.trim() === '') {
+        createStatusEl.textContent = 'Authorization token missing. Please log in again.';
+        createStatusEl.className = 'status-text error';
+        return;
+    }
+    
+    createStatusEl.textContent = 'Updating...';
+    
+    try {
+        // Get form values (same as create)
+        const barangayZonesEl = document.getElementById('barangay_zones');
+        let barangayZones = [];
+        if (barangayZonesEl && typeof barangayZonesEl.getSelectedValues === 'function') {
+            barangayZones = barangayZonesEl.getSelectedValues();
+        } else if (barangayZonesEl?.value) {
+            barangayZones = barangayZonesEl.value.split(',').map(s => s.trim()).filter(Boolean);
+        }
+        
+        const assignedStaffEl = document.getElementById('assigned_staff');
+        let assignedStaff = [];
+        if (assignedStaffEl && typeof assignedStaffEl.getSelectedValues === 'function') {
+            assignedStaff = assignedStaffEl.getSelectedValues();
+        } else if (assignedStaffEl?.value) {
+            const staffInput = assignedStaffEl.value.trim();
+            assignedStaff = staffInput ? staffInput.split(',').map(s => s.trim()).filter(Boolean) : [];
+        }
+        
+        const materialsEl = document.getElementById('materials_json');
+        let materialsJson = {};
+        if (materialsEl && typeof materialsEl.getSelectedValues === 'function') {
+            const materialsList = materialsEl.getSelectedValues();
+            materialsList.forEach(mat => {
+                materialsJson[mat] = 1;
+            });
+        }
+        
+        const titleEl = document.getElementById('title');
+        const title = (titleEl && typeof titleEl.getSelectedValues === 'function') 
+            ? titleEl.getSelectedValues() 
+            : titleEl?.value.trim() || '';
+        
+        const locationEl = document.getElementById('location');
+        const location = (locationEl && typeof locationEl.getSelectedValues === 'function') 
+            ? locationEl.getSelectedValues() 
+            : locationEl?.value.trim() || null;
+        
+        const geographicScopeEl = document.getElementById('geographic_scope');
+        const geographicScope = (geographicScopeEl && typeof geographicScopeEl.getSelectedValues === 'function') 
+            ? geographicScopeEl.getSelectedValues() 
+            : geographicScopeEl?.value.trim() || null;
+        
+        const categoryEl = document.getElementById('category');
+        const category = (categoryEl && typeof categoryEl.getSelectedValues === 'function')
+            ? categoryEl.getSelectedValues()
+            : (categoryEl?.value.trim() || null);
+        
+        const statusEl = document.getElementById('status');
+        const status = (statusEl && typeof statusEl.getSelectedValues === 'function')
+            ? statusEl.getSelectedValues()
+            : (statusEl?.value.trim() || 'draft');
+        
+        const payload = {
+            title: title,
+            description: document.getElementById('description').value.trim(),
+            category: category,
+            geographic_scope: geographicScope,
+            status: status,
+            start_date: document.getElementById('start_date').value || null,
+            end_date: document.getElementById('end_date').value || null,
+            draft_schedule_datetime: document.getElementById('draft_schedule_datetime').value || null,
+            objectives: document.getElementById('objectives').value.trim() || null,
+            location: location,
+            assigned_staff: assignedStaff,
+            barangay_target_zones: barangayZones,
+            budget: parseFloat(document.getElementById('budget').value) || null,
+            staff_count: parseInt(document.getElementById('staff_count').value) || null,
+            materials_json: materialsJson,
+        };
+        
+        if (!payload.title) {
+            createStatusEl.textContent = 'Title is required.';
+            createStatusEl.className = 'status-text error';
+            return;
+        }
+        
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        let data;
+        try {
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                data = await res.json();
+            } else {
+                const text = await res.text();
+                throw new Error(text || 'Server returned non-JSON response');
+            }
+        } catch (parseError) {
+            createStatusEl.textContent = 'Error: Unable to parse server response. ' + parseError.message;
+            createStatusEl.className = 'status-text error';
+            return;
+        }
+        
+        if (!res.ok) {
+            if (data.error && (data.error.toLowerCase().includes('authorization') || data.error.toLowerCase().includes('token'))) {
+                createStatusEl.textContent = 'Authorization token missing or expired. Please log in again.';
+                createStatusEl.className = 'status-text error';
+                localStorage.removeItem('jwtToken');
+                setTimeout(() => {
+                    window.location.href = basePath + '/index.php';
+                }, 2000);
+            } else {
+                createStatusEl.textContent = data.error || 'Failed to update campaign.';
+                createStatusEl.className = 'status-text error';
+            }
+            return;
+        }
+        
+        createStatusEl.textContent = 'Campaign updated successfully!';
+        createStatusEl.className = 'status-text success';
+        clearForm();
+        loadCampaigns();
+        refreshGantt();
+        if (calendar) calendar.refetchEvents();
+        
+    } catch (err) {
+        createStatusEl.textContent = 'Error: ' + err.message;
+        createStatusEl.className = 'status-text error';
+    }
+}
+
+// Archive Campaign
+async function archiveCampaign(campaignId) {
+    if (!confirm('Are you sure you want to archive this campaign?')) {
+        return;
+    }
+    
+    const currentToken = getToken();
+    if (!currentToken || currentToken.trim() === '') {
+        alert('Authorization token missing. Please log in again.');
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify({ status: 'archived' })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to archive campaign'));
+            return;
+        }
+        
+        alert('Campaign archived successfully!');
+        loadCampaigns();
+        refreshGantt();
+        if (calendar) calendar.refetchEvents();
+        
+    } catch (err) {
+        alert('Failed to archive campaign: ' + err.message);
+    }
 }
 
 // Segments
@@ -2190,7 +3327,7 @@ async function loadSegments() {
     
     try {
         const res = await fetch(apiBase + '/api/v1/campaigns/' + cid + '/segments', {
-            headers: { 'Authorization': 'Bearer ' + token }
+            headers: { 'Authorization': 'Bearer ' + getToken() }
         });
         const data = await res.json();
         const segments = data.data || [];
@@ -2239,7 +3376,7 @@ async function saveSegments() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
+                'Authorization': 'Bearer ' + getToken()
             },
             body: JSON.stringify({ segment_ids: ids })
         });
@@ -2274,6 +3411,120 @@ async function initializeCampaigns() {
             refreshGantt();
         }
     }, 500);
+}
+
+// Show Campaign "How It Works" modal
+function showCampaignHowItWorks() {
+    const tips = `
+        <div style="max-width: 700px; padding: 24px;">
+            <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 22px;">📋 Campaign Module - How It Works</h3>
+            <div style="line-height: 1.8; color: #475569; font-size: 14px;">
+                
+                <div style="margin-bottom: 24px; padding: 16px; background: #f0fdfa; border-radius: 8px; border-left: 4px solid #4c8a89;">
+                    <strong style="color: #065f46; display: block; margin-bottom: 12px; font-size: 16px;">🎯 Complete Campaign Workflow (10 Steps):</strong>
+                    <ol style="margin: 0; padding-left: 20px; line-height: 2;">
+                        <li><strong>Create Campaign</strong> - Fill out campaign details (title, category, dates, location, etc.)</li>
+                        <li><strong>Select Audience & Content</strong> - Choose target audience segments and attach materials from Content Repository</li>
+                        <li><strong>Request Optimal Posting Time</strong> - Click "Get Prediction" in AI-Powered Deployment Optimization</li>
+                        <li><strong>AI Processing</strong> - System sends request to AI scheduling microservice</li>
+                        <li><strong>Google AutoML Analysis</strong> - Microservice calls Google AutoML for prediction</li>
+                        <li><strong>AI Recommendation</strong> - Google AutoML returns optimal date/time prediction</li>
+                        <li><strong>Display Recommendation</strong> - AI suggestion shown with confidence score</li>
+                        <li><strong>Review & Confirm</strong> - User reviews the AI recommendation</li>
+                        <li><strong>Accept Schedule</strong> - User confirms and accepts the recommended schedule</li>
+                        <li><strong>Campaign Saved</strong> - Campaign is saved with final schedule and appears in All Campaigns table</li>
+                    </ol>
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <strong style="color: #0f172a; display: block; margin-bottom: 12px; font-size: 16px;">📋 Main Sections Explained:</strong>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        <li><strong>Plan New Campaign</strong> - Create campaigns with all details (title, category, dates, location, budget, staff, materials)</li>
+                        <li><strong>AI-Powered Deployment Optimization</strong> - Get AI recommendations for optimal posting times using Google AutoML</li>
+                        <li><strong>Project Timeline (Gantt Chart)</strong> - Visual timeline of all campaigns and their schedules</li>
+                        <li><strong>Scheduling Calendar</strong> - Calendar view to see campaign schedules by month/week</li>
+                        <li><strong>Resource Allocation</strong> - Overview of total budget, staff, and active campaigns</li>
+                        <li><strong>All Campaigns</strong> - Table view of all campaigns with actions (edit, delete, view details)</li>
+                        <li><strong>Schedule Management</strong> - Manage and update campaign schedules</li>
+                        <li><strong>Target Segments</strong> - Manage audience segments for campaigns</li>
+                        <li><strong>Linked Content</strong> - View and manage content materials attached to campaigns</li>
+                    </ul>
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <strong style="color: #0f172a; display: block; margin-bottom: 12px; font-size: 16px;">🔗 Connection to Content Module:</strong>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        <li><strong>Materials Selection</strong> - When creating a campaign, you can select materials from the Content Repository</li>
+                        <li><strong>Approved Content Only</strong> - Only approved content items can be attached to campaigns</li>
+                        <li><strong>Content Types</strong> - Posters, videos, guidelines, and infographics can be linked to campaigns</li>
+                        <li><strong>Linked Content Section</strong> - View all content materials attached to a specific campaign</li>
+                    </ul>
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <strong style="color: #0f172a; display: block; margin-bottom: 12px; font-size: 16px;">🤖 AI Scheduling Flow:</strong>
+                    <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <p style="margin: 0 0 8px 0;"><strong>Step-by-Step:</strong></p>
+                        <ol style="margin: 0; padding-left: 20px; font-size: 13px;">
+                            <li>Create campaign first (without schedule)</li>
+                            <li>Go to "AI-Powered Deployment Optimization" section</li>
+                            <li>Select the campaign ID from dropdown</li>
+                            <li>Optionally enter audience segment ID</li>
+                            <li>Click "🔮 Get Prediction" button</li>
+                            <li>Wait for AI analysis (Google AutoML or heuristic fallback)</li>
+                            <li>Review the recommended date/time and confidence score</li>
+                            <li>Click "✓ Accept AI Recommendation" to confirm</li>
+                            <li>Campaign schedule is updated automatically</li>
+                            <li>View updated schedule in "All Campaigns" table</li>
+                        </ol>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <strong style="color: #0f172a; display: block; margin-bottom: 12px; font-size: 16px;">💡 Pro Tips:</strong>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        <li><strong>Complete Form First</strong> - Fill out all campaign details before requesting AI recommendation</li>
+                        <li><strong>Attach Materials</strong> - Link approved content from Content Repository for better campaign planning</li>
+                        <li><strong>Check Conflicts</strong> - Use "Check Conflicts" button to see if schedule conflicts with other campaigns</li>
+                        <li><strong>Override if Needed</strong> - You can manually override AI recommendation if needed</li>
+                        <li><strong>View Timeline</strong> - Use Gantt Chart and Calendar to visualize all campaign schedules</li>
+                        <li><strong>Monitor Resources</strong> - Check Resource Allocation section to see budget and staff usage</li>
+                    </ul>
+                </div>
+                
+                <div style="background: #fff7ed; padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <strong style="color: #92400e;">⚠️ Important Notes:</strong>
+                    <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px;">
+                        <li>Draft Schedule field is disabled - schedule must be set via AI recommendation flow</li>
+                        <li>AI recommendation is required before campaign can be finalized</li>
+                        <li>Only approved content from Content Repository can be attached</li>
+                        <li>Campaign status changes based on schedule confirmation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Create modal
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+    modal.onclick = function(e) {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
+    };
+    
+    const content = document.createElement('div');
+    content.style.cssText = 'background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 700px; max-height: 85vh; overflow-y: auto;';
+    content.innerHTML = tips + '<button onclick="this.closest(\'div[style*=\\\'position: fixed\\\']\').remove()" style="margin-top: 20px; padding: 10px 24px; background: #4c8a89; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600;">Got it!</button>';
+    content.onclick = function(e) {
+        if (e.target.tagName === 'BUTTON') {
+            document.body.removeChild(modal);
+        }
+    };
+    
+    modal.appendChild(content);
+    document.body.appendChild(modal);
 }
 
 initializeCampaigns();

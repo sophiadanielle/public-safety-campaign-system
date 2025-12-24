@@ -23,17 +23,35 @@ class AuthController
     public function login(?array $user = null, array $params = []): array
     {
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
-        $email = isset($input['email']) ? filter_var($input['email'], FILTER_VALIDATE_EMAIL) : null;
-        $password = $input['password'] ?? '';
+        $rawEmail = isset($input['email']) ? trim($input['email']) : '';
+        $rawPassword = isset($input['password']) ? (string)$input['password'] : '';
 
-        if (!$email || !$password) {
+        // Log for debugging (remove in production)
+        error_log('Login attempt - Email: ' . $rawEmail . ', Password length: ' . strlen($rawPassword));
+
+        if (empty($rawEmail) || empty($rawPassword)) {
             http_response_code(422);
             return ['error' => 'Email and password are required.'];
         }
 
+        // Validate email format
+        $email = filter_var($rawEmail, FILTER_VALIDATE_EMAIL);
+        if (!$email) {
+            http_response_code(422);
+            return ['error' => 'Invalid email format.'];
+        }
+
+        // Normalize email for comparison (case-insensitive, trimmed)
+        $normalizedEmail = strtolower(trim($email));
+        $normalizedPassword = trim($rawPassword);
+        
         // Developer shortcut: allow a guaranteed local admin login even if DB seeding is broken.
         // This ONLY kicks in for the known demo credentials.
-        if (strtolower($email) === 'admin@barangay1.qc.gov.ph' && $password === 'password123') {
+        // Admin credentials: admin@barangay1.qc.gov.ph / pass123
+        $isAdminEmail = ($normalizedEmail === 'admin@barangay1.qc.gov.ph');
+        $isAdminPassword = ($normalizedPassword === 'pass123' || $rawPassword === 'pass123');
+        
+        if ($isAdminEmail && $isAdminPassword) {
             $demoUser = [
                 'id' => 1,
                 'name' => 'Admin User',
@@ -50,14 +68,15 @@ class AuthController
                 'user' => $demoUser,
             ];
         }
-
-        $stmt = $this->pdo->prepare('SELECT id, name, email, password_hash, role_id, barangay_id FROM users WHERE email = :email AND is_active = 1 LIMIT 1');
-        $stmt->execute(['email' => $email]);
+        
+        // Normalize email for database query (case-insensitive)
+        $stmt = $this->pdo->prepare('SELECT id, name, email, password_hash, role_id, barangay_id FROM users WHERE LOWER(TRIM(email)) = :email AND is_active = 1 LIMIT 1');
+        $stmt->execute(['email' => $normalizedEmail]);
         $user = $stmt->fetch();
 
         // If login fails for the default admin, attempt an automatic repair of that account
-        if (!$user || !password_verify($password, $user['password_hash'])) {
-            $repairedUser = $this->maybeRepairAdminUser($email, $password);
+        if (!$user || !password_verify($rawPassword, $user['password_hash'] ?? '')) {
+            $repairedUser = $this->maybeRepairAdminUser($email, $rawPassword);
             if ($repairedUser) {
                 $user = $repairedUser;
             } else {
@@ -225,7 +244,14 @@ class AuthController
     private function maybeRepairAdminUser(string $email, string $password): ?array
     {
         // Only ever auto-repair for the known default admin account
-        if (strtolower($email) !== 'admin@barangay1.qc.gov.ph') {
+        $normalizedEmail = strtolower(trim($email));
+        if ($normalizedEmail !== 'admin@barangay1.qc.gov.ph') {
+            return null;
+        }
+        
+        // Also check if password matches admin password (pass123)
+        $normalizedPassword = trim($password);
+        if ($normalizedPassword !== 'pass123' && $password !== 'pass123') {
             return null;
         }
 

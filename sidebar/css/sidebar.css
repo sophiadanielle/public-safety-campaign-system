@@ -37,6 +37,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    color: #0f172a; /* Dark text for visibility - ensure readable */
 }
 
 .sidebar.sidebar-open {
@@ -132,7 +133,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--sidebar-text-secondary-1);
+    color: #475569; /* Medium gray for better visibility */
     margin-bottom: 0.75rem;
     font-style: italic;
     padding: 0 0.75rem;
@@ -155,28 +156,45 @@
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
-    color: var(--sidebar-text-1);
+    color: #0f172a; /* Dark text for visibility */
     text-decoration: none;
     border-radius: 0.5rem;
     transition: var(--sidebar-transition-1);
     font-size: 0.95rem;
     position: relative;
+    font-weight: 500;
+    line-height: 1.5;
 }
 
 .sidebar-link:hover {
     background-color: var(--sidebar-hover-bg-1);
+    color: #0f172a; /* Keep dark text on hover for readability */
+}
+
+.sidebar-link:hover i {
     color: var(--primary-color-1);
 }
 
 .sidebar-link.active {
-    background-color: var(--sidebar-active-bg-1);
-    color: var(--sidebar-active-text-1);
+    background-color: var(--sidebar-active-bg-1) !important;
+    color: #0f172a !important;
+    font-weight: 600;
+}
+
+.sidebar-link.active i {
+    color: var(--primary-color-1) !important;
+}
+
+.sidebar-link.active span {
+    color: #0f172a !important;
 }
 
 .sidebar-link i {
     width: 20px;
     text-align: center;
     font-size: 1rem;
+    color: #475569; /* Visible icon color */
+    transition: color 0.2s ease;
 }
 
 .sidebar-link span {
@@ -196,37 +214,189 @@
 .submenu-icon {
     margin-left: auto !important;
     font-size: 0.875rem !important;
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, color 0.2s ease;
+    color: #64748b !important; /* Visible chevron icon */
+}
+
+.sidebar-link:hover .submenu-icon,
+.sidebar-link.active .submenu-icon {
+    color: var(--primary-color-1) !important;
+}
+
+.sidebar-link.active .submenu-icon {
+    color: #ffffff !important;
 }
 
 .sidebar-submenu {
     list-style: none;
     padding: 0;
-    margin: 0.5rem 0 0 2.5rem;
-    max-height: 0;
+    margin: 0;
+    background-color: rgba(0, 0, 0, 0.02);
+    border-left: 2px solid var(--sidebar-border-1);
+    margin-left: 1rem;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease;
-    background-color: transparent;
-    opacity: 0;
-    transform: translateY(-10px);
-    transition: all 0.3s ease;
+    max-height: 0;
+    transition: max-height 0.3s ease, margin-top 0.3s ease, margin-bottom 0.3s ease, padding-top 0.3s ease, padding-bottom 0.3s ease;
+    display: block;
 }
 
-.sidebar-submenu.sidebar-submenu-open {
+.sidebar-submenu.submenu-open {
     max-height: 500px;
-    opacity: 1;
-    transform: translateY(0);
-    animation: slideInFromTop 0.3s ease-out;
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
 }
 
+/* Ensure submenu is visible when open */
+.sidebar-menu-item.has-children.active .sidebar-submenu,
+.sidebar-submenu.submenu-open {
+    max-height: 500px;
+}
+
+/* Ensure collapsed submenu has absolutely zero height and no spacing - no gaps */
+.sidebar-submenu:not(.submenu-open) {
+    max-height: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-left: none; /* Remove border when collapsed to avoid visual artifacts */
+}
+
+/* Ensure submenu items don't create gaps when parent is collapsed */
+.sidebar-submenu:not(.submenu-open) .sidebar-menu-item {
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+    line-height: 0 !important;
+}
+
+.sidebar-submenu:not(.submenu-open) .sidebar-link {
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+    line-height: 0 !important;
+    font-size: 0 !important; /* Remove font size to eliminate any space */
+}
+
+/* Base submenu link styles */
 .sidebar-submenu .sidebar-link {
-    padding: 0.5rem 1rem;
+    padding: 0.625rem 1rem 0.625rem 2.5rem;
     font-size: 0.875rem;
+    color: #1e293b; /* Dark text for full visibility */
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.sidebar-submenu .sidebar-link i {
+    color: #475569; /* Visible icon color */
+    font-size: 0.875rem;
+}
+
+.sidebar-submenu .sidebar-link::before {
+    content: '';
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 4px;
+    background-color: #64748b; /* Medium gray for visibility */
+    border-radius: 50%;
+}
+
+.sidebar-submenu .sidebar-link:hover {
+    background-color: var(--sidebar-hover-bg-1);
+    color: #0f172a; /* Dark text on hover for visibility */
+}
+
+.sidebar-submenu .sidebar-link:hover i {
+    color: var(--primary-color-1);
+}
+
+.sidebar-submenu .sidebar-link:hover::before {
+    background-color: var(--primary-color-1);
+}
+
+.sidebar-submenu .sidebar-link.active {
+    background-color: var(--sidebar-active-bg-1) !important;
+    color: #0f172a !important;
+    font-weight: 600;
+}
+
+.sidebar-submenu .sidebar-link.active i {
+    color: var(--primary-color-1) !important;
+}
+
+.sidebar-submenu .sidebar-link.active span {
+    color: #0f172a !important;
+}
+
+.sidebar-submenu .sidebar-link.active::before {
+    background-color: var(--primary-color-1) !important;
 }
 
 .sidebar-submenu .sidebar-link i {
     width: 16px;
     font-size: 0.875rem;
+    margin-right: 0.5rem;
+}
+
+/* Module toggle link styling */
+.sidebar-module-toggle {
+    cursor: pointer;
+    position: relative;
+}
+
+.sidebar-module-toggle .submenu-icon {
+    transition: transform 0.3s ease;
+}
+
+/* Ensure submenu items are properly nested */
+.sidebar-menu-item.has-children .sidebar-submenu .sidebar-menu-item {
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+.sidebar-menu-item.has-children .sidebar-submenu .sidebar-menu-item:last-child {
+    margin-bottom: 0;
+}
+
+/* When submenu is open, restore normal item spacing */
+.sidebar-submenu.submenu-open {
+    border-left: 2px solid var(--sidebar-border-1); /* Restore border when open */
+}
+
+.sidebar-submenu.submenu-open .sidebar-menu-item {
+    height: auto !important;
+    min-height: auto !important;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    line-height: normal !important;
+}
+
+.sidebar-submenu.submenu-open .sidebar-link {
+    height: auto !important;
+    min-height: auto !important;
+    margin: 0;
+    padding: 0.625rem 1rem 0.625rem 2.5rem !important;
+    overflow: visible;
+    line-height: 1.5 !important;
+    font-size: 0.875rem !important; /* Restore font size when open */
 }
 
 /* Sidebar Footer */

@@ -154,11 +154,28 @@ async function signup() {
     try {
         const data = await res.json();
         if (data.token) {
-            localStorage.setItem('jwtToken', data.token);
+            // Store token and user info - use synchronous storage
+            try {
+                localStorage.setItem('jwtToken', data.token);
+                if (data.user) {
+                    localStorage.setItem('currentUser', JSON.stringify(data.user));
+                }
+                // Force synchronous write by reading back immediately
+                const verifyToken = localStorage.getItem('jwtToken');
+                if (!verifyToken || verifyToken !== data.token) {
+                    throw new Error('Token storage failed');
+                }
+            } catch (e) {
+                statusEl.textContent = 'Error: Failed to store authentication token. ' + e.message;
+                statusEl.style.color = '#dc2626';
+                return;
+            }
             statusEl.textContent = 'Account created! Redirecting...';
+            // Use replace instead of href to prevent back button issues
+            // Add a parameter to indicate successful signup
             setTimeout(() => {
-                window.location.href = basePath + '/public/campaigns.php';
-            }, 1000);
+                window.location.replace(basePath + '/public/campaigns.php?signed_up=1');
+            }, 300);
         } else {
             statusEl.textContent = 'Error: ' + (data.error || JSON.stringify(data));
             statusEl.style.color = '#dc2626';

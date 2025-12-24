@@ -46,65 +46,60 @@ class AutocompleteController
     public function barangays(?array $user, array $params = []): array
     {
         $query = $_GET['q'] ?? '';
-        if (strlen($query) < 2) {
-            return ['data' => []];
-        }
-
-        // Get from barangays table
-        $stmt = $this->pdo->prepare('
-            SELECT DISTINCT name 
-            FROM barangays 
-            WHERE city = "Quezon City" 
-            AND name LIKE :query 
-            ORDER BY name ASC 
-            LIMIT 20
-        ');
-        $stmt->execute(['query' => '%' . $query . '%']);
-        $barangayResults = $stmt->fetchAll();
-
-        // Also get from existing campaign geographic_scope and barangay_target_zones
-        $stmt = $this->pdo->prepare('
-            SELECT DISTINCT geographic_scope 
-            FROM campaigns 
-            WHERE geographic_scope LIKE :query 
-            AND geographic_scope LIKE "%Quezon City%" 
-            ORDER BY geographic_scope ASC 
-            LIMIT 10
-        ');
-        $stmt->execute(['query' => '%' . $query . '%']);
-        $scopeResults = $stmt->fetchAll();
-
-        // Extract barangay names from JSON arrays in barangay_target_zones
-        $stmt = $this->pdo->prepare('
-            SELECT barangay_target_zones 
-            FROM campaigns 
-            WHERE barangay_target_zones IS NOT NULL 
-            AND barangay_target_zones LIKE :query
-            LIMIT 50
-        ');
-        $stmt->execute(['query' => '%' . $query . '%']);
-        $zonesResults = $stmt->fetchAll();
-
-        $allBarangays = array_column($barangayResults, 'name');
         
-        foreach ($zonesResults as $row) {
-            if ($row['barangay_target_zones']) {
-                $zones = json_decode($row['barangay_target_zones'], true);
-                if (is_array($zones)) {
-                    foreach ($zones as $zone) {
-                        if (stripos($zone, $query) !== false && !in_array($zone, $allBarangays)) {
-                            $allBarangays[] = $zone;
-                        }
-                    }
-                }
-            }
+        // Real Quezon City Barangays (16 official barangays - Quezon City ONLY)
+        $realQuezonCityBarangays = [
+            'Barangay Batasan Hills',
+            'Barangay Commonwealth',
+            'Barangay Holy Spirit',
+            'Barangay Payatas',
+            'Barangay Bagong Silangan',
+            'Barangay Tandang Sora',
+            'Barangay UP Campus',
+            'Barangay Diliman',
+            'Barangay Matandang Balara',
+            'Barangay Loyola Heights',
+            'Barangay Cubao',
+            'Barangay Kamuning',
+            'Barangay Project 6',
+            'Barangay Project 8',
+            'Barangay Fairview',
+            'Barangay Nagkaisang Nayon',
+        ];
+        
+        // Real Quezon City Barangay Target Zones (sub-areas for planning and deployment)
+        $realBarangayZones = [
+            'Sitio Veterans Village (Batasan Hills)',
+            'IBP Road Area (Batasan Hills)',
+            'Don Antonio Heights (Commonwealth)',
+            'Litex Area (Commonwealth)',
+            'North Fairview Subdivision',
+            'Fairview Center Mall Area',
+            'UP Academic Oval Area',
+            'Teachers Village East',
+            'Teachers Village West',
+            'Araneta City Cubao Area',
+            'Kamias–E. Rodriguez Area',
+            'Balara Filters Area',
+            'Payatas A Proper',
+            'Payatas B Proper',
+            'Novaliches Proper',
+            'Nagkaisang Nayon',
+        ];
+        
+        // Combine both lists
+        $allOptions = array_merge($realQuezonCityBarangays, $realBarangayZones);
+        
+        // If query is provided, filter by query
+        if (strlen($query) >= 2) {
+            $filtered = array_filter($allOptions, function($item) use ($query) {
+                return stripos($item, $query) !== false;
+            });
+            return ['data' => array_values($filtered)];
         }
-
-        // Remove duplicates and sort
-        $allBarangays = array_unique($allBarangays);
-        sort($allBarangays);
-
-        return ['data' => array_slice($allBarangays, 0, 20)];
+        
+        // If no query or query too short, return all options
+        return ['data' => $allOptions];
     }
 
     /**

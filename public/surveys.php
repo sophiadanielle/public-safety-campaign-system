@@ -1,9 +1,63 @@
 <?php
 $pageTitle = 'Surveys & Feedback';
-include __DIR__ . '/../header/includes/header.php';
+require_once __DIR__ . '/../header/includes/path_helper.php';
 ?>
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($pageTitle); ?> - Public Safety Campaign</title>
+    <link rel="icon" type="image/x-icon" href="<?php echo htmlspecialchars($imgPath . '/favicon.ico'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/global.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/buttons.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/forms.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/cards.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/content.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/sidebar.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/admin-header.css'); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('theme', 'light');
+    </script>
+</head>
+<body class="module-surveys" data-module="surveys">
+    <?php include __DIR__ . '/../sidebar/includes/sidebar.php'; ?>
+    <?php include __DIR__ . '/../sidebar/includes/admin-header.php'; ?>
+    
+    <main class="main-content-wrapper">
 <style>
+    .main-content-wrapper {
+        margin-left: 280px;
+        margin-top: 70px;
+        min-height: calc(100vh - 70px);
+        transition: margin-left 0.3s ease;
+    }
+    
+    @media (min-width: 769px) {
+        .sidebar {
+            transform: translateX(0) !important;
+        }
+    }
+    
+    @media (max-width: 1024px) {
+        .main-content-wrapper {
+            margin-left: 280px !important;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .main-content-wrapper {
+            margin-left: 0 !important;
+        }
+        .sidebar {
+            transform: translateX(-100%);
+        }
+        .sidebar.sidebar-open {
+            transform: translateX(0);
+        }
+    }
     .surveys-page {
         max-width: 1400px;
         margin: 0 auto;
@@ -129,9 +183,6 @@ include __DIR__ . '/../header/includes/header.php';
         <button type="submit" form="responseForm" class="btn btn-primary" style="margin-top:16px;" onclick="submitResponse(event)">Submit Response</button>
         <div class="status" id="respStatus" style="margin-top:12px;"></div>
     </section>
-</main>
-
-<?php include __DIR__ . '/../header/includes/footer.php'; ?>
 
 <script>
 <?php require_once __DIR__ . '/../header/includes/path_helper.php'; ?>
@@ -262,3 +313,6 @@ async function submitResponse(e) {
     }
 }
 </script>
+    </main>
+</body>
+</html>

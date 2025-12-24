@@ -39,7 +39,9 @@ try {
 $migrations = [
     '001_initial_schema.sql',
     '011_complete_schema_update.sql',  // Run after initial schema
-    '012_seed_data.sql',                // Seed data last
+    '012_seed_data.sql',                // Seed data
+    '014_content_repository.sql',       // Content Repository enhancements
+    '015_content_repository_seed.sql', // Content Repository sample data
 ];
 
 $migrationDir = __DIR__ . '/migrations';

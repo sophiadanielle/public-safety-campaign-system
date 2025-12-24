@@ -113,28 +113,31 @@
         const mobileNav = document.querySelector('.mobile-nav');
         const mobileNavOverlay = document.querySelector('.mobile-nav-overlay');
 
-        mobileMenuToggle.forEach(toggle => {
-            toggle.addEventListener('click', () => {
-                mobileNav.classList.toggle('active');
-                mobileNavOverlay.classList.toggle('active');
-                document.body.style.overflow = mobileNav.classList.contains('active') ? 'hidden' : '';
+        // Only set up mobile nav if elements exist (they won't exist on login page)
+        if (mobileNav && mobileNavOverlay) {
+            mobileMenuToggle.forEach(toggle => {
+                toggle.addEventListener('click', () => {
+                    mobileNav.classList.toggle('active');
+                    mobileNavOverlay.classList.toggle('active');
+                    document.body.style.overflow = mobileNav.classList.contains('active') ? 'hidden' : '';
+                });
             });
-        });
 
-        // Close button functionality
-        if (mobileNavClose) {
-            mobileNavClose.addEventListener('click', () => {
+            // Close button functionality
+            if (mobileNavClose) {
+                mobileNavClose.addEventListener('click', () => {
+                    mobileNav.classList.remove('active');
+                    mobileNavOverlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            }
+
+            mobileNavOverlay.addEventListener('click', () => {
                 mobileNav.classList.remove('active');
                 mobileNavOverlay.classList.remove('active');
                 document.body.style.overflow = '';
             });
         }
-
-        mobileNavOverlay.addEventListener('click', () => {
-            mobileNav.classList.remove('active');
-            mobileNavOverlay.classList.remove('active');
-            document.body.style.overflow = '';
-        });
 
         // Theme Toggle
         const themeToggleBtns = document.querySelectorAll('.theme-toggle-btn');
@@ -220,8 +223,11 @@
                     window.logout = function () {
                         try {
                             localStorage.removeItem('jwtToken');
-                        } catch (e) {}
-                        window.location.href = basePath + '/public/index.php';
+                            localStorage.removeItem('currentUser');
+                        } catch (e) {
+                            console.error('Error clearing localStorage:', e);
+                        }
+                        window.location.href = basePath + '/index.php';
                     };
                 }
             } catch (e) {}

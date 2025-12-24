@@ -29,6 +29,8 @@ $moduleNavItems = [
         ['label' => 'Content Library', 'href' => '#content-library', 'icon' => 'fa-book'],
         ['label' => 'Templates', 'href' => '#templates', 'icon' => 'fa-file-alt'],
         ['label' => 'Media Gallery', 'href' => '#media-gallery', 'icon' => 'fa-images'],
+        ['label' => 'Record Content Usage', 'href' => '#record-usage', 'icon' => 'fa-clipboard-list'],
+        ['label' => 'Content Usage History', 'href' => '#usage-history', 'icon' => 'fa-history'],
     ],
     'segments' => [
         ['label' => 'All Segments', 'href' => '#segments-list', 'icon' => 'fa-list'],
