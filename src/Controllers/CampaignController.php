@@ -24,15 +24,38 @@ class CampaignController
 
     public function index(?array $user, array $params = []): array
     {
-        $stmt = $this->pdo->query('
-            SELECT id, title, description, category, geographic_scope, status, 
-                   start_date, end_date, draft_schedule_datetime, ai_recommended_datetime, 
-                   final_schedule_datetime, owner_id, created_at, objectives, location, 
-                   assigned_staff, barangay_target_zones, budget, staff_count, materials_json 
-            FROM campaigns 
-            ORDER BY created_at DESC
-        ');
-        return ['data' => $stmt->fetchAll()];
+        try {
+            $stmt = $this->pdo->query('
+                SELECT id, title, description, category, geographic_scope, status, 
+                       start_date, end_date, draft_schedule_datetime, ai_recommended_datetime, 
+                       final_schedule_datetime, owner_id, created_at, objectives, location, 
+                       assigned_staff, barangay_target_zones, budget, staff_count, materials_json 
+                FROM campaigns 
+                ORDER BY created_at DESC
+            ');
+            
+            if ($stmt === false) {
+                throw new \RuntimeException('Failed to execute query');
+            }
+            
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Ensure all data is properly formatted for JSON
+            // Note: null values are fine for JSON, no conversion needed
+            // Just ensure the data structure is valid
+            
+            return ['data' => $data];
+        } catch (\PDOException $e) {
+            error_log('CampaignController::index - Database error: ' . $e->getMessage());
+            error_log('CampaignController::index - SQL State: ' . $e->getCode());
+            http_response_code(500);
+            return ['error' => 'Database error: ' . $e->getMessage()];
+        } catch (\Exception $e) {
+            error_log('CampaignController::index - Error: ' . $e->getMessage());
+            error_log('CampaignController::index - Stack trace: ' . $e->getTraceAsString());
+            http_response_code(500);
+            return ['error' => 'Failed to load campaigns: ' . $e->getMessage()];
+        }
     }
 
     public function store(?array $user, array $params = []): array
@@ -153,6 +176,21 @@ class CampaignController
 
         // Log audit entry
         $this->logAudit($ownerId, 'campaign', 'create', $campaignId, ['title' => $title, 'status' => $status]);
+
+        // Create notification for campaign creator
+        try {
+            \App\Controllers\NotificationController::create(
+                $this->pdo,
+                $ownerId,
+                'campaign',
+                'Campaign Created',
+                "Campaign '{$title}' has been created successfully.",
+                '/public/campaigns.php#list-section',
+                'fas fa-bullhorn'
+            );
+        } catch (\Exception $e) {
+            error_log('Failed to create notification: ' . $e->getMessage());
+        }
 
         return ['id' => $campaignId, 'message' => 'Campaign created'];
     }
@@ -482,9 +520,16 @@ class CampaignController
         $features = $input['features'] ?? [];
 
         try {
-            error_log("Requesting AI recommendation for Campaign ID: $campaignId");
+            error_log("CampaignController::requestAIRecommendation - Campaign ID: $campaignId");
+            error_log("CampaignController::requestAIRecommendation - Features: " . json_encode($features));
+            
             $prediction = $this->autoMLService->predict($campaignId, $features);
-            error_log("AI prediction received: " . json_encode($prediction));
+            
+            error_log("CampaignController::requestAIRecommendation - Prediction received:");
+            error_log("  - Model Source: " . ($prediction['model_source'] ?? 'unknown'));
+            error_log("  - Suggested DateTime: " . ($prediction['suggested_datetime'] ?? 'N/A'));
+            error_log("  - Confidence Score: " . ($prediction['confidence_score'] ?? 'N/A'));
+            error_log("  - AutoML Configured: " . (isset($prediction['automl_configured']) ? ($prediction['automl_configured'] ? 'YES' : 'NO') : 'UNKNOWN'));
             
             // Save AI recommendation to campaign
             $stmt = $this->pdo->prepare('
@@ -498,19 +543,36 @@ class CampaignController
             ]);
 
             // Save prediction record
-            $predictionId = $this->autoMLService->savePrediction($campaignId, $prediction);
+            try {
+                $predictionId = $this->autoMLService->savePrediction($campaignId, $prediction);
+            } catch (\Exception $e) {
+                error_log("CampaignController::requestAIRecommendation - Failed to save prediction record: " . $e->getMessage());
+                $predictionId = null;
+            }
+
+            $message = 'AI recommendation generated';
+            if (isset($prediction['model_source'])) {
+                if ($prediction['model_source'] === 'google_automl') {
+                    $message = 'Google AutoML recommendation generated successfully';
+                } elseif (isset($prediction['automl_configured']) && !$prediction['automl_configured']) {
+                    $message = 'Heuristic recommendation generated (Google AutoML not configured)';
+                } elseif (isset($prediction['fallback_reason'])) {
+                    $message = 'Heuristic recommendation generated (Google AutoML unavailable)';
+                }
+            }
 
             return [
                 'prediction_id' => $predictionId,
                 'prediction' => $prediction,
-                'message' => 'AI recommendation generated',
+                'message' => $message,
             ];
         } catch (RuntimeException $e) {
-            error_log("AI recommendation error: " . $e->getMessage());
+            error_log("CampaignController::requestAIRecommendation - RuntimeException: " . $e->getMessage());
             http_response_code(400);
             return ['error' => $e->getMessage()];
         } catch (\Exception $e) {
-            error_log("AI recommendation exception: " . $e->getMessage());
+            error_log("CampaignController::requestAIRecommendation - Exception: " . $e->getMessage());
+            error_log("CampaignController::requestAIRecommendation - Stack trace: " . $e->getTraceAsString());
             http_response_code(500);
             return ['error' => 'Failed to generate AI recommendation: ' . $e->getMessage()];
         }

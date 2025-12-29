@@ -60,6 +60,18 @@ return [
         'handler' => [ContentController::class, 'useContent'],
         'middleware' => JWTMiddleware::class,
     ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/content/{id}/archive',
+        'handler' => [ContentController::class, 'archive'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/content/approved',
+        'handler' => [ContentController::class, 'getApproved'],
+        'middleware' => JWTMiddleware::class,
+    ],
 ];
 
 

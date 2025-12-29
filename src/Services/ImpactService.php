@@ -28,7 +28,7 @@ class ImpactService
         $notificationsFailed = (int) $this->scalar('SELECT COUNT(*) FROM notification_logs WHERE campaign_id = :cid AND status = "failed"', ['cid' => $campaignId]);
 
         $attendance = (int) $this->scalar(
-            'SELECT COUNT(*) FROM attendance a INNER JOIN events e ON e.id = a.event_id WHERE e.campaign_id = :cid',
+            'SELECT COUNT(*) FROM attendance a INNER JOIN events e ON e.id = a.event_id WHERE e.linked_campaign_id = :cid',
             ['cid' => $campaignId]
         );
 

@@ -45,20 +45,48 @@ class ContentController
             $onlyApproved = isset($_GET['only_approved']) && $_GET['only_approved'] === 'true';
             $tag = $_GET['tag'] ?? null;
             $visibility = $_GET['visibility'] ?? null;
+            
+            // Pagination
+            $page = max(1, (int)($_GET['page'] ?? 1));
+            $perPage = min(50, max(6, (int)($_GET['per_page'] ?? 6))); // Default 6, min 6, max 50
+            $offset = ($page - 1) * $perPage;
+            
+            // Sorting
+            $sortBy = $_GET['sort_by'] ?? 'latest'; // latest, oldest, title_asc, title_desc
+            $orderBy = 'ci.updated_at DESC, ci.created_at DESC'; // Default: latest first
+            switch ($sortBy) {
+                case 'oldest':
+                    $orderBy = 'ci.created_at ASC, ci.updated_at ASC';
+                    break;
+                case 'title_asc':
+                    $orderBy = 'ci.title ASC';
+                    break;
+                case 'title_desc':
+                    $orderBy = 'ci.title DESC';
+                    break;
+                case 'latest':
+                default:
+                    $orderBy = 'ci.updated_at DESC, ci.created_at DESC';
+                    break;
+            }
 
             // Check which audience column exists
             $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
             $audienceColumn = !empty($audienceColCheck) ? $audienceColCheck[0] : 'intended_audience';
             
+            // Check which user column exists (created_by or uploaded_by)
+            $userColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items")->fetchAll(PDO::FETCH_COLUMN);
+            $userColumn = in_array('uploaded_by', $userColCheck) ? 'uploaded_by' : 'created_by';
+            
             $sql = "SELECT ci.id, ci.title, ci.body, ci.content_type, ci.visibility, ci.created_at, 
                            ci.hazard_category, ci.{$audienceColumn} as intended_audience_segment, ci.source, 
                            ci.approval_status, ci.version_number, ci.approved_by, ci.approval_notes,
-                           ci.date_uploaded, ci.file_reference,
+                           ci.date_uploaded, ci.file_reference, ci.last_updated,
                            a.file_path, a.mime_type, ci.campaign_id,
                            u1.name as uploaded_by_name, u2.name as approved_by_name
                     FROM content_items ci
                     LEFT JOIN attachments a ON a.content_item_id = ci.id
-                    LEFT JOIN users u1 ON ci.created_by = u1.id
+                    LEFT JOIN users u1 ON ci.{$userColumn} = u1.id
                     LEFT JOIN users u2 ON ci.approved_by = u2.id";
             $where = [];
             $bind = [];
@@ -94,11 +122,16 @@ class ContentController
             }
 
             // Filter by approval status
-            if ($approvalStatus && in_array($approvalStatus, ['draft', 'pending', 'approved', 'rejected'], true)) {
+            // By default, exclude archived content unless specifically requested
+            $includeArchived = isset($_GET['include_archived']) && $_GET['include_archived'] === 'true';
+            if ($approvalStatus && in_array($approvalStatus, ['draft', 'pending_review', 'approved', 'rejected', 'archived'], true)) {
                 $where[] = 'ci.approval_status = :approval_status';
                 $bind['approval_status'] = $approvalStatus;
             } elseif ($onlyApproved) {
                 $where[] = 'ci.approval_status = "approved"';
+            } elseif (!$includeArchived) {
+                // Exclude archived content by default
+                $where[] = 'ci.approval_status != "archived"';
             }
 
             // Filter by visibility
@@ -106,6 +139,9 @@ class ContentController
                 $where[] = 'ci.visibility = :visibility';
                 $bind['visibility'] = $visibility;
             }
+            
+            // Track if tag join was added
+            $hasTagJoin = false;
             
             // Filter by tag
             if ($tag) {
@@ -115,6 +151,7 @@ class ContentController
                               INNER JOIN tags t ON t.id = ct.tag_id';
                     $where[] = 't.name = :tag';
                     $bind['tag'] = $tag;
+                    $hasTagJoin = true;
                 }
             }
 
@@ -122,13 +159,42 @@ class ContentController
                 $sql .= ' WHERE ' . implode(' AND ', $where);
             }
 
-            $sql .= ' ORDER BY ci.updated_at DESC, ci.created_at DESC';
+            // Get total count for pagination
+            // Build count query - match the main query structure
+            if ($hasTagJoin) {
+                // If main query has tag join, count query needs it too
+                $countSql = "SELECT COUNT(DISTINCT ci.id) as total 
+                            FROM content_items ci
+                            INNER JOIN content_tags ct ON ct.content_item_id = ci.id
+                            INNER JOIN tags t ON t.id = ct.tag_id";
+            } else {
+                $countSql = "SELECT COUNT(DISTINCT ci.id) as total FROM content_items ci";
+            }
+            
+            // Apply WHERE conditions to count query
+            if ($where) {
+                $countSql .= ' WHERE ' . implode(' AND ', $where);
+            }
+            
+            $countStmt = $this->pdo->prepare($countSql);
+            $countStmt->execute($bind);
+            $totalCount = (int)$countStmt->fetchColumn();
+            $totalPages = ceil($totalCount / $perPage);
+
+            $sql .= ' ORDER BY ' . $orderBy;
+            $sql .= ' LIMIT :limit OFFSET :offset';
 
             error_log('ContentController::index SQL: ' . $sql);
             error_log('ContentController::index bind params: ' . json_encode($bind));
+            error_log('ContentController::index pagination: page=' . $page . ', per_page=' . $perPage . ', total=' . $totalCount);
 
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($bind);
+            foreach ($bind as $key => $value) {
+                $stmt->bindValue(':' . $key, $value);
+            }
+            $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
 
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
@@ -160,13 +226,27 @@ class ContentController
                 }
             }
 
-            return ['data' => $results];
+            return [
+                'data' => $results,
+                'pagination' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $totalCount,
+                    'total_pages' => $totalPages,
+                    'has_next' => $page < $totalPages,
+                    'has_prev' => $page > 1,
+                ],
+                'sort' => [
+                    'sort_by' => $sortBy,
+                    'order_by' => $orderBy,
+                ],
+            ];
         } catch (\PDOException $e) {
             error_log('ContentController::index error: ' . $e->getMessage());
-            return ['data' => [], 'error' => 'Database error occurred'];
+            return ['data' => [], 'pagination' => ['current_page' => 1, 'per_page' => 24, 'total' => 0, 'total_pages' => 0, 'has_next' => false, 'has_prev' => false], 'error' => 'Database error occurred'];
         } catch (\Throwable $e) {
             error_log('ContentController::index error: ' . $e->getMessage());
-            return ['data' => [], 'error' => 'An error occurred while loading content'];
+            return ['data' => [], 'pagination' => ['current_page' => 1, 'per_page' => 24, 'total' => 0, 'total_pages' => 0, 'has_next' => false, 'has_prev' => false], 'error' => 'An error occurred while loading content'];
         }
     }
 
@@ -244,15 +324,35 @@ class ContentController
 
             $fileReference = 'uploads/content_repository/' . $newFileName;
             
+            // Validate user ID exists before inserting
+            $userId = $user['id'] ?? null;
+            if ($userId !== null) {
+                $userCheck = $this->pdo->prepare('SELECT id FROM users WHERE id = :id AND is_active = 1 LIMIT 1');
+                $userCheck->execute(['id' => $userId]);
+                if (!$userCheck->fetch()) {
+                    http_response_code(400);
+                    $this->pdo->rollBack();
+                    return ['error' => 'Invalid user ID. Please log in again.'];
+                }
+            }
+            
+            // Check which user column exists - prefer uploaded_by if both exist
+            $userColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items")->fetchAll(PDO::FETCH_COLUMN);
+            $hasUploadedBy = in_array('uploaded_by', $userColCheck);
+            $hasCreatedBy = in_array('created_by', $userColCheck);
+            // Prefer uploaded_by if it exists (it's nullable), otherwise use created_by
+            $userColumn = $hasUploadedBy ? 'uploaded_by' : ($hasCreatedBy ? 'created_by' : 'uploaded_by');
+            
             // Build INSERT statement - use file_reference (preferred) or file_path
+            $userParamKey = $userColumn; // Use same name for parameter key
             $columns = [
-                'campaign_id', 'title', 'body', 'content_type', 'created_by', 'visibility',
+                'campaign_id', 'title', 'body', 'content_type', $userColumn, 'visibility',
                 'hazard_category', $audienceColumn, 'source', 'approval_status',
                 'version_number', 'file_reference'
             ];
             
             $placeholders = [
-                ':campaign_id', ':title', ':body', ':content_type', ':created_by', ':visibility',
+                ':campaign_id', ':title', ':body', ':content_type', ':' . $userParamKey, ':visibility',
                 ':hazard_category', ':intended_audience', ':source', ':approval_status',
                 ':version_number', ':file_reference'
             ];
@@ -262,7 +362,7 @@ class ContentController
                 'title' => $title,
                 'body' => $body ?: null,
                 'content_type' => $contentType,
-                'created_by' => $user['id'] ?? null,
+                $userParamKey => $userId,
                 'visibility' => $visibility,
                 'hazard_category' => $hazardCategory ?: null,
                 'intended_audience' => $intendedAudience ?: null,
@@ -271,6 +371,13 @@ class ContentController
                 'version_number' => 1,
                 'file_reference' => $fileReference,
             ];
+            
+            // Log audit entry
+            $this->logAudit($user['id'] ?? null, 'content', 'upload', $contentId ?? null, [
+                'title' => $title,
+                'content_type' => $contentType,
+                'approval_status' => 'draft'
+            ]);
             
             $sql = 'INSERT INTO content_items (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $placeholders) . ')';
             
@@ -324,6 +431,21 @@ class ContentController
 
             $this->pdo->commit();
             
+            // Create notification for content creator
+            try {
+                \App\Controllers\NotificationController::create(
+                    $this->pdo,
+                    $user['id'] ?? null,
+                    'content',
+                    'Content Uploaded',
+                    "Content '{$title}' has been uploaded and is pending approval.",
+                    '/public/content.php#content-library',
+                    'fas fa-file-alt'
+                );
+            } catch (\Exception $e) {
+                error_log('Failed to create notification: ' . $e->getMessage());
+            }
+            
             // Return the created content ID
             return ['data' => ['id' => $contentId, 'title' => $title], 'message' => 'Content uploaded successfully'];
         } catch (RuntimeException $e) {
@@ -353,10 +475,14 @@ class ContentController
         $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
         $audienceColumn = !empty($audienceColCheck) ? $audienceColCheck[0] : 'intended_audience';
 
+        // Check which user column exists
+        $userColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items")->fetchAll(PDO::FETCH_COLUMN);
+        $userColumn = in_array('uploaded_by', $userColCheck) ? 'uploaded_by' : 'created_by';
+        
         $stmt = $this->pdo->prepare("
             SELECT ci.*, u1.name as uploaded_by_name, u2.name as approved_by_name
             FROM content_items ci
-            LEFT JOIN users u1 ON ci.created_by = u1.id
+            LEFT JOIN users u1 ON ci.{$userColumn} = u1.id
             LEFT JOIN users u2 ON ci.approved_by = u2.id
             WHERE ci.id = :id
         ");
@@ -490,7 +616,7 @@ class ContentController
                 // Version table might not exist, continue without version tracking
             }
 
-            // Update content
+            // Update content - if approved, revert to pending_review
             $updateStmt = $this->pdo->prepare("
                 UPDATE content_items SET
                     title = :title,
@@ -500,9 +626,10 @@ class ContentController
                     source = :source,
                     version_number = :version_number,
                     approval_status = CASE 
-                        WHEN approval_status = 'approved' THEN 'pending'
+                        WHEN approval_status = 'approved' THEN 'pending_review'
                         ELSE approval_status
-                    END
+                    END,
+                    last_updated = NOW()
                 WHERE id = :id
             ");
             $updateStmt->execute([
@@ -527,7 +654,9 @@ class ContentController
     }
 
     /**
-     * Update approval status (draft → pending → approved/rejected)
+     * Update approval status (draft → pending_review → approved/rejected/archived)
+     * Staff can submit for review (draft → pending_review)
+     * Only admin can approve/reject/archive
      */
     public function updateApproval(?array $user, array $params = []): array
     {
@@ -537,12 +666,12 @@ class ContentController
         $status = $input['approval_status'] ?? '';
         $notes = trim($input['approval_notes'] ?? '');
 
-        if (!in_array($status, ['pending', 'approved', 'rejected'], true)) {
+        if (!in_array($status, ['pending_review', 'approved', 'rejected', 'archived'], true)) {
             http_response_code(422);
             return ['error' => 'Invalid approval status'];
         }
 
-        $stmt = $this->pdo->prepare('SELECT approval_status FROM content_items WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT approval_status, title FROM content_items WHERE id = :id');
         $stmt->execute(['id' => $contentId]);
         $current = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -551,45 +680,100 @@ class ContentController
             throw new RuntimeException('Content not found');
         }
 
-        // Validate workflow: draft → pending → approved/rejected
+        // Validate workflow: draft → pending_review → approved/rejected/archived
         $currentStatus = $current['approval_status'];
-        if ($currentStatus === 'draft' && $status !== 'pending') {
+        // Check if user is admin by role_id (1 = Administrator, 2 = Barangay Admin)
+        $userRoleId = (int) ($user['role_id'] ?? 0);
+        $isAdmin = ($userRoleId === 1 || $userRoleId === 2);
+        
+        // Staff can submit for review (draft → pending_review)
+        if ($currentStatus === 'draft' && $status === 'pending_review') {
+            // Allow staff to submit for review
+        } elseif ($currentStatus === 'draft' && $status !== 'pending_review') {
             http_response_code(422);
-            return ['error' => 'Draft content must be submitted as pending first'];
-        }
-        if ($currentStatus === 'pending' && !in_array($status, ['approved', 'rejected'], true)) {
+            return ['error' => 'Draft content must be submitted as pending_review first'];
+        } elseif ($currentStatus === 'pending_review' && !in_array($status, ['approved', 'rejected'], true)) {
             http_response_code(422);
             return ['error' => 'Pending content can only be approved or rejected'];
+        } elseif (in_array($currentStatus, ['approved', 'rejected'], true) && $status === 'pending_review') {
+            http_response_code(422);
+            return ['error' => 'Cannot revert to pending_review from ' . $currentStatus];
+        }
+        
+        // Role-based access control: Only admin can approve/reject/archive
+        if (in_array($status, ['approved', 'rejected', 'archived'], true) && !$isAdmin) {
+            http_response_code(403);
+            return ['error' => 'Only administrators can approve, reject, or archive content'];
         }
 
-        // Check if approved_by column exists
+        // Check which user column exists for notifications
+        $userColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items")->fetchAll(PDO::FETCH_COLUMN);
+        $userColumn = in_array('uploaded_by', $userColCheck) ? 'uploaded_by' : 'created_by';
+        
+        // Get content creator ID
+        $creatorStmt = $this->pdo->prepare("SELECT {$userColumn} as creator_id FROM content_items WHERE id = :id");
+        $creatorStmt->execute(['id' => $contentId]);
+        $creatorData = $creatorStmt->fetch(PDO::FETCH_ASSOC);
+        $creatorId = $creatorData['creator_id'] ?? null;
+
+        // Update approval status
         $columns = $this->pdo->query("SHOW COLUMNS FROM content_items LIKE 'approved_by'")->fetchAll(PDO::FETCH_COLUMN);
         $hasApprovedBy = !empty($columns);
 
         if ($hasApprovedBy) {
-            $stmt = $this->pdo->prepare('
+            $updateStmt = $this->pdo->prepare('
                 UPDATE content_items SET
                     approval_status = :approval_status,
                     approved_by = :approved_by,
-                    approval_notes = :approval_notes
+                    approval_notes = :approval_notes,
+                    last_updated = NOW()
                 WHERE id = :id
             ');
-            $stmt->execute([
+            $updateStmt->execute([
                 'approval_status' => $status,
-                'approved_by' => $user['id'] ?? null,
+                'approved_by' => in_array($status, ['approved', 'rejected', 'archived'], true) ? ($user['id'] ?? null) : null,
                 'approval_notes' => $notes ?: null,
                 'id' => $contentId,
             ]);
         } else {
-            $stmt = $this->pdo->prepare('
+            $updateStmt = $this->pdo->prepare('
                 UPDATE content_items SET
                     approval_status = :approval_status
                 WHERE id = :id
             ');
-            $stmt->execute([
+            $updateStmt->execute([
                 'approval_status' => $status,
                 'id' => $contentId,
             ]);
+        }
+
+        // Log audit entry
+        $this->logAudit($user['id'] ?? null, 'content', 'approval_' . $status, $contentId, [
+            'title' => $current['title'],
+            'previous_status' => $currentStatus,
+            'new_status' => $status,
+            'notes' => $notes
+        ]);
+
+        // Create notification for content creator when approved/rejected
+        if ($creatorId && in_array($status, ['approved', 'rejected'], true)) {
+            try {
+                $message = $status === 'approved' 
+                    ? "Content '{$current['title']}' has been approved and is now available for use."
+                    : "Content '{$current['title']}' has been rejected. " . ($notes ? "Reason: {$notes}" : '');
+                
+                \App\Controllers\NotificationController::create(
+                    $this->pdo,
+                    $creatorId,
+                    'content',
+                    $status === 'approved' ? 'Content Approved' : 'Content Rejected',
+                    $message,
+                    '/public/content.php#content-library',
+                    $status === 'approved' ? 'fas fa-check-circle' : 'fas fa-times-circle'
+                );
+            } catch (\Exception $e) {
+                error_log('Failed to create notification: ' . $e->getMessage());
+            }
         }
 
         return ['message' => 'Approval status updated successfully'];
@@ -799,6 +983,131 @@ class ContentController
             $ids[] = (int) $select->fetchColumn();
         }
         return $ids;
+    }
+    
+    /**
+     * Archive content (soft delete, audit-safe)
+     */
+    public function archive(?array $user, array $params = []): array
+    {
+        // Role-based access control: Only admin can archive
+        // Check if user is admin by role_id (1 = Administrator, 2 = Barangay Admin)
+        $userRoleId = (int) ($user['role_id'] ?? 0);
+        if (!$user || ($userRoleId !== 1 && $userRoleId !== 2)) {
+            http_response_code(403);
+            return ['error' => 'Only administrators can archive content'];
+        }
+        
+        $contentId = (int) ($params['id'] ?? 0);
+        
+        $stmt = $this->pdo->prepare('SELECT id, title, approval_status FROM content_items WHERE id = :id');
+        $stmt->execute(['id' => $contentId]);
+        $content = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$content) {
+            http_response_code(404);
+            throw new RuntimeException('Content not found');
+        }
+        
+        // Update to archived status
+        $updateStmt = $this->pdo->prepare('
+            UPDATE content_items SET
+                approval_status = "archived",
+                last_updated = NOW()
+            WHERE id = :id
+        ');
+        $updateStmt->execute(['id' => $contentId]);
+        
+        // Log audit entry
+        $this->logAudit($user['id'] ?? null, 'content', 'archive', $contentId, [
+            'title' => $content['title'],
+            'previous_status' => $content['approval_status']
+        ]);
+        
+        return ['message' => 'Content archived successfully'];
+    }
+    
+    /**
+     * Get approved content for integration (read-only API for external subsystems)
+     */
+    public function getApproved(?array $user, array $params = []): array
+    {
+        try {
+            // This endpoint only returns approved content for integration purposes
+            $q = $_GET['q'] ?? '';
+            $contentType = $_GET['content_type'] ?? null;
+            $hazardCategory = $_GET['hazard_category'] ?? null;
+            
+            $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
+            $audienceColumn = !empty($audienceColCheck) ? $audienceColCheck[0] : 'intended_audience';
+            
+            $sql = "SELECT ci.id, ci.title, ci.body, ci.content_type, ci.hazard_category, 
+                           ci.{$audienceColumn} as intended_audience_segment, ci.source,
+                           ci.file_reference, ci.date_uploaded, ci.version_number
+                    FROM content_items ci
+                    WHERE ci.approval_status = 'approved'";
+            
+            $where = [];
+            $bind = [];
+            
+            if ($q) {
+                $where[] = '(ci.title LIKE :q OR ci.body LIKE :q)';
+                $bind['q'] = '%' . $q . '%';
+            }
+            
+            if ($contentType) {
+                $where[] = 'ci.content_type = :content_type';
+                $bind['content_type'] = $contentType;
+            }
+            
+            if ($hazardCategory) {
+                $where[] = 'ci.hazard_category = :hazard_category';
+                $bind['hazard_category'] = $hazardCategory;
+            }
+            
+            if ($where) {
+                $sql .= ' AND ' . implode(' AND ', $where);
+            }
+            
+            $sql .= ' ORDER BY ci.date_uploaded DESC LIMIT 100';
+            
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($bind);
+            
+            return ['data' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+        } catch (\Throwable $e) {
+            error_log('ContentController::getApproved error: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to retrieve approved content'];
+        }
+    }
+    
+    /**
+     * Log audit entry
+     */
+    private function logAudit(?int $userId, string $entityType, string $action, ?int $entityId, array $metadata = []): void
+    {
+        try {
+            $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+            
+            $stmt = $this->pdo->prepare('
+                INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address, user_agent, metadata)
+                VALUES (:user_id, :action, :entity_type, :entity_id, :ip_address, :user_agent, :metadata)
+            ');
+            $stmt->execute([
+                'user_id' => $userId,
+                'action' => $action,
+                'entity_type' => $entityType,
+                'entity_id' => $entityId,
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+                'metadata' => json_encode($metadata),
+            ]);
+        } catch (\PDOException $e) {
+            // Audit logging is non-critical, log error but don't fail
+            error_log('Failed to log audit entry: ' . $e->getMessage());
+        }
     }
 }
 

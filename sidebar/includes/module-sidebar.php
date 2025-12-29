@@ -15,6 +15,15 @@ require_once __DIR__ . '/../../header/includes/path_helper.php';
 
 // Define module-specific navigation items
 $moduleNavItems = [
+    'dashboard' => [
+        ['label' => 'KPI Overview', 'href' => '#kpi-overview', 'icon' => 'fa-chart-bar'],
+        ['label' => 'Campaign Planning', 'href' => '#campaign-planning', 'icon' => 'fa-bullhorn'],
+        ['label' => 'Event Readiness', 'href' => '#event-readiness', 'icon' => 'fa-calendar-check'],
+        ['label' => 'Audience Coverage', 'href' => '#audience-coverage', 'icon' => 'fa-users'],
+        ['label' => 'Engagement & Impact', 'href' => '#engagement-impact', 'icon' => 'fa-chart-line'],
+        ['label' => 'Partners', 'href' => '#partners-snapshot', 'icon' => 'fa-handshake'],
+        ['label' => 'Content Repository', 'href' => '#content-snapshot', 'icon' => 'fa-book'],
+    ],
     'campaigns' => [
         ['label' => 'Plan New Campaign', 'href' => '#planning-section', 'icon' => 'fa-plus-circle'],
         ['label' => 'All Campaigns', 'href' => '#list-section', 'icon' => 'fa-list'],
@@ -79,6 +88,7 @@ $navItems = $moduleNavItems[$moduleName] ?? [];
         <h3 class="module-sidebar-title">
             <?php
             $moduleTitles = [
+                'dashboard' => 'Dashboard Features',
                 'campaigns' => 'Campaign Features',
                 'content' => 'Content Management',
                 'segments' => 'Audience Segments',

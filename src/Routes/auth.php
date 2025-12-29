@@ -27,6 +27,18 @@ return [
         'handler' => [AuthController::class, 'me'],
         'middleware' => JWTMiddleware::class,
     ],
+    [
+        'method' => 'PUT',
+        'path' => '/api/v1/users/me',
+        'handler' => [AuthController::class, 'updateProfile'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/users/change-password',
+        'handler' => [AuthController::class, 'changePassword'],
+        'middleware' => JWTMiddleware::class,
+    ],
 ];
 
 

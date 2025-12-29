@@ -223,3 +223,5 @@ GROUP BY c.id, c.title, c.ai_recommended_datetime, c.final_schedule_datetime;
 
 
 
+
+

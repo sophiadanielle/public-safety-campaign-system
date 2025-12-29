@@ -8,10 +8,10 @@
     right: 2rem;
     width: 380px;
     max-height: 480px;
-    background-color: var(--card-bg-1);
-    border: 1px solid var(--border-color-1);
+    background-color: #ffffff;
+    border: 2px solid #e2e8f0;
     border-radius: 0.75rem;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
@@ -38,8 +38,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border-color-1);
-    background-color: var(--header-bg-1);
+    border-bottom: 2px solid #e2e8f0;
+    background-color: #ffffff;
 }
 
 .notification-modal .modal-header h3 {
@@ -81,8 +81,8 @@
 /* Modal Footer */
 .notification-modal .modal-footer {
     padding: 0.75rem 1.25rem;
-    border-top: 1px solid var(--border-color-1);
-    background-color: var(--header-bg-1);
+    border-top: 2px solid #e2e8f0;
+    background-color: #ffffff;
     text-align: center;
 }
 
@@ -133,16 +133,44 @@
     color: white;
 }
 
-.notification-modal .notification-item:nth-child(1) .notification-icon {
-    background-color: #007bff;
+.notification-icon.info {
+    background-color: #3b82f6;
 }
 
-.notification-modal .notification-item:nth-child(2) .notification-icon {
-    background-color: #28a745;
+.notification-icon.success {
+    background-color: #10b981;
 }
 
-.notification-modal .notification-item:nth-child(3) .notification-icon {
-    background-color: #ffc107;
+.notification-icon.warning {
+    background-color: #f59e0b;
+}
+
+.notification-icon.error {
+    background-color: #ef4444;
+}
+
+.notification-icon.campaign {
+    background-color: #8b5cf6;
+}
+
+.notification-icon.event {
+    background-color: #06b6d4;
+}
+
+.notification-icon.content {
+    background-color: #6366f1;
+}
+
+.notification-icon.system {
+    background-color: #64748b;
+}
+
+.notification-icon.alert {
+    background-color: #f97316;
+}
+
+.notification-icon.reminder {
+    background-color: #14b8a6;
 }
 
 .notification-details {
@@ -169,6 +197,27 @@
     font-size: 0.6875rem;
     color: var(--text-secondary-1);
     opacity: 0.7;
+}
+
+.notification-item.unread-notification {
+    background-color: #f0f9ff;
+    border-left: 3px solid #3b82f6;
+}
+
+.notification-item.unread-notification:hover {
+    background-color: #e0f2fe;
+}
+
+.notification-item.read {
+    opacity: 0.8;
+}
+
+.notification-item {
+    cursor: pointer;
+}
+
+.notification-item:active {
+    transform: scale(0.98);
 }
 
 /* ===================================

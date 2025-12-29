@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AutoML Buttons Test</title>
+</head>
+<body>
+    <h1>AutoML Buttons Test</h1>
+    <button id="testRefresh" onclick="testRefresh()">Test Refresh Function</button>
+    <button id="testGetPrediction" onclick="testGetPrediction()">Test Get Prediction Function</button>
+    <div id="results"></div>
+    
+    <script>
+        // Simulate the functions
+        function testRefresh() {
+            console.log('testRefresh called');
+            document.getElementById('results').innerHTML += '<p>Refresh button works!</p>';
+        }
+        
+        function testGetPrediction() {
+            console.log('testGetPrediction called');
+            document.getElementById('results').innerHTML += '<p>Get Prediction button works!</p>';
+        }
+        
+        // Test if functions are accessible
+        console.log('testRefresh:', typeof testRefresh);
+        console.log('testGetPrediction:', typeof testGetPrediction);
+    </script>
+</body>
+</html>
+
+
+

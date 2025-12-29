@@ -365,6 +365,79 @@
     transition: transform 0.3s ease;
 }
 
+/* Hide main sidebar submenu items when module sidebar is present to prevent duplication */
+/* Target submenu by ID when module sidebar exists - use highest specificity */
+body.module-dashboard .sidebar #submenu-dashboard,
+body.module-dashboard .sidebar #submenu-dashboard.submenu-open,
+body.module-dashboard .sidebar-menu-item:has(#submenu-dashboard) .sidebar-submenu,
+body.module-campaign .sidebar #submenu-campaigns,
+body.module-campaign .sidebar #submenu-campaigns.submenu-open,
+body.module-campaign .sidebar-menu-item:has(#submenu-campaigns) .sidebar-submenu,
+body.module-content .sidebar #submenu-content,
+body.module-content .sidebar #submenu-content.submenu-open,
+body.module-content .sidebar-menu-item:has(#submenu-content) .sidebar-submenu,
+body.module-segments .sidebar #submenu-segments,
+body.module-segments .sidebar #submenu-segments.submenu-open,
+body.module-segments .sidebar-menu-item:has(#submenu-segments) .sidebar-submenu,
+body.module-events .sidebar #submenu-events,
+body.module-events .sidebar #submenu-events.submenu-open,
+body.module-events .sidebar-menu-item:has(#submenu-events) .sidebar-submenu,
+body.module-surveys .sidebar #submenu-surveys,
+body.module-surveys .sidebar #submenu-surveys.submenu-open,
+body.module-surveys .sidebar-menu-item:has(#submenu-surveys) .sidebar-submenu,
+body.module-impact .sidebar #submenu-impact,
+body.module-impact .sidebar #submenu-impact.submenu-open,
+body.module-impact .sidebar-menu-item:has(#submenu-impact) .sidebar-submenu,
+body.module-partners .sidebar #submenu-partners,
+body.module-partners .sidebar #submenu-partners.submenu-open,
+body.module-partners .sidebar-menu-item:has(#submenu-partners) .sidebar-submenu {
+    display: none !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+    border: none !important;
+    opacity: 0 !important;
+    height: 0 !important;
+}
+
+/* Also hide submenu items to prevent any visual artifacts */
+body.module-dashboard .sidebar #submenu-dashboard .sidebar-menu-item,
+body.module-campaign .sidebar #submenu-campaigns .sidebar-menu-item,
+body.module-content .sidebar #submenu-content .sidebar-menu-item,
+body.module-segments .sidebar #submenu-segments .sidebar-menu-item,
+body.module-events .sidebar #submenu-events .sidebar-menu-item,
+body.module-surveys .sidebar #submenu-surveys .sidebar-menu-item,
+body.module-impact .sidebar #submenu-impact .sidebar-menu-item,
+body.module-partners .sidebar #submenu-partners .sidebar-menu-item {
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    line-height: 0 !important;
+    display: none !important;
+}
+
+body.module-dashboard .sidebar #submenu-dashboard .sidebar-link,
+body.module-campaign .sidebar #submenu-campaigns .sidebar-link,
+body.module-content .sidebar #submenu-content .sidebar-link,
+body.module-segments .sidebar #submenu-segments .sidebar-link,
+body.module-events .sidebar #submenu-events .sidebar-link,
+body.module-surveys .sidebar #submenu-surveys .sidebar-link,
+body.module-impact .sidebar #submenu-impact .sidebar-link,
+body.module-partners .sidebar #submenu-partners .sidebar-link {
+    height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    line-height: 0 !important;
+    font-size: 0 !important;
+    display: none !important;
+}
+
 /* Ensure submenu items are properly nested */
 .sidebar-menu-item.has-children .sidebar-submenu .sidebar-menu-item {
     margin-bottom: 0;

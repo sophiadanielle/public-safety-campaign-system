@@ -321,6 +321,148 @@ class AutocompleteController
 
         return ['data' => array_slice($allMaterials, 0, 20)];
     }
+
+    /**
+     * Get event title suggestions
+     */
+    public function eventTitles(?array $user, array $params = []): array
+    {
+        $query = $_GET['q'] ?? '';
+        if (strlen($query) < 2) {
+            return ['data' => []];
+        }
+
+        // Get from events.event_title or events.event_name
+        $stmt = $this->pdo->prepare('
+            SELECT DISTINCT COALESCE(event_title, event_name, name) as title 
+            FROM events 
+            WHERE (event_title LIKE :query OR event_name LIKE :query OR name LIKE :query)
+            AND COALESCE(event_title, event_name, name) IS NOT NULL
+            ORDER BY title ASC 
+            LIMIT 20
+        ');
+        $stmt->execute(['query' => '%' . $query . '%']);
+        $results = $stmt->fetchAll();
+
+        return ['data' => array_column($results, 'title')];
+    }
+
+    /**
+     * Get hazard focus suggestions
+     */
+    public function hazardFocus(?array $user, array $params = []): array
+    {
+        $query = $_GET['q'] ?? '';
+        
+        // Common hazard types
+        $commonHazards = [
+            'fire',
+            'flood',
+            'earthquake',
+            'typhoon',
+            'landslide',
+            'health emergency',
+            'traffic accident',
+            'crime prevention',
+            'disaster preparedness',
+            'emergency response',
+            'first aid',
+            'evacuation',
+            'search and rescue',
+            'fire safety',
+            'flood safety',
+            'earthquake safety',
+            'typhoon preparedness',
+            'health awareness',
+            'traffic safety',
+            'community safety'
+        ];
+        
+        // Get from existing events
+        $stmt = $this->pdo->prepare('
+            SELECT DISTINCT hazard_focus 
+            FROM events 
+            WHERE hazard_focus IS NOT NULL 
+            AND hazard_focus LIKE :query
+            ORDER BY hazard_focus ASC 
+            LIMIT 15
+        ');
+        $stmt->execute(['query' => '%' . $query . '%']);
+        $eventResults = $stmt->fetchAll();
+        
+        $allHazards = array_column($eventResults, 'hazard_focus');
+        
+        // Add common hazards that match query
+        if (strlen($query) >= 2) {
+            foreach ($commonHazards as $hazard) {
+                if (stripos($hazard, $query) !== false && !in_array($hazard, $allHazards)) {
+                    $allHazards[] = $hazard;
+                }
+            }
+        } else {
+            $allHazards = array_merge($allHazards, $commonHazards);
+        }
+        
+        // Remove duplicates and sort
+        $allHazards = array_unique($allHazards);
+        sort($allHazards);
+        
+        return ['data' => array_slice($allHazards, 0, 20)];
+    }
+
+    /**
+     * Get venue suggestions
+     */
+    public function venues(?array $user, array $params = []): array
+    {
+        $query = $_GET['q'] ?? '';
+        if (strlen($query) < 2) {
+            return ['data' => []];
+        }
+
+        // Get from events.venue
+        $stmt = $this->pdo->prepare('
+            SELECT DISTINCT venue 
+            FROM events 
+            WHERE venue IS NOT NULL 
+            AND venue LIKE :query 
+            ORDER BY venue ASC 
+            LIMIT 20
+        ');
+        $stmt->execute(['query' => '%' . $query . '%']);
+        $venueResults = $stmt->fetchAll();
+
+        // Also get from reference_locations
+        $stmt = $this->pdo->prepare('
+            SELECT DISTINCT name, barangay_name
+            FROM reference_locations
+            WHERE name LIKE :query
+            ORDER BY name ASC
+            LIMIT 15
+        ');
+        $stmt->execute(['query' => '%' . $query . '%']);
+        $refResults = $stmt->fetchAll();
+
+        $allVenues = array_column($venueResults, 'venue');
+
+        foreach ($refResults as $row) {
+            if (!empty($row['name'])) {
+                $label = $row['name'];
+                if (!empty($row['barangay_name'])) {
+                    $label .= ' - ' . $row['barangay_name'];
+                }
+                if (!in_array($label, $allVenues)) {
+                    $allVenues[] = $label;
+                }
+            }
+        }
+
+        // Remove duplicates, nulls, and empty strings
+        $allVenues = array_filter(array_unique($allVenues));
+        sort($allVenues);
+
+        return ['data' => array_slice($allVenues, 0, 20)];
+    }
 }
 
 

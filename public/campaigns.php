@@ -417,7 +417,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         margin-top: 20px;
         box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
         position: relative;
-        overflow: hidden;
+        overflow: visible;
     }
     .automl-panel::before {
         content: '';
@@ -459,6 +459,9 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         padding: 20px;
         border-radius: 12px;
         margin-top: 16px;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
         border: 1px solid rgba(255,255,255,0.3);
         position: relative;
         z-index: 1;
@@ -1182,22 +1185,32 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             <h2 class="section-title analytics-accent">AI-Powered Deployment Optimization</h2>
         </div>
         <div class="automl-panel">
-            <h3>Google AutoML Predictions</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="margin: 0;">Google AutoML Predictions</h3>
+                <button type="button" id="automlRefreshBtn" onclick="if(typeof refreshAutoMLCampaigns==='function'){refreshAutoMLCampaigns();}else if(typeof window.refreshAutoMLCampaigns==='function'){window.refreshAutoMLCampaigns();}else{console.error('refreshAutoMLCampaigns not found'); alert('Refresh function not loaded');}" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" title="Refresh campaign list" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    <span>🔄</span>
+                    <span>Refresh</span>
+                </button>
+            </div>
             <p style="margin: 0 0 20px; opacity: 0.95;">Get AI-suggested optimal dates and times for campaign deployment based on real-time historical data, audience engagement patterns, and performance analytics.</p>
-            <div class="form-grid" style="grid-template-columns: 1fr 1fr auto; gap: 16px;">
-                <div class="form-field">
-                    <label for="automl_campaign_id" style="color: white; opacity: 0.95;">Campaign ID</label>
-                    <select id="automl_campaign_id" style="background: rgba(255,255,255,0.95); border: 2px solid rgba(255,255,255,0.3); color: #0f172a;">
+            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 12px; margin-bottom: 20px; font-size: 13px; opacity: 0.95;">
+                <strong>💡 How it works:</strong> The system uses Google AutoML if configured (via GOOGLE_AUTOML_ENDPOINT and GOOGLE_AUTOML_API_KEY environment variables), otherwise automatically falls back to intelligent heuristic predictions based on historical campaign data. Both methods analyze similar campaigns, engagement patterns, and optimal timing to suggest the best deployment schedule.
+            </div>
+            <div style="display: flex; gap: 16px; align-items: flex-start;">
+                <div class="form-field" style="flex: 1; position: relative; overflow: visible;">
+                    <label for="automl_campaign_id" style="color: white; opacity: 0.95; display: block; margin-bottom: 4px; height: 20px;">Campaign ID</label>
+                    <select id="automl_campaign_id" style="background: rgba(255,255,255,0.95); border: 2px solid rgba(255,255,255,0.3); color: #0f172a; width: 100%; padding: 8px 12px; padding-right: 32px; border-radius: 6px; font-size: 14px; cursor: pointer; appearance: auto; -webkit-appearance: menulist; -moz-appearance: menulist; height: 42px; box-sizing: border-box; position: relative; z-index: 1000; overflow: visible;" onfocus="checkDropdownStatus(); console.log('Dropdown focused, options count:', this.options.length);" onchange="updateDropdownStatus(); validateAutoMLForm(); console.log('Dropdown changed to:', this.value);" onclick="console.log('Dropdown clicked, options count:', this.options.length); if(this.options.length <= 1) { console.warn('Dropdown has no options! Attempting to populate...'); populateAutoMLDropdown(); }" onmousedown="console.log('Dropdown mousedown, options:', Array.from(this.options).map(o => o.value + ':' + o.textContent));">
                         <option value="">Select Campaign</option>
                     </select>
+                    <p id="automl_dropdown_status" style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 4px 0 0 0; min-height: 16px;">Loading campaigns...</p>
                 </div>
-                <div class="form-field">
-                    <label for="automl_audience_segment" style="color: white; opacity: 0.95;">Audience Segment ID (Optional)</label>
-                    <input id="automl_audience_segment" type="number" placeholder="e.g., 1" style="background: rgba(255,255,255,0.95); border: 2px solid rgba(255,255,255,0.3); color: #0f172a;">
+                <div class="form-field" style="flex: 1;">
+                    <label for="automl_audience_segment" style="color: white; opacity: 0.95; display: block; margin-bottom: 4px; height: 20px;">Audience Segment ID (Optional)</label>
+                    <input id="automl_audience_segment" type="number" placeholder="e.g., 1" style="background: rgba(255,255,255,0.95); border: 2px solid rgba(255,255,255,0.3); color: #0f172a; width: 100%; padding: 8px 12px; border-radius: 6px; font-size: 14px; height: 42px; box-sizing: border-box;" onchange="validateAutoMLForm();" oninput="validateAutoMLForm();">
                 </div>
-                <div class="form-field" style="justify-content: flex-end; align-items: flex-end;">
-                    <label style="color: white; opacity: 0; height: 0;">Action</label>
-                    <button type="button" class="btn btn-primary" onclick="getAutoMLPrediction()" style="background: white; color: #667eea; border: none; font-weight: 700; padding: 12px 24px;">🔮 Get Prediction</button>
+                <div style="display: flex; flex-direction: column;">
+                    <label style="color: white; opacity: 0; height: 20px; margin-bottom: 4px; visibility: hidden;">Placeholder</label>
+                    <button type="button" id="getPredictionBtn" class="btn btn-primary" onclick="if(typeof handleGetPredictionClick==='function'){handleGetPredictionClick(event);}else if(typeof window.handleGetPredictionClick==='function'){window.handleGetPredictionClick(event);}else{console.error('handleGetPredictionClick not found'); alert('Prediction function not loaded. Please refresh the page.');}" style="background: white; color: #667eea; border: none; font-weight: 700; padding: 12px 24px; height: 42px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; white-space: nowrap; transition: all 0.2s; cursor: pointer;" onmouseover="this.style.opacity='0.9'; this.style.transform='scale(1.02)'" onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">🔮 Get Prediction</button>
                 </div>
             </div>
             <div id="automlResult" class="prediction-result" style="display:none;">
@@ -2164,35 +2177,429 @@ function clearForm() {
 let currentPrediction = null;
 let currentCampaignId = null;
 
-async function getAutoMLPrediction() {
-    const cid = parseInt(document.getElementById('automl_campaign_id').value);
-    if (!cid) {
-        alert('Please select a campaign');
+// Helper function to check dropdown status
+function checkDropdownStatus() {
+    const automlSelect = document.getElementById('automl_campaign_id');
+    const statusEl = document.getElementById('automl_dropdown_status');
+    
+    if (!automlSelect) {
+        if (statusEl) statusEl.textContent = 'Error: Dropdown element not found';
         return;
     }
     
-    currentCampaignId = cid;
-    const resultDiv = document.getElementById('automlResult');
-    resultDiv.style.display = 'block';
-    resultDiv.innerHTML = '<div style="text-align:center; padding:20px;">Loading prediction from real-time data...</div>';
+    const optionCount = automlSelect.options.length - 1; // Exclude default option
+    if (optionCount <= 0) {
+        if (statusEl) {
+            if (allCampaigns && allCampaigns.length > 0) {
+                statusEl.textContent = 'Campaigns loaded but dropdown empty. Click Refresh.';
+                statusEl.style.color = 'rgba(255,193,7,0.9)';
+                // Try to populate immediately
+                populateAutoMLDropdown();
+            } else {
+                statusEl.textContent = 'No campaigns available. Create a campaign first.';
+                statusEl.style.color = 'rgba(255,255,255,0.7)';
+            }
+        }
+    } else {
+        if (statusEl) {
+            statusEl.textContent = `${optionCount} campaign(s) available - Click to select`;
+            statusEl.style.color = 'rgba(255,255,255,0.9)';
+        }
+    }
+}
+
+// Refresh AutoML campaigns dropdown
+async function refreshAutoMLCampaigns() {
+    console.log('=== refreshAutoMLCampaigns() - Function called ===');
+    const refreshBtn = document.getElementById('automlRefreshBtn');
+    const statusEl = document.getElementById('automl_dropdown_status');
+    
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.style.opacity = '0.6';
+        refreshBtn.innerHTML = '<span>⏳</span><span>Loading...</span>';
+    }
+    
+    if (statusEl) {
+        statusEl.textContent = 'Refreshing campaigns...';
+        statusEl.style.color = 'rgba(255,255,255,0.7)';
+    }
     
     try {
-        const audienceSegmentId = document.getElementById('automl_audience_segment').value;
-        const features = {};
-        if (audienceSegmentId) {
-            features.audience_segment_id = parseInt(audienceSegmentId);
+        await loadCampaigns();
+        populateAutoMLDropdown();
+        
+        if (statusEl) {
+            const optionCount = document.getElementById('automl_campaign_id') ? document.getElementById('automl_campaign_id').options.length - 1 : 0;
+            if (optionCount > 0) {
+                statusEl.textContent = `${optionCount} campaign(s) loaded - Click to select`;
+                statusEl.style.color = 'rgba(144, 238, 144, 0.9)';
+            } else {
+                statusEl.textContent = 'No campaigns available. Create a campaign first.';
+                statusEl.style.color = 'rgba(255,255,255,0.7)';
+            }
+        }
+    } catch (err) {
+        console.error('refreshAutoMLCampaigns() - Error:', err);
+        if (statusEl) {
+            statusEl.textContent = 'Error refreshing campaigns. Please try again.';
+            statusEl.style.color = 'rgba(255, 100, 100, 0.9)';
+        }
+    } finally {
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.style.opacity = '1';
+            refreshBtn.innerHTML = '<span>🔄</span><span>Refresh</span>';
+        }
+    }
+}
+
+// Handle Get Prediction button click
+function handleGetPredictionClick(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    console.log('=== handleGetPredictionClick() - Button clicked ===');
+    console.log('Event:', event);
+    
+    const automlSelect = document.getElementById('automl_campaign_id');
+    const getPredictionBtn = document.getElementById('getPredictionBtn');
+    
+    console.log('automlSelect:', automlSelect);
+    console.log('getPredictionBtn:', getPredictionBtn);
+    
+    if (!automlSelect || !getPredictionBtn) {
+        console.error('handleGetPredictionClick() - Elements not found');
+        alert('Form elements not found. Please refresh the page.');
+        return;
+    }
+    
+    const campaignId = parseInt(automlSelect.value);
+    console.log('Campaign ID from dropdown:', automlSelect.value, 'Parsed:', campaignId);
+    
+    if (!campaignId || isNaN(campaignId)) {
+        alert('Please select a campaign from the dropdown first.');
+        automlSelect.focus();
+        return;
+    }
+    
+    console.log('Calling getAutoMLPrediction() with campaign ID:', campaignId);
+    console.log('getAutoMLPrediction function exists:', typeof getAutoMLPrediction);
+    console.log('window.getAutoMLPrediction function exists:', typeof window.getAutoMLPrediction);
+    
+    // Get result div and make it visible immediately
+    const resultDiv = document.getElementById('automlResult');
+    if (resultDiv) {
+        resultDiv.style.display = 'block';
+        resultDiv.style.visibility = 'visible';
+        resultDiv.style.opacity = '1';
+        resultDiv.innerHTML = '<div style="text-align:center; padding:20px; color: white; background: rgba(0,0,0,0.3); border-radius: 8px;">⏳ Processing request...</div>';
+        console.log('handleGetPredictionClick() - Result div made visible');
+    } else {
+        console.error('handleGetPredictionClick() - Result div not found!');
+        alert('Result container not found. Please refresh the page.');
+        return;
+    }
+    
+    // Call the prediction function
+    try {
+        if (typeof getAutoMLPrediction === 'function') {
+            console.log('Calling getAutoMLPrediction() directly');
+            const promise = getAutoMLPrediction();
+            if (promise && typeof promise.catch === 'function') {
+                promise.catch(err => {
+                    console.error('getAutoMLPrediction() promise rejected:', err);
+                    if (resultDiv) {
+                        resultDiv.innerHTML = `<div style="color: #fee2e2; padding: 16px; background: rgba(254, 226, 226, 0.1); border-radius: 8px;">
+                            <strong>❌ Error:</strong> ${err.message || 'Unknown error'}
+                        </div>`;
+                    }
+                });
+            }
+        } else if (typeof window.getAutoMLPrediction === 'function') {
+            console.log('Calling window.getAutoMLPrediction()');
+            const promise = window.getAutoMLPrediction();
+            if (promise && typeof promise.catch === 'function') {
+                promise.catch(err => {
+                    console.error('window.getAutoMLPrediction() promise rejected:', err);
+                    if (resultDiv) {
+                        resultDiv.innerHTML = `<div style="color: #fee2e2; padding: 16px; background: rgba(254, 226, 226, 0.1); border-radius: 8px;">
+                            <strong>❌ Error:</strong> ${err.message || 'Unknown error'}
+                        </div>`;
+                    }
+                });
+            }
+        } else {
+            console.error('getAutoMLPrediction is not a function!');
+            console.error('Available functions:', {
+                getAutoMLPrediction: typeof getAutoMLPrediction,
+                window_getAutoMLPrediction: typeof window.getAutoMLPrediction,
+                handleGetPredictionClick: typeof handleGetPredictionClick,
+                window_handleGetPredictionClick: typeof window.handleGetPredictionClick
+            });
+            if (resultDiv) {
+                resultDiv.innerHTML = '<div style="color: #fee2e2; padding: 16px; background: rgba(254, 226, 226, 0.1); border-radius: 8px;"><strong>❌ Error:</strong> Prediction function not found. Please refresh the page.</div>';
+            } else {
+                alert('Error: Prediction function not found. Please refresh the page.');
+            }
+        }
+    } catch (err) {
+        console.error('Error calling getAutoMLPrediction:', err);
+        if (resultDiv) {
+            resultDiv.innerHTML = `<div style="color: #fee2e2; padding: 16px; background: rgba(254, 226, 226, 0.1); border-radius: 8px;"><strong>❌ Error:</strong> ${err.message || 'Unknown error'}</div>`;
+        } else {
+            alert('Error: ' + err.message);
+        }
+    }
+}
+
+// Validate AutoML form before submission
+function validateAutoMLForm() {
+    const automlSelect = document.getElementById('automl_campaign_id');
+    const getPredictionBtn = document.getElementById('getPredictionBtn');
+    
+    if (!automlSelect || !getPredictionBtn) {
+        console.warn('validateAutoMLForm() - Elements not found');
+        return;
+    }
+    
+    const hasCampaign = automlSelect.value && parseInt(automlSelect.value) > 0;
+    console.log('validateAutoMLForm() - Campaign selected:', hasCampaign, 'Value:', automlSelect.value);
+    
+    if (hasCampaign) {
+        getPredictionBtn.disabled = false;
+        getPredictionBtn.style.opacity = '1';
+        getPredictionBtn.style.cursor = 'pointer';
+        getPredictionBtn.title = 'Click to get AI prediction for selected campaign';
+        console.log('validateAutoMLForm() - Button enabled');
+    } else {
+        getPredictionBtn.disabled = true;
+        getPredictionBtn.style.opacity = '0.6';
+        getPredictionBtn.style.cursor = 'not-allowed';
+        getPredictionBtn.title = 'Please select a campaign first';
+        console.log('validateAutoMLForm() - Button disabled (no campaign selected)');
+    }
+}
+
+// Update status when dropdown value changes
+function updateDropdownStatus() {
+    const automlSelect = document.getElementById('automl_campaign_id');
+    const statusEl = document.getElementById('automl_dropdown_status');
+    
+    if (automlSelect && automlSelect.value) {
+        const selectedOption = automlSelect.options[automlSelect.selectedIndex];
+        if (statusEl) {
+            statusEl.textContent = `Selected: ${selectedOption.textContent}`;
+            statusEl.style.color = 'rgba(144, 238, 144, 0.9)';
+        }
+    } else if (statusEl) {
+        const optionCount = automlSelect ? automlSelect.options.length - 1 : 0;
+        if (optionCount > 0) {
+            statusEl.textContent = `${optionCount} campaign(s) available - Click to select`;
+            statusEl.style.color = 'rgba(255,255,255,0.9)';
+        }
+    }
+    
+    validateAutoMLForm();
+    
+    // Add event listener to Get Prediction button as backup
+    const getPredictionBtn = document.getElementById('getPredictionBtn');
+    if (getPredictionBtn) {
+        // Remove any existing listeners to avoid duplicates
+        const newBtn = getPredictionBtn.cloneNode(true);
+        getPredictionBtn.parentNode.replaceChild(newBtn, getPredictionBtn);
+        
+        // Add click event listener
+        document.getElementById('getPredictionBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Get Prediction button clicked via event listener');
+            handleGetPredictionClick(e);
+        });
+        
+        console.log('Get Prediction button event listener attached');
+    }
+}
+
+// Helper function to ensure AutoML dropdown is populated
+function populateAutoMLDropdown() {
+    const automlSelect = document.getElementById('automl_campaign_id');
+    const statusEl = document.getElementById('automl_dropdown_status');
+    
+    if (!automlSelect) {
+        console.error('populateAutoMLDropdown() - automl_campaign_id element not found');
+        if (statusEl) statusEl.textContent = 'Error: Dropdown element not found';
+        return false;
+    }
+    
+    console.log('populateAutoMLDropdown() - Called. allCampaigns length:', allCampaigns ? allCampaigns.length : 'undefined');
+    console.log('populateAutoMLDropdown() - Current dropdown options:', automlSelect.options.length);
+    
+    // Always repopulate to ensure it's up to date with latest campaign data
+    if (allCampaigns && allCampaigns.length > 0) {
+        console.log('populateAutoMLDropdown() - Populating with', allCampaigns.length, 'campaigns');
+        
+        // Clear and repopulate
+        automlSelect.innerHTML = '<option value="">Select Campaign</option>';
+        
+        // Sort campaigns by ID (newest first) for better UX
+        const sortedCampaigns = [...allCampaigns].sort((a, b) => (b.id || 0) - (a.id || 0));
+        
+        sortedCampaigns.forEach(c => {
+            if (!c || !c.id) {
+                console.warn('populateAutoMLDropdown() - Skipping invalid campaign:', c);
+                return;
+            }
+            
+            const opt = document.createElement('option');
+            opt.value = c.id.toString();
+            opt.textContent = `${c.id} - ${c.title || 'Untitled Campaign'}`;
+            opt.setAttribute('data-campaign-id', c.id.toString());
+            automlSelect.appendChild(opt);
+            
+            console.log('populateAutoMLDropdown() - Added option:', opt.value, opt.textContent);
+        });
+        
+        const finalOptionCount = automlSelect.options.length - 1;
+        console.log('populateAutoMLDropdown() - Successfully added', finalOptionCount, 'options. Total options now:', automlSelect.options.length);
+        
+        // Verify options are actually in the DOM
+        if (finalOptionCount !== allCampaigns.length) {
+            console.warn('populateAutoMLDropdown() - Option count mismatch! Expected:', allCampaigns.length, 'Got:', finalOptionCount);
         }
         
-        const res = await fetch(apiBase + `/api/v1/campaigns/${cid}/ai-recommendation`, {
+        if (statusEl) {
+            statusEl.textContent = `${finalOptionCount} campaign(s) available - Click to select`;
+            statusEl.style.color = 'rgba(255,255,255,0.9)';
+        }
+        
+        // Force a re-render by triggering a change event
+        automlSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        return true;
+    } else {
+        console.warn('populateAutoMLDropdown() - No campaigns available. allCampaigns:', allCampaigns);
+        automlSelect.innerHTML = '<option value="">Select Campaign</option>';
+        if (statusEl) {
+            statusEl.textContent = 'No campaigns available. Create a campaign first.';
+            statusEl.style.color = 'rgba(255,255,255,0.7)';
+        }
+        return false;
+    }
+}
+
+// Define getAutoMLPrediction function
+async function getAutoMLPrediction() {
+    console.log('=== getAutoMLPrediction() - Function called ===');
+    console.log('apiBase:', apiBase);
+    console.log('basePath:', basePath);
+    
+    const automlSelect = document.getElementById('automl_campaign_id');
+    const getPredictionBtn = document.getElementById('getPredictionBtn');
+    const resultDiv = document.getElementById('automlResult');
+    
+    if (!automlSelect) {
+        alert('Campaign dropdown not found. Please refresh the page.');
+        console.error('getAutoMLPrediction() - automl_campaign_id element not found');
+        return;
+    }
+    
+    if (!resultDiv) {
+        alert('Result container not found. Please refresh the page.');
+        console.error('getAutoMLPrediction() - automlResult element not found');
+        return;
+    }
+    
+    console.log('getAutoMLPrediction() - Dropdown value:', automlSelect.value);
+    console.log('getAutoMLPrediction() - Dropdown options count:', automlSelect.options.length);
+    
+    // Ensure dropdown is populated before checking value
+    if (automlSelect.options.length <= 1) {
+        console.log('getAutoMLPrediction() - Dropdown empty, refreshing...');
+        await refreshAutoMLCampaigns();
+        // Wait a moment for DOM to update
+        await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
+    const cid = parseInt(automlSelect.value);
+    console.log('getAutoMLPrediction() - Parsed campaign ID:', cid);
+    
+    if (!cid || isNaN(cid)) {
+        alert('Please select a campaign from the dropdown first');
+        automlSelect.focus();
+        console.warn('getAutoMLPrediction() - No valid campaign ID selected');
+        // Re-enable button
+        if (getPredictionBtn) {
+            getPredictionBtn.disabled = false;
+            getPredictionBtn.style.opacity = '1';
+            getPredictionBtn.innerHTML = '🔮 Get Prediction';
+        }
+        return;
+    }
+    
+    // Disable button during request
+    if (getPredictionBtn) {
+        getPredictionBtn.disabled = true;
+        getPredictionBtn.style.opacity = '0.6';
+        getPredictionBtn.innerHTML = '⏳ Processing...';
+        getPredictionBtn.style.cursor = 'wait';
+        console.log('getAutoMLPrediction() - Button disabled, starting request...');
+    }
+    
+    currentCampaignId = cid;
+    
+    // Make sure result div is visible
+    resultDiv.style.display = 'block';
+    resultDiv.style.visibility = 'visible';
+    resultDiv.style.opacity = '1';
+    resultDiv.style.height = 'auto';
+    resultDiv.style.overflow = 'visible';
+    
+    console.log('getAutoMLPrediction() - Result div display set to:', resultDiv.style.display);
+    console.log('getAutoMLPrediction() - Result div element:', resultDiv);
+    console.log('getAutoMLPrediction() - Result div computed style:', window.getComputedStyle(resultDiv).display);
+    
+    resultDiv.innerHTML = '<div style="text-align:center; padding:20px; color: white; background: rgba(0,0,0,0.3); border-radius: 8px;">⏳ Loading prediction from real-time data...</div>';
+    
+    // Force a reflow to ensure display change takes effect
+    resultDiv.offsetHeight;
+    
+    try {
+        const audienceSegmentId = document.getElementById('automl_audience_segment')?.value;
+        const features = {};
+        if (audienceSegmentId && audienceSegmentId.trim() !== '') {
+            features.audience_segment_id = parseInt(audienceSegmentId);
+            console.log('getAutoMLPrediction() - Audience Segment ID:', features.audience_segment_id);
+        }
+        
+        const token = getToken();
+        if (!token) {
+            throw new Error('Authentication token not found. Please log in again.');
+        }
+        
+        if (!apiBase) {
+            throw new Error('API base path not defined. Please refresh the page.');
+        }
+        
+        const apiUrl = apiBase + `/api/v1/campaigns/${cid}/ai-recommendation`;
+        console.log('getAutoMLPrediction() - Making API call to:', apiUrl);
+        console.log('getAutoMLPrediction() - Request payload:', JSON.stringify({ features }));
+        console.log('getAutoMLPrediction() - Token length:', token ? token.length : 0);
+        
+        const res = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + getToken()
+                'Authorization': 'Bearer ' + token
             },
             body: JSON.stringify({ features })
         });
         
         console.log('getAutoMLPrediction() - Response status:', res.status);
+        console.log('getAutoMLPrediction() - Response ok:', res.ok);
+        console.log('getAutoMLPrediction() - Response headers:', Object.fromEntries(res.headers.entries()));
         
         if (!res.ok) {
             const errorText = await res.text();
@@ -2203,10 +2610,18 @@ async function getAutoMLPrediction() {
                 errorData = { error: errorText || `HTTP ${res.status}` };
             }
             console.error('getAutoMLPrediction() - API error:', res.status, errorData);
-            resultDiv.innerHTML = `<div class="prediction-item" style="color: #fee2e2; border-color: #fca5a5;">
-                <strong>Error:</strong>
-                <span>${errorData.error || `Failed to get prediction (${res.status})`}</span>
+            resultDiv.innerHTML = `<div class="prediction-item" style="color: #fee2e2; border-color: #fca5a5; background: rgba(254, 226, 226, 0.1); padding: 16px; border-radius: 8px;">
+                <strong>❌ Error:</strong>
+                <span style="display: block; margin-top: 8px;">${errorData.error || `Failed to get prediction (HTTP ${res.status})`}</span>
+                <p style="margin-top: 12px; font-size: 11px; opacity: 0.7;">Check the browser console (F12) for more details.</p>
             </div>`;
+            // Re-enable button on error
+            if (getPredictionBtn) {
+                getPredictionBtn.disabled = false;
+                getPredictionBtn.style.opacity = '1';
+                getPredictionBtn.innerHTML = '🔮 Get Prediction';
+                getPredictionBtn.style.cursor = 'pointer';
+            }
             return;
         }
         
@@ -2227,6 +2642,30 @@ async function getAutoMLPrediction() {
         const suggestedDateTime = pred.suggested_datetime || new Date().toISOString().slice(0, 16).replace('T', ' ');
         const confidence = pred.confidence_score ? (pred.confidence_score * 100).toFixed(1) + '%' : 'N/A';
         const modelSource = pred.model_source || 'unknown';
+        const automlConfigured = pred.automl_configured !== undefined ? pred.automl_configured : null;
+        const fallbackReason = pred.fallback_reason || null;
+        
+        // Determine model source display
+        let modelSourceDisplay = 'Unknown';
+        let modelStatusBadge = '';
+        if (modelSource === 'google_automl') {
+            modelSourceDisplay = 'Google AutoML';
+            modelStatusBadge = '<span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">✓ Active</span>';
+        } else if (modelSource === 'heuristic_with_history') {
+            modelSourceDisplay = 'Heuristic (with historical data)';
+            if (automlConfigured === false) {
+                modelStatusBadge = '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">⚠ Not Configured</span>';
+            } else if (fallbackReason) {
+                modelStatusBadge = '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">⚠ Fallback</span>';
+            }
+        } else {
+            modelSourceDisplay = 'Heuristic (fallback)';
+            if (automlConfigured === false) {
+                modelStatusBadge = '<span style="background: #f59e0b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">⚠ Not Configured</span>';
+            } else if (fallbackReason) {
+                modelStatusBadge = '<span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px;">⚠ Fallback</span>';
+            }
+        }
         
         let recommendation = 'Optimal deployment time based on real-time historical performance data';
         if (pred.confidence_score && pred.confidence_score > 0.8) {
@@ -2237,36 +2676,108 @@ async function getAutoMLPrediction() {
             recommendation = 'Lower confidence - Limited historical data, consider additional factors';
         }
         
+        // Add configuration notice if AutoML is not configured
+        let configNotice = '';
+        if (automlConfigured === false) {
+            configNotice = `
+            <div class="prediction-item" style="background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; margin-top: 12px;">
+                <strong>⚠️ Notice:</strong>
+                <span style="font-size: 13px;">Google AutoML is not configured. Using heuristic prediction. To enable Google AutoML, set GOOGLE_AUTOML_ENDPOINT and GOOGLE_AUTOML_API_KEY environment variables.</span>
+            </div>
+            `;
+        } else if (fallbackReason) {
+            configNotice = `
+            <div class="prediction-item" style="background: rgba(239, 68, 68, 0.1); border-color: #ef4444; margin-top: 12px;">
+                <strong>⚠️ Notice:</strong>
+                <span style="font-size: 13px;">Google AutoML unavailable: ${fallbackReason}. Using heuristic fallback.</span>
+            </div>
+            `;
+        }
+        
+        // Ensure result div is still visible
+        resultDiv.style.display = 'block';
+        resultDiv.style.visibility = 'visible';
+        resultDiv.style.opacity = '1';
+        
+        console.log('getAutoMLPrediction() - Setting result HTML, display:', resultDiv.style.display);
+        console.log('getAutoMLPrediction() - Prediction data:', pred);
+        
         resultDiv.innerHTML = `
-            <div class="prediction-item">
-                <strong>📅 Suggested Date & Time:</strong>
-                <span>${suggestedDateTime}</span>
+            <div class="prediction-item" style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                <strong style="color: white;">📅 Suggested Date & Time:</strong>
+                <span style="color: white; font-weight: 700;">${suggestedDateTime}</span>
             </div>
-            <div class="prediction-item">
-                <strong>📊 Confidence Score:</strong>
-                <span>${confidence}</span>
+            <div class="prediction-item" style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                <strong style="color: white;">📊 Confidence Score:</strong>
+                <span style="color: white; font-weight: 700;">${confidence}</span>
             </div>
-            <div class="prediction-item">
-                <strong>🔍 Model Source:</strong>
-                <span>${modelSource === 'google_automl' ? 'Google AutoML' : modelSource === 'heuristic_with_history' ? 'Heuristic (with historical data)' : 'Heuristic (fallback)'}</span>
+            <div class="prediction-item" style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                <strong style="color: white;">🔍 Model Source:</strong>
+                <span style="color: white; font-weight: 700;">${modelSourceDisplay}${modelStatusBadge}</span>
             </div>
-            <div class="prediction-item">
-                <strong>💡 Recommendation:</strong>
-                <span style="font-size: 13px;">${recommendation}</span>
+            <div class="prediction-item" style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
+                <strong style="color: white;">💡 Recommendation:</strong>
+                <span style="color: white; font-size: 13px;">${recommendation}</span>
             </div>
-            <div style="margin-top: 16px; display: flex; gap: 12px;">
-                <button type="button" class="btn btn-primary" onclick="acceptAIRecommendation()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5);">✓ Accept AI Recommendation</button>
-                <button type="button" class="btn btn-secondary" onclick="checkConflicts()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5);">🔍 Check Conflicts</button>
-                <button type="button" class="btn btn-secondary" onclick="overrideSchedule()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5);">✏️ Override Schedule</button>
+            ${configNotice}
+            <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-primary" onclick="acceptAIRecommendation()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">✓ Accept AI Recommendation</button>
+                <button type="button" class="btn btn-secondary" onclick="checkConflicts()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">🔍 Check Conflicts</button>
+                <button type="button" class="btn btn-secondary" onclick="overrideSchedule()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">✏️ Override Schedule</button>
             </div>
         `;
+        
+        console.log('getAutoMLPrediction() - Result HTML set, innerHTML length:', resultDiv.innerHTML.length);
+        console.log('getAutoMLPrediction() - Result div final display:', window.getComputedStyle(resultDiv).display);
+        
+        // Scroll to results
+        resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+        // Re-enable button after successful prediction
+        if (getPredictionBtn) {
+            getPredictionBtn.disabled = false;
+            getPredictionBtn.style.opacity = '1';
+            getPredictionBtn.innerHTML = '🔮 Get Prediction';
+            getPredictionBtn.style.cursor = 'pointer';
+        }
     } catch (err) {
-        resultDiv.innerHTML = `<div class="prediction-item" style="color: #fee2e2; border-color: #fca5a5;">
-            <strong>Error:</strong>
-            <span>Failed to get prediction: ${err.message}</span>
+        console.error('getAutoMLPrediction() - Exception caught:', err);
+        console.error('getAutoMLPrediction() - Exception:', err);
+        console.error('getAutoMLPrediction() - Error stack:', err.stack);
+        
+        let errorMessage = err.message || 'Unknown error occurred';
+        if (err.message.includes('token')) {
+            errorMessage = 'Authentication failed. Please refresh the page and log in again.';
+        } else if (err.message.includes('fetch')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+        }
+        
+        resultDiv.innerHTML = `<div class="prediction-item" style="color: #fee2e2; border-color: #fca5a5; background: rgba(254, 226, 226, 0.1); padding: 16px; border-radius: 8px;">
+            <strong>❌ Error:</strong>
+            <span style="display: block; margin-top: 8px;">${errorMessage}</span>
+            <p style="margin-top: 12px; font-size: 11px; opacity: 0.7;">Check the browser console (F12) for more details.</p>
         </div>`;
+        
+        // Re-enable button on error
+        if (getPredictionBtn) {
+            getPredictionBtn.disabled = false;
+            getPredictionBtn.style.opacity = '1';
+            getPredictionBtn.innerHTML = '🔮 Get Prediction';
+            getPredictionBtn.style.cursor = 'pointer';
+            console.log('getAutoMLPrediction() - Button re-enabled after error');
+        }
     }
 }
+
+// Make functions globally accessible immediately after definition
+window.getAutoMLPrediction = getAutoMLPrediction;
+window.handleGetPredictionClick = handleGetPredictionClick;
+window.refreshAutoMLCampaigns = refreshAutoMLCampaigns;
+console.log('AutoML functions registered globally:', {
+    getAutoMLPrediction: typeof window.getAutoMLPrediction,
+    handleGetPredictionClick: typeof window.handleGetPredictionClick,
+    refreshAutoMLCampaigns: typeof window.refreshAutoMLCampaigns
+});
 
 async function acceptAIRecommendation() {
     if (!currentCampaignId || !currentPrediction) {
@@ -2718,14 +3229,45 @@ async function loadResources() {
         
         console.log('loadCampaigns() - Response status:', res.status);
         
+        // Read response as text first (can be parsed as JSON or shown as error)
+        const responseText = await res.text();
+        console.log('loadCampaigns() - Response text length:', responseText.length);
+        
         if (!res.ok) {
-            const errorText = await res.text();
-            console.error('loadCampaigns() - API error:', res.status, errorText);
-            tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:24px; color: #dc2626;">Failed to load campaigns: ${res.status} ${errorText}</td></tr>`;
+            console.error('loadCampaigns() - API error:', res.status, responseText);
+            let errorMessage = `Failed to load campaigns (HTTP ${res.status})`;
+            try {
+                const errorData = JSON.parse(responseText);
+                if (errorData.error) {
+                    errorMessage = errorData.error;
+                }
+            } catch (e) {
+                // If not JSON, use the raw text (truncated if too long)
+                if (responseText && responseText.length < 200) {
+                    errorMessage += ': ' + responseText;
+                }
+            }
+            tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:24px; color: #dc2626;">
+                <strong>Failed to load campaigns.</strong><br>
+                <small style="margin-top:8px; display:block; opacity:0.8;">${errorMessage}</small>
+            </td></tr>`;
             return;
         }
         
-        const data = await res.json();
+        // Parse JSON from the text we already read
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('loadCampaigns() - JSON parse error:', parseError);
+            console.error('loadCampaigns() - Response text:', responseText.substring(0, 500));
+            tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:24px; color: #dc2626;">
+                <strong>Failed to parse response.</strong><br>
+                <small style="margin-top:8px; display:block; opacity:0.8;">Invalid JSON format. Check console for details.</small>
+            </td></tr>`;
+            return;
+        }
+        
         console.log('loadCampaigns() - Received data:', data);
         allCampaigns = data.data || [];
         console.log('loadCampaigns() - Campaigns count:', allCampaigns.length);
@@ -2738,8 +3280,19 @@ async function loadResources() {
         tbody.innerHTML = '';
         const select = document.getElementById('active_campaign');
         const automlSelect = document.getElementById('automl_campaign_id');
-        select.innerHTML = '';
-        automlSelect.innerHTML = '<option value="">Select Campaign</option>';
+        
+        // Clear and populate dropdowns
+        if (select) {
+            select.innerHTML = '';
+        }
+        if (automlSelect) {
+            automlSelect.innerHTML = '<option value="">Select Campaign</option>';
+        }
+        
+        console.log('loadCampaigns() - Populating dropdowns with', allCampaigns.length, 'campaigns');
+        
+        // Populate AutoML dropdown immediately after campaigns are loaded
+        populateAutoMLDropdown();
         
         allCampaigns.forEach(c => {
             const tr = document.createElement('tr');
@@ -2772,16 +3325,94 @@ async function loadResources() {
             `;
             tbody.appendChild(tr);
             
-            const opt = document.createElement('option');
-            opt.value = c.id;
-            opt.textContent = `${c.id} - ${c.title || ''}`;
-            select.appendChild(opt);
+            // Populate active_campaign dropdown
+            if (select) {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = `${c.id} - ${c.title || 'Untitled'}`;
+                select.appendChild(opt);
+            }
             
-            const automlOpt = document.createElement('option');
-            automlOpt.value = c.id;
-            automlOpt.textContent = `${c.id} - ${c.title || ''}`;
-            automlSelect.appendChild(automlOpt);
+            // Populate automl_campaign_id dropdown (will be repopulated by populateAutoMLDropdown)
+            // We populate here as backup, but populateAutoMLDropdown() will ensure it's correct
+            if (automlSelect) {
+                // Check if option already exists to avoid duplicates
+                const existingOption = Array.from(automlSelect.options).find(opt => opt.value === c.id.toString());
+                if (!existingOption) {
+                    const automlOpt = document.createElement('option');
+                    automlOpt.value = c.id.toString();
+                    automlOpt.textContent = `${c.id} - ${c.title || 'Untitled'}`;
+                    automlOpt.setAttribute('data-campaign-id', c.id.toString());
+                    automlSelect.appendChild(automlOpt);
+                }
+            }
         });
+        
+        console.log('loadCampaigns() - Dropdowns populated. automlSelect options:', automlSelect ? automlSelect.options.length : 'N/A');
+        
+        // Force populate AutoML dropdown immediately after campaigns are loaded
+        // This ensures the dropdown always has the latest campaign data from the database (NOT hardcoded)
+        // The campaigns come from the /api/v1/campaigns endpoint which queries the campaigns table
+        setTimeout(() => {
+            console.log('loadCampaigns() - Calling populateAutoMLDropdown()');
+            console.log('loadCampaigns() - allCampaigns data (from database):', allCampaigns);
+            console.log('loadCampaigns() - Campaign count:', allCampaigns ? allCampaigns.length : 0);
+            
+            const populated = populateAutoMLDropdown();
+            console.log('loadCampaigns() - populateAutoMLDropdown() returned:', populated);
+            
+            // Verify dropdown has options
+            const automlSelectCheck = document.getElementById('automl_campaign_id');
+            if (automlSelectCheck) {
+                const finalCount = automlSelectCheck.options.length - 1;
+                console.log('loadCampaigns() - Final dropdown option count:', finalCount);
+                
+                // Log all options for debugging
+                const allOptions = Array.from(automlSelectCheck.options).map((o, idx) => ({
+                    index: idx,
+                    value: o.value,
+                    text: o.textContent,
+                    selected: o.selected
+                }));
+                console.log('loadCampaigns() - All dropdown options:', allOptions);
+                
+                // Update status message
+                const statusEl = document.getElementById('automl_dropdown_status');
+                if (statusEl) {
+            if (finalCount > 0) {
+                statusEl.textContent = `${finalCount} campaign(s) available - Click dropdown to select`;
+                statusEl.style.color = 'rgba(255,255,255,0.9)';
+            } else {
+                statusEl.textContent = 'No campaigns available. Create a campaign first.';
+                statusEl.style.color = 'rgba(255,255,255,0.7)';
+            }
+        }
+        
+        // If dropdown is still empty but we have campaigns, try again with more force
+        if (finalCount === 0 && allCampaigns.length > 0) {
+            console.warn('loadCampaigns() - Dropdown empty but campaigns exist! Retrying with force...');
+            setTimeout(() => {
+                // Force clear and repopulate
+                automlSelectCheck.innerHTML = '<option value="">Select Campaign</option>';
+                allCampaigns.forEach(c => {
+                    if (c && c.id) {
+                        const opt = document.createElement('option');
+                        opt.value = c.id.toString();
+                        opt.textContent = `${c.id} - ${c.title || 'Untitled Campaign'}`;
+                        automlSelectCheck.appendChild(opt);
+                    }
+                });
+                console.log('loadCampaigns() - Force populated, new count:', automlSelectCheck.options.length - 1);
+            }, 300);
+        }
+        
+        // Always validate form after populating dropdown
+        validateAutoMLForm();
+    }
+    
+    // Ensure button state is correct
+    validateAutoMLForm();
+        }, 150);
         
         if (!activeCampaignId && allCampaigns.length) {
             activeCampaignId = allCampaigns[0].id;
@@ -2791,7 +3422,24 @@ async function loadResources() {
         refreshGantt();
         loadResources();
     } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:24px; color:#dc2626;">Failed to load campaigns.</td></tr>';
+        console.error('loadCampaigns() - Exception caught:', err);
+        console.error('loadCampaigns() - Error message:', err.message);
+        console.error('loadCampaigns() - Error stack:', err.stack);
+        
+        let errorMessage = 'Failed to load campaigns.';
+        if (err.message) {
+            errorMessage += ' Error: ' + err.message;
+        }
+        
+        // Count actual table columns
+        const headerRow = document.querySelector('#campaignTable')?.closest('table')?.querySelector('thead tr');
+        const columnCount = headerRow ? headerRow.children.length : 12;
+        
+        tbody.innerHTML = `<tr><td colspan="${columnCount}" style="text-align:center; padding:24px; color:#dc2626;">
+            <strong>Failed to load campaigns.</strong><br>
+            <small style="margin-top:8px; display:block; opacity:0.8;">${errorMessage}</small><br>
+            <small style="margin-top:4px; display:block; opacity:0.6;">Check browser console (F12) for details.</small>
+        </td></tr>`;
     }
 }
 
@@ -3392,25 +4040,116 @@ async function saveSegments() {
 
 // Initialize
 async function initializeCampaigns() {
-    await loadCampaigns();
-    loadResources();
-    
-    // Populate campaign dropdown for AI recommendations
-    const automlSelect = document.getElementById('automl_campaign_id');
-    if (allCampaigns.length > 0) {
-        allCampaigns.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.id;
-            opt.textContent = `${c.id} - ${c.title || 'Untitled'}`;
-            automlSelect.appendChild(opt);
-        });
+    console.log('initializeCampaigns() - Starting initialization');
+    try {
+        // Wait for campaigns to load
+        await loadCampaigns();
+        console.log('initializeCampaigns() - Campaigns loaded. Count:', allCampaigns.length);
+        
+        loadResources();
+        
+        // Populate AutoML dropdown immediately after campaigns are loaded
+        console.log('initializeCampaigns() - Populating AutoML dropdown with', allCampaigns.length, 'campaigns');
+        populateAutoMLDropdown();
+        validateAutoMLForm();
+        
+        // Also set up a delayed check as backup
+        setTimeout(() => {
+            const automlSelect = document.getElementById('automl_campaign_id');
+            if (automlSelect && automlSelect.options.length <= 1 && allCampaigns.length > 0) {
+                console.log('initializeCampaigns() - Dropdown empty, populating...');
+                populateAutoMLDropdown();
+                validateAutoMLForm();
+            } else if (automlSelect) {
+                console.log('initializeCampaigns() - Dropdown already has', automlSelect.options.length - 1, 'options');
+                validateAutoMLForm();
+            }
+            
+            // Ensure Get Prediction button has event listener
+            const getPredictionBtn = document.getElementById('getPredictionBtn');
+            if (getPredictionBtn) {
+                console.log('initializeCampaigns() - Found Get Prediction button');
+                // Remove old onclick and add event listener
+                getPredictionBtn.onclick = null;
+                
+                // Remove any existing listeners first
+                const newBtn = getPredictionBtn.cloneNode(true);
+                getPredictionBtn.parentNode.replaceChild(newBtn, getPredictionBtn);
+                
+                // Get the new button reference
+                const btn = document.getElementById('getPredictionBtn');
+                
+                // Add click event listener
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('=== Get Prediction button clicked via event listener ===');
+                    handleGetPredictionClick(e);
+                });
+                
+                // Also set onclick as backup
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('=== Get Prediction button clicked via onclick handler ===');
+                    handleGetPredictionClick(e);
+                };
+                
+                console.log('initializeCampaigns() - Get Prediction button event listeners attached');
+            } else {
+                console.warn('initializeCampaigns() - Get Prediction button not found!');
+            }
+            
+            // Ensure Refresh button has event listener
+            const refreshBtn = document.getElementById('automlRefreshBtn');
+            if (refreshBtn) {
+                console.log('initializeCampaigns() - Found Refresh button');
+                
+                // Remove any existing listeners by cloning
+                const newRefreshBtn = refreshBtn.cloneNode(true);
+                refreshBtn.parentNode.replaceChild(newRefreshBtn, refreshBtn);
+                
+                // Get the new button reference
+                const refreshBtnNew = document.getElementById('automlRefreshBtn');
+                
+                // Add click event listener
+                refreshBtnNew.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('=== Refresh button clicked ===');
+                    console.log('refreshAutoMLCampaigns type:', typeof refreshAutoMLCampaigns);
+                    console.log('window.refreshAutoMLCampaigns type:', typeof window.refreshAutoMLCampaigns);
+                    
+                    try {
+                        if (typeof refreshAutoMLCampaigns === 'function') {
+                            refreshAutoMLCampaigns();
+                        } else if (typeof window.refreshAutoMLCampaigns === 'function') {
+                            window.refreshAutoMLCampaigns();
+                        } else {
+                            console.error('refreshAutoMLCampaigns function not found!');
+                            alert('Error: Refresh function not loaded. Please refresh the page.');
+                        }
+                    } catch (err) {
+                        console.error('Error in refresh button click handler:', err);
+                        alert('Error: ' + err.message);
+                    }
+                });
+                
+                console.log('initializeCampaigns() - Refresh button event listener attached');
+            } else {
+                console.warn('initializeCampaigns() - Refresh button not found!');
+            }
+        }, 200);
+        
+        setTimeout(() => {
+            if (document.getElementById('gantt-tab') && document.getElementById('gantt-tab').classList.contains('active')) {
+                refreshGantt();
+            }
+        }, 500);
+    } catch (err) {
+        console.error('initializeCampaigns() - Error:', err);
+        console.error('initializeCampaigns() - Stack:', err.stack);
     }
-    
-    setTimeout(() => {
-        if (document.getElementById('gantt-tab').classList.contains('active')) {
-            refreshGantt();
-        }
-    }, 500);
 }
 
 // Show Campaign "How It Works" modal
@@ -3527,7 +4266,48 @@ function showCampaignHowItWorks() {
     document.body.appendChild(modal);
 }
 
-initializeCampaigns();
+// Wait for DOM to be fully ready before initializing
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOMContentLoaded - Initializing campaigns');
+        initializeCampaigns();
+        
+        // Make functions globally accessible after DOM loads
+        window.handleGetPredictionClick = handleGetPredictionClick;
+        window.getAutoMLPrediction = getAutoMLPrediction;
+        window.refreshAutoMLCampaigns = refreshAutoMLCampaigns;
+        console.log('Functions made globally accessible:', {
+            handleGetPredictionClick: typeof window.handleGetPredictionClick,
+            getAutoMLPrediction: typeof window.getAutoMLPrediction,
+            refreshAutoMLCampaigns: typeof window.refreshAutoMLCampaigns
+        });
+    });
+} else {
+    // DOM is already ready
+    console.log('DOM already ready - Initializing campaigns');
+    
+    // Make functions globally accessible
+    window.handleGetPredictionClick = handleGetPredictionClick;
+    window.getAutoMLPrediction = getAutoMLPrediction;
+    window.refreshAutoMLCampaigns = refreshAutoMLCampaigns;
+    
+    initializeCampaigns();
+}
+
+// Also try to populate dropdown when the AutoML section becomes visible
+const observer = new MutationObserver((mutations) => {
+    const automlSelect = document.getElementById('automl_campaign_id');
+    if (automlSelect && automlSelect.options.length <= 1 && allCampaigns.length > 0) {
+        console.log('MutationObserver - AutoML dropdown detected, populating...');
+        populateAutoMLDropdown();
+    }
+});
+
+// Observe the automl section for visibility changes
+const automlSection = document.getElementById('automl-section');
+if (automlSection) {
+    observer.observe(automlSection, { childList: true, subtree: true });
+}
 </script>
 </body>
 </html>

@@ -8,10 +8,10 @@
     right: 2rem;
     width: 380px;
     max-height: 480px;
-    background-color: var(--card-bg-1);
-    border: 1px solid var(--border-color-1);
+    background-color: #ffffff;
+    border: 2px solid #e2e8f0;
     border-radius: 0.75rem;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
@@ -38,8 +38,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border-color-1);
-    background-color: var(--header-bg-1);
+    border-bottom: 2px solid #e2e8f0;
+    background-color: #ffffff;
 }
 
 #messageModal .modal-header h3 {
@@ -81,8 +81,8 @@
 /* Modal Footer */
 #messageModal .modal-footer {
     padding: 0.75rem 1.25rem;
-    border-top: 1px solid var(--border-color-1);
-    background-color: var(--header-bg-1);
+    border-top: 2px solid #e2e8f0;
+    background-color: #ffffff;
     text-align: center;
 }
 
@@ -173,6 +173,15 @@
 
 .message-status.unread {
     background-color: #dc3545;
+}
+
+.message-item.unread-message {
+    background-color: #f0f9ff;
+    border-left: 3px solid #3b82f6;
+}
+
+.message-item.unread-message:hover {
+    background-color: #e0f2fe;
 }
 
 /* ===================================

@@ -9,8 +9,8 @@
     width: 360px;
     height: 500px;
     max-height: 70vh;
-    background-color: var(--card-bg-1);
-    border: 1px solid var(--border-color-1);
+    background-color: #ffffff;
+    border: 2px solid #e2e8f0;
     border-radius: 0.75rem;
     box-shadow: 0 10px 25px var(--shadow-1);
     z-index: 1000;

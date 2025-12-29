@@ -192,12 +192,34 @@ class AuthController
 
     public function me(?array $user, array $params = []): array
     {
-        if (!$user) {
-            http_response_code(401);
-            return ['error' => 'Unauthorized'];
-        }
+        try {
+            if (!$user) {
+                http_response_code(401);
+                return ['error' => 'Unauthorized'];
+            }
 
-        return ['user' => $this->publicUser($user)];
+            // Fetch full user data with barangay name
+            $userId = (int) $user['id'];
+            $stmt = $this->pdo->prepare('
+                SELECT u.*, b.name as barangay_name 
+                FROM users u 
+                LEFT JOIN barangays b ON b.id = u.barangay_id 
+                WHERE u.id = :id
+            ');
+            $stmt->execute(['id' => $userId]);
+            $fullUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($fullUser) {
+                return ['user' => $this->publicUser($fullUser)];
+            }
+
+            return ['user' => $this->publicUser($user)];
+        } catch (\Throwable $e) {
+            error_log('AuthController::me error: ' . $e->getMessage());
+            error_log('AuthController::me stack: ' . $e->getTraceAsString());
+            http_response_code(500);
+            return ['error' => 'Failed to load user data'];
+        }
     }
 
     private function generateToken(int $userId, string $email, int $roleId): string
@@ -234,7 +256,119 @@ class AuthController
             'email' => $user['email'] ?? null,
             'role_id' => isset($user['role_id']) ? (int) $user['role_id'] : null,
             'barangay_id' => isset($user['barangay_id']) ? (int) $user['barangay_id'] : null,
+            'barangay_name' => $user['barangay_name'] ?? null,
+            'phone_number' => $user['phone_number'] ?? $user['phone'] ?? null,
+            'created_at' => $user['created_at'] ?? null,
         ];
+    }
+
+    /**
+     * Update user profile
+     */
+    public function updateProfile(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Unauthorized'];
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $userId = (int) $user['id'];
+
+        $updates = [];
+        $params_array = ['id' => $userId];
+
+        if (isset($input['name'])) {
+            $updates[] = 'name = :name';
+            $params_array['name'] = trim($input['name']);
+        }
+
+        if (isset($input['email'])) {
+            $email = filter_var(trim($input['email']), FILTER_VALIDATE_EMAIL);
+            if (!$email) {
+                http_response_code(422);
+                return ['error' => 'Invalid email format'];
+            }
+            // Check if email is already taken by another user
+            $stmt = $this->pdo->prepare('SELECT id FROM users WHERE email = :email AND id != :id');
+            $stmt->execute(['email' => $email, 'id' => $userId]);
+            if ($stmt->fetch()) {
+                http_response_code(422);
+                return ['error' => 'Email already in use'];
+            }
+            $updates[] = 'email = :email';
+            $params_array['email'] = $email;
+        }
+
+        if (isset($input['phone'])) {
+            $updates[] = 'phone = :phone';
+            $params_array['phone'] = trim($input['phone']) ?: null;
+        }
+
+        if (empty($updates)) {
+            http_response_code(422);
+            return ['error' => 'No fields to update'];
+        }
+
+        $sql = 'UPDATE users SET ' . implode(', ', $updates) . ', updated_at = NOW() WHERE id = :id';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params_array);
+
+        // Fetch updated user
+        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = :id');
+        $stmt->execute(['id' => $userId]);
+        $updatedUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return ['user' => $this->publicUser($updatedUser), 'message' => 'Profile updated successfully'];
+    }
+
+    /**
+     * Change user password
+     */
+    public function changePassword(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Unauthorized'];
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $userId = (int) $user['id'];
+
+        $currentPassword = $input['current_password'] ?? '';
+        $newPassword = $input['new_password'] ?? '';
+
+        if (empty($currentPassword) || empty($newPassword)) {
+            http_response_code(422);
+            return ['error' => 'Current password and new password are required'];
+        }
+
+        if (strlen($newPassword) < 6) {
+            http_response_code(422);
+            return ['error' => 'New password must be at least 6 characters'];
+        }
+
+        // Verify current password
+        $stmt = $this->pdo->prepare('SELECT password FROM users WHERE id = :id');
+        $stmt->execute(['id' => $userId]);
+        $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$userData) {
+            http_response_code(404);
+            return ['error' => 'User not found'];
+        }
+
+        if (!password_verify($currentPassword, $userData['password'])) {
+            http_response_code(422);
+            return ['error' => 'Current password is incorrect'];
+        }
+
+        // Update password
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+        $stmt = $this->pdo->prepare('UPDATE users SET password = :password, updated_at = NOW() WHERE id = :id');
+        $stmt->execute(['password' => $hashedPassword, 'id' => $userId]);
+
+        return ['message' => 'Password changed successfully'];
     }
 
     /**

@@ -36,7 +36,28 @@ return [
         'handler' => [AutocompleteController::class, 'materials'],
         'middleware' => JWTMiddleware::class,
     ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/autocomplete/event-titles',
+        'handler' => [AutocompleteController::class, 'eventTitles'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/autocomplete/hazard-focus',
+        'handler' => [AutocompleteController::class, 'hazardFocus'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/autocomplete/venues',
+        'handler' => [AutocompleteController::class, 'venues'],
+        'middleware' => JWTMiddleware::class,
+    ],
 ];
+
+
+
 
 
 

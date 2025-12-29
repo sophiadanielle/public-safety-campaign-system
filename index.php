@@ -30,6 +30,15 @@ if ($requestUri === '' || ($requestUri[0] !== '/' && $requestUri !== '')) {
 $isApiRequest = strpos($requestUri, '/api/') === 0;
 
 if ($isApiRequest) {
+    // Start output buffering early to catch any warnings/errors
+    if (ob_get_level() == 0) {
+        ob_start();
+    }
+    
+    // Suppress error display but log them
+    ini_set('display_errors', '0');
+    error_reporting(E_ALL);
+    
     // Handle API request
     require __DIR__ . '/vendor/autoload.php';
     require __DIR__ . '/src/Config/db_connect.php';
@@ -65,6 +74,9 @@ if ($isApiRequest) {
         'autocomplete.php',
         'automl.php',
         'integrations.php',
+        'dashboard.php',
+        'notifications.php',
+        'messages.php',
     ];
 
     $allRoutes = [];
@@ -102,9 +114,15 @@ if ($isApiRequest) {
     }
 
     if (!$matchedRoute) {
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
         http_response_code(404);
         header('Content-Type: application/json');
         echo json_encode(['error' => 'Route not found']);
+        if (ob_get_level() > 0) {
+            ob_end_flush();
+        }
         exit;
     }
 
@@ -115,9 +133,15 @@ if ($isApiRequest) {
         try {
             $user = $middlewareClass::authenticate($pdo, $jwtSecret, $jwtAudience, $jwtIssuer);
         } catch (\RuntimeException $e) {
+            if (ob_get_level() > 0) {
+                ob_clean();
+            }
             http_response_code(401);
             header('Content-Type: application/json');
             echo json_encode(['error' => $e->getMessage()]);
+            if (ob_get_level() > 0) {
+                ob_end_flush();
+            }
             exit;
         }
     }
@@ -155,20 +179,74 @@ if ($isApiRequest) {
 
     // Call controller method
     try {
-        header('Content-Type: application/json');
+        // Clear any output that might have been generated
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+        
+        // Set headers FIRST before any controller code runs
+        if (!headers_sent()) {
+            header('Content-Type: application/json');
+            header('X-Content-Type-Options: nosniff');
+        }
+        
+        // Call controller method
         $result = $controller->$methodName($user, $params);
         
-        // Set HTTP status code if not already set
-        if (http_response_code() === 200) {
+        // Check for any unexpected output after controller call
+        if (ob_get_level() > 0) {
+            $output = ob_get_contents();
+            if (!empty($output)) {
+                error_log('Unexpected output before JSON (length: ' . strlen($output) . '): ' . substr($output, 0, 500));
+                ob_clean();
+            }
+        }
+        
+        // Check if controller already set a status code
+        $currentStatus = http_response_code();
+        
+        // If no status was set by controller, set 200 for success
+        if ($currentStatus === false) {
             http_response_code(200);
         }
         
-        echo json_encode($result);
+        $json = json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        
+        if ($json === false) {
+            $errorMsg = json_last_error_msg();
+            error_log('JSON encoding failed: ' . $errorMsg);
+            error_log('Data type: ' . gettype($result));
+            if (is_array($result)) {
+                error_log('Array keys: ' . implode(', ', array_keys($result)));
+                if (count($result) > 0) {
+                    error_log('Array sample: ' . print_r(array_slice($result, 0, 2, true), true));
+                }
+            }
+            throw new \RuntimeException('Failed to encode JSON: ' . $errorMsg);
+        }
+        
+        echo $json;
     } catch (\Throwable $e) {
-        http_response_code(500);
-        header('Content-Type: application/json');
-        echo json_encode(['error' => 'Internal server error: ' . $e->getMessage()]);
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: application/json');
+        }
+        $errorMsg = $e->getMessage();
+        // Don't expose internal errors in production
+        if (strpos($errorMsg, 'Stack trace') !== false || strpos($errorMsg, 'Fatal error') !== false) {
+            $errorMsg = 'Internal server error';
+        }
+        $errorResponse = ['error' => $errorMsg];
+        echo json_encode($errorResponse, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         error_log('API Error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+    }
+    
+    // End output buffering and flush
+    if (ob_get_level() > 0) {
+        ob_end_flush();
     }
     exit;
 }
@@ -667,7 +745,7 @@ async function login() {
                         
                         // Use href instead of replace to allow back button, and add small delay
                         console.log('🚀 Redirecting to campaigns page...');
-                        console.log('Redirect URL:', basePath + '/public/campaigns.php');
+                        console.log('Redirect URL:', basePath + '/public/dashboard.php');
                         console.log('Final token verification before redirect:', localStorage.getItem('jwtToken') ? 'EXISTS' : 'MISSING');
                         
                         // Store token in sessionStorage as backup in case localStorage is blocked
@@ -690,7 +768,7 @@ async function login() {
                                 }
                             }
                             // Add URL parameter to indicate successful login (bypasses Tracking Prevention issue)
-                            window.location.href = basePath + '/public/campaigns.php?logged_in=1&t=' + Date.now();
+                            window.location.href = basePath + '/public/dashboard.php?logged_in=1&t=' + Date.now();
                         }, 200);
                     }, 200);
                 }, 500);
@@ -827,7 +905,7 @@ async function signup() {
                     console.log('Redirect URL:', basePath + '/public/campaigns.php');
                     // Add URL parameter to indicate successful signup (bypasses Tracking Prevention issue)
                     setTimeout(function() {
-                        window.location.href = basePath + '/public/campaigns.php?signed_up=1&t=' + Date.now();
+                        window.location.href = basePath + '/public/dashboard.php?signed_up=1&t=' + Date.now();
                     }, 100);
                 }, 300);
             } catch (e) {
