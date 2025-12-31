@@ -1,5 +1,5 @@
 -- Add planning and resource allocation fields to campaigns table
-ALTER TABLE campaigns
+ALTER TABLE `campaign_department_campaigns`
 ADD COLUMN objectives TEXT NULL AFTER description,
 ADD COLUMN location VARCHAR(255) NULL AFTER objectives,
 ADD COLUMN assigned_staff JSON NULL AFTER location,
@@ -9,7 +9,7 @@ ADD COLUMN staff_count INT UNSIGNED NULL AFTER budget,
 ADD COLUMN materials_json JSON NULL AFTER staff_count;
 
 -- Update status enum to include new statuses
-ALTER TABLE campaigns
+ALTER TABLE `campaign_department_campaigns`
 MODIFY COLUMN status ENUM('draft','pending','approved','ongoing','completed','scheduled','active','archived') NOT NULL DEFAULT 'draft';
 
 -- Update existing status values if needed (optional, adjust as needed)

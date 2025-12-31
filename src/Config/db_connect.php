@@ -23,18 +23,32 @@ try {
     }
 } catch (PDOException $e) {
     // Log error instead of outputting HTML
-    error_log('Database connection failed: ' . $e->getMessage());
+    $errorMessage = $e->getMessage();
+    error_log('Database connection failed: ' . $errorMessage);
+    error_log('Attempted connection to: ' . $dsn);
+    error_log('User: ' . $dbUser);
     
-    // If we're in API context, return JSON error
+    // If we're in API context, return JSON error with more details
     if (PHP_SAPI !== 'cli' && strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false) {
         header('Content-Type: application/json');
         http_response_code(500);
-        echo json_encode(['error' => 'Database connection failed']);
+        
+        // Provide more helpful error message
+        $userFriendlyError = 'Database connection failed';
+        if (strpos($errorMessage, 'Access denied') !== false) {
+            $userFriendlyError = 'Database access denied. Please check your database credentials.';
+        } elseif (strpos($errorMessage, 'Unknown database') !== false) {
+            $userFriendlyError = 'Database not found. Please make sure the database "' . $dbName . '" exists.';
+        } elseif (strpos($errorMessage, 'Connection refused') !== false || strpos($errorMessage, 'No connection') !== false) {
+            $userFriendlyError = 'Cannot connect to database server. Please make sure MySQL/XAMPP is running.';
+        }
+        
+        echo json_encode(['error' => $userFriendlyError]);
         exit;
     }
     
     // Otherwise, die with message (for CLI or non-API contexts)
-    die('Database connection failed: ' . $e->getMessage());
+    die('Database connection failed: ' . $errorMessage);
 }
 
 

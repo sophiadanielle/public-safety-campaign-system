@@ -39,6 +39,16 @@ return [
         'handler' => [AuthController::class, 'changePassword'],
         'middleware' => JWTMiddleware::class,
     ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/auth/google',
+        'handler' => [AuthController::class, 'google'],
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/auth/google/callback',
+        'handler' => [AuthController::class, 'googleCallback'],
+    ],
 ];
 
 

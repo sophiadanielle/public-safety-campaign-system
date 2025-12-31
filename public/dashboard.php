@@ -13,7 +13,22 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         (function () {
             const basePath = '<?php echo $basePath; ?>';
             const urlParams = new URLSearchParams(window.location.search);
-            const justLoggedIn = urlParams.has('logged_in') || urlParams.has('signed_up');
+            const justLoggedIn = urlParams.has('logged_in') || urlParams.has('signed_up') || urlParams.has('google_login');
+            
+            // Handle Google login token from URL
+            if (urlParams.has('google_login') && urlParams.has('token')) {
+                const token = urlParams.get('token');
+                if (token && token.trim() !== '') {
+                    try {
+                        localStorage.setItem('jwtToken', token);
+                        // Clean URL
+                        const cleanUrl = window.location.pathname;
+                        window.history.replaceState({}, '', cleanUrl);
+                    } catch (e) {
+                        console.error('Failed to store Google login token:', e);
+                    }
+                }
+            }
             
             function checkAuth(retryCount) {
                 retryCount = retryCount || 0;

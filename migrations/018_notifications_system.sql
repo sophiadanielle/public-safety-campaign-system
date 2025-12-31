@@ -5,7 +5,7 @@ SET NAMES utf8mb4;
 SET time_zone = '+00:00';
 
 -- Create notifications table
-CREATE TABLE IF NOT EXISTS notifications (
+CREATE TABLE IF NOT EXISTS `campaign_department_notifications` (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id INT UNSIGNED NULL,
     type ENUM('campaign', 'event', 'content', 'system', 'alert', 'reminder') NOT NULL DEFAULT 'system',
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS notifications (
     INDEX idx_is_read (is_read),
     INDEX idx_created_at (created_at),
     INDEX idx_type (type),
-    CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES `campaign_department_users`(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 

@@ -7,7 +7,7 @@ SET time_zone = '+00:00';
 -- ============================================
 -- 1. AI MODEL VERSIONS TABLE
 -- ============================================
-CREATE TABLE IF NOT EXISTS ai_model_versions (
+CREATE TABLE IF NOT EXISTS `campaign_department_ai_model_versions` (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     model_id VARCHAR(255) NOT NULL COMMENT 'Google Vertex AI model ID',
     model_name VARCHAR(200) NOT NULL COMMENT 'Human-readable model name',
@@ -34,13 +34,13 @@ CREATE TABLE IF NOT EXISTS ai_model_versions (
     INDEX idx_training_status (training_status),
     INDEX idx_is_active (is_active),
     INDEX idx_created_by (created_by),
-    CONSTRAINT fk_ai_model_versions_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT fk_ai_model_versions_created_by FOREIGN KEY (created_by) REFERENCES `campaign_department_users`(id) ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='Google AutoML model versions and training metadata';
 
 -- ============================================
 -- 2. AI TRAINING LOGS TABLE
 -- ============================================
-CREATE TABLE IF NOT EXISTS ai_training_logs (
+CREATE TABLE IF NOT EXISTS `campaign_department_ai_training_logs` (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     model_version_id INT UNSIGNED NOT NULL,
     action_type ENUM('training_started', 'training_progress', 'training_completed', 'training_failed', 'model_deployed', 'model_archived') NOT NULL,
@@ -51,14 +51,14 @@ CREATE TABLE IF NOT EXISTS ai_training_logs (
     INDEX idx_model_version_id (model_version_id),
     INDEX idx_action_type (action_type),
     INDEX idx_created_at (created_at),
-    CONSTRAINT fk_ai_training_logs_model_version FOREIGN KEY (model_version_id) REFERENCES ai_model_versions(id) ON DELETE CASCADE,
-    CONSTRAINT fk_ai_training_logs_created_by FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT fk_ai_training_logs_model_version FOREIGN KEY (model_version_id) REFERENCES `campaign_department_ai_model_versions`(id) ON DELETE CASCADE,
+    CONSTRAINT fk_ai_training_logs_created_by FOREIGN KEY (created_by) REFERENCES `campaign_department_users`(id) ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='Training event logs for audit and debugging';
 
 -- ============================================
 -- 3. AI PREDICTION CACHE TABLE
 -- ============================================
-CREATE TABLE IF NOT EXISTS ai_prediction_cache (
+CREATE TABLE IF NOT EXISTS `campaign_department_ai_prediction_cache` (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     cache_key VARCHAR(255) NOT NULL UNIQUE COMMENT 'MD5 hash of feature payload',
     model_type ENUM('schedule_optimization', 'conflict_prediction', 'engagement_prediction', 'readiness_forecast') NOT NULL,
@@ -74,13 +74,13 @@ CREATE TABLE IF NOT EXISTS ai_prediction_cache (
     INDEX idx_model_type (model_type),
     INDEX idx_entity (entity_type, entity_id),
     INDEX idx_expires_at (expires_at),
-    CONSTRAINT fk_ai_prediction_cache_model_version FOREIGN KEY (model_version_id) REFERENCES ai_model_versions(id) ON DELETE SET NULL
+    CONSTRAINT fk_ai_prediction_cache_model_version FOREIGN KEY (model_version_id) REFERENCES `campaign_department_ai_model_versions`(id) ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='Cached AI predictions to avoid redundant API calls';
 
 -- ============================================
 -- 4. AI PREDICTION REQUESTS LOG TABLE
 -- ============================================
-CREATE TABLE IF NOT EXISTS ai_prediction_requests (
+CREATE TABLE IF NOT EXISTS `campaign_department_ai_prediction_requests` (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     model_type ENUM('schedule_optimization', 'conflict_prediction', 'engagement_prediction', 'readiness_forecast') NOT NULL,
     entity_type ENUM('campaign', 'event', 'seminar') NOT NULL,
@@ -101,8 +101,8 @@ CREATE TABLE IF NOT EXISTS ai_prediction_requests (
     INDEX idx_requested_by (requested_by),
     INDEX idx_created_at (created_at),
     INDEX idx_success (success),
-    CONSTRAINT fk_ai_prediction_requests_model_version FOREIGN KEY (model_version_id) REFERENCES ai_model_versions(id) ON DELETE SET NULL,
-    CONSTRAINT fk_ai_prediction_requests_requested_by FOREIGN KEY (requested_by) REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT fk_ai_prediction_requests_model_version FOREIGN KEY (model_version_id) REFERENCES `campaign_department_ai_model_versions`(id) ON DELETE SET NULL,
+    CONSTRAINT fk_ai_prediction_requests_requested_by FOREIGN KEY (requested_by) REFERENCES `campaign_department_users`(id) ON DELETE SET NULL
 ) ENGINE=InnoDB COMMENT='Audit log of all AI prediction requests';
 
 -- ============================================
@@ -114,8 +114,8 @@ CREATE TABLE IF NOT EXISTS ai_prediction_requests (
 -- ============================================
 -- 6. CREATE INDEXES FOR PERFORMANCE
 -- ============================================
-CREATE INDEX IF NOT EXISTS idx_ai_model_versions_deployed ON ai_model_versions(training_status, is_active, model_type);
-CREATE INDEX IF NOT EXISTS idx_ai_prediction_cache_lookup ON ai_prediction_cache(model_type, entity_type, entity_id, expires_at);
+CREATE INDEX IF NOT EXISTS idx_ai_model_versions_deployed ON `campaign_department_ai_model_versions`(training_status, is_active, model_type);
+CREATE INDEX IF NOT EXISTS idx_ai_prediction_cache_lookup ON `campaign_department_ai_prediction_cache`(model_type, entity_type, entity_id, expires_at);
 
 -- ============================================
 -- 7. INSERT DEFAULT MODEL VERSION RECORDS (Optional)

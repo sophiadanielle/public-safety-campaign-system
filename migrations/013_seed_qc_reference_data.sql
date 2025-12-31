@@ -9,7 +9,7 @@ SET NAMES utf8mb4;
 -- 1. BARANGAYS (15 QC barangays)
 -- ============================================
 
-INSERT IGNORE INTO barangays (name, city, province, region) VALUES
+INSERT IGNORE INTO `campaign_department_barangays` (name, city, province, region) VALUES
 ('Commonwealth', 'Quezon City', 'Metro Manila', 'NCR'),
 ('Batasan Hills', 'Quezon City', 'Metro Manila', 'NCR'),
 ('Payatas', 'Quezon City', 'Metro Manila', 'NCR'),
@@ -30,7 +30,7 @@ INSERT IGNORE INTO barangays (name, city, province, region) VALUES
 -- 2. REFERENCE LOCATIONS (15 QC locations)
 -- ============================================
 
-CREATE TABLE IF NOT EXISTS reference_locations (
+CREATE TABLE IF NOT EXISTS `campaign_department_reference_locations` (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     barangay_name VARCHAR(150) NULL,
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS reference_locations (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT IGNORE INTO reference_locations (name, barangay_name, city) VALUES
+INSERT IGNORE INTO `campaign_department_reference_locations` (name, barangay_name, city) VALUES
 ('Commonwealth Covered Court', 'Commonwealth', 'Quezon City'),
 ('Phase 8 Covered Court', 'Commonwealth', 'Quezon City'),
 ('IBP Road Area', 'Batasan Hills', 'Quezon City'),
@@ -60,7 +60,7 @@ INSERT IGNORE INTO reference_locations (name, barangay_name, city) VALUES
 -- 3. REFERENCE STAFF (15 named staff with roles)
 -- ============================================
 
-CREATE TABLE IF NOT EXISTS reference_staff (
+CREATE TABLE IF NOT EXISTS `campaign_department_reference_staff` (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
     role VARCHAR(150) NULL,
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS reference_staff (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT IGNORE INTO reference_staff (name, role) VALUES
+INSERT IGNORE INTO `campaign_department_reference_staff` (name, role) VALUES
 ('Juan Dela Cruz', 'Barangay Safety Officer'),
 ('Maria Santos', 'DRRM Coordinator'),
 ('Pedro Reyes', 'Fire Safety Marshal'),
@@ -92,45 +92,45 @@ INSERT IGNORE INTO reference_staff (name, role) VALUES
 -- Note: Uses existing campaigns (1–3) and admin user (id=1) as creator.
 -- content_type is mapped from the "type" label.
 
-INSERT IGNORE INTO content_items
+INSERT IGNORE INTO `campaign_department_content_items`
     (campaign_id, title, body, content_type, hazard_category, intended_audience, source, approval_status, file_path, created_by)
 VALUES
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Fire Safety Poster', 'Poster for basic fire safety reminders.', 'image', 'fire', 'general_public', 'Seed Data', 'approved', '/uploads/materials/fire_safety_poster.jpg', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Flood Preparedness Checklist', 'Checklist for household flood preparedness.', 'file', 'flood', 'general_public', 'Seed Data', 'approved', '/uploads/materials/flood_preparedness_checklist.pdf', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Earthquake Drill Video', 'Video demonstrating earthquake drill procedures.', 'video', 'earthquake', 'general_public', 'Seed Data', 'approved', '/uploads/materials/earthquake_drill_video.mp4', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Emergency Go-Bag Guide', 'Guide on preparing emergency go-bags.', 'file', 'emergency', 'general_public', 'Seed Data', 'approved', '/uploads/materials/emergency_go_bag_guide.pdf', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Road Safety Infographic', 'Infographic about road and traffic safety.', 'image', 'traffic', 'general_public', 'Seed Data', 'approved', '/uploads/materials/road_safety_infographic.png', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Dengue Prevention Poster', 'Poster about dengue prevention measures.', 'image', 'health', 'general_public', 'Seed Data', 'approved', '/uploads/materials/dengue_prevention_poster.jpg', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Fire Drill Guide', 'Step-by-step fire drill guide.', 'file', 'fire', 'general_public', 'Seed Data', 'approved', '/uploads/materials/fire_drill_guide.pdf', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Typhoon Safety Video', 'Video on typhoon safety and preparedness.', 'video', 'typhoon', 'general_public', 'Seed Data', 'approved', '/uploads/materials/typhoon_safety_video.mp4', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Senior Citizen Safety Guide', 'Safety guide tailored for senior citizens.', 'file', 'senior', 'seniors', 'Seed Data', 'approved', '/uploads/materials/senior_citizen_safety_guide.pdf', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Youth Disaster Awareness Poster', 'Poster to raise disaster awareness among youth.', 'image', 'youth', 'youth', 'Seed Data', 'approved', '/uploads/materials/youth_disaster_awareness_poster.jpg', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Community Evacuation Map', 'Map showing community evacuation routes.', 'image', 'evacuation', 'general_public', 'Seed Data', 'approved', '/uploads/materials/community_evacuation_map.png', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Flood Risk Awareness Video', 'Video about flood risks and mitigation.', 'video', 'flood', 'general_public', 'Seed Data', 'approved', '/uploads/materials/flood_risk_awareness_video.mp4', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Fire Extinguisher Manual', 'Manual for using fire extinguishers.', 'file', 'equipment', 'general_public', 'Seed Data', 'approved', '/uploads/materials/fire_extinguisher_manual.pdf', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'School Safety Checklist', 'Checklist for school-based safety checks.', 'file', 'school', 'school_community', 'Seed Data', 'approved', '/uploads/materials/school_safety_checklist.pdf', 1),
-((SELECT id FROM campaigns ORDER BY id LIMIT 1),
+((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Barangay Emergency Contacts', 'List of important barangay emergency contacts.', 'file', 'contacts', 'general_public', 'Seed Data', 'approved', '/uploads/materials/barangay_emergency_contacts.pdf', 1);
 
 -- ============================================
 -- 5. CAMPAIGN TITLES (15 additional campaigns)
 -- ============================================
 
-INSERT IGNORE INTO campaigns
+INSERT IGNORE INTO `campaign_department_campaigns`
     (title, description, status, start_date, end_date, owner_id, category, geographic_scope, location, budget, staff_count)
 VALUES
 ('Fire Safety Awareness Drive', 'Barangay-level fire safety awareness drive in Quezon City.', 'draft', '2025-01-10', '2025-01-31', 1, 'fire_safety', 'Quezon City', 'Commonwealth Covered Court', 40000.00, 5),

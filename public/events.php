@@ -15,6 +15,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/cards.css'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($cssPath . '/content.css'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/sidebar.css'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/module-sidebar.css'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/admin-header.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script>
@@ -62,6 +63,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             transform: translateX(0);
         }
     }
+    
     .events-page {
         max-width: 1400px;
         margin: 0 auto;
@@ -144,7 +146,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     }
 </style>
 
-<main class="events-page">
+<div class="events-page">
     <div class="page-header">
         <h1>Events & Seminars</h1>
         <p>Schedule and manage campaign events, seminars, and workshops</p>
@@ -261,7 +263,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <button class="btn btn-primary" style="margin-top:16px;" onclick="createEvent()">Create Event</button>
         <div class="status" id="createStatus" style="margin-top:12px;"></div>
     </section>
-    
+
     <section id="agency-coordination" class="card" style="margin-bottom:24px;">
         <h2 class="section-title">Agency Coordination</h2>
         <div class="form-field" style="margin-bottom:16px;">
@@ -307,29 +309,29 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                 <button class="btn btn-secondary" onclick="switchView('list')" id="listViewBtn">📋 List</button>
                 <button class="btn btn-secondary" onclick="switchView('calendar')" id="calendarViewBtn">📅 Calendar</button>
                 <button class="btn btn-secondary" onclick="loadEvents()">🔄 Refresh</button>
-            </div>
+        </div>
         </div>
         
         <div id="listView" style="display:block;">
-            <div style="overflow-x:auto;">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
+        <div style="overflow-x:auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
                             <th>Title</th>
-                            <th>Type</th>
-                            <th>Date</th>
-                            <th>Time</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Time</th>
                             <th>Venue</th>
-                            <th>Campaign</th>
-                            <th>Status</th>
+                        <th>Campaign</th>
+                        <th>Status</th>
                             <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="eventTable">
+                    </tr>
+                </thead>
+                <tbody id="eventTable">
                         <tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">Loading events...</td></tr>
-                    </tbody>
-                </table>
+                </tbody>
+            </table>
             </div>
         </div>
         
@@ -339,7 +341,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             </div>
         </div>
     </section>
-    
+
     <section id="event-calendar" class="card" style="margin-bottom:24px; display:none;">
         <h2 class="section-title">Event Calendar</h2>
         <div id="fullCalendarContainer" style="min-height:600px;"></div>
@@ -398,18 +400,18 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             <div>
                 <h3 style="font-size:16px; font-weight:600; color:#1e293b; margin-bottom:12px;">Quick Check-in</h3>
                 <form id="checkinForm" class="form-grid">
-                    <div class="form-field">
-                        <label>Full Name *</label>
-                        <input id="checkin_name" type="text" required>
-                    </div>
-                    <div class="form-field">
-                        <label>Contact</label>
-                        <input id="checkin_contact" type="text" placeholder="Email or phone">
-                    </div>
+            <div class="form-field">
+                <label>Full Name *</label>
+                <input id="checkin_name" type="text" required>
+            </div>
+            <div class="form-field">
+                <label>Contact</label>
+                <input id="checkin_contact" type="text" placeholder="Email or phone">
+            </div>
                     <input type="hidden" id="checkin_event" value="">
-                </form>
+        </form>
                 <button class="btn btn-primary" style="margin-top:12px; width:100%;" onclick="checkIn(event)">Check In</button>
-                <div class="status" id="checkinStatus" style="margin-top:12px;"></div>
+        <div class="status" id="checkinStatus" style="margin-top:12px;"></div>
             </div>
         </div>
     </section>
@@ -1374,6 +1376,7 @@ loadCampaigns();
 loadAudienceSegments();
 loadEvents();
 </script>
+    </div>
     </main>
 </body>
 </html>

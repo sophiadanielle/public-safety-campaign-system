@@ -5,7 +5,7 @@ SET NAMES utf8mb4;
 SET time_zone = '+00:00';
 
 -- Create conversations table (threads between users)
-CREATE TABLE IF NOT EXISTS conversations (
+CREATE TABLE IF NOT EXISTS `campaign_department_conversations` (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     participant1_id INT UNSIGNED NOT NULL,
     participant2_id INT UNSIGNED NOT NULL,
@@ -15,12 +15,12 @@ CREATE TABLE IF NOT EXISTS conversations (
     INDEX idx_participant2 (participant2_id),
     INDEX idx_last_message (last_message_at),
     UNIQUE KEY unique_conversation (participant1_id, participant2_id),
-    CONSTRAINT fk_conv_participant1 FOREIGN KEY (participant1_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_conv_participant2 FOREIGN KEY (participant2_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_conv_participant1 FOREIGN KEY (participant1_id) REFERENCES `campaign_department_users`(id) ON DELETE CASCADE,
+    CONSTRAINT fk_conv_participant2 FOREIGN KEY (participant2_id) REFERENCES `campaign_department_users`(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Create messages table
-CREATE TABLE IF NOT EXISTS messages (
+CREATE TABLE IF NOT EXISTS `campaign_department_messages` (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     conversation_id INT UNSIGNED NOT NULL,
     sender_id INT UNSIGNED NOT NULL,
@@ -37,9 +37,9 @@ CREATE TABLE IF NOT EXISTS messages (
     INDEX idx_is_read (is_read),
     INDEX idx_created_at (created_at),
     INDEX idx_context (context_type, context_id),
-    CONSTRAINT fk_messages_conversation FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
-    CONSTRAINT fk_messages_sender FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT fk_messages_recipient FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_messages_conversation FOREIGN KEY (conversation_id) REFERENCES `campaign_department_conversations`(id) ON DELETE CASCADE,
+    CONSTRAINT fk_messages_sender FOREIGN KEY (sender_id) REFERENCES `campaign_department_users`(id) ON DELETE CASCADE,
+    CONSTRAINT fk_messages_recipient FOREIGN KEY (recipient_id) REFERENCES `campaign_department_users`(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 

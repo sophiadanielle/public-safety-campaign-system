@@ -238,22 +238,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const icon = link.querySelector('.submenu-icon');
         const isCurrentlyOpen = submenu && submenu.classList.contains('submenu-open');
         
-        // Check if module sidebar is present - if so, don't toggle main sidebar submenu
-        const moduleName = link.getAttribute('data-module');
-        const moduleSidebar = document.querySelector('.module-sidebar[data-module="' + moduleName + '"]');
-        const isModuleSidebarVisible = moduleSidebar && window.getComputedStyle(moduleSidebar).display !== 'none';
-        
-        // If module sidebar is visible, prevent main sidebar submenu from opening
-        if (isModuleSidebarVisible && submenu) {
-            // Keep submenu closed and just navigate
-            submenu.classList.remove('submenu-open');
-            if (icon) {
-                icon.classList.remove('fa-chevron-up');
-                icon.classList.add('fa-chevron-down');
-            }
-            return false;
-        }
-        
         // Close all other submenus (accordion behavior)
         document.querySelectorAll('.sidebar-submenu').forEach(menu => {
             if (menu !== submenu) {
@@ -343,98 +327,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Expose function globally
     window.toggleModuleSubmenu = toggleModuleSubmenu;
     
-    // Force hide main sidebar submenus when module sidebar is present
-    function hideMainSidebarSubmenus() {
-        const moduleSidebars = document.querySelectorAll('.module-sidebar[data-module]');
-        moduleSidebars.forEach(moduleSidebar => {
-            const moduleName = moduleSidebar.getAttribute('data-module');
-            const isVisible = window.getComputedStyle(moduleSidebar).display !== 'none';
-            
-            if (isVisible) {
-                // Hide the corresponding main sidebar submenu
-                const mainSubmenu = document.getElementById('submenu-' + moduleName);
-                if (mainSubmenu) {
-                    mainSubmenu.style.display = 'none';
-                    mainSubmenu.style.visibility = 'hidden';
-                    mainSubmenu.style.maxHeight = '0';
-                    mainSubmenu.style.margin = '0';
-                    mainSubmenu.style.padding = '0';
-                    mainSubmenu.style.overflow = 'hidden';
-                    mainSubmenu.style.opacity = '0';
-                    mainSubmenu.style.height = '0';
-                    mainSubmenu.classList.remove('submenu-open');
-                    
-                    // Also hide all items inside
-                    const items = mainSubmenu.querySelectorAll('.sidebar-menu-item, .sidebar-link');
-                    items.forEach(item => {
-                        item.style.display = 'none';
-                        item.style.height = '0';
-                        item.style.margin = '0';
-                        item.style.padding = '0';
-                        item.style.overflow = 'hidden';
-                    });
-                }
-                
-                // Update chevron icon
-                const toggleLink = document.querySelector('.sidebar-module-toggle[data-module="' + moduleName + '"]');
-                if (toggleLink) {
-                    const icon = toggleLink.querySelector('.submenu-icon');
-                    if (icon) {
-                        icon.classList.remove('fa-chevron-up');
-                        icon.classList.add('fa-chevron-down');
-                    }
-                }
-            }
-        });
-    }
-    
-    // Run on page load and after a short delay
-    hideMainSidebarSubmenus();
-    setTimeout(hideMainSidebarSubmenus, 50);
-    setTimeout(hideMainSidebarSubmenus, 200);
-    
-    // Also run when window is resized or module sidebar visibility changes
-    const moduleSidebars = document.querySelectorAll('.module-sidebar[data-module]');
-    if (moduleSidebars.length > 0) {
-        const observer = new MutationObserver(function(mutations) {
-            hideMainSidebarSubmenus();
-        });
-        
-        // Observe module sidebar visibility changes
-        moduleSidebars.forEach(moduleSidebar => {
-            observer.observe(moduleSidebar, {
-                attributes: true,
-                attributeFilter: ['style', 'class']
-            });
-        });
-    }
-    
     // Auto-expand submenu if parent module is active (on page load)
-    // BUT only if module sidebar is not present
     setTimeout(() => {
         const activeModuleLinks = document.querySelectorAll('.sidebar-module-toggle.active');
         activeModuleLinks.forEach(link => {
-            const moduleName = link.getAttribute('data-module');
-            const moduleSidebar = document.querySelector('.module-sidebar[data-module="' + moduleName + '"]');
-            const isModuleSidebarVisible = moduleSidebar && window.getComputedStyle(moduleSidebar).display !== 'none';
-            
-            // If module sidebar is visible, keep main sidebar submenu closed
-            if (isModuleSidebarVisible) {
-                const menuItem = link.closest('.sidebar-menu-item');
-                const submenu = menuItem ? menuItem.querySelector('.sidebar-submenu') : null;
-                const icon = link.querySelector('.submenu-icon');
-                
-                if (submenu) {
-                    submenu.classList.remove('submenu-open');
-                    submenu.style.display = 'none';
-                }
-                if (icon) {
-                    icon.classList.remove('fa-chevron-up');
-                    icon.classList.add('fa-chevron-down');
-                }
-                return; // Skip this link
-            }
-            
             const menuItem = link.closest('.sidebar-menu-item');
             const submenu = menuItem ? menuItem.querySelector('.sidebar-submenu') : null;
             const icon = link.querySelector('.submenu-icon');

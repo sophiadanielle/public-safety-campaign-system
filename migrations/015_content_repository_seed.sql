@@ -11,7 +11,7 @@ SET NAMES utf8mb4;
 -- Note: Uses IDs 101-112 to avoid conflicts with existing seed data
 
 -- Approved Content (Ready for use in campaigns)
-INSERT IGNORE INTO content_items (
+INSERT IGNORE INTO `campaign_department_content_items` (
     id, campaign_id, title, body, content_type, hazard_category, 
     intended_audience_segment, source, approval_status, version_number,
     file_reference, file_path, created_by, approved_by, approval_notes,
@@ -114,7 +114,7 @@ INSERT IGNORE INTO content_items (
 -- VERSION HISTORY (Demonstrates version tracking)
 -- ============================================
 
-INSERT IGNORE INTO content_item_versions (
+INSERT IGNORE INTO `campaign_department_content_item_versions` (
     content_id, version_number, title, body, file_reference, file_path, changed_by, change_notes, created_at
 ) VALUES
 -- Version 1 of Fire Safety Poster (before update)
@@ -133,7 +133,7 @@ INSERT IGNORE INTO content_item_versions (
 -- ATTACHMENTS (for backward compatibility)
 -- ============================================
 
-INSERT IGNORE INTO attachments (content_item_id, file_path, mime_type, file_size) VALUES
+INSERT IGNORE INTO `campaign_department_attachments` (content_item_id, file_path, mime_type, file_size) VALUES
 (101, 'uploads/content_repository/fire_safety_households_v2.jpg', 'image/jpeg', 245760),
 (102, 'uploads/content_repository/flood_preparedness_checklist.pdf', 'application/pdf', 512000),
 (103, 'uploads/content_repository/earthquake_safety_video.mp4', 'video/mp4', 5242880),
@@ -152,7 +152,7 @@ INSERT IGNORE INTO attachments (content_item_id, file_path, mime_type, file_size
 -- ============================================
 
 -- Ensure tags exist
-INSERT IGNORE INTO tags (id, name) VALUES
+INSERT IGNORE INTO `campaign_department_tags` (id, name) VALUES
 (101, 'fire-safety'),
 (102, 'flood-preparedness'),
 (103, 'earthquake'),
@@ -165,7 +165,7 @@ INSERT IGNORE INTO tags (id, name) VALUES
 (110, 'youth');
 
 -- Link tags to content
-INSERT IGNORE INTO content_tags (content_item_id, tag_id) VALUES
+INSERT IGNORE INTO `campaign_department_content_tags` (content_item_id, tag_id) VALUES
 (101, 101), (101, 109), -- Fire safety, households
 (102, 102), (102, 109), -- Flood preparedness, households
 (103, 103), (103, 108), -- Earthquake, schools
@@ -184,7 +184,7 @@ INSERT IGNORE INTO content_tags (content_item_id, tag_id) VALUES
 -- ============================================
 -- Link approved content to existing campaigns
 
-INSERT IGNORE INTO campaign_content_items (campaign_id, content_id, attached_by, attached_at) VALUES
+INSERT IGNORE INTO `campaign_department_campaign_content_items` (campaign_id, content_id, attached_by, attached_at) VALUES
 -- Link Fire Safety Poster to Fire Safety Campaign (campaign_id = 1)
 (1, 101, 1, '2025-02-20 10:00:00'),
 -- Link Emergency Contacts to Fire Safety Campaign
@@ -198,7 +198,7 @@ INSERT IGNORE INTO campaign_content_items (campaign_id, content_id, attached_by,
 -- CONTENT USAGE TRACKING (Optional)
 -- ============================================
 
-INSERT IGNORE INTO content_usage (content_item_id, campaign_id, usage_context) VALUES
+INSERT IGNORE INTO `campaign_department_content_usage` (content_item_id, campaign_id, usage_context) VALUES
 (101, 1, 'Distributed during Fire Safety Awareness Week'),
 (102, 3, 'Included in flood preparedness information packets'),
 (103, 2, 'Screened during earthquake preparedness seminar'),

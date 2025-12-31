@@ -489,5 +489,220 @@ class AuthController
 
         return $user;
     }
+
+    /**
+     * Initiate Google OAuth login - redirects to Google
+     */
+    public function google(?array $user = null, array $params = []): void
+    {
+        // Start session if not started
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        // Get Google OAuth credentials from environment
+        $clientId = $_ENV['GOOGLE_CLIENT_ID'] ?? '';
+        $clientSecret = $_ENV['GOOGLE_SECRET'] ?? '';
+        
+        if (empty($clientId) || empty($clientSecret)) {
+            http_response_code(500);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Google OAuth not configured']);
+            exit;
+        }
+
+        // Get the base URL for redirect
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $scriptPath = dirname($_SERVER['SCRIPT_NAME'] ?? '');
+        $redirectUri = $protocol . '://' . $host . $scriptPath . '/api/v1/auth/google/callback';
+        
+        // Generate state for CSRF protection
+        $state = bin2hex(random_bytes(16));
+        $_SESSION['google_oauth_state'] = $state;
+        
+        // Build Google OAuth URL
+        $authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
+            'client_id' => $clientId,
+            'redirect_uri' => $redirectUri,
+            'response_type' => 'code',
+            'scope' => 'openid email profile',
+            'state' => $state,
+            'access_type' => 'online',
+            'prompt' => 'select_account'
+        ]);
+        
+        // Redirect to Google
+        header('Location: ' . $authUrl);
+        exit;
+    }
+
+    /**
+     * Handle Google OAuth callback
+     */
+    public function googleCallback(?array $user = null, array $params = []): void
+    {
+        // Start session if not started
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // Get Google OAuth credentials
+        $clientId = $_ENV['GOOGLE_CLIENT_ID'] ?? '';
+        $clientSecret = $_ENV['GOOGLE_SECRET'] ?? '';
+        
+        if (empty($clientId) || empty($clientSecret)) {
+            $this->redirectWithError('Google OAuth not configured');
+            return;
+        }
+
+        // Verify state (CSRF protection)
+        $state = $_GET['state'] ?? '';
+        $sessionState = $_SESSION['google_oauth_state'] ?? '';
+        
+        if (empty($state) || $state !== $sessionState) {
+            $this->redirectWithError('Invalid state parameter');
+            return;
+        }
+        
+        unset($_SESSION['google_oauth_state']);
+
+        // Get authorization code
+        $code = $_GET['code'] ?? '';
+        if (empty($code)) {
+            $error = $_GET['error'] ?? 'Authorization failed';
+            $this->redirectWithError($error);
+            return;
+        }
+
+        // Exchange code for access token
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $scriptPath = dirname($_SERVER['SCRIPT_NAME'] ?? '');
+        $redirectUri = $protocol . '://' . $host . $scriptPath . '/api/v1/auth/google/callback';
+        
+        $tokenUrl = 'https://oauth2.googleapis.com/token';
+        $tokenData = [
+            'code' => $code,
+            'client_id' => $clientId,
+            'client_secret' => $clientSecret,
+            'redirect_uri' => $redirectUri,
+            'grant_type' => 'authorization_code'
+        ];
+
+        $ch = curl_init($tokenUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($tokenData));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
+        
+        $tokenResponse = curl_exec($ch);
+        $tokenHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($tokenHttpCode !== 200) {
+            $this->redirectWithError('Failed to exchange code for token');
+            return;
+        }
+
+        $tokenData = json_decode($tokenResponse, true);
+        if (!isset($tokenData['access_token'])) {
+            $this->redirectWithError('Invalid token response');
+            return;
+        }
+
+        // Get user info from Google
+        $userInfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo?access_token=' . urlencode($tokenData['access_token']);
+        
+        $ch = curl_init($userInfoUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $userInfoResponse = curl_exec($ch);
+        $userInfoHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($userInfoHttpCode !== 200) {
+            $this->redirectWithError('Failed to get user info from Google');
+            return;
+        }
+
+        $userInfo = json_decode($userInfoResponse, true);
+        if (!isset($userInfo['email'])) {
+            $this->redirectWithError('Email not provided by Google');
+            return;
+        }
+
+        // Find or create user
+        $email = strtolower(trim($userInfo['email']));
+        $name = $userInfo['name'] ?? $userInfo['given_name'] ?? 'Google User';
+        $googleId = $userInfo['id'] ?? null;
+
+        try {
+            // Check if user exists
+            $stmt = $this->pdo->prepare('SELECT id, name, email, role_id, barangay_id FROM users WHERE LOWER(TRIM(email)) = :email AND is_active = 1 LIMIT 1');
+            $stmt->execute(['email' => $email]);
+            $user = $stmt->fetch();
+
+            if (!$user) {
+                // Create new user
+                // Get default role (assuming role_id 2 is for regular users, adjust as needed)
+                $defaultRoleId = 2;
+                $defaultBarangayId = 1;
+
+                $insert = $this->pdo->prepare("
+                    INSERT INTO users (name, email, role_id, barangay_id, is_active, created_at)
+                    VALUES (:name, :email, :role_id, :barangay_id, 1, NOW())
+                ");
+                $insert->execute([
+                    'name' => $name,
+                    'email' => $email,
+                    'role_id' => $defaultRoleId,
+                    'barangay_id' => $defaultBarangayId
+                ]);
+
+                $userId = (int) $this->pdo->lastInsertId();
+                $user = [
+                    'id' => $userId,
+                    'name' => $name,
+                    'email' => $email,
+                    'role_id' => $defaultRoleId,
+                    'barangay_id' => $defaultBarangayId
+                ];
+            }
+        } catch (\PDOException $e) {
+            error_log('Database error in Google callback: ' . $e->getMessage());
+            $this->redirectWithError('Database connection failed. Please try again later.');
+            return;
+        } catch (\Throwable $e) {
+            error_log('Error in Google callback: ' . $e->getMessage());
+            $this->redirectWithError('An error occurred during authentication. Please try again.');
+            return;
+        }
+
+        // Generate JWT token
+        $token = $this->generateToken((int) $user['id'], $user['email'], (int) $user['role_id']);
+
+        // Redirect to dashboard with token in URL (will be stored in localStorage by JavaScript)
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $scriptPath = dirname(dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+        $redirectUrl = $protocol . '://' . $host . $scriptPath . '/public/dashboard.php?google_login=1&token=' . urlencode($token);
+        
+        header('Location: ' . $redirectUrl);
+        exit;
+    }
+
+    /**
+     * Helper to redirect with error message
+     */
+    private function redirectWithError(string $error): void
+    {
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $scriptPath = dirname(dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+        $redirectUrl = $protocol . '://' . $host . $scriptPath . '/index.php?error=' . urlencode($error);
+        
+        header('Location: ' . $redirectUrl);
+        exit;
+    }
 }
 

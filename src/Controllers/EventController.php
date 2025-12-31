@@ -940,6 +940,110 @@ class EventController
         $stmt->execute(['event_id' => $eventId, 'subsystem_type' => $subsystemType]);
     }
 
+    /**
+     * Get incidents from Law Enforcement system (integration example)
+     */
+    public function getLawEnforcementIncidents(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Unauthorized'];
+        }
+
+        try {
+            $integrationService = new \App\Services\IntegrationService($this->pdo);
+            
+            // Check if events module has access to law_enforcement system
+            if (!$integrationService->moduleHasAccess('events', 'law_enforcement', 'read')) {
+                http_response_code(403);
+                return ['error' => 'Events module does not have access to Law Enforcement system'];
+            }
+
+            // Try to get cached data first (faster)
+            $cached = $integrationService->getCachedData('law_enforcement', 'incidents_to_events');
+            
+            if (!empty($cached)) {
+                return [
+                    'source' => 'cache',
+                    'incidents' => array_map(function($item) {
+                        return $item['data_json'];
+                    }, $cached),
+                    'count' => count($cached)
+                ];
+            }
+
+            // If no cache, query external system
+            // Option 1: Query external database
+            try {
+                $incidents = $integrationService->queryExternalDatabase(
+                    'law_enforcement',
+                    'SELECT incident_id, incident_type, location, reported_at, description, status 
+                     FROM incidents 
+                     WHERE status = :status AND reported_at >= :date 
+                     ORDER BY reported_at DESC 
+                     LIMIT 50',
+                    [
+                        'status' => 'active',
+                        'date' => date('Y-m-d', strtotime('-30 days'))
+                    ]
+                );
+                
+                return [
+                    'source' => 'database',
+                    'incidents' => $incidents,
+                    'count' => count($incidents)
+                ];
+            } catch (\RuntimeException $e) {
+                // If database query fails, try API
+                $incidents = $integrationService->queryExternalApi(
+                    'law_enforcement',
+                    'incidents',
+                    'GET',
+                    ['status' => 'active', 'date_from' => date('Y-m-d', strtotime('-30 days'))],
+                    'events'
+                );
+                
+                return [
+                    'source' => 'api',
+                    'incidents' => $incidents['data'] ?? $incidents,
+                    'count' => count($incidents['data'] ?? $incidents)
+                ];
+            }
+        } catch (\RuntimeException $e) {
+            http_response_code(500);
+            return ['error' => 'Failed to fetch incidents: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Sync incidents from Law Enforcement system to events
+     */
+    public function syncLawEnforcementIncidents(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Unauthorized'];
+        }
+
+        try {
+            $integrationService = new \App\Services\IntegrationService($this->pdo);
+            
+            $result = $integrationService->syncExternalData(
+                'law_enforcement',
+                'incidents_to_events',
+                $user['id'] ?? null
+            );
+            
+            return [
+                'message' => 'Sync completed',
+                'sync_result' => $result
+            ];
+        } catch (\RuntimeException $e) {
+            http_response_code(500);
+            return ['error' => 'Sync failed: ' . $e->getMessage()];
+        }
+    }
+
     private function mapAgencyTypeToSubsystem(string $agencyType): string
     {
         $mapping = [

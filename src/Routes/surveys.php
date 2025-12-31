@@ -54,6 +54,30 @@ return [
         'handler' => [SurveyController::class, 'qrLink'],
         'middleware' => JWTMiddleware::class,
     ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/surveys/{id}/close',
+        'handler' => [SurveyController::class, 'closeSurvey'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/surveys/{id}/responses',
+        'handler' => [SurveyController::class, 'getResponses'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/surveys/{id}/results',
+        'handler' => [SurveyController::class, 'aggregatedResults'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/surveys/{id}/results/export',
+        'handler' => [SurveyController::class, 'exportAggregatedCsv'],
+        'middleware' => JWTMiddleware::class,
+    ],
 ];
 
 

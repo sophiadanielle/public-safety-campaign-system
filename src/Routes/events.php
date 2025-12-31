@@ -109,4 +109,20 @@ return [
         'handler' => [EventController::class, 'integrationCheckpoint'],
         'middleware' => JWTMiddleware::class,
     ],
+    
+    // Get Law Enforcement incidents (integration example)
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/events/integrations/law-enforcement/incidents',
+        'handler' => [EventController::class, 'getLawEnforcementIncidents'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    
+    // Sync Law Enforcement incidents
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/events/integrations/law-enforcement/sync',
+        'handler' => [EventController::class, 'syncLawEnforcementIncidents'],
+        'middleware' => JWTMiddleware::class,
+    ],
 ];
