@@ -118,3 +118,4 @@ foreach ($files as $file) {
 echo "\nDone! All migration files have been updated with campaign_department_ prefix.\n";
 echo "Backup files (.backup) have been created for all modified files.\n";
 
+

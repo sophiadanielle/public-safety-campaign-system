@@ -68,6 +68,18 @@ return [
         'handler' => [IntegrationController::class, 'getLogs'],
         'middleware' => JWTMiddleware::class,
     ],
+    // Webhook endpoint for external systems to push data
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/integrations/webhook/{system}',
+        'handler' => [IntegrationController::class, 'receiveWebhook'],
+    ],
+    // Real-time data push endpoint
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/integrations/push',
+        'handler' => [IntegrationController::class, 'receivePushData'],
+    ],
 ];
 
 

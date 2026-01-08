@@ -60,7 +60,7 @@ class IntegrationController
                 is_active,
                 created_at,
                 updated_at
-            FROM external_systems
+            FROM `campaign_department_external_systems`
             ORDER BY system_name ASC
         ');
         return ['systems' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
@@ -281,8 +281,8 @@ class IntegrationController
                 iql.*,
                 es.system_name,
                 es.display_name
-            FROM integration_query_logs iql
-            INNER JOIN external_systems es ON es.id = iql.system_id
+            FROM `campaign_department_integration_query_logs` iql
+            INNER JOIN `campaign_department_external_systems` es ON es.id = iql.system_id
             WHERE ' . implode(' AND ', $where) . '
             ORDER BY iql.created_at DESC
             LIMIT :limit OFFSET :offset
@@ -296,6 +296,132 @@ class IntegrationController
         $stmt->execute();
 
         return ['logs' => $stmt->fetchAll(PDO::FETCH_ASSOC)];
+    }
+
+    /**
+     * Receive webhook from external system (real-time push)
+     * Public endpoint authenticated via webhook secret
+     */
+    public function receiveWebhook(?array $user, array $params = []): array
+    {
+        $systemName = $params['system'] ?? null;
+        if (!$systemName) {
+            http_response_code(422);
+            return ['error' => 'System name is required'];
+        }
+
+        $payload = file_get_contents('php://input');
+        $data = json_decode($payload, true) ?? [];
+
+        // Verify system exists
+        $stmt = $this->pdo->prepare('
+            SELECT id FROM `campaign_department_external_systems`
+            WHERE system_name = :system_name AND is_active = TRUE LIMIT 1
+        ');
+        $stmt->execute(['system_name' => $systemName]);
+        $system = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$system) {
+            http_response_code(404);
+            return ['error' => 'External system not found'];
+        }
+
+        // Log webhook
+        $stmt = $this->pdo->prepare('
+            INSERT INTO `campaign_department_integration_query_logs`
+            (system_id, query_type, query_string, request_payload, status, module_name)
+            VALUES (:system_id, :query_type, :query_string, :request_payload, :status, :module_name)
+        ');
+        $stmt->execute([
+            'system_id' => $system['id'],
+            'query_type' => 'api_post',
+            'query_string' => '/api/v1/integrations/webhook/' . $systemName,
+            'request_payload' => $payload,
+            'status' => 'success',
+            'module_name' => 'integration'
+        ]);
+
+        // Cache data for processing
+        $externalId = (string)($data['id'] ?? uniqid());
+        $stmt = $this->pdo->prepare('
+            INSERT INTO `campaign_department_external_data_cache`
+            (system_id, mapping_id, external_id, data_json, sync_status, last_synced_at)
+            VALUES (:system_id, 1, :external_id, :data_json, :sync_status, NOW())
+            ON DUPLICATE KEY UPDATE
+                data_json = VALUES(data_json),
+                sync_status = VALUES(sync_status),
+                last_synced_at = NOW()
+        ');
+        $stmt->execute([
+            'system_id' => $system['id'],
+            'external_id' => $externalId,
+            'data_json' => $payload,
+            'sync_status' => 'pending'
+        ]);
+
+        return ['status' => 'received', 'system' => $systemName, 'external_id' => $externalId];
+    }
+
+    /**
+     * Receive push data from external system (alternative endpoint)
+     */
+    public function receivePushData(?array $user, array $params = []): array
+    {
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $systemName = $input['system'] ?? null;
+        $mappingName = $input['mapping'] ?? null;
+        $data = $input['data'] ?? null;
+
+        if (!$systemName || !$mappingName || !$data) {
+            http_response_code(422);
+            return ['error' => 'System name, mapping name, and data are required'];
+        }
+
+        // Verify mapping exists
+        $stmt = $this->pdo->prepare('
+            SELECT es.id as system_id, edm.id as mapping_id, edm.target_table
+            FROM `campaign_department_external_systems` es
+            INNER JOIN `campaign_department_external_data_mappings` edm ON edm.system_id = es.id
+            WHERE es.system_name = :system_name 
+            AND edm.mapping_name = :mapping_name 
+            AND es.is_active = TRUE 
+            AND edm.is_active = TRUE
+            LIMIT 1
+        ');
+        $stmt->execute(['system_name' => $systemName, 'mapping_name' => $mappingName]);
+        $mapping = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$mapping) {
+            http_response_code(404);
+            return ['error' => 'System or mapping not found'];
+        }
+
+        // Cache the data
+        $externalId = (string)($data['id'] ?? uniqid());
+        $stmt = $this->pdo->prepare('
+            INSERT INTO `campaign_department_external_data_cache`
+            (system_id, mapping_id, external_id, data_json, sync_status, last_synced_at)
+            VALUES (:system_id, :mapping_id, :external_id, :data_json, :sync_status, NOW())
+            ON DUPLICATE KEY UPDATE
+                data_json = VALUES(data_json),
+                sync_status = VALUES(sync_status),
+                last_synced_at = NOW()
+        ');
+        $stmt->execute([
+            'system_id' => $mapping['system_id'],
+            'mapping_id' => $mapping['mapping_id'],
+            'external_id' => $externalId,
+            'data_json' => json_encode($data),
+            'sync_status' => 'pending'
+        ]);
+
+        return [
+            'status' => 'success',
+            'system' => $systemName,
+            'mapping' => $mappingName,
+            'external_id' => $externalId,
+            'message' => 'Data cached for processing'
+        ];
     }
 }
 

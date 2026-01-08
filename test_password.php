@@ -28,3 +28,4 @@ echo "Verification with new hash: " . (password_verify($password, $newHash) ? "S
 
 
 
+

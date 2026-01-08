@@ -74,3 +74,4 @@ For each migration file, replace:
 | tags | campaign_department_tags |
 | content_usage | campaign_department_content_usage |
 
+

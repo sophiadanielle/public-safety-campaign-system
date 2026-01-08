@@ -40,8 +40,8 @@ class IntegrationService
                 esc.api_timeout,
                 esc.config_json,
                 esc.connection_status
-            FROM external_systems es
-            LEFT JOIN external_system_connections esc ON esc.system_id = es.id AND esc.is_active = TRUE
+            FROM `campaign_department_external_systems` es
+            LEFT JOIN `campaign_department_external_system_connections` esc ON esc.system_id = es.id AND esc.is_active = TRUE
             WHERE es.system_name = :system_name AND es.is_active = TRUE
             LIMIT 1
         ');
@@ -151,9 +151,9 @@ class IntegrationService
     {
         $stmt = $this->pdo->prepare('
             SELECT edc.*
-            FROM external_data_cache edc
-            INNER JOIN external_systems es ON es.id = edc.system_id
-            INNER JOIN external_data_mappings edm ON edm.id = edc.mapping_id
+            FROM `campaign_department_external_data_cache` edc
+            INNER JOIN `campaign_department_external_systems` es ON es.id = edc.system_id
+            INNER JOIN `campaign_department_external_data_mappings` edm ON edm.id = edc.mapping_id
             WHERE es.system_name = :system_name 
             AND edm.mapping_name = :mapping_name
             AND edc.expires_at > NOW()
@@ -183,8 +183,8 @@ class IntegrationService
     {
         $stmt = $this->pdo->prepare('
             SELECT edm.*, es.system_name
-            FROM external_data_mappings edm
-            INNER JOIN external_systems es ON es.id = edm.system_id
+            FROM `campaign_department_external_data_mappings` edm
+            INNER JOIN `campaign_department_external_systems` es ON es.id = edm.system_id
             WHERE es.system_name = :system_name 
             AND edm.mapping_name = :mapping_name
             AND edm.is_active = TRUE
@@ -241,7 +241,7 @@ class IntegrationService
 
         // Update mapping sync time
         $updateStmt = $this->pdo->prepare('
-            UPDATE external_data_mappings 
+            UPDATE `campaign_department_external_data_mappings` 
             SET last_sync_at = NOW(),
                 next_sync_at = CASE 
                     WHEN sync_frequency = "hourly" THEN DATE_ADD(NOW(), INTERVAL 1 HOUR)
@@ -267,8 +267,8 @@ class IntegrationService
     {
         $stmt = $this->pdo->prepare('
             SELECT msm.access_type
-            FROM module_system_mappings msm
-            INNER JOIN external_systems es ON es.id = msm.system_id
+            FROM `campaign_department_module_system_mappings` msm
+            INNER JOIN `campaign_department_external_systems` es ON es.id = msm.system_id
             WHERE msm.module_name = :module_name
             AND es.system_name = :system_name
             AND msm.is_active = TRUE
@@ -304,9 +304,9 @@ class IntegrationService
                 es.system_type,
                 msm.access_type,
                 esc.connection_status
-            FROM module_system_mappings msm
-            INNER JOIN external_systems es ON es.id = msm.system_id
-            LEFT JOIN external_system_connections esc ON esc.system_id = es.id AND esc.is_active = TRUE
+            FROM `campaign_department_module_system_mappings` msm
+            INNER JOIN `campaign_department_external_systems` es ON es.id = msm.system_id
+            LEFT JOIN `campaign_department_external_system_connections` esc ON esc.system_id = es.id AND esc.is_active = TRUE
             WHERE msm.module_name = :module_name
             AND msm.is_active = TRUE
             AND es.is_active = TRUE
@@ -407,7 +407,7 @@ class IntegrationService
     private function cacheExternalData(int $systemId, int $mappingId, string $externalId, array $data): void
     {
         $stmt = $this->pdo->prepare('
-            INSERT INTO external_data_cache 
+            INSERT INTO `campaign_department_external_data_cache` 
             (system_id, mapping_id, external_id, data_json, sync_status, last_synced_at, expires_at)
             VALUES (:system_id, :mapping_id, :external_id, :data_json, "synced", NOW(), DATE_ADD(NOW(), INTERVAL 1 HOUR))
             ON DUPLICATE KEY UPDATE
@@ -440,7 +440,7 @@ class IntegrationService
         ?int $responseStatus = null
     ): void {
         // Get system ID
-        $stmt = $this->pdo->prepare('SELECT id FROM external_systems WHERE system_name = :system_name LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id FROM `campaign_department_external_systems` WHERE system_name = :system_name LIMIT 1');
         $stmt->execute(['system_name' => $systemName]);
         $system = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -449,7 +449,7 @@ class IntegrationService
         }
 
         $logStmt = $this->pdo->prepare('
-            INSERT INTO integration_query_logs 
+            INSERT INTO `campaign_department_integration_query_logs` 
             (system_id, query_type, query_string, request_payload, response_payload, 
              response_status, execution_time_ms, status, error_message, module_name)
             VALUES (:system_id, :query_type, :query_string, :request_payload, :response_payload,

@@ -218,3 +218,4 @@ SET s.created_by = (
 )
 WHERE s.created_by IS NULL AND s.campaign_id IS NOT NULL;
 
+
