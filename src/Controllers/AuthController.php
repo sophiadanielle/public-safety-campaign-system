@@ -12,7 +12,7 @@ use Throwable;
 class AuthController
 {
     public function __construct(
-        private PDO $pdo,
+        private ?PDO $pdo,
         private string $jwtSecret,
         private string $jwtIssuer,
         private string $jwtAudience,
@@ -45,7 +45,7 @@ class AuthController
         $normalizedEmail = strtolower(trim($email));
         $normalizedPassword = trim($rawPassword);
         
-        // Developer shortcut: allow a guaranteed local admin login even if DB seeding is broken.
+        // Developer shortcut: allow a guaranteed local admin login even if DB seeding is broken or DB is unavailable.
         // This ONLY kicks in for the known demo credentials.
         // Admin credentials: admin@barangay1.qc.gov.ph / pass123
         $isAdminEmail = ($normalizedEmail === 'admin@barangay1.qc.gov.ph');
@@ -60,7 +60,7 @@ class AuthController
                 'barangay_id' => 1,
             ];
 
-            $token = $this->generateToken($demoUser['id'], $demoUser['email'], $demoUser['role_id']);
+            $token = $this->generateToken($demoUser['id'], $demoUser['email'], $demoUser['role_id'], $demoUser['name']);
 
             return [
                 'token' => $token,
@@ -69,29 +69,57 @@ class AuthController
             ];
         }
         
-        // Normalize email for database query (case-insensitive)
-        $stmt = $this->pdo->prepare('SELECT id, name, email, password_hash, role_id, barangay_id FROM users WHERE LOWER(TRIM(email)) = :email AND is_active = 1 LIMIT 1');
-        $stmt->execute(['email' => $normalizedEmail]);
-        $user = $stmt->fetch();
-
-        // If login fails for the default admin, attempt an automatic repair of that account
-        if (!$user || !password_verify($rawPassword, $user['password_hash'] ?? '')) {
-            $repairedUser = $this->maybeRepairAdminUser($email, $rawPassword);
-            if ($repairedUser) {
-                $user = $repairedUser;
-            } else {
-                http_response_code(401);
-                return ['error' => 'Invalid credentials'];
-            }
+        // If PDO is null (database connection failed), only allow demo login
+        if ($this->pdo === null) {
+            http_response_code(503);
+            return ['error' => 'Database unavailable. Please use demo credentials: admin@barangay1.qc.gov.ph / pass123'];
         }
+        
+        // Normalize email for database query (case-insensitive)
+        try {
+            $stmt = $this->pdo->prepare('SELECT id, name, email, password_hash, role_id, barangay_id FROM `campaign_department_users` WHERE LOWER(TRIM(email)) = :email AND is_active = 1 LIMIT 1');
+            $stmt->execute(['email' => $normalizedEmail]);
+            $user = $stmt->fetch();
 
-        $token = $this->generateToken((int) $user['id'], $user['email'], (int) $user['role_id']);
+            // If login fails for the default admin, attempt an automatic repair of that account
+            if (!$user || !password_verify($rawPassword, $user['password_hash'] ?? '')) {
+                $repairedUser = $this->maybeRepairAdminUser($email, $rawPassword);
+                if ($repairedUser) {
+                    $user = $repairedUser;
+                } else {
+                    http_response_code(401);
+                    return ['error' => 'Invalid credentials'];
+                }
+            }
 
-        return [
-            'token' => $token,
-            'expires_in' => $this->jwtExpirySeconds,
-            'user' => $this->publicUser($user),
-        ];
+            $token = $this->generateToken((int) $user['id'], $user['email'], (int) $user['role_id'], $user['name'] ?? null);
+
+            return [
+                'token' => $token,
+                'expires_in' => $this->jwtExpirySeconds,
+                'user' => $this->publicUser($user),
+            ];
+        } catch (\PDOException $e) {
+            error_log('Database error during login: ' . $e->getMessage());
+            // Fall back to demo login if database query fails
+            if ($isAdminEmail && $isAdminPassword) {
+                $demoUser = [
+                    'id' => 1,
+                    'name' => 'Admin User',
+                    'email' => 'admin@barangay1.qc.gov.ph',
+                    'role_id' => 1,
+                    'barangay_id' => 1,
+                ];
+                $token = $this->generateToken($demoUser['id'], $demoUser['email'], $demoUser['role_id'], $demoUser['name']);
+                return [
+                    'token' => $token,
+                    'expires_in' => $this->jwtExpirySeconds,
+                    'user' => $demoUser,
+                ];
+            }
+            http_response_code(503);
+            return ['error' => 'Database error. Please try again or use demo credentials: admin@barangay1.qc.gov.ph / pass123'];
+        }
     }
 
     /**
@@ -112,7 +140,7 @@ class AuthController
         }
 
         // Ensure email is unique
-        $check = $this->pdo->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
+        $check = $this->pdo->prepare('SELECT id FROM campaign_department_users WHERE email = :email LIMIT 1');
         $check->execute(['email' => $email]);
         if ($check->fetch()) {
             http_response_code(409);
@@ -126,7 +154,7 @@ class AuthController
         $barangayId = 1;
 
         $stmt = $this->pdo->prepare('
-            INSERT INTO users (role_id, barangay_id, name, email, password_hash, is_active)
+            INSERT INTO campaign_department_users (role_id, barangay_id, name, email, password_hash, is_active)
             VALUES (:role_id, :barangay_id, :name, :email, :password_hash, 1)
         ');
 
@@ -140,7 +168,7 @@ class AuthController
 
         $userId = (int) $this->pdo->lastInsertId();
 
-        $token = $this->generateToken($userId, $email, $roleId);
+        $token = $this->generateToken($userId, $email, $roleId, $name);
 
         return [
             'token' => $token,
@@ -170,14 +198,14 @@ class AuthController
                 throw new \RuntimeException('Invalid token subject');
             }
 
-            $stmt = $this->pdo->prepare('SELECT id, name, email, role_id, barangay_id FROM users WHERE id = :id AND is_active = 1 LIMIT 1');
+            $stmt = $this->pdo->prepare('SELECT id, name, email, role_id, barangay_id FROM campaign_department_users WHERE id = :id AND is_active = 1 LIMIT 1');
             $stmt->execute(['id' => $userId]);
             $user = $stmt->fetch();
             if (!$user) {
                 throw new \RuntimeException('User not found');
             }
 
-            $newToken = $this->generateToken((int) $user['id'], $user['email'], (int) $user['role_id']);
+            $newToken = $this->generateToken((int) $user['id'], $user['email'], (int) $user['role_id'], $user['name'] ?? null);
 
             return [
                 'token' => $newToken,
@@ -192,37 +220,75 @@ class AuthController
 
     public function me(?array $user, array $params = []): array
     {
+        // CRITICAL PROOF: Log that this endpoint was called
+        error_log('=== CRITICAL PROOF: AuthController::me() CALLED ===');
+        error_log('CRITICAL: Request URI: ' . ($_SERVER['REQUEST_URI'] ?? 'NOT SET'));
+        error_log('CRITICAL: User parameter: ' . ($user ? json_encode($user, JSON_PRETTY_PRINT) : 'NULL'));
         try {
             if (!$user) {
+                error_log('CRITICAL: User is NULL - returning 401');
                 http_response_code(401);
                 return ['error' => 'Unauthorized'];
+            }
+
+            // If PDO is null, return user data from JWT token (already validated by middleware)
+            if ($this->pdo === null) {
+                error_log('AuthController::me - PDO is null, returning user from JWT token');
+                return ['user' => $this->publicUser($user)];
             }
 
             // Fetch full user data with barangay name
             $userId = (int) $user['id'];
             $stmt = $this->pdo->prepare('
-                SELECT u.*, b.name as barangay_name 
-                FROM users u 
-                LEFT JOIN barangays b ON b.id = u.barangay_id 
-                WHERE u.id = :id
+                SELECT u.id, u.name, u.email, u.role_id, u.barangay_id, u.phone_number, u.created_at, b.name as barangay_name 
+                FROM campaign_department_users u 
+                LEFT JOIN `campaign_department_barangays` b ON b.id = u.barangay_id 
+                WHERE u.id = :id AND u.is_active = 1
             ');
             $stmt->execute(['id' => $userId]);
             $fullUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            // TASK 2: PROVE REAL API RESPONSE - Log exact database result
+            $dbResultJson = json_encode($fullUser, JSON_PRETTY_PRINT);
+            error_log("=== TASK 2 PROOF: Database query result ===\n" . $dbResultJson);
+            
+            // TASK 2: Log middleware user data
+            $middlewareUserJson = json_encode($user, JSON_PRETTY_PRINT);
+            error_log("=== TASK 2 PROOF: Middleware user data ===\n" . $middlewareUserJson);
+
             if ($fullUser) {
-                return ['user' => $this->publicUser($fullUser)];
+                // Ensure name is set - use from database query, fallback to middleware user data if empty
+                if (empty($fullUser['name']) && !empty($user['name'])) {
+                    $fullUser['name'] = $user['name'];
+                    error_log('TASK 2 PROOF: Name was empty in DB, using middleware name: ' . $user['name']);
+                }
+                $publicUserData = $this->publicUser($fullUser);
+                $finalResponse = ['user' => $publicUserData];
+                $finalResponseJson = json_encode($finalResponse, JSON_PRETTY_PRINT);
+                error_log("=== TASK 2 PROOF: Final API Response ===\n" . $finalResponseJson);
+                return $finalResponse;
             }
 
+            // If query returned no results, use middleware user data (which came from database)
+            error_log('TASK 2 PROOF: Database query returned no results, using middleware user');
+            $publicUserData = $this->publicUser($user);
+            $finalResponse = ['user' => $publicUserData];
+            $finalResponseJson = json_encode($finalResponse, JSON_PRETTY_PRINT);
+            error_log("=== TASK 2 PROOF: Final API Response (from middleware) ===\n" . $finalResponseJson);
+            return $finalResponse;
+        } catch (\PDOException $e) {
+            error_log('AuthController::me database error: ' . $e->getMessage());
+            // If database query fails, return user from JWT token as fallback
             return ['user' => $this->publicUser($user)];
         } catch (\Throwable $e) {
             error_log('AuthController::me error: ' . $e->getMessage());
             error_log('AuthController::me stack: ' . $e->getTraceAsString());
-            http_response_code(500);
-            return ['error' => 'Failed to load user data'];
+            // Return user from JWT token as fallback
+            return ['user' => $this->publicUser($user)];
         }
     }
 
-    private function generateToken(int $userId, string $email, int $roleId): string
+    private function generateToken(int $userId, string $email, int $roleId, ?string $name = null): string
     {
         $now = time();
         $payload = [
@@ -235,6 +301,11 @@ class AuthController
             'email' => $email,
             'role_id' => $roleId,
         ];
+        
+        // Include name in token if provided (for fallback when database unavailable)
+        if ($name !== null) {
+            $payload['name'] = $name;
+        }
 
         return JWT::encode($payload, $this->jwtSecret, 'HS256');
     }
@@ -250,16 +321,37 @@ class AuthController
 
     private function publicUser(array $user): array
     {
-        return [
-            'id' => (int) $user['id'],
-            'name' => $user['name'] ?? null,
-            'email' => $user['email'] ?? null,
+        // TASK 3: PROVE WHERE "User" IS COMING FROM
+        $nameValue = isset($user['name']) ? $user['name'] : 'NOT_SET';
+        $nameType = isset($user['name']) ? gettype($user['name']) : 'N/A';
+        $nameEmpty = isset($user['name']) && empty($user['name']) ? 'YES' : 'NO';
+        $nameTrimmed = isset($user['name']) ? trim($user['name']) : '';
+        $nameIsEmptyAfterTrim = ($nameTrimmed === '');
+        
+        error_log("=== TASK 3 PROOF: publicUser() called ===");
+        error_log("TASK 3: user['name'] value: " . var_export($nameValue, true));
+        error_log("TASK 3: user['name'] type: " . $nameType);
+        error_log("TASK 3: user['name'] empty(): " . $nameEmpty);
+        error_log("TASK 3: user['name'] after trim: " . var_export($nameTrimmed, true));
+        error_log("TASK 3: nameIsEmptyAfterTrim: " . ($nameIsEmptyAfterTrim ? 'YES' : 'NO'));
+        
+        // Get name from user array - use actual database value, only fallback to 'User' if truly missing/empty
+        $userName = isset($user['name']) && trim($user['name']) !== '' ? trim($user['name']) : 'User';
+        error_log("TASK 3: Final userName assigned: " . var_export($userName, true));
+        error_log("TASK 3: Fallback 'User' used: " . ($userName === 'User' ? 'YES' : 'NO'));
+        
+        $result = [
+            'id' => (int) ($user['id'] ?? 0),
+            'name' => $userName,
+            'email' => $user['email'] ?? '',
             'role_id' => isset($user['role_id']) ? (int) $user['role_id'] : null,
             'barangay_id' => isset($user['barangay_id']) ? (int) $user['barangay_id'] : null,
             'barangay_name' => $user['barangay_name'] ?? null,
             'phone_number' => $user['phone_number'] ?? $user['phone'] ?? null,
             'created_at' => $user['created_at'] ?? null,
         ];
+        error_log("TASK 3: publicUser() returning: " . json_encode($result, JSON_PRETTY_PRINT));
+        return $result;
     }
 
     /**
@@ -290,7 +382,7 @@ class AuthController
                 return ['error' => 'Invalid email format'];
             }
             // Check if email is already taken by another user
-            $stmt = $this->pdo->prepare('SELECT id FROM users WHERE email = :email AND id != :id');
+            $stmt = $this->pdo->prepare('SELECT id FROM campaign_department_users WHERE email = :email AND id != :id');
             $stmt->execute(['email' => $email, 'id' => $userId]);
             if ($stmt->fetch()) {
                 http_response_code(422);
@@ -310,12 +402,12 @@ class AuthController
             return ['error' => 'No fields to update'];
         }
 
-        $sql = 'UPDATE users SET ' . implode(', ', $updates) . ', updated_at = NOW() WHERE id = :id';
+        $sql = 'UPDATE campaign_department_users SET ' . implode(', ', $updates) . ', updated_at = NOW() WHERE id = :id';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params_array);
 
         // Fetch updated user
-        $stmt = $this->pdo->prepare('SELECT * FROM users WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT * FROM campaign_department_users WHERE id = :id');
         $stmt->execute(['id' => $userId]);
         $updatedUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -349,7 +441,7 @@ class AuthController
         }
 
         // Verify current password
-        $stmt = $this->pdo->prepare('SELECT password FROM users WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT password FROM campaign_department_users WHERE id = :id');
         $stmt->execute(['id' => $userId]);
         $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -365,7 +457,7 @@ class AuthController
 
         // Update password
         $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-        $stmt = $this->pdo->prepare('UPDATE users SET password = :password, updated_at = NOW() WHERE id = :id');
+        $stmt = $this->pdo->prepare('UPDATE campaign_department_users SET password = :password, updated_at = NOW() WHERE id = :id');
         $stmt->execute(['password' => $hashedPassword, 'id' => $userId]);
 
         return ['message' => 'Password changed successfully'];
@@ -377,6 +469,11 @@ class AuthController
      */
     private function maybeRepairAdminUser(string $email, string $password): ?array
     {
+        // If PDO is null (database unavailable), return null - demo login already handled in login()
+        if ($this->pdo === null) {
+            return null;
+        }
+        
         // Only ever auto-repair for the known default admin account
         $normalizedEmail = strtolower(trim($email));
         if ($normalizedEmail !== 'admin@barangay1.qc.gov.ph') {
@@ -389,7 +486,8 @@ class AuthController
             return null;
         }
 
-        // Ensure supporting tables exist (no-op if already there)
+        try {
+            // Ensure supporting tables exist (no-op if already there)
         $this->pdo->exec("
             CREATE TABLE IF NOT EXISTS roles (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -413,7 +511,7 @@ class AuthController
         ");
 
         $this->pdo->exec("
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE IF NOT EXISTS campaign_department_users (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 role_id INT UNSIGNED NOT NULL,
                 barangay_id INT UNSIGNED NULL,
@@ -423,8 +521,8 @@ class AuthController
                 is_active TINYINT(1) NOT NULL DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                CONSTRAINT fk_users_role FOREIGN KEY (role_id) REFERENCES roles(id),
-                CONSTRAINT fk_users_barangay FOREIGN KEY (barangay_id) REFERENCES barangays(id)
+                CONSTRAINT fk_campaign_department_users_role FOREIGN KEY (role_id) REFERENCES roles(id),
+                CONSTRAINT fk_campaign_department_users_barangay FOREIGN KEY (barangay_id) REFERENCES barangays(id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         ");
 
@@ -442,14 +540,14 @@ class AuthController
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
         // Check if user already exists
-        $checkStmt = $this->pdo->prepare('SELECT id FROM users WHERE email = :email OR id = 1 LIMIT 1');
+        $checkStmt = $this->pdo->prepare('SELECT id FROM campaign_department_users WHERE email = :email OR id = 1 LIMIT 1');
         $checkStmt->execute(['email' => $email]);
         $existing = $checkStmt->fetch();
 
         if ($existing) {
             // Update existing admin user with the new password
             $update = $this->pdo->prepare("
-                UPDATE users
+                UPDATE campaign_department_users
                 SET password_hash = :password_hash,
                     role_id = 1,
                     barangay_id = 1,
@@ -464,7 +562,7 @@ class AuthController
         } else {
             // Create fresh admin user
             $insert = $this->pdo->prepare("
-                INSERT INTO users (id, role_id, barangay_id, name, email, password_hash, is_active)
+                INSERT INTO campaign_department_users (id, role_id, barangay_id, name, email, password_hash, is_active)
                 VALUES (1, 1, 1, 'Admin User', :email, :password_hash, 1)
             ");
             $insert->execute([
@@ -473,21 +571,25 @@ class AuthController
             ]);
         }
 
-        // Reload the user record
-        $reload = $this->pdo->prepare('SELECT id, name, email, password_hash, role_id, barangay_id FROM users WHERE email = :email AND is_active = 1 LIMIT 1');
-        $reload->execute(['email' => $email]);
-        $user = $reload->fetch();
+            // Reload the user record
+            $reload = $this->pdo->prepare('SELECT id, name, email, password_hash, role_id, barangay_id FROM campaign_department_users WHERE email = :email AND is_active = 1 LIMIT 1');
+            $reload->execute(['email' => $email]);
+            $user = $reload->fetch();
 
-        if (!$user) {
+            if (!$user) {
+                return null;
+            }
+
+            // Final safety check
+            if (!password_verify($password, $user['password_hash'])) {
+                return null;
+            }
+
+            return $user;
+        } catch (\PDOException $e) {
+            error_log('Database error in maybeRepairAdminUser: ' . $e->getMessage());
             return null;
         }
-
-        // Final safety check
-        if (!password_verify($password, $user['password_hash'])) {
-            return null;
-        }
-
-        return $user;
     }
 
     /**
@@ -638,18 +740,18 @@ class AuthController
 
         try {
             // Check if user exists
-            $stmt = $this->pdo->prepare('SELECT id, name, email, role_id, barangay_id FROM users WHERE LOWER(TRIM(email)) = :email AND is_active = 1 LIMIT 1');
+            $stmt = $this->pdo->prepare('SELECT id, name, email, role_id, barangay_id FROM campaign_department_users WHERE LOWER(TRIM(email)) = :email AND is_active = 1 LIMIT 1');
             $stmt->execute(['email' => $email]);
             $user = $stmt->fetch();
 
             if (!$user) {
                 // Create new user
-                // Get default role (assuming role_id 2 is for regular users, adjust as needed)
+                // Get default role (assuming role_id 2 is for regular campaign_department_users, adjust as needed)
                 $defaultRoleId = 2;
                 $defaultBarangayId = 1;
 
                 $insert = $this->pdo->prepare("
-                    INSERT INTO users (name, email, role_id, barangay_id, is_active, created_at)
+                    INSERT INTO campaign_department_users (name, email, role_id, barangay_id, is_active, created_at)
                     VALUES (:name, :email, :role_id, :barangay_id, 1, NOW())
                 ");
                 $insert->execute([
@@ -679,7 +781,7 @@ class AuthController
         }
 
         // Generate JWT token
-        $token = $this->generateToken((int) $user['id'], $user['email'], (int) $user['role_id']);
+        $token = $this->generateToken((int) $user['id'], $user['email'], (int) $user['role_id'], $user['name'] ?? null);
 
         // Redirect to dashboard with token in URL (will be stored in localStorage by JavaScript)
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';

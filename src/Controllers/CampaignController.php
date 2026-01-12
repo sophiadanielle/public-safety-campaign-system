@@ -25,14 +25,16 @@ class CampaignController
     public function index(?array $user, array $params = []): array
     {
         try {
-            $stmt = $this->pdo->query('
+            $sql = '
                 SELECT id, title, description, category, geographic_scope, status, 
                        start_date, end_date, draft_schedule_datetime, ai_recommended_datetime, 
                        final_schedule_datetime, owner_id, created_at, objectives, location, 
                        assigned_staff, barangay_target_zones, budget, staff_count, materials_json 
-                FROM campaigns 
+                FROM campaign_department_campaigns 
                 ORDER BY created_at DESC
-            ');
+            ';
+            error_log('CRITICAL: CampaignController::index - Executing SQL: ' . $sql);
+            $stmt = $this->pdo->query($sql);
             
             if ($stmt === false) {
                 throw new \RuntimeException('Failed to execute query');
@@ -46,8 +48,9 @@ class CampaignController
             
             return ['data' => $data];
         } catch (\PDOException $e) {
-            error_log('CampaignController::index - Database error: ' . $e->getMessage());
-            error_log('CampaignController::index - SQL State: ' . $e->getCode());
+            error_log('CRITICAL ERROR: CampaignController::index - Database error: ' . $e->getMessage());
+            error_log('CRITICAL ERROR: CampaignController::index - SQL State: ' . $e->getCode());
+            error_log('CRITICAL ERROR: CampaignController::index - Error Info: ' . json_encode($stmt->errorInfo() ?? []));
             http_response_code(500);
             return ['error' => 'Database error: ' . $e->getMessage()];
         } catch (\Exception $e) {
@@ -122,7 +125,7 @@ class CampaignController
         $draftSchedule = null;
 
         $stmt = $this->pdo->prepare('
-            INSERT INTO campaigns (
+            INSERT INTO campaign_department_campaigns (
                 title, description, category, geographic_scope, status, 
                 start_date, end_date, draft_schedule_datetime, owner_id, 
                 objectives, location, assigned_staff, barangay_target_zones, 
@@ -298,7 +301,7 @@ class CampaignController
             return ['message' => 'Nothing to update'];
         }
 
-        $sql = 'UPDATE campaigns SET ' . implode(', ', $fields) . ', updated_at = CURRENT_TIMESTAMP WHERE id = :id';
+        $sql = 'UPDATE campaign_department_campaigns SET ' . implode(', ', $fields) . ', updated_at = CURRENT_TIMESTAMP WHERE id = :id';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($bindings);
 
@@ -533,7 +536,7 @@ class CampaignController
             
             // Save AI recommendation to campaign
             $stmt = $this->pdo->prepare('
-                UPDATE campaigns 
+                UPDATE campaign_department_campaigns 
                 SET ai_recommended_datetime = :ai_recommended_datetime 
                 WHERE id = :id
             ');
@@ -593,7 +596,7 @@ class CampaignController
         if ($useAIRecommendation) {
             // Use AI recommendation
             $stmt = $this->pdo->prepare('
-                UPDATE campaigns 
+                UPDATE campaign_department_campaigns 
                 SET final_schedule_datetime = ai_recommended_datetime,
                     draft_schedule_datetime = ai_recommended_datetime,
                     status = CASE 
@@ -612,7 +615,7 @@ class CampaignController
         } elseif ($finalSchedule) {
             // Override with manual schedule
             $stmt = $this->pdo->prepare('
-                UPDATE campaigns 
+                UPDATE campaign_department_campaigns 
                 SET final_schedule_datetime = :final_schedule_datetime,
                     draft_schedule_datetime = :final_schedule_datetime,
                     status = CASE 
@@ -654,7 +657,7 @@ class CampaignController
                 start_date, end_date, 
                 draft_schedule_datetime, ai_recommended_datetime, final_schedule_datetime,
                 location, geographic_scope
-            FROM campaigns
+            FROM campaign_department_campaigns
             WHERE (start_date BETWEEN :start AND :end)
                OR (end_date BETWEEN :start AND :end)
                OR (start_date <= :start AND end_date >= :end)
@@ -687,7 +690,7 @@ class CampaignController
         // Check for conflicts with other campaigns
         $stmt = $this->pdo->prepare('
             SELECT id, title, final_schedule_datetime, location
-            FROM campaigns
+            FROM campaign_department_campaigns
             WHERE id != :id
               AND final_schedule_datetime IS NOT NULL
               AND DATE(final_schedule_datetime) = :proposed_date
@@ -724,7 +727,7 @@ class CampaignController
                    ai_recommended_datetime, final_schedule_datetime, 
                    owner_id, objectives, location, assigned_staff, 
                    barangay_target_zones, budget, staff_count, materials_json 
-            FROM campaigns 
+            FROM campaign_department_campaigns 
             WHERE id = :id LIMIT 1
         ');
         $stmt->execute(['id' => $id]);

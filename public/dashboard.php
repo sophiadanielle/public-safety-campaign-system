@@ -715,6 +715,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
 <script>
 <?php require_once __DIR__ . '/../header/includes/path_helper.php'; ?>
 const token = localStorage.getItem('jwtToken') || '';
+const basePath = '<?php echo $basePath; ?>';
 const apiBase = '<?php echo $apiPath; ?>';
 const publicPath = '<?php echo $publicPath; ?>';
 
@@ -727,7 +728,9 @@ async function loadDashboard() {
         // Get token from localStorage
         const authToken = localStorage.getItem('jwtToken');
         if (!authToken || authToken.trim() === '') {
-            throw new Error('Authentication token not found. Please log in again.');
+            // No token - redirect to login
+            window.location.href = basePath + '/index.php';
+            return;
         }
         
         const res = await fetch(apiBase + '/api/v1/dashboard/summary', {
@@ -736,7 +739,9 @@ async function loadDashboard() {
         
         if (!res.ok) {
             if (res.status === 401) {
-                window.location.href = publicPath + '/index.php';
+                // Token exists but API says unauthorized - don't redirect, just show error
+                // User is authenticated (has token) so they should stay on dashboard
+                console.error('Dashboard API returned 401, but user has token - staying on page');
                 return;
             }
             

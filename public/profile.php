@@ -308,6 +308,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
 
 <script>
 <?php require_once __DIR__ . '/../header/includes/path_helper.php'; ?>
+const basePath = '<?php echo $basePath; ?>';
 const token = localStorage.getItem('jwtToken') || '';
 const apiBase = '<?php echo $apiPath; ?>';
 let currentUser = null;
@@ -321,7 +322,7 @@ async function loadProfile() {
         
         if (!res.ok) {
             if (res.status === 401) {
-                window.location.href = '<?php echo $publicPath; ?>/index.php';
+                window.location.href = basePath + '/index.php';
                 return;
             }
             throw new Error('Failed to load profile');
@@ -426,6 +427,7 @@ loadProfile();
     </main>
 </body>
 </html>
+
 
 
 

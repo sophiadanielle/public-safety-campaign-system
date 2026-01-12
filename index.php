@@ -41,18 +41,108 @@ if ($isApiRequest) {
     
     // Handle API request
     require __DIR__ . '/vendor/autoload.php';
-    require __DIR__ . '/src/Config/db_connect.php';
-
-    // Load environment variables
-    if (file_exists(__DIR__ . '/.env')) {
-        $lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
+    
+    // Load environment variables BEFORE database connection
+    $envPath = __DIR__ . '/.env';
+    error_log('DB DEBUG: index.php - Checking for .env at: ' . $envPath);
+    if (file_exists($envPath)) {
+        error_log('DB DEBUG: index.php - .env file found, loading...');
+        $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $loadedCount = 0;
+        foreach ($lines as $lineNum => $line) {
             $line = trim($line);
             if ($line === '' || strpos($line, '#') === 0) continue;
             if (strpos($line, '=') === false) continue;
             list($name, $value) = explode('=', $line, 2);
-            $_ENV[trim($name)] = trim($value);
+            $name = trim($name);
+            $value = trim($value);
+            // IMPORTANT: Set even if empty (for empty passwords like LOCAL_DB_PASS=)
+            $_ENV[$name] = $value;
+            putenv("$name=$value");
+            if (strpos($name, 'DB_') === 0 || strpos($name, 'LOCAL_DB_') === 0) {
+                error_log("DB DEBUG: index.php - Loaded \$_ENV['$name'] = " . ($value === '' ? '[empty]' : "'$value'") . " (line " . ($lineNum + 1) . ")");
+                $loadedCount++;
+            }
         }
+        error_log("DB DEBUG: index.php - Loaded $loadedCount DB-related variables from .env");
+    } else {
+        error_log('DB DEBUG: index.php - WARNING: .env file NOT found at: ' . $envPath);
+    }
+    error_log('DB DEBUG: index.php - $_ENV now has ' . count($_ENV) . ' total keys');
+    
+    // Load database connection - catch exceptions to return proper JSON error
+    $isAuthRequest = strpos($requestUri, '/api/v1/auth/login') !== false || 
+                     strpos($requestUri, '/api/v1/auth/register') !== false;
+    
+    try {
+        require __DIR__ . '/src/Config/db_connect.php';
+        // Verify PDO was created successfully (unless this is an auth request)
+        if (!$isAuthRequest) {
+            if (!isset($pdo)) {
+                error_log('DB ERROR: $pdo variable is not set after requiring db_connect.php');
+                throw new RuntimeException('Database connection variable is not set');
+            }
+            if ($pdo === null) {
+                error_log('DB ERROR: $pdo is null after requiring db_connect.php');
+                throw new RuntimeException('Database connection is null - this should not happen for non-auth requests');
+            }
+            if (!($pdo instanceof PDO)) {
+                error_log('DB ERROR: $pdo is not a PDO instance, type: ' . gettype($pdo));
+                throw new RuntimeException('Database connection is not a valid PDO instance');
+            }
+            // Test the connection
+            try {
+                $testResult = $pdo->query('SELECT 1 as test')->fetch();
+                if (!$testResult || $testResult['test'] != 1) {
+                    error_log('DB ERROR: Connection test query failed - unexpected result');
+                    throw new RuntimeException('Database connection test failed - query returned unexpected result');
+                }
+                error_log('DB DEBUG: index.php - PDO connection verified successfully');
+            } catch (\PDOException $testEx) {
+                error_log('DB ERROR: Connection test query failed: ' . $testEx->getMessage());
+                throw new RuntimeException('Database connection test failed: ' . $testEx->getMessage(), 0, $testEx);
+            }
+        }
+    } catch (PDOException $e) {
+        $errorMsg = 'Database connection failed: ' . $e->getMessage();
+        error_log('DB ERROR: PDOException caught in index.php: ' . $e->getMessage());
+        error_log('DB ERROR: PDOException code: ' . $e->getCode());
+        error_log('DB ERROR: PDOException file: ' . $e->getFile() . ':' . $e->getLine());
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+        http_response_code(500);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'error' => $errorMsg,
+            'message' => $e->getMessage(),
+            'details' => [
+                'code' => $e->getCode(),
+                'file' => basename($e->getFile()),
+                'line' => $e->getLine(),
+            ]
+        ]);
+        if (ob_get_level() > 0) {
+            ob_end_flush();
+        }
+        exit;
+    } catch (Exception $e) {
+        $errorMsg = 'Database initialization failed: ' . $e->getMessage();
+        error_log('DB ERROR: Exception caught in index.php: ' . $e->getMessage());
+        error_log('DB ERROR: Exception type: ' . get_class($e));
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+        http_response_code(500);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'error' => $errorMsg,
+            'message' => $e->getMessage(),
+        ]);
+        if (ob_get_level() > 0) {
+            ob_end_flush();
+        }
+        exit;
     }
 
     // JWT configuration
@@ -160,6 +250,17 @@ if ($isApiRequest) {
         foreach ($constructor->getParameters() as $param) {
             $paramName = $param->getName();
             if ($paramName === 'pdo') {
+                // For non-auth requests, PDO must be set and valid
+                if (!$isAuthRequest) {
+                    if (!isset($pdo) || $pdo === null) {
+                        error_log('Dependency injection ERROR: Attempting to pass null PDO to ' . $controllerClass);
+                        throw new RuntimeException('Database connection is required but PDO is null');
+                    }
+                    if (!($pdo instanceof PDO)) {
+                        error_log('Dependency injection ERROR: Attempting to pass non-PDO to ' . $controllerClass . ', type: ' . gettype($pdo));
+                        throw new RuntimeException('Database connection is not a valid PDO instance');
+                    }
+                }
                 $dependencies[] = $pdo;
             } elseif ($paramName === 'jwtSecret') {
                 $dependencies[] = $jwtSecret;

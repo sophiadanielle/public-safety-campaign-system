@@ -56,11 +56,21 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- Update audience_members table to support segment members view
-ALTER TABLE `campaign_department_audience_members`
-    ADD COLUMN IF NOT EXISTS sector VARCHAR(100) NULL AFTER full_name,
-    ADD COLUMN IF NOT EXISTS barangay VARCHAR(255) NULL AFTER sector,
-    ADD COLUMN IF NOT EXISTS zone VARCHAR(255) NULL AFTER barangay,
-    ADD COLUMN IF NOT EXISTS purok VARCHAR(255) NULL AFTER zone;
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_audience_members' AND COLUMN_NAME = 'sector');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE `campaign_department_audience_members` ADD COLUMN sector VARCHAR(100) NULL AFTER full_name', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_audience_members' AND COLUMN_NAME = 'barangay');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE `campaign_department_audience_members` ADD COLUMN barangay VARCHAR(255) NULL AFTER sector', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_audience_members' AND COLUMN_NAME = 'zone');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE `campaign_department_audience_members` ADD COLUMN zone VARCHAR(255) NULL AFTER barangay', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_audience_members' AND COLUMN_NAME = 'purok');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE `campaign_department_audience_members` ADD COLUMN purok VARCHAR(255) NULL AFTER zone', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Create participation_history view (read-only) for historical participation data
 CREATE OR REPLACE VIEW participation_history AS

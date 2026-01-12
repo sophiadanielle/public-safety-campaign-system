@@ -1,0 +1,2 @@
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'YsqnXk6q#145';
+FLUSH PRIVILEGES;

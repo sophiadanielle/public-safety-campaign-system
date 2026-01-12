@@ -93,7 +93,7 @@ INSERT IGNORE INTO `campaign_department_reference_staff` (name, role) VALUES
 -- content_type is mapped from the "type" label.
 
 INSERT IGNORE INTO `campaign_department_content_items`
-    (campaign_id, title, body, content_type, hazard_category, intended_audience, source, approval_status, file_path, created_by)
+    (campaign_id, title, body, content_type, hazard_category, intended_audience_segment, source, approval_status, file_path, created_by)
 VALUES
 ((SELECT id FROM `campaign_department_campaigns` ORDER BY id LIMIT 1),
  'Fire Safety Poster', 'Poster for basic fire safety reminders.', 'image', 'fire', 'general_public', 'Seed Data', 'approved', '/uploads/materials/fire_safety_poster.jpg', 1),

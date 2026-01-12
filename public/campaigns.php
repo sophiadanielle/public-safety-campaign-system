@@ -1423,14 +1423,21 @@ console.log('BASE PATH:', basePath);
 function getToken() {
     try {
         const token = localStorage.getItem('jwtToken') || '';
+        // TASK 4: PROVE TOKEN PRESENCE
+        console.log('=== TASK 4 PROOF: getToken() called ===');
+        console.log('TASK 4: localStorage.getItem("jwtToken") result:', token ? 'EXISTS (length: ' + token.length + ')' : 'NULL/EMPTY');
+        console.log('TASK 4: Token value (first 20 chars):', token ? token.substring(0, 20) + '...' : 'N/A');
+        console.log('TASK 4: Token after trim:', token ? token.trim().substring(0, 20) + '...' : 'N/A');
         if (!token || token.trim() === '') {
-            console.warn('getToken() - No token found in localStorage');
-            console.warn('getToken() - localStorage keys:', Object.keys(localStorage));
+            console.warn('=== TASK 4 PROOF: No token found ===');
+            console.warn('TASK 4: localStorage keys:', Object.keys(localStorage));
             return '';
         }
-        return token.trim();
+        const trimmedToken = token.trim();
+        console.log('=== TASK 4 PROOF: Token returned (length: ' + trimmedToken.length + ') ===');
+        return trimmedToken;
     } catch (e) {
-        console.error('Error reading localStorage:', e);
+        console.error('=== TASK 4 PROOF: Error reading localStorage ===', e);
         return '';
     }
 }
@@ -2056,6 +2063,16 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
         }
         
         const token = getToken();
+        // TASK 4: PROVE TOKEN PRESENCE ON REQUEST
+        console.log('=== TASK 4 PROOF: Campaign creation request ===');
+        console.log('TASK 4: Token variable value:', token ? 'EXISTS (length: ' + token.length + ')' : 'NULL/EMPTY');
+        console.log('TASK 4: Token first 30 chars:', token ? token.substring(0, 30) + '...' : 'N/A');
+        
+        const authHeader = 'Bearer ' + (token ? token.trim() : '');
+        console.log('=== TASK 4 PROOF: Authorization header value ===');
+        console.log('TASK 4: Authorization header:', authHeader ? authHeader.substring(0, 50) + '...' : 'EMPTY');
+        console.log('TASK 4: Authorization header length:', authHeader.length);
+        
         console.log('Campaign creation - Making API call with token (length:', token ? token.length : 0 + ')');
         console.log('Campaign creation - API URL:', apiBase + '/api/v1/campaigns');
         
@@ -2063,7 +2080,7 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token.trim()
+                'Authorization': authHeader
             },
             body: JSON.stringify(payload)
         });

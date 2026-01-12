@@ -71,11 +71,11 @@ class ContentController
             }
 
             // Check which audience column exists
-            $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
+            $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
             $audienceColumn = !empty($audienceColCheck) ? $audienceColCheck[0] : 'intended_audience';
             
             // Check which user column exists (created_by or uploaded_by)
-            $userColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items")->fetchAll(PDO::FETCH_COLUMN);
+            $userColCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items")->fetchAll(PDO::FETCH_COLUMN);
             $userColumn = in_array('uploaded_by', $userColCheck) ? 'uploaded_by' : 'created_by';
             
             $sql = "SELECT ci.id, ci.title, ci.body, ci.content_type, ci.visibility, ci.created_at, 
@@ -84,10 +84,10 @@ class ContentController
                            ci.date_uploaded, ci.file_reference, ci.last_updated,
                            a.file_path, a.mime_type, ci.campaign_id,
                            u1.name as uploaded_by_name, u2.name as approved_by_name
-                    FROM content_items ci
-                    LEFT JOIN attachments a ON a.content_item_id = ci.id
-                    LEFT JOIN users u1 ON ci.{$userColumn} = u1.id
-                    LEFT JOIN users u2 ON ci.approved_by = u2.id";
+                    FROM campaign_department_content_items ci
+                    LEFT JOIN campaign_department_attachments a ON a.content_item_id = ci.id
+                    LEFT JOIN campaign_department_users u1 ON ci.{$userColumn} = u1.id
+                    LEFT JOIN campaign_department_users u2 ON ci.approved_by = u2.id";
             $where = [];
             $bind = [];
 
@@ -145,10 +145,10 @@ class ContentController
             
             // Filter by tag
             if ($tag) {
-                $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'content_tags'");
+                $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_content_tags'");
                 if ($tableCheck && $tableCheck->rowCount() > 0) {
-                    $sql .= ' INNER JOIN content_tags ct ON ct.content_item_id = ci.id
-                              INNER JOIN tags t ON t.id = ct.tag_id';
+                    $sql .= ' INNER JOIN campaign_department_content_tags ct ON ct.content_item_id = ci.id
+                              INNER JOIN campaign_department_tags t ON t.id = ct.tag_id';
                     $where[] = 't.name = :tag';
                     $bind['tag'] = $tag;
                     $hasTagJoin = true;
@@ -164,11 +164,11 @@ class ContentController
             if ($hasTagJoin) {
                 // If main query has tag join, count query needs it too
                 $countSql = "SELECT COUNT(DISTINCT ci.id) as total 
-                            FROM content_items ci
-                            INNER JOIN content_tags ct ON ct.content_item_id = ci.id
-                            INNER JOIN tags t ON t.id = ct.tag_id";
+                            FROM campaign_department_content_items ci
+                            INNER JOIN campaign_department_content_tags ct ON ct.content_item_id = ci.id
+                            INNER JOIN campaign_department_tags t ON t.id = ct.tag_id";
             } else {
-                $countSql = "SELECT COUNT(DISTINCT ci.id) as total FROM content_items ci";
+                $countSql = "SELECT COUNT(DISTINCT ci.id) as total FROM campaign_department_content_items ci";
             }
             
             // Apply WHERE conditions to count query
@@ -215,8 +215,8 @@ class ContentController
                 // Get tags for each item
                 try {
                     $tagStmt = $this->pdo->prepare('
-                        SELECT t.name FROM tags t
-                        INNER JOIN content_tags ct ON ct.tag_id = t.id
+                        SELECT t.name FROM campaign_department_tags t
+                        INNER JOIN campaign_department_content_tags ct ON ct.tag_id = t.id
                         WHERE ct.content_item_id = :id
                     ');
                     $tagStmt->execute(['id' => $result['id']]);
@@ -307,7 +307,7 @@ class ContentController
         $this->pdo->beginTransaction();
         try {
             // Check which audience column exists
-            $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
+            $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
             $audienceColumn = !empty($audienceColCheck) ? $audienceColCheck[0] : 'intended_audience';
             
             // Create content_repository subdirectory
@@ -327,7 +327,7 @@ class ContentController
             // Validate user ID exists before inserting
             $userId = $user['id'] ?? null;
             if ($userId !== null) {
-                $userCheck = $this->pdo->prepare('SELECT id FROM users WHERE id = :id AND is_active = 1 LIMIT 1');
+                $userCheck = $this->pdo->prepare('SELECT id FROM campaign_department_users WHERE id = :id AND is_active = 1 LIMIT 1');
                 $userCheck->execute(['id' => $userId]);
                 if (!$userCheck->fetch()) {
                     http_response_code(400);
@@ -337,7 +337,7 @@ class ContentController
             }
             
             // Check which user column exists - prefer uploaded_by if both exist
-            $userColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items")->fetchAll(PDO::FETCH_COLUMN);
+            $userColCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items")->fetchAll(PDO::FETCH_COLUMN);
             $hasUploadedBy = in_array('uploaded_by', $userColCheck);
             $hasCreatedBy = in_array('created_by', $userColCheck);
             // Prefer uploaded_by if it exists (it's nullable), otherwise use created_by
@@ -379,7 +379,7 @@ class ContentController
                 'approval_status' => 'draft'
             ]);
             
-            $sql = 'INSERT INTO content_items (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $placeholders) . ')';
+            $sql = 'INSERT INTO campaign_department_content_items (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $placeholders) . ')';
             
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($bindParams);
@@ -387,10 +387,10 @@ class ContentController
 
             // Save initial version (if table exists)
             try {
-                $tableExists = $this->pdo->query("SHOW TABLES LIKE 'content_item_versions'")->rowCount() > 0;
+                $tableExists = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_campaign_department_content_item_versions'")->rowCount() > 0;
                 if ($tableExists) {
                     $versionStmt = $this->pdo->prepare('
-                        INSERT INTO content_item_versions (
+                        INSERT INTO campaign_department_content_item_versions (
                             content_id, version_number, title, body, file_reference, file_path, changed_by
                         ) VALUES (
                             :content_id, 1, :title, :body, :file_reference, :file_path, :changed_by
@@ -412,7 +412,7 @@ class ContentController
             }
 
             // Also save to attachments table for backward compatibility
-            $stmt = $this->pdo->prepare('INSERT INTO attachments (content_item_id, file_path, mime_type, file_size) VALUES (:content_item_id, :file_path, :mime_type, :file_size)');
+            $stmt = $this->pdo->prepare('INSERT INTO campaign_department_attachments (content_item_id, file_path, mime_type, file_size) VALUES (:content_item_id, :file_path, :mime_type, :file_size)');
             $stmt->execute([
                 'content_item_id' => $contentId,
                 'file_path' => $fileReference,
@@ -423,7 +423,7 @@ class ContentController
             $tags = $this->parseTags($tagsInput);
             if (!empty($tags)) {
                 $tagIds = $this->ensureTags($tags);
-                $ins = $this->pdo->prepare('INSERT IGNORE INTO content_tags (content_item_id, tag_id) VALUES (:cid, :tid)');
+                $ins = $this->pdo->prepare('INSERT IGNORE INTO campaign_department_content_tags (content_item_id, tag_id) VALUES (:cid, :tid)');
                 foreach ($tagIds as $tid) {
                     $ins->execute(['cid' => $contentId, 'tid' => $tid]);
                 }
@@ -472,18 +472,18 @@ class ContentController
         $contentId = (int) ($params['id'] ?? 0);
 
         // Check which audience column exists
-        $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
+        $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
         $audienceColumn = !empty($audienceColCheck) ? $audienceColCheck[0] : 'intended_audience';
 
         // Check which user column exists
-        $userColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items")->fetchAll(PDO::FETCH_COLUMN);
+        $userColCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items")->fetchAll(PDO::FETCH_COLUMN);
         $userColumn = in_array('uploaded_by', $userColCheck) ? 'uploaded_by' : 'created_by';
         
         $stmt = $this->pdo->prepare("
             SELECT ci.*, u1.name as uploaded_by_name, u2.name as approved_by_name
-            FROM content_items ci
-            LEFT JOIN users u1 ON ci.{$userColumn} = u1.id
-            LEFT JOIN users u2 ON ci.approved_by = u2.id
+            FROM campaign_department_content_items ci
+            LEFT JOIN campaign_department_users u1 ON ci.{$userColumn} = u1.id
+            LEFT JOIN campaign_department_users u2 ON ci.approved_by = u2.id
             WHERE ci.id = :id
         ");
         $stmt->execute(['id' => $contentId]);
@@ -502,8 +502,8 @@ class ContentController
         // Get tags
         try {
             $tagStmt = $this->pdo->prepare('
-                SELECT t.name FROM tags t
-                INNER JOIN content_tags ct ON ct.tag_id = t.id
+                SELECT t.name FROM campaign_department_tags t
+                INNER JOIN campaign_department_content_tags ct ON ct.tag_id = t.id
                 WHERE ct.content_item_id = :id
             ');
             $tagStmt->execute(['id' => $contentId]);
@@ -518,8 +518,8 @@ class ContentController
                 SELECT version_id, version_number, title, body, file_reference, file_path, 
                        changed_by, change_notes, created_at,
                        u.name as changed_by_name
-                FROM content_item_versions civ
-                LEFT JOIN users u ON civ.changed_by = u.id
+                FROM campaign_department_content_item_versions civ
+                LEFT JOIN campaign_department_users u ON civ.changed_by = u.id
                 WHERE civ.content_id = :content_id
                 ORDER BY civ.version_number DESC
             ');
@@ -533,9 +533,9 @@ class ContentController
         try {
             $campaignStmt = $this->pdo->prepare('
                 SELECT c.id, c.title, c.status, cci.attached_at, u.name as attached_by_name
-                FROM campaign_content_items cci
-                INNER JOIN campaigns c ON cci.campaign_id = c.id
-                LEFT JOIN users u ON cci.attached_by = u.id
+                FROM campaign_department_campaign_content_items cci
+                INNER JOIN campaign_department_campaigns c ON cci.campaign_id = c.id
+                LEFT JOIN campaign_department_users u ON cci.attached_by = u.id
                 WHERE cci.content_id = :content_id
                 ORDER BY cci.attached_at DESC
             ');
@@ -563,7 +563,7 @@ class ContentController
     {
         $contentId = (int) ($params['id'] ?? 0);
 
-        $stmt = $this->pdo->prepare('SELECT * FROM content_items WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT * FROM campaign_department_content_items WHERE id = :id');
         $stmt->execute(['id' => $contentId]);
         $current = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -579,7 +579,7 @@ class ContentController
         $hazardCategory = trim($input['hazard_category'] ?? $current['hazard_category'] ?? '');
         
         // Check which audience column exists
-        $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
+        $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
         $audienceColumn = !empty($audienceColCheck) ? $audienceColCheck[0] : 'intended_audience';
         $intendedAudience = trim($input['intended_audience_segment'] ?? $input[$audienceColumn] ?? $current[$audienceColumn] ?? '');
         $source = trim($input['source'] ?? $current['source'] ?? '');
@@ -596,7 +596,7 @@ class ContentController
             // Save current version to history (if table exists)
             try {
                 $versionStmt = $this->pdo->prepare('
-                    INSERT INTO content_item_versions (
+                    INSERT INTO campaign_department_content_item_versions (
                         content_id, version_number, title, body, file_reference, file_path, changed_by, change_notes
                     ) VALUES (
                         :content_id, :version_number, :title, :body, :file_reference, :file_path, :changed_by, :change_notes
@@ -618,7 +618,7 @@ class ContentController
 
             // Update content - if approved, revert to pending_review
             $updateStmt = $this->pdo->prepare("
-                UPDATE content_items SET
+                UPDATE campaign_department_content_items SET
                     title = :title,
                     body = :body,
                     hazard_category = :hazard_category,
@@ -671,7 +671,7 @@ class ContentController
             return ['error' => 'Invalid approval status'];
         }
 
-        $stmt = $this->pdo->prepare('SELECT approval_status, title FROM content_items WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT approval_status, title FROM campaign_department_content_items WHERE id = :id');
         $stmt->execute(['id' => $contentId]);
         $current = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -707,22 +707,22 @@ class ContentController
         }
 
         // Check which user column exists for notifications
-        $userColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items")->fetchAll(PDO::FETCH_COLUMN);
+        $userColCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items")->fetchAll(PDO::FETCH_COLUMN);
         $userColumn = in_array('uploaded_by', $userColCheck) ? 'uploaded_by' : 'created_by';
         
         // Get content creator ID
-        $creatorStmt = $this->pdo->prepare("SELECT {$userColumn} as creator_id FROM content_items WHERE id = :id");
+        $creatorStmt = $this->pdo->prepare("SELECT {$userColumn} as creator_id FROM campaign_department_content_items WHERE id = :id");
         $creatorStmt->execute(['id' => $contentId]);
         $creatorData = $creatorStmt->fetch(PDO::FETCH_ASSOC);
         $creatorId = $creatorData['creator_id'] ?? null;
 
         // Update approval status
-        $columns = $this->pdo->query("SHOW COLUMNS FROM content_items LIKE 'approved_by'")->fetchAll(PDO::FETCH_COLUMN);
+        $columns = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'approved_by'")->fetchAll(PDO::FETCH_COLUMN);
         $hasApprovedBy = !empty($columns);
 
         if ($hasApprovedBy) {
             $updateStmt = $this->pdo->prepare('
-                UPDATE content_items SET
+                UPDATE campaign_department_content_items SET
                     approval_status = :approval_status,
                     approved_by = :approved_by,
                     approval_notes = :approval_notes,
@@ -737,7 +737,7 @@ class ContentController
             ]);
         } else {
             $updateStmt = $this->pdo->prepare('
-                UPDATE content_items SET
+                UPDATE campaign_department_content_items SET
                     approval_status = :approval_status
                 WHERE id = :id
             ');
@@ -795,7 +795,7 @@ class ContentController
         }
 
         // Verify content exists and is approved
-        $contentStmt = $this->pdo->prepare('SELECT approval_status FROM content_items WHERE id = :id');
+        $contentStmt = $this->pdo->prepare('SELECT approval_status FROM campaign_department_content_items WHERE id = :id');
         $contentStmt->execute(['id' => $contentId]);
         $content = $contentStmt->fetch(PDO::FETCH_ASSOC);
 
@@ -810,7 +810,7 @@ class ContentController
         }
 
         // Verify campaign exists
-        $campaignStmt = $this->pdo->prepare('SELECT id FROM campaigns WHERE id = :id');
+        $campaignStmt = $this->pdo->prepare('SELECT id FROM campaign_department_campaigns WHERE id = :id');
         $campaignStmt->execute(['id' => $campaignId]);
         if (!$campaignStmt->fetch()) {
             http_response_code(404);
@@ -819,7 +819,7 @@ class ContentController
 
         // Check if already attached
         try {
-            $checkStmt = $this->pdo->prepare('SELECT id FROM campaign_content_items WHERE campaign_id = :campaign_id AND content_id = :content_id');
+            $checkStmt = $this->pdo->prepare('SELECT id FROM campaign_department_campaign_content_items WHERE campaign_id = :campaign_id AND content_id = :content_id');
             $checkStmt->execute(['campaign_id' => $campaignId, 'content_id' => $contentId]);
             if ($checkStmt->fetch()) {
                 http_response_code(409);
@@ -827,7 +827,7 @@ class ContentController
             }
 
             $stmt = $this->pdo->prepare('
-                INSERT INTO campaign_content_items (campaign_id, content_id, attached_by)
+                INSERT INTO campaign_department_campaign_content_items (campaign_id, content_id, attached_by)
                 VALUES (:campaign_id, :content_id, :attached_by)
             ');
             $stmt->execute([
@@ -837,7 +837,7 @@ class ContentController
             ]);
         } catch (\PDOException $e) {
             // Table might not exist, use campaign_id in content_items instead
-            $updateStmt = $this->pdo->prepare('UPDATE content_items SET campaign_id = :campaign_id WHERE id = :content_id');
+            $updateStmt = $this->pdo->prepare('UPDATE campaign_department_content_items SET campaign_id = :campaign_id WHERE id = :content_id');
             $updateStmt->execute([
                 'campaign_id' => $campaignId,
                 'content_id' => $contentId,
@@ -857,9 +857,9 @@ class ContentController
         try {
             $stmt = $this->pdo->prepare('
                 SELECT c.id, c.title, c.status, cci.attached_at, u.name as attached_by_name
-                FROM campaign_content_items cci
-                INNER JOIN campaigns c ON cci.campaign_id = c.id
-                LEFT JOIN users u ON cci.attached_by = u.id
+                FROM campaign_department_campaign_content_items cci
+                INNER JOIN campaign_department_campaigns c ON cci.campaign_id = c.id
+                LEFT JOIN campaign_department_users u ON cci.attached_by = u.id
                 WHERE cci.content_id = :content_id
                 ORDER BY cci.attached_at DESC
             ');
@@ -874,7 +874,7 @@ class ContentController
     public function useContent(?array $user, array $params = []): array
     {
         $contentId = (int) ($params['id'] ?? 0);
-        $stmt = $this->pdo->prepare('SELECT id FROM content_items WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id FROM campaign_department_content_items WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $contentId]);
         if (!$stmt->fetch()) {
             http_response_code(404);
@@ -918,9 +918,9 @@ class ContentController
                            c.title as campaign_title,
                            t.name as tag_name
                     FROM content_usage cu
-                    INNER JOIN content_items ci ON cu.content_item_id = ci.id
-                    LEFT JOIN campaigns c ON cu.campaign_id = c.id
-                    LEFT JOIN tags t ON cu.tag_id = t.id
+                    INNER JOIN campaign_department_content_items ci ON cu.content_item_id = ci.id
+                    LEFT JOIN campaign_department_campaigns c ON cu.campaign_id = c.id
+                    LEFT JOIN campaign_department_tags t ON cu.tag_id = t.id
                     WHERE 1=1";
             $bind = [];
             
@@ -976,7 +976,7 @@ class ContentController
     {
         $ids = [];
         $insert = $this->pdo->prepare('INSERT IGNORE INTO tags (name) VALUES (:name)');
-        $select = $this->pdo->prepare('SELECT id FROM tags WHERE name = :name LIMIT 1');
+        $select = $this->pdo->prepare('SELECT id FROM campaign_department_tags WHERE name = :name LIMIT 1');
         foreach ($tags as $name) {
             $insert->execute(['name' => $name]);
             $select->execute(['name' => $name]);
@@ -1000,7 +1000,7 @@ class ContentController
         
         $contentId = (int) ($params['id'] ?? 0);
         
-        $stmt = $this->pdo->prepare('SELECT id, title, approval_status FROM content_items WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT id, title, approval_status FROM campaign_department_content_items WHERE id = :id');
         $stmt->execute(['id' => $contentId]);
         $content = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -1011,7 +1011,7 @@ class ContentController
         
         // Update to archived status
         $updateStmt = $this->pdo->prepare('
-            UPDATE content_items SET
+            UPDATE campaign_department_content_items SET
                 approval_status = "archived",
                 last_updated = NOW()
             WHERE id = :id
@@ -1038,13 +1038,13 @@ class ContentController
             $contentType = $_GET['content_type'] ?? null;
             $hazardCategory = $_GET['hazard_category'] ?? null;
             
-            $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
+            $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
             $audienceColumn = !empty($audienceColCheck) ? $audienceColCheck[0] : 'intended_audience';
             
             $sql = "SELECT ci.id, ci.title, ci.body, ci.content_type, ci.hazard_category, 
                            ci.{$audienceColumn} as intended_audience_segment, ci.source,
                            ci.file_reference, ci.date_uploaded, ci.version_number
-                    FROM content_items ci
+                    FROM campaign_department_content_items ci
                     WHERE ci.approval_status = 'approved'";
             
             $where = [];

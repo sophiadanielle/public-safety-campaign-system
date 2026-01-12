@@ -2,6 +2,8 @@
 -- Public Safety Campaign Management System
 -- MySQL 8+ (InnoDB, utf8mb4)
 
+USE `LGU`;
+
 SET NAMES utf8mb4;
 SET time_zone = '+00:00';
 
@@ -229,27 +231,61 @@ SELECT 4, id FROM `campaign_department_permissions` WHERE id IN (7, 8, 10);
 -- ============================================
 
 -- Campaign indexes
-CREATE INDEX IF NOT EXISTS idx_campaigns_status ON `campaign_department_campaigns`(status);
-CREATE INDEX IF NOT EXISTS idx_campaigns_start_date ON `campaign_department_campaigns`(start_date);
-CREATE INDEX IF NOT EXISTS idx_campaigns_category ON `campaign_department_campaigns`(category);
-CREATE INDEX IF NOT EXISTS idx_campaigns_owner ON `campaign_department_campaigns`(owner_id);
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_campaigns' AND INDEX_NAME = 'idx_campaigns_status');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_campaigns_status ON `campaign_department_campaigns`(status)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_campaigns' AND INDEX_NAME = 'idx_campaigns_start_date');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_campaigns_start_date ON `campaign_department_campaigns`(start_date)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_campaigns' AND INDEX_NAME = 'idx_campaigns_category');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_campaigns_category ON `campaign_department_campaigns`(category)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_campaigns' AND INDEX_NAME = 'idx_campaigns_owner');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_campaigns_owner ON `campaign_department_campaigns`(owner_id)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Content indexes
-CREATE INDEX IF NOT EXISTS idx_content_approval ON `campaign_department_content_items`(approval_status);
-CREATE INDEX IF NOT EXISTS idx_content_hazard ON `campaign_department_content_items`(hazard_category);
-CREATE INDEX IF NOT EXISTS idx_content_campaign ON `campaign_department_content_items`(campaign_id);
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_content_items' AND INDEX_NAME = 'idx_content_approval');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_content_approval ON `campaign_department_content_items`(approval_status)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_content_items' AND INDEX_NAME = 'idx_content_hazard');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_content_hazard ON `campaign_department_content_items`(hazard_category)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_content_items' AND INDEX_NAME = 'idx_content_campaign');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_content_campaign ON `campaign_department_content_items`(campaign_id)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Event indexes
-CREATE INDEX IF NOT EXISTS idx_events_date ON `campaign_department_events`(event_date);
-CREATE INDEX IF NOT EXISTS idx_events_type ON `campaign_department_events`(event_type);
-CREATE INDEX IF NOT EXISTS idx_events_status ON `campaign_department_events`(status);
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_events' AND INDEX_NAME = 'idx_events_date');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_events_date ON `campaign_department_events`(event_date)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_events' AND INDEX_NAME = 'idx_events_type');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_events_type ON `campaign_department_events`(event_type)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_events' AND INDEX_NAME = 'idx_events_status');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_events_status ON `campaign_department_events`(status)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Survey indexes
-CREATE INDEX IF NOT EXISTS idx_surveys_campaign ON `campaign_department_surveys`(campaign_id);
-CREATE INDEX IF NOT EXISTS idx_feedback_survey ON `campaign_department_feedback`(survey_id);
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_surveys' AND INDEX_NAME = 'idx_surveys_campaign');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_surveys_campaign ON `campaign_department_surveys`(campaign_id)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_feedback' AND INDEX_NAME = 'idx_feedback_survey');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_feedback_survey ON `campaign_department_feedback`(survey_id)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Partner indexes
-CREATE INDEX IF NOT EXISTS idx_partners_type ON `campaign_department_partners`(organization_type);
+SET @idx_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_partners' AND INDEX_NAME = 'idx_partners_type');
+SET @sql = IF(@idx_exists = 0, 'CREATE INDEX idx_partners_type ON `campaign_department_partners`(organization_type)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ============================================
 -- 9. VIEWS FOR REPORTING

@@ -369,7 +369,9 @@ function handleTokenExpiration() {
 function getToken() {
     const t = localStorage.getItem('jwtToken') || '';
     if (!t || t.trim() === '') {
-        handleTokenExpiration();
+        // Don't immediately redirect - let the API call handle 401 responses
+        // This allows for retry logic and better error handling
+        console.warn('getToken() - No token found in localStorage');
         return '';
     }
     return t.trim();
@@ -381,7 +383,12 @@ async function loadSegments() {
     container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">Loading segments...</p>';
     
     const currentToken = getToken();
-    if (!currentToken) return;
+    if (!currentToken) {
+        // Token missing - show error but don't redirect immediately
+        // Let the API call handle authentication errors
+        container.innerHTML = '<p style="text-align: center; color: #dc2626; padding: 20px;">Authentication required. Please log in.</p>';
+        return;
+    }
     
     try {
         const res = await fetch(apiBase + '/api/v1/segments', {

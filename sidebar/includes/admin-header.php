@@ -239,9 +239,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             const data = await res.json();
-            console.log('API Response data:', JSON.stringify(data, null, 2));
+            console.log('=== TASK 2 PROOF: API Response data ===', JSON.stringify(data, null, 2));
             const user = data.user || data.data || data;
-            console.log('Extracted user object:', JSON.stringify(user, null, 2));
+            console.log('=== TASK 2 PROOF: Extracted user object ===', JSON.stringify(user, null, 2));
+            
+            // TASK 3: PROVE WHERE "User" IS COMING FROM
+            console.log('=== TASK 3 PROOF: user.name value ===', user.name);
+            console.log('=== TASK 3 PROOF: user.name type ===', typeof user.name);
+            console.log('=== TASK 3 PROOF: user.name truthy check ===', !!user.name);
+            console.log('=== TASK 3 PROOF: user.name || "User" result ===', user.name || 'User');
             
             // Validate that we have valid user data with email
             if (!user || !user.email) {
@@ -285,7 +291,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const userRoleEl = document.getElementById('headerUserRole');
         const userAvatarEl = document.getElementById('headerUserAvatar');
         
-        if (userNameEl) userNameEl.textContent = user.name || 'User';
+        // TASK 3: PROVE WHERE "User" IS COMING FROM
+        console.log('=== TASK 3 PROOF: updateUserDisplay called with user.name ===', user.name);
+        console.log('=== TASK 3 PROOF: user.name || "User" will result in ===', user.name || 'User');
+        if (userNameEl) {
+            const finalName = user.name || 'User';
+            console.log('=== TASK 3 PROOF: Setting headerUserName.textContent to ===', finalName);
+            userNameEl.textContent = finalName;
+        }
         if (userRoleEl) {
             // Map role_id to role name
             const roleNames = {

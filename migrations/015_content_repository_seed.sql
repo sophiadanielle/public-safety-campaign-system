@@ -2,6 +2,8 @@
 -- Comprehensive sample data demonstrating all Content Repository features
 -- Run after migrations 001, 011, 012, and 014
 
+USE `LGU`;
+
 SET NAMES utf8mb4;
 
 -- ============================================
@@ -164,6 +166,15 @@ INSERT IGNORE INTO `campaign_department_tags` (id, name) VALUES
 (109, 'households'),
 (110, 'youth');
 
+-- Ensure content_tags junction table exists
+CREATE TABLE IF NOT EXISTS `campaign_department_content_tags` (
+    content_item_id INT UNSIGNED NOT NULL,
+    tag_id INT UNSIGNED NOT NULL,
+    PRIMARY KEY (content_item_id, tag_id),
+    CONSTRAINT fk_content_tags_content FOREIGN KEY (content_item_id) REFERENCES `campaign_department_content_items`(id) ON DELETE CASCADE,
+    CONSTRAINT fk_content_tags_tag FOREIGN KEY (tag_id) REFERENCES `campaign_department_tags`(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Link tags to content
 INSERT IGNORE INTO `campaign_department_content_tags` (content_item_id, tag_id) VALUES
 (101, 101), (101, 109), -- Fire safety, households
@@ -198,8 +209,8 @@ INSERT IGNORE INTO `campaign_department_campaign_content_items` (campaign_id, co
 -- CONTENT USAGE TRACKING (Optional)
 -- ============================================
 
-INSERT IGNORE INTO `campaign_department_content_usage` (content_item_id, campaign_id, usage_context) VALUES
-(101, 1, 'Distributed during Fire Safety Awareness Week'),
-(102, 3, 'Included in flood preparedness information packets'),
-(103, 2, 'Screened during earthquake preparedness seminar'),
-(111, 1, 'Distributed as quick reference cards');
+INSERT IGNORE INTO `campaign_department_content_usage` (content_item_id, usage_context) VALUES
+(101, 'Distributed during Fire Safety Awareness Week'),
+(102, 'Included in flood preparedness information packets'),
+(103, 'Screened during earthquake preparedness seminar'),
+(111, 'Distributed as quick reference cards');

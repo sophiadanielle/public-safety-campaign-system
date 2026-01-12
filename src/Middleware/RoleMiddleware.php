@@ -28,7 +28,7 @@ class RoleMiddleware
         $roleId = (int) $user['role_id'];
 
         // Get user's role name
-        $stmt = $pdo->prepare('SELECT name FROM roles WHERE id = :id LIMIT 1');
+        $stmt = $pdo->prepare('SELECT name FROM campaign_department_roles WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $roleId]);
         $role = $stmt->fetch();
 
@@ -66,8 +66,8 @@ class RoleMiddleware
         // Check if role has permission
         $stmt = $pdo->prepare('
             SELECT COUNT(*) 
-            FROM role_permissions rp
-            INNER JOIN permissions p ON p.id = rp.permission_id
+            FROM campaign_department_role_permissions rp
+            INNER JOIN campaign_department_permissions p ON p.id = rp.permission_id
             WHERE rp.role_id = :role_id AND p.name = :permission
         ');
         $stmt->execute(['role_id' => $roleId, 'permission' => $permission]);
@@ -83,19 +83,30 @@ class RoleMiddleware
     /**
      * Get user's role name
      */
-    public static function getUserRole(?array $user, PDO $pdo): ?string
+    public static function getUserRole(?array $user, ?PDO $pdo): ?string
     {
         if (!$user || !isset($user['role_id'])) {
             return null;
         }
 
-        $stmt = $pdo->prepare('SELECT name FROM roles WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => (int) $user['role_id']]);
-        $role = $stmt->fetch();
+        if ($pdo === null) {
+            // If PDO is null, return null (can't query database)
+            return null;
+        }
 
-        return $role ? $role['name'] : null;
+        try {
+            $stmt = $pdo->prepare('SELECT name FROM campaign_department_roles WHERE id = :id LIMIT 1');
+            $stmt->execute(['id' => (int) $user['role_id']]);
+            $role = $stmt->fetch();
+
+            return $role ? $role['name'] : null;
+        } catch (\Exception $e) {
+            error_log('RoleMiddleware::getUserRole - Error querying database: ' . $e->getMessage());
+            return null;
+        }
     }
 }
+
 
 
 

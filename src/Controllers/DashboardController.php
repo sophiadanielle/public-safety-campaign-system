@@ -11,7 +11,7 @@ use RuntimeException;
 class DashboardController
 {
     public function __construct(
-        private PDO $pdo,
+        private ?PDO $pdo,
         private string $jwtSecret,
         private string $jwtIssuer,
         private string $jwtAudience,
@@ -25,67 +25,62 @@ class DashboardController
      */
     public function summary(?array $user, array $params = []): array
     {
-        try {
-            $userRole = $user ? RoleMiddleware::getUserRole($user, $this->pdo) : null;
-            $isResident = $userRole === 'resident' || !$user;
-
-            // Get KPI counts (with individual error handling)
-            $kpis = $this->getKPIs($isResident);
-
-            // Get campaign planning snapshot
-            $campaignSnapshot = $this->getCampaignSnapshot($isResident);
-
-            // Get event readiness data
-            $eventReadiness = $this->getEventReadiness($isResident);
-
-            // Get audience coverage
-            $audienceCoverage = $this->getAudienceCoverage($isResident);
-
-            // Get engagement preview
-            $engagementPreview = $this->getEngagementPreview($isResident);
-
-            // Get partner snapshot
-            $partnerSnapshot = $this->getPartnerSnapshot($isResident);
-
-            // Get content repository snapshot
-            $contentSnapshot = $this->getContentSnapshot($isResident);
-
-            // Get alerts and reminders
-            $alerts = $this->getAlerts($isResident);
-
-            return [
-                'kpis' => $kpis,
-                'campaign_snapshot' => $campaignSnapshot,
-                'event_readiness' => $eventReadiness,
-                'audience_coverage' => $audienceCoverage,
-                'engagement_preview' => $engagementPreview,
-                'partner_snapshot' => $partnerSnapshot,
-                'content_snapshot' => $contentSnapshot,
-                'alerts' => $alerts,
-            ];
-        } catch (\Throwable $e) {
-            error_log('Dashboard summary error: ' . $e->getMessage());
-            error_log('Dashboard summary stack trace: ' . $e->getTraceAsString());
-            http_response_code(500);
-            return [
-                'error' => 'Failed to load dashboard data: ' . $e->getMessage(),
-                'kpis' => [
-                    'active_campaigns' => 0,
-                    'scheduled_campaigns' => 0,
-                    'upcoming_events' => 0,
-                    'defined_segments' => 0,
-                    'partner_organizations' => 0,
-                    'feedback_responses' => 0,
-                ],
-                'campaign_snapshot' => ['by_status' => [], 'upcoming' => [], 'ai_scheduled' => 0, 'manual_scheduled' => 0],
-                'event_readiness' => ['upcoming' => [], 'by_type' => [], 'capacity' => [], 'linkage' => []],
-                'audience_coverage' => ['total_segments' => 0, 'most_targeted' => [], 'summary' => []],
-                'engagement_preview' => ['campaigns_with_feedback' => 0, 'events_with_attendance' => 0, 'total_attendance' => 0, 'recent_engagement' => 0],
-                'partner_snapshot' => ['active_partners' => 0, 'upcoming_partnered_events' => [], 'schools_count' => 0, 'ngos_count' => 0],
-                'content_snapshot' => ['total_content' => 0, 'approved_content' => 0, 'pending_content' => 0, 'draft_content' => 0, 'recent_content' => [], 'by_type' => [], 'by_category' => []],
-                'alerts' => [],
-            ];
+        // PDO must be valid - if it's null, db_connect.php should have thrown an exception
+        if ($this->pdo === null) {
+            error_log('DashboardController::summary - PDO is null');
+            throw new RuntimeException('Database connection is not available: PDO is null');
         }
+        
+        if (!($this->pdo instanceof PDO)) {
+            error_log('DashboardController::summary - PDO is not a PDO instance, type: ' . gettype($this->pdo));
+            throw new RuntimeException('Database connection is not available: PDO is not a valid PDO instance');
+        }
+        
+        // Test the connection before proceeding
+        try {
+            $this->pdo->query('SELECT 1');
+        } catch (\PDOException $e) {
+            error_log('DashboardController::summary - PDO connection test failed: ' . $e->getMessage());
+            throw new RuntimeException('Database connection test failed: ' . $e->getMessage(), 0, $e);
+        }
+        
+        $userRole = $user ? RoleMiddleware::getUserRole($user, $this->pdo) : null;
+        $isResident = $userRole === 'resident' || !$user;
+
+        // Get KPI counts (with individual error handling)
+        $kpis = $this->getKPIs($isResident);
+
+        // Get campaign planning snapshot
+        $campaignSnapshot = $this->getCampaignSnapshot($isResident);
+
+        // Get event readiness data
+        $eventReadiness = $this->getEventReadiness($isResident);
+
+        // Get audience coverage
+        $audienceCoverage = $this->getAudienceCoverage($isResident);
+
+        // Get engagement preview
+        $engagementPreview = $this->getEngagementPreview($isResident);
+
+        // Get partner snapshot
+        $partnerSnapshot = $this->getPartnerSnapshot($isResident);
+
+        // Get content repository snapshot
+        $contentSnapshot = $this->getContentSnapshot($isResident);
+
+        // Get alerts and reminders
+        $alerts = $this->getAlerts($isResident);
+
+        return [
+            'kpis' => $kpis,
+            'campaign_snapshot' => $campaignSnapshot,
+            'event_readiness' => $eventReadiness,
+            'audience_coverage' => $audienceCoverage,
+            'engagement_preview' => $engagementPreview,
+            'partner_snapshot' => $partnerSnapshot,
+            'content_snapshot' => $contentSnapshot,
+            'alerts' => $alerts,
+        ];
     }
 
     /**
@@ -104,7 +99,7 @@ class DashboardController
             // Active campaigns (scheduled or active status)
             $activeCampaignsQuery = "
                 SELECT COUNT(*) 
-                FROM campaigns 
+                FROM campaign_department_campaigns 
                 WHERE status IN ('scheduled', 'active')
             ";
             if ($isResident) {
@@ -119,7 +114,7 @@ class DashboardController
             // Scheduled campaigns
             $scheduledCampaignsQuery = "
                 SELECT COUNT(*) 
-                FROM campaigns 
+                FROM campaign_department_campaigns 
                 WHERE status = 'scheduled'
             ";
             $scheduledCampaigns = (int) $this->pdo->query($scheduledCampaignsQuery)->fetchColumn();
@@ -193,7 +188,7 @@ class DashboardController
             // Campaigns by status
             $statusQuery = "
                 SELECT status, COUNT(*) as count
-                FROM campaigns
+                FROM campaign_department_campaigns
                 GROUP BY status
             ";
             $statusResults = $this->pdo->query($statusQuery)->fetchAll(PDO::FETCH_ASSOC);
@@ -208,7 +203,7 @@ class DashboardController
             // Upcoming campaigns (next 7-14 days)
             $upcomingQuery = "
                 SELECT id, title, start_date, status, ai_recommended_datetime
-                FROM campaigns
+                FROM campaign_department_campaigns
                 WHERE start_date >= CURDATE()
                 AND start_date <= DATE_ADD(CURDATE(), INTERVAL 14 DAY)
                 ORDER BY start_date ASC
@@ -223,7 +218,7 @@ class DashboardController
             // AI vs Manual scheduling
             $aiScheduledQuery = "
                 SELECT COUNT(*) 
-                FROM campaigns 
+                FROM campaign_department_campaigns 
                 WHERE ai_recommended_datetime IS NOT NULL
             ";
             $aiScheduled = (int) $this->pdo->query($aiScheduledQuery)->fetchColumn();
@@ -234,7 +229,7 @@ class DashboardController
         try {
             $manualScheduledQuery = "
                 SELECT COUNT(*) 
-                FROM campaigns 
+                FROM campaign_department_campaigns 
                 WHERE final_schedule_datetime IS NOT NULL 
                 AND ai_recommended_datetime IS NULL
             ";
@@ -649,7 +644,7 @@ class DashboardController
             // Campaigns missing schedules
             $missingScheduleQuery = "
                 SELECT id, title, status, owner_id as created_by
-                FROM campaigns
+                FROM campaign_department_campaigns
                 WHERE status IN ('draft', 'scheduled')
                 AND final_schedule_datetime IS NULL
                 AND ai_recommended_datetime IS NULL
@@ -717,7 +712,7 @@ class DashboardController
             // Campaigns without assigned audience segments
             $noSegmentsQuery = "
                 SELECT c.id, c.title, c.status
-                FROM campaigns c
+                FROM campaign_department_campaigns c
                 LEFT JOIN campaign_audience ca ON ca.campaign_id = c.id
                 WHERE ca.campaign_id IS NULL
                 AND c.status IN ('draft', 'scheduled', 'active')
@@ -776,7 +771,7 @@ class DashboardController
         // Search campaigns
         $campaignsQuery = "
             SELECT 'campaign' as type, id, title as name, 'campaigns.php' as url
-            FROM campaigns
+            FROM campaign_department_campaigns
             WHERE title LIKE :query
             LIMIT 5
         ";

@@ -53,11 +53,11 @@ SELECT 2, id FROM `campaign_department_permissions` WHERE id != 11;
 
 -- School Partner - limited permissions
 INSERT IGNORE INTO `campaign_department_role_permissions` (role_id, permission_id)
-SELECT 3, id FROM permissions WHERE id IN (7, 8, 10);
+SELECT 3, id FROM `campaign_department_permissions` WHERE id IN (7, 8, 10);
 
 -- NGO Partner - limited permissions
 INSERT IGNORE INTO `campaign_department_role_permissions` (role_id, permission_id)
-SELECT 4, id FROM permissions WHERE id IN (7, 8, 10);
+SELECT 4, id FROM `campaign_department_permissions` WHERE id IN (7, 8, 10);
 
 -- ============================================
 -- SAMPLE USERS
