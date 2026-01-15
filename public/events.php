@@ -27,8 +27,9 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <?php include __DIR__ . '/../sidebar/includes/sidebar.php'; ?>
     <?php include __DIR__ . '/../sidebar/includes/admin-header.php'; ?>
     <?php 
-    $moduleName = 'events';
-    include __DIR__ . '/../sidebar/includes/module-sidebar.php'; 
+    // Removed redundant "Event Management" panel
+    // $moduleName = 'events';
+    // include __DIR__ . '/../sidebar/includes/module-sidebar.php'; 
     ?>
     
     <main class="main-content-wrapper">

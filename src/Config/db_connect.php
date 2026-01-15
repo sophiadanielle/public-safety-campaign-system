@@ -101,63 +101,104 @@ if (!empty($relevantEnvKeys)) {
     error_log('DB DEBUG: WARNING - No DB_* or LOCAL_DB_* keys found in $_ENV!');
 }
 
-// Load from .env - check for LOCAL_DB_* keys first (for local development), then DB_* keys, then defaults
-// The .env file uses LOCAL_DB_* keys for local development
-// IMPORTANT: Use array_key_exists to check if LOCAL_DB_* keys exist (like password) to use values exactly as provided
-$dbHost = array_key_exists('LOCAL_DB_HOST', $_ENV) ? $_ENV['LOCAL_DB_HOST'] : 
-          (!empty($_ENV['DB_HOST']) ? $_ENV['DB_HOST'] : 
-          (getenv('LOCAL_DB_HOST') !== false ? getenv('LOCAL_DB_HOST') : 
-          (getenv('DB_HOST') !== false ? getenv('DB_HOST') : 'localhost')));
+// CRITICAL: Database connection logic based strictly on APP_ENV
+// Rules:
+// - APP_ENV=local → Use ONLY: DB_HOST, DB_NAME, DB_USER, DB_PASSWORD, DB_PORT
+// - APP_ENV=production → Use ONLY: PROD_DB_HOST, PROD_DB_NAME, PROD_DB_USER, PROD_DB_PASS, PROD_DB_PORT
+// - No fallbacks, no mixing, no defaults
 
-$dbPort = array_key_exists('LOCAL_DB_PORT', $_ENV) ? $_ENV['LOCAL_DB_PORT'] : 
-          (!empty($_ENV['DB_PORT']) ? $_ENV['DB_PORT'] : 
-          (getenv('LOCAL_DB_PORT') !== false ? getenv('LOCAL_DB_PORT') : 
-          (getenv('DB_PORT') !== false ? getenv('DB_PORT') : '3306')));
+// Determine environment
+$appEnv = $_ENV['APP_ENV'] ?? getenv('APP_ENV') ?: 'local';
+$appEnv = strtolower(trim($appEnv));
 
-$dbName = array_key_exists('LOCAL_DB_NAME', $_ENV) ? $_ENV['LOCAL_DB_NAME'] : 
-          (!empty($_ENV['DB_DATABASE']) ? $_ENV['DB_DATABASE'] : 
-          (!empty($_ENV['DB_NAME']) ? $_ENV['DB_NAME'] : 
-          (getenv('LOCAL_DB_NAME') !== false ? getenv('LOCAL_DB_NAME') : 
-          (getenv('DB_DATABASE') !== false ? getenv('DB_DATABASE') : 
-          (getenv('DB_NAME') !== false ? getenv('DB_NAME') : 'LGU')))));
+// Log environment
+error_log("DB CONFIG: APP_ENV = '$appEnv'");
 
-$dbUser = array_key_exists('LOCAL_DB_USER', $_ENV) ? $_ENV['LOCAL_DB_USER'] : 
-          (!empty($_ENV['DB_USERNAME']) ? $_ENV['DB_USERNAME'] : 
-          (!empty($_ENV['DB_USER']) ? $_ENV['DB_USER'] : 
-          (getenv('LOCAL_DB_USER') !== false ? getenv('LOCAL_DB_USER') : 
-          (getenv('DB_USERNAME') !== false ? getenv('DB_USERNAME') : 
-          (getenv('DB_USER') !== false ? getenv('DB_USER') : 'root')))));
-
-// Password: check LOCAL_DB_PASS first, then DB_PASSWORD/DB_PASS, then empty for XAMPP default
-// IMPORTANT: Use password exactly as provided from .env - do not trim, modify, or override it
-// Empty password is valid for XAMPP, so check if key EXISTS using array_key_exists (not isset, since isset returns false for empty strings)
-$dbPass = '';
-if (array_key_exists('LOCAL_DB_PASS', $_ENV)) {
-    $dbPass = $_ENV['LOCAL_DB_PASS']; // Use exactly as provided, no trimming
-    error_log('DB DEBUG: Using LOCAL_DB_PASS from $_ENV (value: ' . ($dbPass === '' ? '[empty string]' : '[set, length: ' . strlen($dbPass) . ']') . ')');
-} elseif (array_key_exists('DB_PASSWORD', $_ENV)) {
-    $dbPass = $_ENV['DB_PASSWORD']; // Use exactly as provided, no trimming
-    error_log('DB DEBUG: Using DB_PASSWORD from $_ENV (value: ' . ($dbPass === '' ? '[empty string]' : '[set, length: ' . strlen($dbPass) . ']') . ')');
-} elseif (array_key_exists('DB_PASS', $_ENV)) {
-    $dbPass = $_ENV['DB_PASS']; // Use exactly as provided, no trimming
-    error_log('DB DEBUG: Using DB_PASS from $_ENV (value: ' . ($dbPass === '' ? '[empty string]' : '[set, length: ' . strlen($dbPass) . ']') . ')');
-} elseif (getenv('LOCAL_DB_PASS') !== false) {
-    $dbPass = getenv('LOCAL_DB_PASS'); // Use exactly as provided, no trimming
-    error_log('DB DEBUG: Using LOCAL_DB_PASS from getenv() (value: ' . ($dbPass === '' ? '[empty string]' : '[set, length: ' . strlen($dbPass) . ']') . ')');
-} elseif (getenv('DB_PASSWORD') !== false) {
-    $dbPass = getenv('DB_PASSWORD'); // Use exactly as provided, no trimming
-    error_log('DB DEBUG: Using DB_PASSWORD from getenv() (value: ' . ($dbPass === '' ? '[empty string]' : '[set, length: ' . strlen($dbPass) . ']') . ')');
-} elseif (getenv('DB_PASS') !== false) {
-    $dbPass = getenv('DB_PASS'); // Use exactly as provided, no trimming
-    error_log('DB DEBUG: Using DB_PASS from getenv() (value: ' . ($dbPass === '' ? '[empty string]' : '[set, length: ' . strlen($dbPass) . ']') . ')');
+// Load database credentials based on APP_ENV
+if ($appEnv === 'production') {
+    // Production: Use ONLY PROD_DB_* variables
+    if (!array_key_exists('PROD_DB_HOST', $_ENV) && getenv('PROD_DB_HOST') === false) {
+        throw new RuntimeException('PROD_DB_HOST is required when APP_ENV=production');
+    }
+    $dbHost = array_key_exists('PROD_DB_HOST', $_ENV) ? $_ENV['PROD_DB_HOST'] : getenv('PROD_DB_HOST');
+    
+    if (!array_key_exists('PROD_DB_NAME', $_ENV) && getenv('PROD_DB_NAME') === false) {
+        throw new RuntimeException('PROD_DB_NAME is required when APP_ENV=production');
+    }
+    $dbName = array_key_exists('PROD_DB_NAME', $_ENV) ? $_ENV['PROD_DB_NAME'] : getenv('PROD_DB_NAME');
+    
+    if (!array_key_exists('PROD_DB_USER', $_ENV) && getenv('PROD_DB_USER') === false) {
+        throw new RuntimeException('PROD_DB_USER is required when APP_ENV=production');
+    }
+    $dbUser = array_key_exists('PROD_DB_USER', $_ENV) ? $_ENV['PROD_DB_USER'] : getenv('PROD_DB_USER');
+    
+    if (!array_key_exists('PROD_DB_PASS', $_ENV) && getenv('PROD_DB_PASS') === false) {
+        throw new RuntimeException('PROD_DB_PASS is required when APP_ENV=production');
+    }
+    $dbPass = array_key_exists('PROD_DB_PASS', $_ENV) ? $_ENV['PROD_DB_PASS'] : getenv('PROD_DB_PASS');
+    
+    if (!array_key_exists('PROD_DB_PORT', $_ENV) && getenv('PROD_DB_PORT') === false) {
+        throw new RuntimeException('PROD_DB_PORT is required when APP_ENV=production');
+    }
+    $dbPort = array_key_exists('PROD_DB_PORT', $_ENV) ? $_ENV['PROD_DB_PORT'] : getenv('PROD_DB_PORT');
+    
+    error_log("DB CONFIG: Using PRODUCTION credentials - host='$dbHost', db='$dbName'");
 } else {
-    // XAMPP default MySQL root password is empty - this is intentional
-    $dbPass = '';
-    error_log('DB DEBUG: No password key found in $_ENV or getenv(), using default empty password for XAMPP');
+    // Local: Use ONLY DB_* variables (not PROD_DB_* or LOCAL_DB_*)
+    if (!array_key_exists('DB_HOST', $_ENV) && getenv('DB_HOST') === false) {
+        throw new RuntimeException('DB_HOST is required when APP_ENV=local');
+    }
+    $dbHost = array_key_exists('DB_HOST', $_ENV) ? $_ENV['DB_HOST'] : getenv('DB_HOST');
+    
+    // Check both DB_NAME and DB_DATABASE (common variations)
+    if (array_key_exists('DB_NAME', $_ENV)) {
+        $dbName = $_ENV['DB_NAME'];
+    } elseif (array_key_exists('DB_DATABASE', $_ENV)) {
+        $dbName = $_ENV['DB_DATABASE'];
+    } elseif (getenv('DB_NAME') !== false) {
+        $dbName = getenv('DB_NAME');
+    } elseif (getenv('DB_DATABASE') !== false) {
+        $dbName = getenv('DB_DATABASE');
+    } else {
+        throw new RuntimeException('DB_NAME or DB_DATABASE is required when APP_ENV=local');
+    }
+    
+    // Check both DB_USER and DB_USERNAME (common variations)
+    if (array_key_exists('DB_USER', $_ENV)) {
+        $dbUser = $_ENV['DB_USER'];
+    } elseif (array_key_exists('DB_USERNAME', $_ENV)) {
+        $dbUser = $_ENV['DB_USERNAME'];
+    } elseif (getenv('DB_USER') !== false) {
+        $dbUser = getenv('DB_USER');
+    } elseif (getenv('DB_USERNAME') !== false) {
+        $dbUser = getenv('DB_USERNAME');
+    } else {
+        throw new RuntimeException('DB_USER or DB_USERNAME is required when APP_ENV=local');
+    }
+    
+    // Check both DB_PASSWORD and DB_PASS (common variations)
+    if (array_key_exists('DB_PASSWORD', $_ENV)) {
+        $dbPass = $_ENV['DB_PASSWORD'];
+    } elseif (array_key_exists('DB_PASS', $_ENV)) {
+        $dbPass = $_ENV['DB_PASS'];
+    } elseif (getenv('DB_PASSWORD') !== false) {
+        $dbPass = getenv('DB_PASSWORD');
+    } elseif (getenv('DB_PASS') !== false) {
+        $dbPass = getenv('DB_PASS');
+    } else {
+        throw new RuntimeException('DB_PASSWORD or DB_PASS is required when APP_ENV=local');
+    }
+    
+    if (!array_key_exists('DB_PORT', $_ENV) && getenv('DB_PORT') === false) {
+        throw new RuntimeException('DB_PORT is required when APP_ENV=local');
+    }
+    $dbPort = array_key_exists('DB_PORT', $_ENV) ? $_ENV['DB_PORT'] : getenv('DB_PORT');
+    
+    error_log("DB CONFIG: Using LOCAL credentials - host='$dbHost', db='$dbName'");
 }
 
-// DIAGNOSTIC: Log the final values that will be used for connection
-error_log("DB DEBUG: Final connection values - host='$dbHost' port='$dbPort' db='$dbName' user='$dbUser' pass=" . ($dbPass === '' ? '[empty - will use NULL for PDO]' : '[set, length: ' . strlen($dbPass) . ']'));
+// Minimal logging: Confirm environment and values used
+error_log("DB CONFIG: Environment='$appEnv', Host='$dbHost', Database='$dbName'");
 
 // IMPORTANT: PDO interprets empty string '' as "no password provided", but if MySQL root actually has no password,
 // we should pass NULL. However, if MySQL root has a password set, we need the actual password.
@@ -210,7 +251,7 @@ try {
     
     // Now connect to the specific database
     $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $dbHost, $dbPort, $dbName);
-    error_log("DB DEBUG: Attempting connection to specific database - DSN: $dsn, User: $dbUser, Password: " . ($pdoPassword === null ? 'NULL (no password)' : '[provided]'));
+    error_log("DB CONFIG: Connecting to database - DSN: $dsn");
     $pdo = new PDO($dsn, $dbUser, $pdoPassword, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -238,9 +279,9 @@ try {
         // Try one more time with direct connection to the database
         // If this fails, throw the exception so we can see the real error
         try {
-            error_log('DB DEBUG: Retrying database connection for non-auth request...');
+            error_log('DB CONFIG: Retrying database connection...');
             $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $dbHost, $dbPort, $dbName);
-            error_log("DB DEBUG: Retry DSN: $dsn, User: $dbUser, Password: " . ($pdoPassword === null ? 'NULL (no password)' : '[provided]'));
+            error_log("DB CONFIG: Retry DSN: $dsn");
             $pdo = new PDO($dsn, $dbUser, $pdoPassword, [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
