@@ -24,19 +24,55 @@ class ImpactService
     {
         $this->assertCampaignExists($campaignId);
 
-        $reach = (int) $this->scalar('SELECT COUNT(*) FROM notification_logs WHERE campaign_id = :cid AND status = "sent"', ['cid' => $campaignId]);
-        $notificationsFailed = (int) $this->scalar('SELECT COUNT(*) FROM notification_logs WHERE campaign_id = :cid AND status = "failed"', ['cid' => $campaignId]);
+        // Reach: Count of sent notifications
+        $reach = (int) $this->scalar(
+            'SELECT COUNT(*) FROM `campaign_department_notification_logs` WHERE campaign_id = :cid AND status = "sent"',
+            ['cid' => $campaignId]
+        );
+        
+        // Failed notifications
+        $notificationsFailed = (int) $this->scalar(
+            'SELECT COUNT(*) FROM `campaign_department_notification_logs` WHERE campaign_id = :cid AND status = "failed"',
+            ['cid' => $campaignId]
+        );
 
+        // Attendance: Count from events linked to this campaign
+        // Note: Table uses 'id' as primary key (not attendance_id)
         $attendance = (int) $this->scalar(
-            'SELECT COUNT(*) FROM attendance a INNER JOIN events e ON e.id = a.event_id WHERE e.linked_campaign_id = :cid',
+            'SELECT COUNT(DISTINCT a.id) FROM `campaign_department_attendance` a 
+             INNER JOIN `campaign_department_events` e ON e.id = a.event_id 
+             WHERE e.linked_campaign_id = :cid',
             ['cid' => $campaignId]
         );
 
+        // Survey responses: Count from surveys linked to campaign OR to events in this campaign
         $surveyResponses = (int) $this->scalar(
-            'SELECT COUNT(*) FROM survey_responses sr INNER JOIN surveys s ON s.id = sr.survey_id WHERE s.campaign_id = :cid',
+            'SELECT COUNT(DISTINCT sr.id) FROM `campaign_department_survey_responses` sr 
+             INNER JOIN `campaign_department_surveys` s ON s.id = sr.survey_id 
+             LEFT JOIN `campaign_department_events` e ON e.id = s.event_id
+             WHERE (s.campaign_id = :cid OR e.linked_campaign_id = :cid)',
             ['cid' => $campaignId]
         );
 
+        // Average rating: Get from aggregated results for rating-type questions
+        // This uses the survey_aggregated_results table which pre-computes averages
+        $avgRating = $this->scalar(
+            'SELECT AVG(sar.average_rating) FROM `campaign_department_survey_aggregated_results` sar
+             INNER JOIN `campaign_department_surveys` s ON s.id = sar.survey_id
+             LEFT JOIN `campaign_department_events` e ON e.id = s.event_id
+             WHERE (s.campaign_id = :cid OR e.linked_campaign_id = :cid) 
+             AND sar.average_rating IS NOT NULL',
+            ['cid' => $campaignId]
+        );
+        $avgRating = $avgRating !== null ? round((float)$avgRating, 2) : null;
+
+        // Audience segments: Count of segments targeted by this campaign
+        $targetedSegments = (int) $this->scalar(
+            'SELECT COUNT(DISTINCT segment_id) FROM `campaign_department_campaign_audience` WHERE campaign_id = :cid',
+            ['cid' => $campaignId]
+        );
+
+        // Calculate rates
         $reachBase = max($reach, 1);
         $engagementRate = ($attendance + $surveyResponses) / $reachBase;
         $responseRate = $surveyResponses / $reachBase;
@@ -47,6 +83,8 @@ class ImpactService
             'notifications_failed' => $notificationsFailed,
             'attendance_count' => $attendance,
             'survey_responses' => $surveyResponses,
+            'avg_rating' => $avgRating, // Added: Average rating from surveys
+            'targeted_segments' => $targetedSegments, // Added: Count of audience segments
             'engagement_rate' => round($engagementRate, 4),
             'response_rate' => round($responseRate, 4),
         ];
@@ -70,7 +108,7 @@ class ImpactService
             throw new RuntimeException('Failed to write report file');
         }
 
-        $stmt = $this->pdo->prepare('INSERT INTO evaluation_reports (campaign_id, file_path, snapshot_json) VALUES (:cid, :file_path, :snapshot_json)');
+        $stmt = $this->pdo->prepare('INSERT INTO `campaign_department_evaluation_reports` (campaign_id, file_path, snapshot_json) VALUES (:cid, :file_path, :snapshot_json)');
         $stmt->execute([
             'cid' => $campaignId,
             'file_path' => $relativePath,
@@ -126,7 +164,7 @@ HTML;
 
     private function assertCampaignExists(int $campaignId): void
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM campaigns WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id FROM `campaign_department_campaigns` WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $campaignId]);
         if (!$stmt->fetch()) {
             throw new RuntimeException('Campaign not found');
@@ -135,7 +173,7 @@ HTML;
 
     private function fetchCampaign(int $campaignId): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, title, status, start_date, end_date FROM campaigns WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, title, status, start_date, end_date FROM `campaign_department_campaigns` WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $campaignId]);
         $campaign = $stmt->fetch();
         if (!$campaign) {

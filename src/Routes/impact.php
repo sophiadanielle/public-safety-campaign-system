@@ -18,6 +18,12 @@ return [
         'handler' => [ImpactController::class, 'generateReport'],
         'middleware' => JWTMiddleware::class,
     ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/reports',
+        'handler' => [ImpactController::class, 'listReports'],
+        'middleware' => JWTMiddleware::class,
+    ],
 ];
 
 

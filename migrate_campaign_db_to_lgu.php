@@ -256,3 +256,4 @@ echo "Tables in $targetDb: $targetTableCount\n";
 
 echo "\n✓ Migration completed!\n";
 
+

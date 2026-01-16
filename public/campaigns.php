@@ -202,7 +202,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         margin-bottom: 28px;
         transition: all 0.3s ease;
         position: relative;
-        overflow: hidden;
+        overflow: visible; /* Changed from hidden to allow dropdowns to show */
         /* When navigating via in-page anchors, keep the card title visible below the sticky header */
         scroll-margin-top: 90px;
     }
@@ -298,8 +298,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         font-size: 12px;
     }
     .form-field input,
-    .form-field textarea,
-    .form-field select {
+    .form-field textarea {
         width: 100%;
         border: 2px solid #e2e8f0;
         border-radius: 12px;
@@ -309,8 +308,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         background: #fafbfc;
     }
     .form-field input:focus,
-    .form-field textarea:focus,
-    .form-field select:focus {
+    .form-field textarea:focus {
         outline: none;
         border-color: #4c8a89;
         background: #fff;
@@ -814,16 +812,15 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         border-radius: 2px;
     }
     
-    /* Combobox Styles (Select-like with autocomplete) */
-    .combobox-wrapper {
-        position: relative;
-        width: 100%;
-    }
-    .combobox-input {
+    /* ============================================
+       NATIVE SELECT DROPDOWNS - Standard Fields Only
+       Scoped to .standard-select class only
+       ============================================ */
+    select.standard-select {
         width: 100%;
         border: 2px solid #e2e8f0;
         border-radius: 12px;
-        padding: 12px 40px 12px 16px;
+        padding: 12px 16px;
         font-size: 14px;
         transition: all 0.2s;
         background: #fafbfc;
@@ -831,140 +828,207 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         appearance: none;
         -webkit-appearance: none;
         -moz-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        background-size: 12px;
+        padding-right: 40px;
     }
-    .combobox-input:focus {
+    
+    select.standard-select:focus {
+        outline: none;
+        border-color: #4c8a89;
+        background-color: #fff;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234c8a89' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        box-shadow: 0 0 0 4px rgba(76, 138, 137, 0.1);
+    }
+    
+    select.standard-select:hover {
+        border-color: #cbd5e1;
+    }
+    /* ============================================
+       ENHANCED MULTI-SELECT - Assigned Staff & Materials Only
+       Scoped to .multi-select-container class only
+       ============================================ */
+    .multi-select-container {
+        position: relative;
+        width: 100%;
+    }
+    
+    /* Native select dropdown for multi-select */
+    .multi-select-container .multi-select-dropdown {
+        width: 100%;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 14px;
+        transition: all 0.2s;
+        background: #fafbfc;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        max-height: 120px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        position: relative;
+        box-sizing: border-box;
+    }
+    
+    .multi-select-container .multi-select-dropdown:focus {
         outline: none;
         border-color: #4c8a89;
         background: #fff;
         box-shadow: 0 0 0 4px rgba(76, 138, 137, 0.1);
     }
-    .combobox-arrow {
-        position: absolute;
-        right: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        pointer-events: none;
-        color: #64748b;
-        font-size: 12px;
+    
+    .multi-select-container .multi-select-dropdown:hover {
+        border-color: #cbd5e1;
     }
-    .combobox-options {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        width: 100%;
-        background: #fff;
-        border: 2px solid #4c8a89;
-        border-top: none;
-        border-radius: 0 0 12px 12px;
-        max-height: 160px; /* default dropdown height for all comboboxes */
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        box-sizing: border-box;
-        z-index: 1000;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
-        display: none;
-        margin-top: -2px;
-    }
-    .combobox-options.active {
-        display: block;
-    }
-    .combobox-option {
-        padding: 12px 16px;
+    
+    .multi-select-container .multi-select-dropdown option {
+        padding: 8px 12px;
         cursor: pointer;
-        border-bottom: 1px solid #f1f5f9;
-        transition: all 0.2s;
-        color: #1e293b;
-        font-size: 14px;
     }
-    .combobox-option:hover,
-    .combobox-option.selected {
+    
+    .multi-select-container .multi-select-dropdown option:checked {
         background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
         color: #0f172a;
         font-weight: 600;
     }
-    .combobox-option:last-child {
-        border-bottom: none;
-    }
-    .combobox-input.active {
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
-        border-bottom-color: #4c8a89;
-    }
-    .combobox-input[readonly] {
-        cursor: pointer;
-        background: #fafbfc;
-    }
-    /* For multi-select comboboxes */
-    .combobox-multi .combobox-input {
-        padding-right: 16px;
-    }
-    .combobox-tags {
+    
+    /* Tags container for multi-select (shows selected items) */
+    .multi-select-container .multi-select-tags {
         display: flex;
         flex-wrap: wrap;
-        gap: 4px;
-        margin-top: 4px;
+        gap: 6px;
+        margin-bottom: 10px;
         width: 100%;
+        min-height: 0;
     }
-    .combobox-tag {
+    
+    /* Assigned Staff specific tags (4 per row) */
+    .multi-select-container.assigned-staff-select .multi-select-tag {
         background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
         color: #0c4a6e;
-        padding: 4px 8px;
+        padding: 6px 10px;
         border-radius: 6px;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 600;
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        flex: 0 0 auto;
-        max-width: calc(25% - 3px); /* Allow 4 items per row */
-        min-width: calc(25% - 3px);
+        gap: 6px;
+        flex: 0 0 calc(25% - 4.5px);
+        max-width: calc(25% - 4.5px);
+        min-width: 120px;
+        box-sizing: border-box;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border: 1px solid #bae6fd;
+        transition: all 0.2s;
     }
-    .combobox-tag-remove {
+    
+    /* Materials specific tags (2 per row) */
+    .multi-select-container.materials-select .multi-select-tag {
+        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+        color: #0c4a6e;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 calc(50% - 3px);
+        max-width: calc(50% - 3px);
+        min-width: 200px;
+        box-sizing: border-box;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border: 1px solid #bae6fd;
+        transition: all 0.2s;
+    }
+    
+    .multi-select-container .multi-select-tag:hover {
+        background: linear-gradient(135deg, #bae6fd 0%, #93c5fd 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .multi-select-container .multi-select-tag-remove {
         cursor: pointer;
         font-weight: bold;
-    }
-
-    /* Show 4 items per row for Assigned Staff tags */
-    .combobox-assigned .combobox-tags {
-        width: 100%;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
+        font-size: 16px;
+        line-height: 1;
+        color: #1e40af;
+        padding: 0 2px;
+        border-radius: 3px;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
     }
     
-    .combobox-assigned .combobox-tag {
-        flex: 0 0 calc(25% - 3px); /* 4 items per row: (100% - 12px) / 4 */
-        max-width: calc(25% - 3px);
-        min-width: 0; /* Allow shrinking if text is too long */
+    .multi-select-container .multi-select-tag-remove:hover {
+        background: rgba(30, 64, 175, 0.1);
+        color: #1e3a8a;
+    }
+    
+    /* Custom scrollbar for multi-select dropdown */
+    .multi-select-container .multi-select-dropdown::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .multi-select-container .multi-select-dropdown::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+    
+    .multi-select-container .multi-select-dropdown::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    
+    .multi-select-container .multi-select-dropdown::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    
+    
+    
+    /* For full-width fields in form-grid, ensure dropdown doesn't overflow */
+    .form-field.full-width .combobox-wrapper {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .form-field.full-width .combobox-options {
+        max-width: 100%;
         box-sizing: border-box;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        /* Ensure dropdown is contained within the form-field */
+        left: 0;
+        right: 0;
     }
     
-    /* Show 2 items per row for Materials tags */
-    .combobox-materials .combobox-tags {
-        width: 100%;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
+    /* Ensure campaign-main container doesn't clip dropdowns */
+    .campaign-main {
+        overflow: visible;
+        position: relative;
     }
     
-    .combobox-materials .combobox-tag {
-        flex: 0 0 calc(50% - 2px); /* 2 items per row: (100% - 4px) / 2 */
-        max-width: calc(50% - 2px);
-        min-width: 0; /* Allow shrinking if text is too long */
-        box-sizing: border-box;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    /* Ensure campaign-layout doesn't clip dropdowns */
+    .campaign-layout {
+        overflow: visible;
+        position: relative;
     }
     
-    /* Keep dropdown height reasonable */
-    .combobox-assigned .combobox-options,
-    .combobox-materials .combobox-options {
-        max-height: 80px; /* Show only 2 items to prevent overlap with buttons */
+    /* Ensure campaign-page doesn't clip dropdowns */
+    .campaign-page {
+        overflow: visible;
+        position: relative;
     }
 
     
@@ -1049,59 +1113,63 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
 
     <!-- Planning Form -->
     <section class="card" id="planning-section">
-        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
             <h2 class="section-title analytics-accent" style="margin: 0;">Plan New Campaign</h2>
-            <button type="button" class="btn btn-secondary" onclick="showCampaignHowItWorks()" style="padding: 8px 16px; font-size: 13px;">
-                💡 How It Works
+            <button type="button" class="btn btn-secondary" onclick="showCampaignHowItWorks()" style="padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-info-circle"></i>
+                How It Works
             </button>
+        </div>
+        
+        <!-- Integration Context -->
+        <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; border-radius: 6px; padding: 14px; margin-bottom: 24px; font-size: 12px; color: #0c4a6e; line-height: 1.6;">
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                <i class="fas fa-link" style="color: #0ea5e9; font-size: 16px; margin-top: 2px;"></i>
+                <div style="flex: 1;">
+                    <strong style="display: block; margin-bottom: 4px;">System Integration:</strong>
+                    <p style="margin: 0;">This form integrates with multiple modules: <strong>Segments module</strong> for audience targeting, <strong>Content module</strong> for material selection, <strong>Events module</strong> for conflict checking, and <strong>Surveys module</strong> for engagement data used in AI recommendations.</p>
+                </div>
+            </div>
         </div>
         
         <form id="planningForm">
             <div class="form-grid">
                 <div class="form-field">
                     <label for="title">Campaign Title *</label>
-                    <div class="combobox-wrapper">
-                        <input type="text" class="combobox-input" id="title" placeholder="Select or type campaign title..." required autocomplete="off">
-                        <span class="combobox-arrow">▼</span>
-                        <div class="combobox-options" id="title_options"></div>
-                    </div>
+                    <select class="standard-select" id="title" required>
+                        <option value="">Select campaign title...</option>
+                    </select>
                 </div>
                 <div class="form-field">
                     <label for="category">Category *</label>
-                    <div class="combobox-wrapper">
-                        <input
-                            type="text"
-                            class="combobox-input"
-                            id="category"
-                            placeholder="Select or type category..."
-                            autocomplete="off"
-                            required
-                        >
-                        <span class="combobox-arrow">▼</span>
-                        <div class="combobox-options" id="category_options"></div>
-                    </div>
+                    <select class="standard-select" id="category" required>
+                        <option value="">Select category...</option>
+                        <option value="fire">Fire</option>
+                        <option value="flood">Flood</option>
+                        <option value="earthquake">Earthquake</option>
+                        <option value="health">Health</option>
+                        <option value="road safety">Road Safety</option>
+                        <option value="general">General</option>
+                    </select>
                 </div>
                 <div class="form-field">
                     <label for="geographic_scope">Geographic Scope / Barangay</label>
-                    <div class="combobox-wrapper">
-                        <input type="text" class="combobox-input" id="geographic_scope" placeholder="Select or type barangay..." autocomplete="off">
-                        <span class="combobox-arrow">▼</span>
-                        <div class="combobox-options" id="geographic_scope_options"></div>
-                    </div>
+                    <select class="standard-select" id="geographic_scope">
+                        <option value="">Select barangay...</option>
+                    </select>
                 </div>
                 <div class="form-field">
                     <label for="status">Status</label>
-                    <div class="combobox-wrapper">
-                        <input
-                            type="text"
-                            class="combobox-input"
-                            id="status"
-                            placeholder="Select or type status..."
-                            autocomplete="off"
-                        >
-                        <span class="combobox-arrow">▼</span>
-                        <div class="combobox-options" id="status_options"></div>
-                    </div>
+                    <select class="standard-select" id="status">
+                        <option value="">Select status...</option>
+                        <option value="draft">Draft</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="ongoing">Ongoing</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="completed">Completed</option>
+                        <option value="archived">Archived</option>
+                    </select>
                 </div>
                 <div class="form-field">
                     <label for="start_date">Start Date</label>
@@ -1111,18 +1179,32 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                     <label for="end_date">End Date</label>
                     <input id="end_date" type="date">
                 </div>
-                <div class="form-field">
-                    <label for="draft_schedule_datetime">Draft Schedule (Date & Time)</label>
-                    <input id="draft_schedule_datetime" type="datetime-local" disabled title="Schedule will be set after requesting AI recommendation">
-                    <small style="display: block; margin-top: 4px; color: #64748b; font-size: 12px;">Schedule must be set via AI recommendation flow (Steps 3-9)</small>
+                <div class="form-field" id="final_schedule_field" style="display: none;">
+                    <label for="final_schedule_display" style="display: flex; align-items: center; gap: 6px; font-weight: 600;">
+                        <i class="fas fa-calendar-check" style="color: #10b981;"></i>
+                        Final Schedule (Generated via AI Optimization)
+                    </label>
+                    <div id="final_schedule_display" style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 14px 16px; color: #065f46; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-clock" style="color: #10b981;"></i>
+                        <span id="final_schedule_value">-</span>
+                    </div>
+                    <small style="display: block; margin-top: 6px; color: #64748b; font-size: 12px; line-height: 1.5;">
+                        <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                        This schedule was generated through the AI-Powered Deployment Optimization workflow.
+                    </small>
                 </div>
                 <div class="form-field">
                     <label for="location">Location</label>
-                    <div class="combobox-wrapper">
-                        <input type="text" class="combobox-input" id="location" placeholder="Select or type location..." autocomplete="off">
-                        <span class="combobox-arrow">▼</span>
-                        <div class="combobox-options" id="location_options"></div>
-                    </div>
+                    <select class="standard-select" id="location">
+                        <option value="">Select location...</option>
+                        <option value="Barangay Hall">Barangay Hall</option>
+                        <option value="Covered Court">Covered Court</option>
+                        <option value="Barangay Gymnasium">Barangay Gymnasium</option>
+                        <option value="Elementary School Grounds">Elementary School Grounds</option>
+                        <option value="High School Auditorium">High School Auditorium</option>
+                        <option value="Multi-purpose Hall">Multi-purpose Hall</option>
+                        <option value="Community Center">Community Center</option>
+                    </select>
                 </div>
                 <div class="form-field">
                     <label for="budget">Budget (PHP)</label>
@@ -1134,12 +1216,9 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                 </div>
                 <div class="form-field">
                     <label for="barangay_zones">Barangay Target Zones</label>
-                    <div class="combobox-wrapper combobox-multi">
-                        <input type="text" class="combobox-input" id="barangay_zones" placeholder="Select or type barangays..." autocomplete="off">
-                        <span class="combobox-arrow">▼</span>
-                        <div class="combobox-options" id="barangay_zones_options"></div>
-                        <div class="combobox-tags" id="barangay_zones_tags"></div>
-                    </div>
+                    <select class="standard-select" id="barangay_zones">
+                        <option value="">Select barangay zone...</option>
+                    </select>
                 </div>
                 <div class="form-field full-width">
                     <label for="objectives">Objectives</label>
@@ -1149,25 +1228,35 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                     <label for="description">Description</label>
                     <textarea id="description" rows="3" placeholder="Detailed description of the campaign..."></textarea>
                 </div>
-                <div class="form-field full-width">
-                    <label for="assigned_staff">Assigned Staff</label>
-                    <div class="combobox-wrapper combobox-multi combobox-assigned">
-                        <input type="text" class="combobox-input" id="assigned_staff" placeholder="Select or type staff names..." autocomplete="off">
-                        <span class="combobox-arrow">▼</span>
-                        <div class="combobox-options" id="assigned_staff_options"></div>
-                        <div class="combobox-tags" id="assigned_staff_tags"></div>
+                <div class="form-field full-width" style="margin-bottom: 24px;">
+                    <label for="assigned_staff" style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px; font-weight: 600;">
+                        <i class="fas fa-users" style="color: #667eea;"></i>
+                        Assigned Staff
+                    </label>
+                    <div class="multi-select-container assigned-staff-select">
+                        <div class="multi-select-tags" id="assigned_staff_tags"></div>
+                        <select class="multi-select-dropdown" id="assigned_staff" multiple size="3">
+                        </select>
                     </div>
-                    <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">Select multiple staff members</small>
+                    <small style="color: #94a3b8; font-size: 12px; margin-top: 8px; display: block; line-height: 1.5;">
+                        <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                        Select multiple staff members. Selected items will appear as tags above.
+                    </small>
                 </div>
-                <div class="form-field full-width">
-                    <label for="materials_json">Materials</label>
-                    <div class="combobox-wrapper combobox-multi combobox-materials">
-                        <input type="text" class="combobox-input" id="materials_json" placeholder="Select or type materials..." autocomplete="off">
-                        <span class="combobox-arrow">▼</span>
-                        <div class="combobox-options" id="materials_json_options"></div>
-                        <div class="combobox-tags" id="materials_json_tags"></div>
+                <div class="form-field full-width" style="margin-bottom: 24px;">
+                    <label for="materials_json" style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px; font-weight: 600;">
+                        <i class="fas fa-file-alt" style="color: #667eea;"></i>
+                        Materials
+                    </label>
+                    <div class="multi-select-container materials-select">
+                        <div class="multi-select-tags" id="materials_json_tags"></div>
+                        <select class="multi-select-dropdown" id="materials_json" multiple size="3">
+                        </select>
                     </div>
-                    <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">Select multiple materials from Content Repository</small>
+                    <small style="color: #94a3b8; font-size: 12px; margin-top: 8px; display: block; line-height: 1.5;">
+                        <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                        Select multiple materials from the <strong>Content Repository</strong>. Only approved content can be attached.
+                    </small>
                 </div>
             </div>
             
@@ -1182,58 +1271,159 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <!-- AutoML Panel -->
     <section class="card" id="automl-section">
         <div class="section-header">
-            <h2 class="section-title analytics-accent">AI-Powered Deployment Optimization</h2>
-        </div>
-        <div class="automl-panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                <h3 style="margin: 0;">Google AutoML Predictions</h3>
-                <button type="button" id="automlRefreshBtn" onclick="if(typeof refreshAutoMLCampaigns==='function'){refreshAutoMLCampaigns();}else if(typeof window.refreshAutoMLCampaigns==='function'){window.refreshAutoMLCampaigns();}else{console.error('refreshAutoMLCampaigns not found'); alert('Refresh function not loaded');}" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" title="Refresh campaign list" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                    <span>🔄</span>
+            <h2 class="section-title analytics-accent">🤖 AI-Powered Deployment Optimization</h2>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; color: #64748b; font-weight: 500; background: #f1f5f9; padding: 4px 10px; border-radius: 12px;">Core Innovation</span>
+                <button type="button" id="automlRefreshBtn" onclick="if(typeof refreshAutoMLCampaigns==='function'){refreshAutoMLCampaigns();}else if(typeof window.refreshAutoMLCampaigns==='function'){window.refreshAutoMLCampaigns();}else{console.error('refreshAutoMLCampaigns not found'); alert('Refresh function not loaded');}" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; font-weight: 500;" title="Refresh campaign list" onmouseover="this.style.background='#5568d3'" onmouseout="this.style.background='#667eea'">
+                    <i class="fas fa-sync-alt"></i>
                     <span>Refresh</span>
                 </button>
             </div>
-            <p style="margin: 0 0 20px; opacity: 0.95;">Get AI-suggested optimal dates and times for campaign deployment based on real-time historical data, audience engagement patterns, and performance analytics.</p>
-            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 12px; margin-bottom: 20px; font-size: 13px; opacity: 0.95;">
-                <strong>💡 How it works:</strong> The system uses Google AutoML if configured (via GOOGLE_AUTOML_ENDPOINT and GOOGLE_AUTOML_API_KEY environment variables), otherwise automatically falls back to intelligent heuristic predictions based on historical campaign data. Both methods analyze similar campaigns, engagement patterns, and optimal timing to suggest the best deployment schedule.
-            </div>
-            <div style="display: flex; gap: 16px; align-items: flex-start;">
-                <div class="form-field" style="flex: 1; position: relative; overflow: visible;">
-                    <label for="automl_campaign_id" style="color: white; opacity: 0.95; display: block; margin-bottom: 4px; height: 20px;">Campaign ID</label>
-                    <select id="automl_campaign_id" style="background: rgba(255,255,255,0.95); border: 2px solid rgba(255,255,255,0.3); color: #0f172a; width: 100%; padding: 8px 12px; padding-right: 32px; border-radius: 6px; font-size: 14px; cursor: pointer; appearance: auto; -webkit-appearance: menulist; -moz-appearance: menulist; height: 42px; box-sizing: border-box; position: relative; z-index: 1000; overflow: visible;" onfocus="checkDropdownStatus(); console.log('Dropdown focused, options count:', this.options.length);" onchange="updateDropdownStatus(); validateAutoMLForm(); console.log('Dropdown changed to:', this.value);" onclick="console.log('Dropdown clicked, options count:', this.options.length); if(this.options.length <= 1) { console.warn('Dropdown has no options! Attempting to populate...'); populateAutoMLDropdown(); }" onmousedown="console.log('Dropdown mousedown, options:', Array.from(this.options).map(o => o.value + ':' + o.textContent));">
-                        <option value="">Select Campaign</option>
-                    </select>
-                    <p id="automl_dropdown_status" style="color: rgba(255,255,255,0.7); font-size: 11px; margin: 4px 0 0 0; min-height: 16px;">Loading campaigns...</p>
-                </div>
-                <div class="form-field" style="flex: 1;">
-                    <label for="automl_audience_segment" style="color: white; opacity: 0.95; display: block; margin-bottom: 4px; height: 20px;">Audience Segment ID (Optional)</label>
-                    <input id="automl_audience_segment" type="number" placeholder="e.g., 1" style="background: rgba(255,255,255,0.95); border: 2px solid rgba(255,255,255,0.3); color: #0f172a; width: 100%; padding: 8px 12px; border-radius: 6px; font-size: 14px; height: 42px; box-sizing: border-box;" onchange="validateAutoMLForm();" oninput="validateAutoMLForm();">
-                </div>
-                <div style="display: flex; flex-direction: column;">
-                    <label style="color: white; opacity: 0; height: 20px; margin-bottom: 4px; visibility: hidden;">Placeholder</label>
-                    <button type="button" id="getPredictionBtn" class="btn btn-primary" onclick="if(typeof handleGetPredictionClick==='function'){handleGetPredictionClick(event);}else if(typeof window.handleGetPredictionClick==='function'){window.handleGetPredictionClick(event);}else{console.error('handleGetPredictionClick not found'); alert('Prediction function not loaded. Please refresh the page.');}" style="background: white; color: #667eea; border: none; font-weight: 700; padding: 12px 24px; height: 42px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; white-space: nowrap; transition: all 0.2s; cursor: pointer;" onmouseover="this.style.opacity='0.9'; this.style.transform='scale(1.02)'" onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">🔮 Get Prediction</button>
+        </div>
+        
+        <!-- Core Innovation Highlight Card -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px; color: white; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <div style="flex: 1;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-brain"></i>
+                        AI-Powered Scheduling Intelligence
+                    </h3>
+                    <p style="margin: 0; opacity: 0.95; line-height: 1.6; font-size: 14px;">
+                        Our AI analyzes historical campaign data, audience engagement patterns from the <strong>Surveys module</strong>, and event conflicts from the <strong>Events module</strong> to recommend the optimal deployment schedule for maximum reach and effectiveness.
+                    </p>
                 </div>
             </div>
-            <div id="automlResult" class="prediction-result" style="display:none;">
-                <div class="prediction-item">
-                    <strong>📅 Suggested Date & Time:</strong>
-                    <span id="pred_datetime">-</span>
+            
+            <!-- How It Works Card -->
+            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 16px; margin-bottom: 20px; backdrop-filter: blur(10px);">
+                <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
+                    <div style="font-size: 24px; line-height: 1;">💡</div>
+                    <div style="flex: 1;">
+                        <strong style="display: block; margin-bottom: 8px; font-size: 15px;">How the AI Works:</strong>
+                        <p style="margin: 0 0 12px 0; font-size: 13px; line-height: 1.6; opacity: 0.95;">
+                            The system uses Google AutoML (if configured) or intelligent heuristic predictions based on historical campaign data. Both methods analyze:
+                        </p>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.8; opacity: 0.95;">
+                            <li>Similar campaigns and their performance metrics</li>
+                            <li>Historical engagement patterns from the <strong>Surveys module</strong></li>
+                            <li>Optimal timing based on audience segments from the <strong>Segments module</strong></li>
+                            <li>Event conflicts from the <strong>Events module</strong> to avoid scheduling overlaps</li>
+                        </ul>
+                    </div>
                 </div>
-                <div class="prediction-item">
-                    <strong>📊 Confidence Score:</strong>
-                    <span id="pred_confidence">-</span>
+            </div>
+            
+            <!-- Input Form Card -->
+            <div style="background: rgba(255,255,255,0.95); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <div style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
+                    <div class="form-field" style="flex: 1; min-width: 250px; position: relative; overflow: visible;">
+                        <label for="automl_campaign_id" style="color: #0f172a; display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-bullhorn" style="margin-right: 6px; color: #667eea;"></i>
+                            Select Campaign *
+                        </label>
+                        <select id="automl_campaign_id" style="background: white; border: 2px solid #e2e8f0; color: #0f172a; width: 100%; padding: 10px 12px; padding-right: 32px; border-radius: 6px; font-size: 14px; cursor: pointer; appearance: auto; -webkit-appearance: menulist; -moz-appearance: menulist; height: 42px; box-sizing: border-box; position: relative; z-index: 1000; overflow: visible; transition: border-color 0.2s;" onfocus="this.style.borderColor='#667eea'; checkDropdownStatus(); console.log('Dropdown focused, options count:', this.options.length);" onblur="this.style.borderColor='#e2e8f0';" onchange="updateDropdownStatus(); validateAutoMLForm(); console.log('Dropdown changed to:', this.value);" onclick="console.log('Dropdown clicked, options count:', this.options.length); if(this.options.length <= 1) { console.warn('Dropdown has no options! Attempting to populate...'); populateAutoMLDropdown(); }" onmousedown="console.log('Dropdown mousedown, options:', Array.from(this.options).map(o => o.value + ':' + o.textContent));">
+                            <option value="">-- Select a campaign --</option>
+                        </select>
+                        <p id="automl_dropdown_status" style="color: #64748b; font-size: 12px; margin: 6px 0 0 0; min-height: 16px;">Loading campaigns...</p>
+                        <p style="color: #94a3b8; font-size: 11px; margin: 4px 0 0 0; line-height: 1.4;">
+                            💡 Campaigns are pulled from the <strong>All Campaigns</strong> section above. Conflict checking will compare with the <strong>Events module</strong>.
+                        </p>
+                    </div>
+                    <div class="form-field" style="flex: 1; min-width: 200px;">
+                        <label for="automl_audience_segment" style="color: #0f172a; display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-users" style="margin-right: 6px; color: #667eea;"></i>
+                            Target Segment (Optional)
+                        </label>
+                        <input id="automl_audience_segment" type="number" placeholder="Enter segment ID" style="background: white; border: 2px solid #e2e8f0; color: #0f172a; width: 100%; padding: 10px 12px; border-radius: 6px; font-size: 14px; height: 42px; box-sizing: border-box; transition: border-color 0.2s;" onfocus="this.style.borderColor='#667eea';" onblur="this.style.borderColor='#e2e8f0';" onchange="validateAutoMLForm();" oninput="validateAutoMLForm();">
+                        <p style="color: #94a3b8; font-size: 11px; margin: 4px 0 0 0; line-height: 1.4;">
+                            💡 Segments are pulled from the <strong>Segments module</strong>. Leave empty for general audience analysis.
+                        </p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; justify-content: flex-end; min-width: 160px;">
+                        <button type="button" id="getPredictionBtn" class="btn btn-primary" onclick="if(typeof handleGetPredictionClick==='function'){handleGetPredictionClick(event);}else if(typeof window.handleGetPredictionClick==='function'){window.handleGetPredictionClick(event);}else{console.error('handleGetPredictionClick not found'); alert('Prediction function not loaded. Please refresh the page.');}" style="background: white; color: #667eea; border: 2px solid white; font-weight: 700; padding: 12px 24px; height: 42px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; white-space: nowrap; transition: all 0.2s; cursor: pointer; border-radius: 6px; font-size: 14px;" onmouseover="this.style.background='#f8fafc'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            <i class="fas fa-magic" style="margin-right: 8px;"></i>
+                            Get AI Prediction
+                        </button>
+                    </div>
                 </div>
-                <div class="prediction-item">
-                    <strong>🔍 Model Source:</strong>
-                    <span id="pred_source">-</span>
+            </div>
+            
+            <!-- Empty State (when no campaign selected) -->
+            <div id="automlEmptyState" style="background: rgba(255,255,255,0.95); border-radius: 8px; padding: 40px 24px; text-align: center; color: #64748b; display: block;">
+                <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.6;">
+                    <i class="fas fa-robot"></i>
                 </div>
-                <div class="prediction-item">
-                    <strong>💡 Recommendation:</strong>
-                    <span id="pred_recommendation" style="font-size: 13px;">Based on historical performance data</span>
+                <h4 style="margin: 0 0 8px 0; color: #0f172a; font-size: 18px; font-weight: 600;">Ready for AI Analysis</h4>
+                <p style="margin: 0; font-size: 14px; line-height: 1.6; max-width: 500px; margin-left: auto; margin-right: auto;">
+                    Select a campaign above and click <strong>"Get AI Prediction"</strong> to receive an AI-powered recommendation for the optimal deployment schedule.
+                </p>
+            </div>
+            
+            <!-- AI Recommendation Result Card -->
+            <div id="automlResult" class="prediction-result" style="display:none; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 24px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
+                    <div style="font-size: 32px;">
+                        <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 4px 0; color: #0f172a; font-size: 18px; font-weight: 700;">AI Recommendation Generated</h4>
+                        <p style="margin: 0; color: #64748b; font-size: 13px;">Review the suggested schedule below and choose an action.</p>
+                    </div>
                 </div>
-                <div style="margin-top: 16px; display: flex; gap: 12px;">
-                    <button type="button" class="btn btn-primary" onclick="acceptAIRecommendation()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5);">✓ Accept AI Recommendation</button>
-                    <button type="button" class="btn btn-secondary" onclick="checkConflicts()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5);">🔍 Check Conflicts</button>
-                    <button type="button" class="btn btn-secondary" onclick="overrideSchedule()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5);">✏️ Override Schedule</button>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                    <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <i class="fas fa-calendar-alt" style="color: #10b981; font-size: 18px;"></i>
+                            <strong style="color: #065f46; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Suggested Date & Time</strong>
+                        </div>
+                        <div id="pred_datetime" style="color: #0f172a; font-size: 16px; font-weight: 600; line-height: 1.4;">-</div>
+                    </div>
+                    
+                    <div style="background: #eff6ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <i class="fas fa-chart-line" style="color: #3b82f6; font-size: 18px;"></i>
+                            <strong style="color: #1e40af; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Confidence Score</strong>
+                        </div>
+                        <div id="pred_confidence" style="color: #0f172a; font-size: 16px; font-weight: 600; line-height: 1.4;">-</div>
+                        <p style="margin: 8px 0 0 0; color: #64748b; font-size: 11px; line-height: 1.4;">
+                            Higher scores indicate stronger confidence in the recommendation based on historical data analysis.
+                        </p>
+                    </div>
+                    
+                    <div style="background: #faf5ff; border: 2px solid #a855f7; border-radius: 8px; padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <i class="fas fa-cog" style="color: #a855f7; font-size: 18px;"></i>
+                            <strong style="color: #6b21a8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Model Source</strong>
+                        </div>
+                        <div id="pred_source" style="color: #0f172a; font-size: 16px; font-weight: 600; line-height: 1.4;">-</div>
+                    </div>
+                </div>
+                
+                <div style="background: #f8fafc; border-left: 4px solid #667eea; border-radius: 6px; padding: 16px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <i class="fas fa-lightbulb" style="color: #667eea; font-size: 20px; margin-top: 2px;"></i>
+                        <div style="flex: 1;">
+                            <strong style="display: block; margin-bottom: 6px; color: #0f172a; font-size: 14px;">AI Recommendation:</strong>
+                            <div id="pred_recommendation" style="color: #475569; font-size: 13px; line-height: 1.6;">Based on historical performance data</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-primary" onclick="acceptAIRecommendation()" style="background: #10b981; color: white; border: none; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#10b981'; this.style.transform='translateY(0)'">
+                        <i class="fas fa-check"></i>
+                        Accept AI Recommendation
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="checkConflicts()" style="background: white; color: #667eea; border: 2px solid #667eea; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                        <i class="fas fa-search"></i>
+                        Check Conflicts
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="overrideSchedule()" style="background: white; color: #64748b; border: 2px solid #e2e8f0; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'" onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">
+                        <i class="fas fa-edit"></i>
+                        Override Schedule
+                    </button>
                 </div>
             </div>
         </div>
@@ -1242,36 +1432,57 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <!-- Timeline & Calendar Tabs -->
     <section class="card" id="timeline-section">
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('gantt')">📊 Project Timeline</button>
-            <button class="tab" onclick="switchTab('calendar')">📅 Scheduling Calendar</button>
+            <button class="tab active" onclick="switchTab('gantt')">
+                <i class="fas fa-chart-gantt"></i> Project Timeline
+            </button>
+            <button class="tab" onclick="switchTab('calendar')">
+                <i class="fas fa-calendar-alt"></i> Scheduling Calendar
+            </button>
         </div>
         
         <div id="gantt-tab" class="tab-content active">
-            <div class="section-header">
+            <div class="section-header" style="margin-bottom: 16px;">
                 <h3 class="section-title analytics-accent">Gantt Chart</h3>
-                <button class="btn btn-secondary" onclick="refreshGantt()">🔄 Refresh</button>
+                <button class="btn btn-secondary" onclick="refreshGantt()" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
             </div>
+            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+                Visual timeline of all campaigns. Schedule conflicts are checked against the <strong>Events module</strong> to prevent overlapping activities.
+            </p>
             <div id="gantt-container"></div>
         </div>
         
         <div id="calendar-tab" class="tab-content">
-            <div class="section-header">
+            <div class="section-header" style="margin-bottom: 16px;">
                 <h3 class="section-title analytics-accent">Calendar View</h3>
                 <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-secondary" onclick="calendarView('dayGridMonth')">📆 Month</button>
-                    <button class="btn btn-secondary" onclick="calendarView('timeGridWeek')">📅 Week</button>
+                    <button class="btn btn-secondary" onclick="calendarView('dayGridMonth')" style="display: flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-calendar"></i> Month
+                    </button>
+                    <button class="btn btn-secondary" onclick="calendarView('timeGridWeek')" style="display: flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-calendar-week"></i> Week
+                    </button>
                 </div>
             </div>
+            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+                Calendar view of campaign schedules. Events from the <strong>Events module</strong> are integrated to show potential conflicts.
+            </p>
             <div id="calendar"></div>
         </div>
     </section>
 
     <!-- Resource Allocation -->
     <section class="card" id="resources-section">
-        <div class="section-header">
-            <h2 class="section-title analytics-accent">Resource Allocation Microservices</h2>
-            <button class="btn btn-secondary" onclick="loadResources()">🔄 Refresh</button>
+        <div class="section-header" style="margin-bottom: 20px;">
+            <h2 class="section-title analytics-accent">Resource Allocation</h2>
+            <button class="btn btn-secondary" onclick="loadResources()" style="display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
         </div>
+        <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+            Overview of allocated resources across all campaigns. Budget and staff assignments are tracked and integrated with campaign planning.
+        </p>
         <div class="resource-grid" id="resourceGrid">
             <div class="resource-card">
                 <h4>💰 Total Budget</h4>
@@ -1298,13 +1509,21 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
 
     <!-- Campaigns List -->
     <section class="card" id="list-section">
-        <div class="section-header">
+        <div class="section-header" style="margin-bottom: 20px;">
             <h2 class="section-title analytics-accent">All Campaigns</h2>
-            <button class="btn btn-secondary" onclick="loadCampaigns()">🔄 Refresh</button>
+            <button class="btn btn-secondary" onclick="loadCampaigns()" style="display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
         </div>
-        <div class="form-field" style="max-width: 300px; margin-bottom: 16px;">
-            <label for="active_campaign">Active Campaign</label>
-            <select id="active_campaign" onchange="onCampaignChange()"></select>
+        <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+            Complete list of all campaigns. AI recommendations shown in the <strong>"AI Recommended"</strong> column are generated using engagement data from the <strong>Surveys module</strong> and historical performance metrics.
+        </p>
+        <div class="form-field" style="max-width: 300px; margin-bottom: 20px;">
+            <label for="active_campaign" style="display: flex; align-items: center; gap: 6px; font-weight: 600;">
+                <i class="fas fa-filter" style="color: #667eea;"></i>
+                Active Campaign
+            </label>
+            <select id="active_campaign" onchange="onCampaignChange()" style="padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#667eea';" onblur="this.style.borderColor='#e2e8f0';"></select>
         </div>
         <div class="table-wrapper">
             <table class="data-table">
@@ -1363,53 +1582,145 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <section class="card" id="segments-section">
         <div class="section-header">
             <h2 class="section-title analytics-accent">Target Segments</h2>
-            <button class="btn btn-secondary" onclick="loadSegments()">🔄 Refresh</button>
+            <button class="btn btn-secondary" onclick="loadSegments()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
         </div>
-        <div class="form-grid">
-            <div class="form-field">
-                <label for="segment_ids">Segment IDs (comma-separated)</label>
-                <input id="segment_ids" type="text" placeholder="1,2,5">
+        
+        <!-- Section Description -->
+        <div style="background: #f8fafc; border-left: 4px solid #667eea; border-radius: 6px; padding: 16px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <i class="fas fa-info-circle" style="color: #667eea; font-size: 20px; margin-top: 2px;"></i>
+                <div style="flex: 1;">
+                    <strong style="display: block; margin-bottom: 6px; color: #0f172a; font-size: 14px;">What this does:</strong>
+                    <p style="margin: 0; color: #475569; font-size: 13px; line-height: 1.6;">
+                        Assign audience segments to your campaign. Segments are pulled from the <strong>Segments module</strong> and define groups of residents (e.g., senior citizens, students, high-risk areas) for targeted campaign delivery.
+                    </p>
+                </div>
             </div>
         </div>
-        <div class="btn-group">
-            <button class="btn btn-primary" onclick="saveSegments()">Save Segments</button>
+        
+        <div class="form-grid" style="margin-bottom: 20px;">
+            <div class="form-field">
+                <label for="segment_ids" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 600;">
+                    <i class="fas fa-users" style="color: #667eea;"></i>
+                    Segment IDs *
+                </label>
+                <input id="segment_ids" type="text" placeholder="Enter segment IDs separated by commas (e.g., 1, 2, 5)" style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#667eea';" onblur="this.style.borderColor='#e2e8f0';">
+                <div style="margin-top: 8px; padding: 12px; background: #f1f5f9; border-radius: 6px; font-size: 12px; color: #475569; line-height: 1.6;">
+                    <strong style="display: block; margin-bottom: 4px; color: #0f172a;">💡 How to use:</strong>
+                    <ul style="margin: 4px 0 0 0; padding-left: 20px;">
+                        <li>Enter segment IDs separated by commas (e.g., <code style="background: white; padding: 2px 6px; border-radius: 3px;">1, 2, 5</code>)</li>
+                        <li>To find segment IDs, go to the <strong>Segments module</strong> and check the ID column</li>
+                        <li>You can assign multiple segments to target different audience groups</li>
+                        <li>Segments use data from the <strong>Segments module</strong> which may include attendance records, incident reports, and demographic data</li>
+                    </ul>
+                </div>
+            </div>
         </div>
-        <div id="segmentStatus" class="status-text" style="display:none;"></div>
-        <table class="data-table" style="margin-top:16px;">
-            <thead><tr><th>ID</th><th>Name</th><th>Criteria</th></tr></thead>
-            <tbody id="segmentTable"><tr><td colspan="3" style="text-align:center; padding:16px;">No segments loaded.</td></tr></tbody>
-        </table>
+        
+        <div class="btn-group" style="margin-bottom: 16px;">
+            <button class="btn btn-primary" onclick="saveSegments()" style="display: flex; align-items: center; gap: 8px; padding: 12px 24px; font-weight: 600;">
+                <i class="fas fa-save"></i>
+                Save Segments
+            </button>
+        </div>
+        
+        <div id="segmentStatus" class="status-text" style="display:none; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px;"></div>
+        
+        <div style="margin-top: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-list" style="color: #667eea;"></i>
+                Assigned Segments
+            </h3>
+            <table class="data-table">
+                <thead>
+                    <tr style="background: #f8fafc;">
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #0f172a; border-bottom: 2px solid #e2e8f0;">ID</th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Segment Name</th>
+                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Segmentation Criteria</th>
+                    </tr>
+                </thead>
+                <tbody id="segmentTable">
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 40px 24px; color: #64748b;">
+                            <div style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;">
+                                <i class="fas fa-inbox"></i>
+                            </div>
+                            <div style="font-weight: 600; color: #0f172a; margin-bottom: 6px; font-size: 15px;">No segments assigned yet</div>
+                            <div style="font-size: 13px; line-height: 1.6; max-width: 400px; margin: 0 auto;">
+                                Enter segment IDs above and click <strong>"Save Segments"</strong> to assign audience segments to this campaign. Segments are pulled from the <strong>Segments module</strong>.
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </section>
 
     <!-- Linked Content -->
     <section class="card" id="content-section">
         <div class="section-header">
             <h2 class="section-title analytics-accent">Linked Content</h2>
-            <button class="btn btn-secondary" onclick="loadCampaignContent()">🔄 Refresh</button>
+            <button class="btn btn-secondary" onclick="loadCampaignContent()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
         </div>
-        <div class="form-field" style="max-width: 300px; margin-bottom: 16px;">
-            <label for="content_campaign_id">Campaign ID</label>
-            <input id="content_campaign_id" type="number" placeholder="Enter campaign ID" onchange="loadCampaignContent()">
+        
+        <!-- Section Description -->
+        <div style="background: #f8fafc; border-left: 4px solid #667eea; border-radius: 6px; padding: 16px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <i class="fas fa-info-circle" style="color: #667eea; font-size: 20px; margin-top: 2px;"></i>
+                <div style="flex: 1;">
+                    <strong style="display: block; margin-bottom: 6px; color: #0f172a; font-size: 14px;">What this shows:</strong>
+                    <p style="margin: 0; color: #475569; font-size: 13px; line-height: 1.6;">
+                        View all content materials (posters, videos, guidelines, infographics) that are linked to a specific campaign. Content is pulled from the <strong>Content Repository</strong> and must be approved before it can be attached to campaigns.
+                    </p>
+                </div>
+            </div>
         </div>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Content Type</th>
-                    <th>Created At</th>
-                </tr>
-            </thead>
-            <tbody id="contentTable">
-                <tr><td colspan="4" style="text-align:center; padding:24px;">Enter a Campaign ID to view linked content</td></tr>
-            </tbody>
-        </table>
+        
+        <div class="form-field" style="max-width: 400px; margin-bottom: 24px;">
+            <label for="content_campaign_id" style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-weight: 600;">
+                <i class="fas fa-bullhorn" style="color: #667eea;"></i>
+                Campaign ID *
+            </label>
+            <input id="content_campaign_id" type="number" placeholder="Enter campaign ID to view linked content" style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#667eea';" onblur="this.style.borderColor='#e2e8f0';" onchange="loadCampaignContent()">
+            <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 12px; line-height: 1.5;">
+                💡 Find campaign IDs in the <strong>All Campaigns</strong> table above. Content linked to campaigns is managed through the <strong>Content module</strong>.
+            </p>
+        </div>
+        
+        <div style="overflow-x: auto;">
+            <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8fafc;">
+                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap;">ID</th>
+                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Content Title</th>
+                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap;">Content Type</th>
+                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap;">Created At</th>
+                    </tr>
+                </thead>
+                <tbody id="contentTable">
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 48px 24px; color: #64748b;">
+                            <div style="font-size: 40px; margin-bottom: 16px; opacity: 0.5;">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div style="font-weight: 600; color: #0f172a; margin-bottom: 8px; font-size: 16px;">No content linked yet</div>
+                            <div style="font-size: 13px; line-height: 1.6; max-width: 450px; margin: 0 auto;">
+                                Enter a campaign ID above to view all content materials linked to that campaign. To link content to a campaign, use the <strong>Content module</strong> to attach approved materials.
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </section>
 
         </div> <!-- /.campaign-main -->
     </div> <!-- /.campaign-layout -->
         </div> <!-- /.campaign-page -->
-    </main> <!-- /.main-content-wrapper -->
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
@@ -1528,318 +1839,124 @@ const SAMPLE_MATERIALS = [
     'Emergency Go Bag Sample',
 ];
 
-// Reusable Combobox Component (Select-like with autocomplete or local samples)
-function initCombobox(inputId, optionsId, apiEndpoint, options = {}) {
-    const input = document.getElementById(inputId);
-    const optionsDiv = document.getElementById(optionsId);
-    const wrapper = input?.closest('.combobox-wrapper');
-    const tagsDiv = wrapper?.querySelector('.combobox-tags');
+// Populate native select options (For standard dropdowns only)
+function populateStandardSelect(selectId, options) {
+    const select = document.getElementById(selectId);
+    if (!select || !Array.isArray(options)) return;
     
-    if (!input || !optionsDiv) {
-        console.warn('Combobox: Element not found', inputId, optionsId);
+    // Clear existing options except the first placeholder
+    const placeholder = select.querySelector('option[value=""]');
+    select.innerHTML = '';
+    if (placeholder) {
+        select.appendChild(placeholder);
+    }
+    
+    // Add options
+    options.forEach(option => {
+        const optionEl = document.createElement('option');
+        optionEl.value = option;
+        optionEl.textContent = option;
+        select.appendChild(optionEl);
+    });
+}
+
+
+// Multi-Select Component (For Assigned Staff & Materials only)
+// Uses native <select multiple> with inline behavior
+function initMultiSelectEnhanced(selectId, options = {}) {
+    const select = document.getElementById(selectId);
+    if (!select) {
+        console.warn('MultiSelectEnhanced: Element not found', selectId);
+        return;
+    }
+    
+    // Get tags container
+    let tagsDiv = null;
+    if (selectId === 'assigned_staff') {
+        tagsDiv = document.getElementById('assigned_staff_tags');
+    } else if (selectId === 'materials_json') {
+        tagsDiv = document.getElementById('materials_json_tags');
+    }
+    
+    if (!tagsDiv) {
+        console.warn('MultiSelectEnhanced: Tags container not found', selectId);
         return;
     }
     
     // Mark as initialized
-    input.dataset.comboboxInit = 'true';
-    console.log('Combobox initialized for:', inputId);
+    select.dataset.multiSelectInit = 'true';
+    console.log('MultiSelectEnhanced initialized for:', selectId);
 
-    const isMultiSelect = options.multiSelect || false;
-    const staticOptions = Array.isArray(options.staticOptions) ? options.staticOptions : null;
-    let selectedIndex = -1;
-    let suggestions = [];
-    let selectedValues = isMultiSelect ? [] : null;
-    let debounceTimer = null;
-    const minChars = options.minChars || 0; // Allow empty query to show all options
-    const delay = options.delay || 300;
-
-    // Show dropdown on focus/click
-    input.addEventListener('focus', function() {
-        // For static option lists, always show the full list on focus
-        if (staticOptions && staticOptions.length) {
-            fetchSuggestions('');
-            return;
-        }
-
-        const query = this.value.trim();
-        if (query.length >= minChars) {
-            fetchSuggestions(query);
-        } else {
-            // Show all options if empty or short
-            fetchSuggestions('');
-        }
+    const staticOptions = Array.isArray(options.staticOptions) ? options.staticOptions : [];
+    
+    // Populate options
+    staticOptions.forEach(option => {
+        const optionEl = document.createElement('option');
+        optionEl.value = option;
+        optionEl.textContent = option;
+        select.appendChild(optionEl);
     });
-
-    // Handle input
-    input.addEventListener('input', function() {
-        const query = this.value.trim();
-        
-        // Clear previous timer
-        if (debounceTimer) {
-            clearTimeout(debounceTimer);
-        }
-
-        // If query is too short, show all options
-        if (query.length < minChars) {
-            fetchSuggestions('');
-            return;
-        }
-
-        // Debounce API calls / filtering
-        debounceTimer = setTimeout(() => {
-            fetchSuggestions(query);
-        }, delay);
-    });
-
-    // Handle keyboard navigation
-    input.addEventListener('keydown', function(e) {
-        if (!optionsDiv.classList.contains('active')) {
-            if (e.key === 'ArrowDown' || e.key === 'Enter') {
-                e.preventDefault();
-                // For static option lists, open with full list when first activated
-                if (staticOptions && staticOptions.length) {
-                    fetchSuggestions('');
-                } else {
-                    fetchSuggestions(this.value.trim());
-                }
-            }
-            return;
-        }
-
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            selectedIndex = Math.min(selectedIndex + 1, suggestions.length - 1);
-            updateSelected();
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            selectedIndex = Math.max(selectedIndex - 1, -1);
-            updateSelected();
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-                selectOption(suggestions[selectedIndex]);
-            }
-        } else if (e.key === 'Escape') {
-            hideOptions();
-        }
-    });
-
-    // Handle blur (hide options after a delay to allow clicks)
-    input.addEventListener('blur', function() {
-        setTimeout(() => {
-            hideOptions();
-        }, 200);
-    });
-
-    // Handle click on arrow to toggle dropdown
-    const arrow = wrapper?.querySelector('.combobox-arrow');
-    if (arrow) {
-        arrow.addEventListener('click', function(e) {
-            e.preventDefault();
-            input.focus();
-            // For static lists, always show full options when arrow is clicked
-            if (staticOptions && staticOptions.length) {
-                fetchSuggestions('');
-                return;
-            }
-
-            const query = input.value.trim();
-            if (query.length >= minChars) {
-                fetchSuggestions(query);
-            } else {
-                fetchSuggestions('');
-            }
-        });
-    }
-
-    // Fetch suggestions from API or static options
-    async function fetchSuggestions(query) {
-        // If static options are provided, always show the full list and skip API calls
-        if (staticOptions && staticOptions.length) {
-            suggestions = staticOptions.slice(); // full list, no filtering
-            displayOptions();
-            return;
-        }
-
-        try {
-            // Build API URL using apiBase (which includes /index.php)
-            const url = apiBase + apiEndpoint + (query ? '?q=' + encodeURIComponent(query) : '?q=');
-            const res = await fetch(url, {
-                headers: { 
-                    'Authorization': 'Bearer ' + getToken(),
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!res.ok) {
-                console.error('Combobox API error:', res.status, res.statusText);
-                hideOptions();
-                return;
-            }
-            
-            const data = await res.json();
-            suggestions = data.data || [];
-            displayOptions();
-        } catch (err) {
-            console.error('Combobox error:', err);
-            hideOptions();
-        }
-    }
-
-    // Display options
-    function displayOptions() {
-        if (suggestions.length === 0) {
-            optionsDiv.innerHTML = '<div class="combobox-option" style="color: #94a3b8; font-style: italic;">No suggestions found</div>';
-        } else {
-            optionsDiv.innerHTML = '';
-        }
-        
-        selectedIndex = -1;
-        input.classList.add('active');
-
-        suggestions.forEach((suggestion, index) => {
-            const div = document.createElement('div');
-            div.className = 'combobox-option';
-            div.textContent = suggestion;
-            div.addEventListener('click', () => selectOption(suggestion));
-            optionsDiv.appendChild(div);
-        });
-
-        optionsDiv.classList.add('active');
-    }
-
-    // Update selected option highlight
-    function updateSelected() {
-        const items = optionsDiv.querySelectorAll('.combobox-option');
-        items.forEach((item, index) => {
-            if (index === selectedIndex) {
-                item.classList.add('selected');
-                item.scrollIntoView({ block: 'nearest' });
-            } else {
-                item.classList.remove('selected');
-            }
-        });
-    }
-
-    // Select an option
-    function selectOption(value) {
-        if (isMultiSelect) {
-            // Multi-select: add to selected values and show as tags
-            if (!selectedValues.includes(value)) {
-                selectedValues.push(value);
-                updateTags();
-            }
-            input.value = '';
-        } else {
-            // Single select: set value
-            input.value = value;
-            selectedValues = value;
-        }
-        
-        hideOptions();
-        input.focus();
-        
-        // Trigger input/change event for any handlers
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-
-    // Update tags display for multi-select
+    
+    // Update tags when selection changes
     function updateTags() {
-        if (!tagsDiv || !isMultiSelect) return;
+        if (!tagsDiv) return;
         
+        const selectedOptions = Array.from(select.selectedOptions);
         tagsDiv.innerHTML = '';
-        selectedValues.forEach(value => {
+        
+        selectedOptions.forEach(option => {
             const tag = document.createElement('div');
-            tag.className = 'combobox-tag';
+            tag.className = 'multi-select-tag';
             tag.innerHTML = `
-                <span>${value}</span>
-                <span class="combobox-tag-remove" data-value="${value}">×</span>
+                <span>${option.textContent}</span>
+                <span class="multi-select-tag-remove" data-value="${option.value}">×</span>
             `;
-            tag.querySelector('.combobox-tag-remove').addEventListener('click', (e) => {
+            tag.querySelector('.multi-select-tag-remove').addEventListener('click', (e) => {
                 e.stopPropagation();
-                removeTag(value);
+                option.selected = false;
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+                updateTags();
             });
             tagsDiv.appendChild(tag);
         });
     }
-
-    // Remove a tag
-    function removeTag(value) {
-        selectedValues = selectedValues.filter(v => v !== value);
-        updateTags();
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-
-    // Hide options
-    function hideOptions() {
-        optionsDiv.classList.remove('active');
-        input.classList.remove('active');
-        selectedIndex = -1;
-    }
-
-    // Expose selectedValues for form submission
-    input.getSelectedValues = () => isMultiSelect ? selectedValues : input.value;
+    
+    // Listen for changes
+    select.addEventListener('change', updateTags);
+    
+    // Initial update
+    updateTags();
+    
+    // Expose getSelectedValues for form submission
+    select.getSelectedValues = () => Array.from(select.selectedOptions).map(opt => opt.value);
 }
 
-// Initialize all combobox fields when DOM is ready
+// Initialize all dropdown fields when DOM is ready
 (function() {
-    function initAllComboboxes() {
-        // Campaign Title
+    function initAllDropdowns() {
+        // STANDARD DROPDOWNS - Native <select> elements (no custom JS needed)
+        // Populate options for dynamic selects
         if (document.getElementById('title')) {
-            initCombobox('title', 'title_options', '/api/v1/autocomplete/campaign-titles', {
-                staticOptions: SAMPLE_CAMPAIGN_TITLES,
-            });
+            populateStandardSelect('title', SAMPLE_CAMPAIGN_TITLES);
         }
         
-        // Category (single-select combobox)
-        if (document.getElementById('category')) {
-            initCombobox('category', 'category_options', '/api/v1/autocomplete/campaign-titles', {
-                staticOptions: ['fire', 'flood', 'earthquake', 'health', 'road safety', 'general'],
-            });
-        }
-        
-        // Barangay / Geographic Scope (single select)
         if (document.getElementById('geographic_scope')) {
-            initCombobox('geographic_scope', 'geographic_scope_options', '/api/v1/autocomplete/barangays', {
-                staticOptions: SAMPLE_BARANGAYS,
-            });
+            populateStandardSelect('geographic_scope', SAMPLE_BARANGAYS);
         }
         
-        // Barangay Target Zones (multi-select with real Quezon City sub-areas)
         if (document.getElementById('barangay_zones')) {
-            initCombobox('barangay_zones', 'barangay_zones_options', '/api/v1/autocomplete/barangays', {
-                multiSelect: true,
-                staticOptions: SAMPLE_BARANGAY_ZONES,
-            });
+            populateStandardSelect('barangay_zones', SAMPLE_BARANGAY_ZONES);
         }
         
-        // Location
-        if (document.getElementById('location')) {
-            initCombobox('location', 'location_options', '/api/v1/autocomplete/locations', {
-                staticOptions: SAMPLE_LOCATIONS,
-            });
-        }
-        
-        // Status (single-select combobox)
-        if (document.getElementById('status')) {
-            initCombobox('status', 'status_options', '/api/v1/autocomplete/campaign-titles', {
-                staticOptions: ['draft','pending','approved','ongoing','scheduled','completed','archived'],
-            });
-        }
-        
-        // Assigned Staff
+        // ENHANCED MULTI-SELECT - Assigned Staff & Materials only
         if (document.getElementById('assigned_staff')) {
-            initCombobox('assigned_staff', 'assigned_staff_options', '/api/v1/autocomplete/staff', {
-                multiSelect: true,
+            initMultiSelectEnhanced('assigned_staff', {
                 staticOptions: SAMPLE_STAFF,
             });
         }
         
-        // Materials
         if (document.getElementById('materials_json')) {
-            initCombobox('materials_json', 'materials_json_options', '/api/v1/autocomplete/materials', {
-                multiSelect: true,
+            initMultiSelectEnhanced('materials_json', {
                 staticOptions: SAMPLE_MATERIALS,
             });
         }
@@ -1847,26 +1964,24 @@ function initCombobox(inputId, optionsId, apiEndpoint, options = {}) {
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initAllComboboxes);
+        document.addEventListener('DOMContentLoaded', initAllDropdowns);
     } else {
-        // DOM already loaded, initialize immediately
-        setTimeout(initAllComboboxes, 100);
+        setTimeout(initAllDropdowns, 100);
     }
 })();
 
 // Also initialize on window load as a fallback
 window.addEventListener('load', function() {
-    // Double-check combobox is initialized
-    if (document.getElementById('title') && !document.getElementById('title').dataset.comboboxInit) {
-        console.log('Re-initializing comboboxes on window load...');
-        // Re-run initialization
-        if (typeof initCombobox === 'function') {
-            initCombobox('title', 'title_options', '/api/v1/autocomplete/campaign-titles');
-            initCombobox('geographic_scope', 'geographic_scope_options', '/api/v1/autocomplete/barangays');
-            initCombobox('barangay_zones', 'barangay_zones_options', '/api/v1/autocomplete/barangays', { multiSelect: true });
-            initCombobox('location', 'location_options', '/api/v1/autocomplete/locations');
-            initCombobox('assigned_staff', 'assigned_staff_options', '/api/v1/autocomplete/staff', { multiSelect: true });
-            initCombobox('materials_json', 'materials_json_options', '/api/v1/autocomplete/materials', { multiSelect: true });
+    if (document.getElementById('assigned_staff') && !document.getElementById('assigned_staff').dataset.multiSelectInit) {
+        console.log('Re-initializing multi-select dropdowns on window load...');
+        if (typeof initMultiSelectEnhanced === 'function') {
+            initMultiSelectEnhanced('assigned_staff', { staticOptions: SAMPLE_STAFF });
+            initMultiSelectEnhanced('materials_json', { staticOptions: SAMPLE_MATERIALS });
+        }
+        if (typeof populateStandardSelect === 'function') {
+            populateStandardSelect('title', SAMPLE_CAMPAIGN_TITLES);
+            populateStandardSelect('geographic_scope', SAMPLE_BARANGAYS);
+            populateStandardSelect('barangay_zones', SAMPLE_BARANGAY_ZONES);
         }
     }
 });
@@ -2185,6 +2300,16 @@ function clearForm() {
         submitBtn.onclick = null; // Remove custom handler, use form's default submit
     }
     
+    // Hide final schedule field
+    const finalScheduleField = document.getElementById('final_schedule_field');
+    if (finalScheduleField) {
+        finalScheduleField.style.display = 'none';
+    }
+    const finalScheduleValue = document.getElementById('final_schedule_value');
+    if (finalScheduleValue) {
+        finalScheduleValue.textContent = '-';
+    }
+    
     // Clear form fields
     document.getElementById('planningForm').reset();
     document.getElementById('createStatus').style.display = 'none';
@@ -2306,14 +2431,19 @@ function handleGetPredictionClick(event) {
     console.log('getAutoMLPrediction function exists:', typeof getAutoMLPrediction);
     console.log('window.getAutoMLPrediction function exists:', typeof window.getAutoMLPrediction);
     
-    // Get result div and make it visible immediately
+    // Get result div and empty state, make result visible and hide empty state
     const resultDiv = document.getElementById('automlResult');
+    const emptyState = document.getElementById('automlEmptyState');
     if (resultDiv) {
         resultDiv.style.display = 'block';
         resultDiv.style.visibility = 'visible';
         resultDiv.style.opacity = '1';
         resultDiv.innerHTML = '<div style="text-align:center; padding:20px; color: white; background: rgba(0,0,0,0.3); border-radius: 8px;">⏳ Processing request...</div>';
         console.log('handleGetPredictionClick() - Result div made visible');
+        // Hide empty state
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
     } else {
         console.error('handleGetPredictionClick() - Result div not found!');
         alert('Result container not found. Please refresh the page.');
@@ -2376,6 +2506,8 @@ function handleGetPredictionClick(event) {
 function validateAutoMLForm() {
     const automlSelect = document.getElementById('automl_campaign_id');
     const getPredictionBtn = document.getElementById('getPredictionBtn');
+    const emptyState = document.getElementById('automlEmptyState');
+    const resultDiv = document.getElementById('automlResult');
     
     if (!automlSelect || !getPredictionBtn) {
         console.warn('validateAutoMLForm() - Elements not found');
@@ -2397,6 +2529,14 @@ function validateAutoMLForm() {
         getPredictionBtn.style.cursor = 'not-allowed';
         getPredictionBtn.title = 'Please select a campaign first';
         console.log('validateAutoMLForm() - Button disabled (no campaign selected)');
+        
+        // Show empty state and hide result if no campaign selected
+        if (emptyState) {
+            emptyState.style.display = 'block';
+        }
+        if (resultDiv) {
+            resultDiv.style.display = 'none';
+        }
     }
 }
 
@@ -2567,12 +2707,18 @@ async function getAutoMLPrediction() {
     
     currentCampaignId = cid;
     
-    // Make sure result div is visible
+    // Make sure result div is visible and hide empty state
+    const emptyState = document.getElementById('automlEmptyState');
     resultDiv.style.display = 'block';
     resultDiv.style.visibility = 'visible';
     resultDiv.style.opacity = '1';
     resultDiv.style.height = 'auto';
     resultDiv.style.overflow = 'visible';
+    
+    // Hide empty state
+    if (emptyState) {
+        emptyState.style.display = 'none';
+    }
     
     console.log('getAutoMLPrediction() - Result div display set to:', resultDiv.style.display);
     console.log('getAutoMLPrediction() - Result div element:', resultDiv);
@@ -2719,28 +2865,83 @@ async function getAutoMLPrediction() {
         console.log('getAutoMLPrediction() - Setting result HTML, display:', resultDiv.style.display);
         console.log('getAutoMLPrediction() - Prediction data:', pred);
         
+        // Hide empty state
+        const emptyState = document.getElementById('automlEmptyState');
+        if (emptyState) {
+            emptyState.style.display = 'none';
+        }
+        
         resultDiv.innerHTML = `
-            <div class="prediction-item" style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
-                <strong style="color: white;">📅 Suggested Date & Time:</strong>
-                <span style="color: white; font-weight: 700;">${suggestedDateTime}</span>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
+                <div style="font-size: 32px;">
+                    <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <h4 style="margin: 0 0 4px 0; color: #0f172a; font-size: 18px; font-weight: 700;">AI Recommendation Generated</h4>
+                    <p style="margin: 0; color: #64748b; font-size: 13px;">Review the suggested schedule below and choose an action.</p>
+                </div>
             </div>
-            <div class="prediction-item" style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
-                <strong style="color: white;">📊 Confidence Score:</strong>
-                <span style="color: white; font-weight: 700;">${confidence}</span>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <i class="fas fa-calendar-alt" style="color: #10b981; font-size: 18px;"></i>
+                        <strong style="color: #065f46; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Suggested Date & Time</strong>
+                    </div>
+                    <div style="color: #0f172a; font-size: 16px; font-weight: 600; line-height: 1.4;">${suggestedDateTime}</div>
+                </div>
+                
+                <div style="background: #eff6ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <i class="fas fa-chart-line" style="color: #3b82f6; font-size: 18px;"></i>
+                        <strong style="color: #1e40af; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Confidence Score</strong>
+                    </div>
+                    <div style="color: #0f172a; font-size: 16px; font-weight: 600; line-height: 1.4;">${confidence}</div>
+                    <p style="margin: 8px 0 0 0; color: #64748b; font-size: 11px; line-height: 1.4;">
+                        Higher scores indicate stronger confidence in the recommendation based on historical data analysis.
+                    </p>
+                </div>
+                
+                <div style="background: #faf5ff; border: 2px solid #a855f7; border-radius: 8px; padding: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <i class="fas fa-cog" style="color: #a855f7; font-size: 18px;"></i>
+                        <strong style="color: #6b21a8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Model Source</strong>
+                    </div>
+                    <div style="color: #0f172a; font-size: 16px; font-weight: 600; line-height: 1.4;">${modelSourceDisplay}${modelStatusBadge}</div>
+                </div>
             </div>
-            <div class="prediction-item" style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
-                <strong style="color: white;">🔍 Model Source:</strong>
-                <span style="color: white; font-weight: 700;">${modelSourceDisplay}${modelStatusBadge}</span>
+            
+            ${configNotice ? `<div style="background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 6px; padding: 12px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: #991b1b;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Notice:</strong>
+                </div>
+                <p style="margin: 4px 0 0 0; color: #7f1d1d; font-size: 13px;">${configNotice.replace(/<[^>]*>/g, '')}</p>
+            </div>` : ''}
+            
+            <div style="background: #f8fafc; border-left: 4px solid #667eea; border-radius: 6px; padding: 16px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                    <i class="fas fa-lightbulb" style="color: #667eea; font-size: 20px; margin-top: 2px;"></i>
+                    <div style="flex: 1;">
+                        <strong style="display: block; margin-bottom: 6px; color: #0f172a; font-size: 14px;">AI Recommendation:</strong>
+                        <div style="color: #475569; font-size: 13px; line-height: 1.6;">${recommendation}</div>
+                    </div>
+                </div>
             </div>
-            <div class="prediction-item" style="background: rgba(255,255,255,0.15); padding: 12px; border-radius: 8px; margin-bottom: 8px;">
-                <strong style="color: white;">💡 Recommendation:</strong>
-                <span style="color: white; font-size: 13px;">${recommendation}</span>
-            </div>
-            ${configNotice}
-            <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
-                <button type="button" class="btn btn-primary" onclick="acceptAIRecommendation()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">✓ Accept AI Recommendation</button>
-                <button type="button" class="btn btn-secondary" onclick="checkConflicts()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">🔍 Check Conflicts</button>
-                <button type="button" class="btn btn-secondary" onclick="overrideSchedule()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">✏️ Override Schedule</button>
+            
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-primary" onclick="acceptAIRecommendation()" style="background: #10b981; color: white; border: none; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#10b981'; this.style.transform='translateY(0)'">
+                    <i class="fas fa-check"></i>
+                    Accept AI Recommendation
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="checkConflicts()" style="background: white; color: #667eea; border: 2px solid #667eea; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                    <i class="fas fa-search"></i>
+                    Check Conflicts
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="overrideSchedule()" style="background: white; color: #64748b; border: 2px solid #e2e8f0; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'" onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">
+                    <i class="fas fa-edit"></i>
+                    Override Schedule
+                </button>
             </div>
         `;
         
@@ -2816,6 +3017,31 @@ async function acceptAIRecommendation() {
         if (data.error) {
             alert('Error: ' + data.error);
             return;
+        }
+        
+        // Update final schedule display in form
+        const finalScheduleField = document.getElementById('final_schedule_field');
+        const finalScheduleValue = document.getElementById('final_schedule_value');
+        
+        if (currentPrediction && currentPrediction.suggested_datetime) {
+            // Format the datetime for display
+            const scheduleDate = new Date(currentPrediction.suggested_datetime);
+            const formattedDate = scheduleDate.toLocaleString('en-US', {
+                dateStyle: 'long',
+                timeStyle: 'short'
+            });
+            
+            if (finalScheduleValue) {
+                finalScheduleValue.textContent = formattedDate;
+            }
+            
+            if (finalScheduleField) {
+                finalScheduleField.style.display = 'block';
+                // Smooth scroll to the field
+                setTimeout(() => {
+                    finalScheduleField.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 100);
+            }
         }
         
         alert('AI recommendation accepted! Final schedule has been set.');
@@ -3728,6 +3954,33 @@ async function editCampaign(campaignId) {
         if (document.getElementById('end_date')) {
             document.getElementById('end_date').value = c.end_date || '';
         }
+        // Handle final schedule display (read-only)
+        const finalScheduleField = document.getElementById('final_schedule_field');
+        const finalScheduleValue = document.getElementById('final_schedule_value');
+        
+        if (c.final_schedule_datetime) {
+            // Format the datetime for display
+            const scheduleDate = new Date(c.final_schedule_datetime);
+            const formattedDate = scheduleDate.toLocaleString('en-US', {
+                dateStyle: 'long',
+                timeStyle: 'short'
+            });
+            
+            if (finalScheduleValue) {
+                finalScheduleValue.textContent = formattedDate;
+            }
+            
+            if (finalScheduleField) {
+                finalScheduleField.style.display = 'block';
+            }
+        } else {
+            // Hide the field if no final schedule exists
+            if (finalScheduleField) {
+                finalScheduleField.style.display = 'none';
+            }
+        }
+        
+        // Legacy draft_schedule_datetime handling (for backward compatibility, but field is removed)
         if (document.getElementById('draft_schedule_datetime')) {
             // Convert datetime to datetime-local format
             if (c.draft_schedule_datetime) {
@@ -4182,11 +4435,11 @@ function showCampaignHowItWorks() {
                         <li><strong>Create Campaign</strong> - Fill out campaign details (title, category, dates, location, etc.)</li>
                         <li><strong>Select Audience & Content</strong> - Choose target audience segments and attach materials from Content Repository</li>
                         <li><strong>Request Optimal Posting Time</strong> - Click "Get Prediction" in AI-Powered Deployment Optimization</li>
-                        <li><strong>AI Processing</strong> - System sends request to AI scheduling microservice</li>
-                        <li><strong>Google AutoML Analysis</strong> - Microservice calls Google AutoML for prediction</li>
-                        <li><strong>AI Recommendation</strong> - Google AutoML returns optimal date/time prediction</li>
-                        <li><strong>Display Recommendation</strong> - AI suggestion shown with confidence score</li>
-                        <li><strong>Review & Confirm</strong> - User reviews the AI recommendation</li>
+                        <li><strong>AI Processing</strong> - System provides decision support through AI-powered analysis interface</li>
+                        <li><strong>AI Analysis</strong> - System is designed to support Google AutoML integration or uses heuristic-based prediction algorithms</li>
+                        <li><strong>AI Recommendation</strong> - System displays optimal date/time recommendation with confidence metrics</li>
+                        <li><strong>Display Recommendation</strong> - AI suggestion shown with confidence score and decision support rationale</li>
+                        <li><strong>Review & Confirm</strong> - User reviews the AI recommendation and decision support data</li>
                         <li><strong>Accept Schedule</strong> - User confirms and accepts the recommended schedule</li>
                         <li><strong>Campaign Saved</strong> - Campaign is saved with final schedule and appears in All Campaigns table</li>
                     </ol>
@@ -4196,7 +4449,7 @@ function showCampaignHowItWorks() {
                     <strong style="color: #0f172a; display: block; margin-bottom: 12px; font-size: 16px;">📋 Main Sections Explained:</strong>
                     <ul style="margin: 0; padding-left: 20px;">
                         <li><strong>Plan New Campaign</strong> - Create campaigns with all details (title, category, dates, location, budget, staff, materials)</li>
-                        <li><strong>AI-Powered Deployment Optimization</strong> - Get AI recommendations for optimal posting times using Google AutoML</li>
+                        <li><strong>AI-Powered Deployment Optimization</strong> - Provides decision support for optimal posting times through AI-powered analysis (designed to support Google AutoML integration or heuristic-based algorithms)</li>
                         <li><strong>Project Timeline (Gantt Chart)</strong> - Visual timeline of all campaigns and their schedules</li>
                         <li><strong>Scheduling Calendar</strong> - Calendar view to see campaign schedules by month/week</li>
                         <li><strong>Resource Allocation</strong> - Overview of total budget, staff, and active campaigns</li>
@@ -4208,7 +4461,7 @@ function showCampaignHowItWorks() {
                 </div>
                 
                 <div style="margin-bottom: 24px;">
-                    <strong style="color: #0f172a; display: block; margin-bottom: 12px; font-size: 16px;">🔗 Connection to Content Module:</strong>
+                    <strong style="color: #0f172a; display: block; margin-bottom: 12px; font-size: 16px;">🔗 Conceptual Integration with Content Module:</strong>
                     <ul style="margin: 0; padding-left: 20px;">
                         <li><strong>Materials Selection</strong> - When creating a campaign, you can select materials from the Content Repository</li>
                         <li><strong>Approved Content Only</strong> - Only approved content items can be attached to campaigns</li>
@@ -4226,10 +4479,10 @@ function showCampaignHowItWorks() {
                             <li>Go to "AI-Powered Deployment Optimization" section</li>
                             <li>Select the campaign ID from dropdown</li>
                             <li>Optionally enter audience segment ID</li>
-                            <li>Click "🔮 Get Prediction" button</li>
-                            <li>Wait for AI analysis (Google AutoML or heuristic fallback)</li>
+                            <li>Click "Get AI Prediction" button</li>
+                            <li>System processes request and provides decision support recommendation (designed to support Google AutoML integration or heuristic-based analysis)</li>
                             <li>Review the recommended date/time and confidence score</li>
-                            <li>Click "✓ Accept AI Recommendation" to confirm</li>
+                            <li>Click "Accept AI Recommendation" to confirm</li>
                             <li>Campaign schedule is updated automatically</li>
                             <li>View updated schedule in "All Campaigns" table</li>
                         </ol>
@@ -4251,8 +4504,8 @@ function showCampaignHowItWorks() {
                 <div style="background: #fff7ed; padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b;">
                     <strong style="color: #92400e;">⚠️ Important Notes:</strong>
                     <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px;">
-                        <li>Draft Schedule field is disabled - schedule must be set via AI recommendation flow</li>
-                        <li>AI recommendation is required before campaign can be finalized</li>
+                        <li>Draft Schedule field is disabled - schedule must be set via AI recommendation workflow</li>
+                        <li>AI recommendation workflow is designed to guide schedule selection and provide decision support</li>
                         <li>Only approved content from Content Repository can be attached</li>
                         <li>Campaign status changes based on schedule confirmation</li>
                     </ul>
@@ -4326,5 +4579,6 @@ if (automlSection) {
     observer.observe(automlSection, { childList: true, subtree: true });
 }
 </script>
-</body>
-</html>
+    
+    <?php include __DIR__ . '/../header/includes/footer.php'; ?>
+    </main> <!-- /.main-content-wrapper -->

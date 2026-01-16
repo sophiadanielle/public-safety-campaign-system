@@ -376,32 +376,6 @@ class SurveyController
         ];
     }
 
-    private function findSurvey(int $id, bool $allowDraft = true, bool $allowPublic = false): array
-    {
-        $stmt = $this->pdo->prepare('SELECT id, title, description, status, campaign_id FROM surveys WHERE id = :id LIMIT 1');
-        $stmt->execute(['id' => $id]);
-        $survey = $stmt->fetch();
-        if (!$survey) {
-            http_response_code(404);
-            throw new RuntimeException('Survey not found');
-        }
-        if (!$allowDraft && $survey['status'] !== 'published') {
-            http_response_code(403);
-            throw new RuntimeException('Survey not published');
-        }
-        if (!$allowPublic && !($GLOBALS['matched']['middleware'] ?? false)) {
-            // maintain backward compatibility; relying on route middleware to protect
-        }
-        return $survey;
-    }
-
-    private function getQuestions(int $surveyId): array
-    {
-        $stmt = $this->pdo->prepare('SELECT id, question_text, question_type, options_json FROM survey_questions WHERE survey_id = :sid ORDER BY id ASC');
-        $stmt->execute(['sid' => $surveyId]);
-        return $stmt->fetchAll();
-    }
-
     public function closeSurvey(?array $user, array $params = []): array
     {
         if (!$user) {

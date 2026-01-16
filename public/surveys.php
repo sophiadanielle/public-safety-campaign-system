@@ -121,7 +121,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <p>Create surveys and collect feedback from campaign participants</p>
     </div>
 
-    <section class="card" style="margin-bottom:24px;">
+    <section class="card" id="create-survey" style="margin-bottom:24px;">
         <h2 class="section-title">Create Survey</h2>
         <form id="createForm" class="form-grid">
             <div class="form-field">
@@ -144,7 +144,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <button class="btn btn-primary" style="margin-top:16px;" onclick="createSurvey()">Create Survey</button>
         <div class="status" id="createStatus" style="margin-top:12px;"></div>
 
-        <div id="builder" style="display:none; margin-top:32px; padding-top:24px; border-top:2px solid #f1f5f9;">
+        <div id="survey-builder" style="display:none; margin-top:32px; padding-top:24px; border-top:2px solid #f1f5f9;">
             <h3 class="section-title" style="font-size:18px;">Add Questions</h3>
             <form id="questionForm" class="form-grid">
                 <div class="form-field">
@@ -185,7 +185,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     </section>
 
     <!-- Survey Dashboard -->
-    <section class="card" style="margin-bottom:24px;">
+    <section class="card" id="surveys-list" style="margin-bottom:24px;">
         <h2 class="section-title">Survey Dashboard</h2>
         <div class="form-grid" style="margin-bottom:16px;">
             <div class="form-field">
@@ -213,24 +213,29 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     </section>
 
     <!-- Survey Results View -->
-    <section class="card" id="resultsSection" style="display:none; margin-bottom:24px;">
+    <section class="card" id="survey-analytics" style="display:none; margin-bottom:24px;">
         <h2 class="section-title">Survey Results</h2>
         <div id="resultsContent"></div>
     </section>
 
-    <section class="card">
+    <section class="card" id="responses">
         <h2 class="section-title">Submit Response (Public)</h2>
         <form id="responseForm" class="form-grid">
             <div class="form-field">
                 <label>Survey ID *</label>
-                <input id="resp_sid" type="number" required>
+                <input id="resp_sid" type="number" required onchange="loadSurveyForResponse()">
             </div>
             <div class="form-field" style="grid-column: 1 / -1;">
-                <label>Responses JSON *</label>
-                <textarea id="resp_json" rows="4" placeholder='{ "1": "Yes", "2": 5 }' required></textarea>
+                <button type="button" class="btn btn-secondary" onclick="loadSurveyForResponse()" style="width:auto;">Load Survey</button>
             </div>
         </form>
-        <button type="submit" form="responseForm" class="btn btn-primary" style="margin-top:16px;" onclick="submitResponse(event)">Submit Response</button>
+        
+        <div id="surveyResponseContainer" style="display:none; margin-top:24px; padding-top:24px; border-top:2px solid #e2e8f0;">
+            <h3 id="surveyResponseTitle" style="margin:0 0 16px 0; font-size:20px;"></h3>
+            <div id="surveyQuestionsContainer"></div>
+            <button type="button" class="btn btn-primary" style="margin-top:20px;" onclick="submitResponse(event)">Submit Response</button>
+        </div>
+        
         <div class="status" id="respStatus" style="margin-top:12px;"></div>
     </section>
 
@@ -263,7 +268,7 @@ async function createSurvey() {
             currentSurveyId = data.id;
             statusEl.textContent = '✓ Survey created! ID: ' + data.id + ' - Now add questions below.';
             statusEl.style.color = '#166534';
-            document.getElementById('builder').style.display = 'block';
+            document.getElementById('survey-builder').style.display = 'block';
         } else {
             statusEl.textContent = '✗ Error: ' + (data.error || 'Failed');
             statusEl.style.color = '#dc2626';
@@ -398,8 +403,8 @@ async function viewResults(surveyId) {
         const data = await res.json();
         if (res.ok && data.results) {
             renderResults(data);
-            document.getElementById('resultsSection').style.display = 'block';
-            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('survey-analytics').style.display = 'block';
+            document.getElementById('survey-analytics').scrollIntoView({ behavior: 'smooth' });
         } else {
             alert('Error: ' + (data.error || 'Failed to load results'));
         }
@@ -504,6 +509,213 @@ async function loadQuestions() {
 // Load surveys on page load
 loadSurveys();
 
+let loadedSurveyQuestions = [];
+
+async function loadSurveyForResponse() {
+    const sid = document.getElementById('resp_sid').value;
+    const statusEl = document.getElementById('respStatus');
+    const container = document.getElementById('surveyResponseContainer');
+    const questionsContainer = document.getElementById('surveyQuestionsContainer');
+    
+    if (!sid) {
+        statusEl.textContent = 'Please enter a Survey ID';
+        statusEl.style.color = '#dc2626';
+        container.style.display = 'none';
+        return;
+    }
+    
+    statusEl.textContent = 'Loading survey...';
+    statusEl.style.color = '#64748b';
+    container.style.display = 'none';
+    questionsContainer.innerHTML = '';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + sid);
+        const data = await res.json();
+        
+        if (!res.ok || !data.data) {
+            statusEl.textContent = '✗ Error: ' + (data.error || 'Survey not found');
+            statusEl.style.color = '#dc2626';
+            container.style.display = 'none';
+            return;
+        }
+        
+        const survey = data.data;
+        
+        // Check if survey is published
+        if (survey.status !== 'published') {
+            statusEl.textContent = '✗ Survey is not published. Only published surveys can accept responses.';
+            statusEl.style.color = '#dc2626';
+            container.style.display = 'none';
+            return;
+        }
+        
+        // Store questions for validation
+        loadedSurveyQuestions = survey.questions || [];
+        
+        // Display survey title
+        document.getElementById('surveyResponseTitle').textContent = survey.title || 'Survey';
+        
+        // Render questions
+        if (loadedSurveyQuestions.length === 0) {
+            statusEl.textContent = '✗ This survey has no questions';
+            statusEl.style.color = '#dc2626';
+            container.style.display = 'none';
+            return;
+        }
+        
+        questionsContainer.innerHTML = '';
+        loadedSurveyQuestions.forEach((q, index) => {
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'form-field';
+            questionDiv.style.gridColumn = '1 / -1';
+            questionDiv.style.marginBottom = '16px';
+            questionDiv.style.padding = '16px';
+            questionDiv.style.border = '1px solid #e2e8f0';
+            questionDiv.style.borderRadius = '8px';
+            questionDiv.style.background = '#f8fafc';
+            
+            const label = document.createElement('label');
+            label.textContent = q.question_text;
+            if (q.required_flag) {
+                label.innerHTML += ' <span style="color:#dc2626;">*</span>';
+            }
+            label.style.fontWeight = '600';
+            label.style.marginBottom = '8px';
+            label.style.display = 'block';
+            questionDiv.appendChild(label);
+            
+            let input;
+            const questionId = q.id;
+            const questionType = q.question_type;
+            
+            if (questionType === 'rating') {
+                // Rating: Radio buttons 1-5
+                const ratingContainer = document.createElement('div');
+                ratingContainer.style.display = 'flex';
+                ratingContainer.style.gap = '12px';
+                ratingContainer.style.alignItems = 'center';
+                
+                for (let i = 1; i <= 5; i++) {
+                    const radioWrapper = document.createElement('label');
+                    radioWrapper.style.display = 'flex';
+                    radioWrapper.style.flexDirection = 'column';
+                    radioWrapper.style.alignItems = 'center';
+                    radioWrapper.style.cursor = 'pointer';
+                    
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = 'q_' + questionId;
+                    radio.value = i;
+                    radio.dataset.qid = questionId;
+                    radio.required = q.required_flag || false;
+                    
+                    const labelText = document.createElement('span');
+                    labelText.textContent = i;
+                    labelText.style.marginTop = '4px';
+                    labelText.style.fontSize = '14px';
+                    
+                    radioWrapper.appendChild(radio);
+                    radioWrapper.appendChild(labelText);
+                    ratingContainer.appendChild(radioWrapper);
+                }
+                
+                questionDiv.appendChild(ratingContainer);
+            } else if (questionType === 'yes_no') {
+                // Yes/No: Radio buttons
+                const radioContainer = document.createElement('div');
+                radioContainer.style.display = 'flex';
+                radioContainer.style.gap = '16px';
+                
+                ['Yes', 'No'].forEach(option => {
+                    const radioWrapper = document.createElement('label');
+                    radioWrapper.style.display = 'flex';
+                    radioWrapper.style.alignItems = 'center';
+                    radioWrapper.style.cursor = 'pointer';
+                    
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = 'q_' + questionId;
+                    radio.value = option;
+                    radio.dataset.qid = questionId;
+                    radio.required = q.required_flag || false;
+                    radio.style.marginRight = '6px';
+                    
+                    const labelText = document.createElement('span');
+                    labelText.textContent = option;
+                    
+                    radioWrapper.appendChild(radio);
+                    radioWrapper.appendChild(labelText);
+                    radioContainer.appendChild(radioWrapper);
+                });
+                
+                questionDiv.appendChild(radioContainer);
+            } else if (questionType === 'single_choice' || questionType === 'multiple_choice') {
+                // Single/Multiple Choice: Select dropdown
+                input = document.createElement('select');
+                input.dataset.qid = questionId;
+                input.required = q.required_flag || false;
+                input.style.width = '100%';
+                input.style.padding = '8px';
+                
+                if (questionType === 'multiple_choice') {
+                    input.multiple = true;
+                    input.size = Math.min(5, (JSON.parse(q.options_json || '[]').length || 1));
+                }
+                
+                const options = JSON.parse(q.options_json || '[]');
+                if (options.length === 0) {
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'No options available';
+                    opt.disabled = true;
+                    input.appendChild(opt);
+                } else {
+                    options.forEach(opt => {
+                        const option = document.createElement('option');
+                        option.value = opt;
+                        option.textContent = opt;
+                        input.appendChild(option);
+                    });
+                }
+                
+                questionDiv.appendChild(input);
+            } else if (questionType === 'open_ended' || questionType === 'text') {
+                // Open-ended/Text: Textarea
+                input = document.createElement('textarea');
+                input.dataset.qid = questionId;
+                input.required = q.required_flag || false;
+                input.rows = 4;
+                input.style.width = '100%';
+                input.style.padding = '8px';
+                input.style.fontFamily = 'inherit';
+                input.placeholder = 'Type your response here...';
+                questionDiv.appendChild(input);
+            } else {
+                // Fallback: Text input
+                input = document.createElement('input');
+                input.type = 'text';
+                input.dataset.qid = questionId;
+                input.required = q.required_flag || false;
+                input.style.width = '100%';
+                input.style.padding = '8px';
+                questionDiv.appendChild(input);
+            }
+            
+            questionsContainer.appendChild(questionDiv);
+        });
+        
+        container.style.display = 'block';
+        statusEl.textContent = '✓ Survey loaded. Please answer the questions below.';
+        statusEl.style.color = '#166534';
+        
+    } catch (err) {
+        statusEl.textContent = '✗ Network error: ' + err.message;
+        statusEl.style.color = '#dc2626';
+        container.style.display = 'none';
+    }
+}
+
 async function submitResponse(e) {
     e.preventDefault();
     const statusEl = document.getElementById('respStatus');
@@ -511,11 +723,64 @@ async function submitResponse(e) {
     statusEl.style.color = '#64748b';
     
     const sid = document.getElementById('resp_sid').value;
-    let responses = {};
-    try {
-        responses = JSON.parse(document.getElementById('resp_json').value || '{}');
-    } catch (e) {
-        statusEl.textContent = '✗ Invalid JSON format';
+    if (!sid) {
+        statusEl.textContent = '✗ Please enter a Survey ID';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+    
+    // Build responses object from form fields
+    const responses = {};
+    const inputs = document.querySelectorAll('[data-qid]');
+    
+    inputs.forEach(input => {
+        const questionId = input.dataset.qid;
+        const question = loadedSurveyQuestions.find(q => q.id == questionId);
+        
+        if (!question) return;
+        
+        if (input.type === 'radio') {
+            // Radio buttons: only get checked value
+            if (input.checked) {
+                // For rating questions, convert to number; for yes_no, keep as string
+                if (question.question_type === 'rating') {
+                    responses[questionId] = parseInt(input.value, 10);
+                } else {
+                    responses[questionId] = input.value;
+                }
+            }
+        } else if (input.tagName === 'SELECT' && input.multiple) {
+            // Multiple select: get array of selected values
+            const selected = Array.from(input.selectedOptions).map(opt => opt.value);
+            if (selected.length > 0) {
+                responses[questionId] = selected;
+            }
+        } else {
+            // Text, textarea, single select: get value
+            const value = input.value.trim();
+            if (value) {
+                responses[questionId] = value;
+            }
+        }
+    });
+    
+    // Validate required questions
+    const missingRequired = loadedSurveyQuestions.filter(q => {
+        if (!q.required_flag) return false;
+        return !responses.hasOwnProperty(q.id) || 
+               (Array.isArray(responses[q.id]) && responses[q.id].length === 0) ||
+               (typeof responses[q.id] === 'string' && responses[q.id].trim() === '');
+    });
+    
+    if (missingRequired.length > 0) {
+        statusEl.textContent = '✗ Please answer all required questions: ' + 
+            missingRequired.map(q => q.question_text).join(', ');
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+    
+    if (Object.keys(responses).length === 0) {
+        statusEl.textContent = '✗ Please answer at least one question';
         statusEl.style.color = '#dc2626';
         return;
     }
@@ -531,6 +796,9 @@ async function submitResponse(e) {
             statusEl.textContent = '✓ Response submitted successfully!';
             statusEl.style.color = '#166534';
             document.getElementById('responseForm').reset();
+            document.getElementById('surveyResponseContainer').style.display = 'none';
+            document.getElementById('surveyQuestionsContainer').innerHTML = '';
+            loadedSurveyQuestions = [];
         } else {
             statusEl.textContent = '✗ Error: ' + (data.error || 'Failed');
             statusEl.style.color = '#dc2626';
@@ -541,6 +809,6 @@ async function submitResponse(e) {
     }
 }
 </script>
+    
+    <?php include __DIR__ . '/../header/includes/footer.php'; ?>
     </main>
-</body>
-</html>

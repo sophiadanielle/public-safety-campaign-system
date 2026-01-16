@@ -54,6 +54,28 @@ class ImpactController
             return ['error' => $e->getMessage()];
         }
     }
+
+    public function listReports(?array $user, array $params = []): array
+    {
+        $campaignId = isset($_GET['campaign_id']) ? (int) $_GET['campaign_id'] : null;
+        
+        $sql = 'SELECT id, campaign_id, file_path, snapshot_json, created_at 
+                FROM `campaign_department_evaluation_reports`';
+        $params_bind = [];
+        
+        if ($campaignId !== null && $campaignId > 0) {
+            $sql .= ' WHERE campaign_id = :cid';
+            $params_bind['cid'] = $campaignId;
+        }
+        
+        $sql .= ' ORDER BY created_at DESC';
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params_bind);
+        $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        return ['reports' => $reports];
+    }
 }
 
 

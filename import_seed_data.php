@@ -122,3 +122,4 @@ try {
 echo "\n✓ Seed data import completed!\n";
 echo "\nYour lgu database now has sample data for testing.\n";
 
+

@@ -11,3 +11,4 @@ VALUES
 (3, 'Commercial Districts', 'Zone', 'Business Areas', 'Households', 'Medium', 'Inspection results', '{"type": "commercial", "business_size": "all"}'),
 (4, 'Senior Citizens', 'Barangay', 'All Areas', 'Senior Citizens', 'High', 'Historical trend', '{"age_min": 60, "special_needs": true}');
 
+

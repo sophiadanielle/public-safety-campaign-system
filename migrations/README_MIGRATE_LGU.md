@@ -103,3 +103,4 @@ If views fail to create:
 - Check that all referenced tables exist in LGU
 - Verify view definitions don't reference tables that don't exist
 
+

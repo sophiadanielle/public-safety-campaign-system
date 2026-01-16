@@ -64,7 +64,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         padding: 24px;
     }
     .page-header {
-        margin-bottom: 32px;
+        margin-bottom: 40px;
     }
     .page-header h1 {
         font-size: 32px;
@@ -72,11 +72,16 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         color: #0f172a;
         margin: 0 0 8px 0;
     }
+    .page-header p {
+        font-size: 16px;
+        color: #64748b;
+        margin: 0;
+    }
     .form-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 16px;
-        margin-top: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 24px;
     }
     .form-field {
         display: flex;
@@ -85,18 +90,27 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     .form-field label {
         font-weight: 600;
         color: #1e293b;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .form-field label::before {
+        content: '▸';
+        color: #4c8a89;
+        font-size: 12px;
     }
     .form-field input,
     .form-field textarea,
     .form-field select {
         width: 100%;
-        padding: 10px 14px;
+        padding: 12px 16px;
         border: 2px solid #e2e8f0;
         border-radius: 8px;
-        font-size: 14px;
+        font-size: 15px;
         transition: all 0.2s;
+        background: #fff;
     }
     .form-field input:focus,
     .form-field textarea:focus,
@@ -106,12 +120,63 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         box-shadow: 0 0 0 3px rgba(76, 138, 137, 0.1);
     }
     .section-title {
-        font-size: 20px;
+        font-size: 24px;
         font-weight: 700;
         color: #0f172a;
-        margin: 0 0 16px 0;
-        padding-bottom: 12px;
+        margin: 0 0 20px 0;
+        padding-bottom: 16px;
         border-bottom: 2px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .section-title::before {
+        content: '';
+        width: 3px;
+        height: 24px;
+        background: #4c8a89;
+        border-radius: 2px;
+    }
+    .section-description {
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 24px;
+        padding: 16px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border-left: 4px solid #4c8a89;
+    }
+    .section-step {
+        display: inline-block;
+        background: #4c8a89;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-right: 8px;
+    }
+    .helper-text {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 6px;
+        font-style: italic;
+        line-height: 1.5;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: #64748b;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 2px dashed #e2e8f0;
+        margin-top: 20px;
+    }
+    .empty-state-icon {
+        font-size: 48px;
+        color: #cbd5e1;
+        margin-bottom: 16px;
     }
     .data-table {
         width: 100%;
@@ -152,32 +217,47 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
 <main class="segments-page">
     <div class="page-header">
         <h1>Audience Segments</h1>
-        <p>Create and manage target audience segments for campaigns</p>
+        <p>Create and manage target audience segments for campaigns. Segment residents by location, risk level, or sector to target your public safety messages effectively.</p>
     </div>
 
     <!-- All Segments List -->
-    <section id="segments-list" class="card" style="margin-bottom:24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <div>
-                <h2 class="section-title" style="margin: 0 0 4px 0;">All Segments</h2>
-                <p style="color: #64748b; margin: 0; font-size: 14px;">View and manage all audience segments</p>
-            </div>
-            <button class="btn btn-secondary" onclick="loadSegments()" style="padding: 8px 16px;">🔄 Refresh</button>
+    <section id="segments-list" class="card" style="margin-bottom:32px;">
+        <h2 class="section-title">
+            <span class="section-step">Step 1</span>
+            All Segments
+        </h2>
+        <div class="section-description">
+            <strong>What this shows:</strong> View all audience segments you've created. Each segment represents a group of residents (e.g., senior citizens in Payatas, high-risk households in Zone 5) that can be targeted for specific campaigns. Use this list to find segments, view their details, or manage members.
+        </div>
+        <div class="form-field" style="margin-bottom:16px;">
+            <button class="btn btn-primary" onclick="loadSegments()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
+                <i class="fas fa-list" style="margin-right:8px;"></i>View All Segments
+            </button>
+        </div>
+        <div class="empty-state" id="segmentsListEmptyState" style="display:none;">
+            <div class="empty-state-icon"><i class="fas fa-users"></i></div>
+            <p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">No segments created yet</p>
+            <p style="margin:0; font-size:14px; line-height:1.6;">You haven't created any audience segments yet. Use the "Create Segment" section below to define your first segment. Segments help you target specific groups of residents for your campaigns.</p>
         </div>
         <div id="segmentsListContainer" style="margin-top: 16px;">
-            <p style="text-align: center; color: #64748b; padding: 20px;">Loading segments...</p>
+            <p style="text-align: center; color: #64748b; padding: 20px;">Click "View All Segments" above to load your segments</p>
         </div>
     </section>
 
     <!-- Create Segment -->
-    <section id="create-segment" class="card" style="margin-bottom:24px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-            <div>
-                <h2 class="section-title" style="margin: 0 0 4px 0;">Create Segment</h2>
-                <p style="color: #64748b; margin: 0; font-size: 14px;">Define target audience segments for your campaigns</p>
-            </div>
-            <button type="button" onclick="showSegmentHelp()" class="btn btn-secondary" style="padding: 8px 16px; display: flex; align-items: center; gap: 6px;">
-                <span>💡</span>
+    <section id="create-segment" class="card" style="margin-bottom:32px;">
+        <h2 class="section-title">
+            <span class="section-step">Step 2</span>
+            Create Segment
+        </h2>
+        <div class="section-description">
+            <strong>What this does:</strong> Define groups of residents (e.g., senior citizens, students, high-risk areas) so campaigns can be targeted properly. Segmentation may use data from incidents, disaster reports, and attendance records. This helps ensure your messages reach the right people at the right time.
+            <br><br>
+            <strong>When to use:</strong> Create a segment when you want to target a specific group of residents for a campaign. For example, create a "High-Risk Households in Payatas" segment to target fire safety campaigns to vulnerable areas.
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+            <button type="button" onclick="showSegmentHelp()" class="btn btn-secondary" style="padding: 10px 16px; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-question-circle"></i>
                 <span>How It Works</span>
             </button>
         </div>
@@ -292,64 +372,113 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     </section>
 
     <!-- Audience Members View -->
-    <section id="audience-members" class="card" style="margin-bottom:24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <div>
-                <h2 class="section-title" style="margin: 0 0 4px 0;">Segment Members</h2>
-                <p style="color: #64748b; margin: 0; font-size: 14px;">View members for a specific segment</p>
+    <section id="audience-members" class="card" style="margin-bottom:32px;">
+        <h2 class="section-title">
+            <span class="section-step">Step 3</span>
+            Segment Members
+        </h2>
+        <div class="section-description">
+            <strong>What this shows:</strong> This section shows the list of residents belonging to the selected segment. You can see who is included in each segment, their contact information, and location details. This helps you verify that the right people are included in your target audience.
+            <br><br>
+            <strong>When to use:</strong> Review segment members after creating a segment or importing members to ensure the correct residents are included. You can also use this to check contact information before sending campaign messages.
+        </div>
+        <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
+            <div class="form-field">
+                <label>Select Segment <span style="color:#dc2626;">*</span></label>
+                <select id="viewMembersSegmentId" style="font-size:15px; padding:12px 16px;">
+                    <option value="">-- Choose a segment to view its members --</option>
+                </select>
+                <div class="helper-text">💡 <strong>Need help?</strong> Don't see any segments? Go to "All Segments" section above to create your first segment, or wait a moment for segments to load.</div>
             </div>
-            <div style="display: flex; gap: 8px;">
-                <input type="number" id="viewMembersSegmentId" placeholder="Segment ID" style="padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px; width: 120px;">
-                <button class="btn btn-secondary" onclick="viewSegmentMembers()" style="padding: 8px 16px;">View Members</button>
+            <div class="form-field" style="margin-top:8px;">
+                <button class="btn btn-primary" onclick="viewSegmentMembers()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
+                    <i class="fas fa-users" style="margin-right:8px;"></i>View Segment Members
+                </button>
             </div>
         </div>
-        <div id="audienceMembersContainer" style="margin-top: 16px;">
-            <p style="text-align: center; color: #64748b; padding: 20px;">Enter a Segment ID and click "View Members" to see segment members</p>
+        <div class="empty-state" id="audienceMembersEmptyState" style="display:none;">
+            <div class="empty-state-icon"><i class="fas fa-user-friends"></i></div>
+            <p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">No segment selected yet</p>
+            <p style="margin:0; font-size:14px; line-height:1.6;">Choose a segment above and click <strong>"View Segment Members"</strong> to see the list of residents in that segment. If a segment has no members yet, you can add them using the "Import Members" section below.</p>
         </div>
+        <div id="audienceMembersContainer" style="margin-top: 20px;"></div>
     </section>
 
     <!-- Participation History -->
-    <section id="segment-analytics" class="card" style="margin-bottom:24px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <div>
-                <h2 class="section-title" style="margin: 0 0 4px 0;">Participation History</h2>
-                <p style="color: #64748b; margin: 0; font-size: 14px;">View historical participation data (read-only)</p>
+    <section id="segment-analytics" class="card" style="margin-bottom:32px;">
+        <h2 class="section-title">
+            <span class="section-step">Step 4</span>
+            Participation History
+        </h2>
+        <div class="section-description">
+            <strong>What this shows:</strong> This shows past participation of this audience in campaigns and events. Data shown includes attendance from training, events, and simulations. Insights may be influenced by reports from police, emergency response, and disaster systems. This helps you understand how engaged each segment has been with your campaigns.
+            <br><br>
+            <strong>When to use:</strong> Review participation history to see which segments are most engaged, track attendance at events, and identify segments that may need more outreach. This data helps improve future campaign targeting.
+        </div>
+        <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
+            <div class="form-field">
+                <label>Select Segment <span style="color:#dc2626;">*</span></label>
+                <select id="viewHistorySegmentId" style="font-size:15px; padding:12px 16px;">
+                    <option value="">-- Choose a segment to view its participation history --</option>
+                </select>
+                <div class="helper-text">💡 <strong>Tip:</strong> Select a segment to see all past campaign and event participation for residents in that segment.</div>
             </div>
-            <div style="display: flex; gap: 8px;">
-                <input type="number" id="viewHistorySegmentId" placeholder="Segment ID" style="padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px; width: 120px;">
-                <button class="btn btn-secondary" onclick="viewParticipationHistory()" style="padding: 8px 16px;">View History</button>
+            <div class="form-field" style="margin-top:8px;">
+                <button class="btn btn-primary" onclick="viewParticipationHistory()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
+                    <i class="fas fa-history" style="margin-right:8px;"></i>View Participation History
+                </button>
             </div>
         </div>
-        <div id="segmentAnalyticsContainer" style="margin-top: 16px;">
-            <p style="text-align: center; color: #64748b; padding: 20px;">Enter a Segment ID and click "View History" to see participation history</p>
+        <div class="empty-state" id="participationHistoryEmptyState" style="display:none;">
+            <div class="empty-state-icon"><i class="fas fa-clipboard-list"></i></div>
+            <p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">No segment selected yet</p>
+            <p style="margin:0; font-size:14px; line-height:1.6;">Choose a segment above and click <strong>"View Participation History"</strong> to see past campaign and event participation. If no history appears, this segment may not have participated in any campaigns or events yet.</p>
         </div>
+        <div id="segmentAnalyticsContainer" style="margin-top: 20px;"></div>
     </section>
 
     <!-- Import Members CSV -->
-    <section id="import-export" class="card" style="margin-bottom:24px;">
-        <h2 class="section-title">Import Members (CSV)</h2>
-        <p style="color: #64748b; margin: 0 0 16px 0; font-size: 14px;">Bulk import segment members from CSV file</p>
+    <section id="import-export" class="card" style="margin-bottom:32px;">
+        <h2 class="section-title">
+            <span class="section-step">Step 5</span>
+            Import Members
+        </h2>
+        <div class="section-description">
+            <strong>What this does:</strong> Upload a CSV file if you received a list of residents from another office or system. This allows you to bulk add residents to a segment instead of entering them one by one. Useful when you have lists from barangay records, census data, or other government systems.
+            <br><br>
+            <strong>When to use:</strong> Use this when you have a spreadsheet or CSV file with resident information that you want to add to a segment. This is faster than manually entering each resident.
+        </div>
         <form id="importForm" class="form-grid">
             <div class="form-field">
-                <label>Segment ID *</label>
-                <input name="segment_id" type="number" required>
+                <label>Select Segment <span style="color:#dc2626;">*</span></label>
+                <select name="segment_id" id="importSegmentId" required style="font-size:15px; padding:12px 16px;">
+                    <option value="">-- Choose a segment to add members to --</option>
+                </select>
+                <div class="helper-text">💡 <strong>Required:</strong> Select which segment you want to add members to. If you don't see any segments, create one first using the "Create Segment" section above.</div>
             </div>
             <div class="form-field">
-                <label>CSV File *</label>
-                <input type="file" name="file" accept=".csv" required>
+                <label>CSV File <span style="color:#dc2626;">*</span></label>
+                <input type="file" name="file" accept=".csv" required style="font-size:15px; padding:12px 16px;">
+                <div class="helper-text">💡 <strong>File format:</strong> Your CSV file should have a header row with column names. See format requirements below.</div>
             </div>
         </form>
-        <p style="color:#64748b; font-size:13px; margin:8px 0; padding: 12px; background: #f8fafc; border-radius: 6px;">
-            <strong>CSV Format:</strong><br>
-            Required column: <code>name</code> (or <code>full_name</code>)<br>
-            Optional columns: <code>sector</code>, <code>barangay</code>, <code>zone</code>, <code>purok</code>, <code>contact</code>
-        </p>
-        <button type="submit" form="importForm" class="btn btn-primary" style="margin-top:8px;">Import CSV</button>
+        <div style="color:#64748b; font-size:13px; margin:16px 0; padding: 16px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #4c8a89;">
+            <strong style="color:#0f172a; display:block; margin-bottom:8px;">📋 CSV File Format Requirements:</strong>
+            <ul style="margin:8px 0 0 0; padding-left:20px; line-height:1.8;">
+                <li><strong>Required column:</strong> <code>name</code> (or <code>full_name</code>) - The resident's full name</li>
+                <li><strong>Optional columns:</strong> <code>sector</code>, <code>barangay</code>, <code>zone</code>, <code>purok</code>, <code>contact</code></li>
+                <li>Make sure your CSV file has a header row with column names</li>
+                <li>The file should be saved as .csv format (not Excel .xlsx)</li>
+            </ul>
+        </div>
+        <div class="form-field" style="margin-top:20px;">
+            <button type="submit" form="importForm" class="btn btn-primary" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
+                <i class="fas fa-file-upload" style="margin-right:8px;"></i>Import Members from CSV
+            </button>
+        </div>
         <div class="status" id="importStatus" style="margin-top:12px;"></div>
     </section>
 </main>
-
-<?php include __DIR__ . '/../header/includes/footer.php'; ?>
 
 <script>
 <?php require_once __DIR__ . '/../header/includes/path_helper.php'; ?>
@@ -377,16 +506,19 @@ function getToken() {
     return t.trim();
 }
 
-// Load segments list
+// Global variable to store segments for dropdowns
+let allSegmentsCache = [];
+
+// Load segments list and populate dropdowns
 async function loadSegments() {
     const container = document.getElementById('segmentsListContainer');
+    const emptyState = document.getElementById('segmentsListEmptyState');
     container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">Loading segments...</p>';
+    emptyState.style.display = 'none';
     
     const currentToken = getToken();
     if (!currentToken) {
-        // Token missing - show error but don't redirect immediately
-        // Let the API call handle authentication errors
-        container.innerHTML = '<p style="text-align: center; color: #dc2626; padding: 20px;">Authentication required. Please log in.</p>';
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-exclamation-triangle"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Authentication required</p><p style="margin:0; font-size:14px;">Please log in to view segments.</p></div>';
         return;
     }
     
@@ -395,7 +527,6 @@ async function loadSegments() {
             headers: { 'Authorization': 'Bearer ' + currentToken }
         });
         
-        // Handle 401 Unauthorized (expired token)
         if (res.status === 401) {
             handleTokenExpiration();
             return;
@@ -404,19 +535,30 @@ async function loadSegments() {
         const data = await res.json();
         
         if (!res.ok) {
-            const errorMsg = data.error || 'Failed to load segments';
+            const errorMsg = data.error || '';
             if (errorMsg.toLowerCase().includes('expired') || errorMsg.toLowerCase().includes('token')) {
                 handleTokenExpiration();
                 return;
             }
-            container.innerHTML = '<p style="text-align: center; color: #dc2626; padding: 20px;">Error: ' + errorMsg + '</p>';
+            // Hide technical errors
+            if (errorMsg.toLowerCase().includes('sqlstate') || errorMsg.toLowerCase().includes('table') || errorMsg.toLowerCase().includes('database')) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Unable to load segments</p><p style="margin:0; font-size:14px;">We couldn\'t load segments right now. Please try again or contact the administrator if the problem persists.</p></div>';
+            } else {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Unable to load segments</p><p style="margin:0; font-size:14px;">' + (errorMsg || 'Please try again or contact the administrator.') + '</p></div>';
+            }
+            emptyState.style.display = 'none';
             return;
         }
         
         const segments = data.data || [];
+        allSegmentsCache = segments; // Cache for dropdowns
+        
+        // Populate dropdowns
+        populateSegmentDropdowns(segments);
         
         if (segments.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 40px;">No segments found. Create a segment to get started.</p>';
+            container.innerHTML = '';
+            emptyState.style.display = 'block';
             return;
         }
         
@@ -462,8 +604,10 @@ async function loadSegments() {
         `;
         
         container.innerHTML = html;
+        emptyState.style.display = 'none';
     } catch (err) {
-        container.innerHTML = '<p style="text-align: center; color: #dc2626; padding: 20px;">Network error: ' + err.message + '</p>';
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-wifi"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Connection problem</p><p style="margin:0; font-size:14px;">We couldn\'t connect to the server. Please check your internet connection and try again.</p></div>';
+        emptyState.style.display = 'none';
     }
 }
 
@@ -742,26 +886,32 @@ async function createSegment() {
         
         const data = await res.json();
         if (res.ok) {
-            statusEl.textContent = '✓ Segment created successfully! ID: ' + (data.id || 'N/A');
+            statusEl.textContent = '✓ Segment created successfully! You can now view it in "All Segments" or add members to it using "Import Members".';
             statusEl.style.color = '#166534';
             resetForm();
             loadSegments();
             
-            // Scroll to segments list
             setTimeout(() => {
                 document.getElementById('segments-list').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 500);
         } else {
-            const errorMsg = data.error || 'Failed';
+            const errorMsg = data.error || '';
             if (errorMsg.toLowerCase().includes('expired') || errorMsg.toLowerCase().includes('token')) {
                 handleTokenExpiration();
                 return;
             }
-            statusEl.textContent = '✗ Error: ' + errorMsg;
+            // Hide technical errors
+            if (errorMsg.toLowerCase().includes('sqlstate') || errorMsg.toLowerCase().includes('table') || errorMsg.toLowerCase().includes('database') || errorMsg.toLowerCase().includes('duplicate')) {
+                statusEl.textContent = '⚠️ Unable to create segment. This segment name may already exist, or there was a system issue. Please try a different name or contact the administrator.';
+            } else if (errorMsg.toLowerCase().includes('required') || errorMsg.toLowerCase().includes('missing')) {
+                statusEl.textContent = '⚠️ ' + (errorMsg || 'Please fill in all required fields.');
+            } else {
+                statusEl.textContent = '⚠️ ' + (errorMsg || 'Unable to create segment. Please check all fields and try again.');
+            }
             statusEl.style.color = '#dc2626';
         }
     } catch (err) {
-        statusEl.textContent = '✗ Network error: ' + err.message;
+        statusEl.textContent = '⚠️ Connection problem. Please check your internet connection and try again.';
         statusEl.style.color = '#dc2626';
     }
 }
@@ -781,16 +931,24 @@ function editSegment(segmentId) {
     // TODO: Implement edit modal or form population
 }
 
-// View segment members
+// View segment members by ID (used from segments list)
 async function viewSegmentMembersById(segmentId) {
-    document.getElementById('viewMembersSegmentId').value = segmentId;
-    await viewSegmentMembers();
+    const select = document.getElementById('viewMembersSegmentId');
+    if (select) {
+        select.value = segmentId;
+        await viewSegmentMembers();
+        // Scroll to members section
+        setTimeout(() => {
+            document.getElementById('audience-members').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
+    }
 }
 
 async function viewSegmentMembers() {
     const segmentId = document.getElementById('viewMembersSegmentId').value;
     if (!segmentId) {
-        alert('Please enter a Segment ID');
+        document.getElementById('audienceMembersEmptyState').style.display = 'block';
+        document.getElementById('audienceMembersContainer').innerHTML = '';
         return;
     }
     
@@ -798,7 +956,9 @@ async function viewSegmentMembers() {
     if (!currentToken) return;
     
     const container = document.getElementById('audienceMembersContainer');
+    const emptyState = document.getElementById('audienceMembersEmptyState');
     container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">Loading members...</p>';
+    emptyState.style.display = 'none';
     
     try {
         const res = await fetch(apiBase + '/api/v1/segments/' + segmentId + '/members', {
@@ -813,19 +973,27 @@ async function viewSegmentMembers() {
         const data = await res.json();
         
         if (!res.ok) {
-            const errorMsg = data.error || 'Failed to load members';
+            const errorMsg = data.error || '';
             if (errorMsg.toLowerCase().includes('expired') || errorMsg.toLowerCase().includes('token')) {
                 handleTokenExpiration();
                 return;
             }
-            container.innerHTML = '<p style="text-align: center; color: #dc2626; padding: 20px;">Error: ' + errorMsg + '</p>';
+            // Hide technical errors
+            if (errorMsg.toLowerCase().includes('sqlstate') || errorMsg.toLowerCase().includes('table') || errorMsg.toLowerCase().includes('database') || errorMsg.toLowerCase().includes('not found')) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Unable to load members</p><p style="margin:0; font-size:14px;">We couldn\'t load members for this segment right now. Please try again or contact the administrator.</p></div>';
+            } else {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Unable to load members</p><p style="margin:0; font-size:14px;">' + (errorMsg || 'Please try again or contact the administrator.') + '</p></div>';
+            }
+            emptyState.style.display = 'none';
             return;
         }
         
         const members = data.data || [];
         
         if (members.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 40px;">No members found for this segment.</p>';
+            container.innerHTML = '';
+            emptyState.style.display = 'block';
+            emptyState.querySelector('p:last-child').innerHTML = 'This segment has no members yet. Use the "Import Members" section below to add residents to this segment.';
             return;
         }
         
@@ -864,8 +1032,10 @@ async function viewSegmentMembers() {
         `;
         
         container.innerHTML = html;
+        emptyState.style.display = 'none';
     } catch (err) {
-        container.innerHTML = '<p style="text-align: center; color: #dc2626; padding: 20px;">Network error: ' + err.message + '</p>';
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-wifi"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Connection problem</p><p style="margin:0; font-size:14px;">We couldn\'t connect to the server. Please check your internet connection and try again.</p></div>';
+        emptyState.style.display = 'none';
     }
 }
 
@@ -873,7 +1043,8 @@ async function viewSegmentMembers() {
 async function viewParticipationHistory() {
     const segmentId = document.getElementById('viewHistorySegmentId').value;
     if (!segmentId) {
-        alert('Please enter a Segment ID');
+        document.getElementById('participationHistoryEmptyState').style.display = 'block';
+        document.getElementById('segmentAnalyticsContainer').innerHTML = '';
         return;
     }
     
@@ -881,7 +1052,9 @@ async function viewParticipationHistory() {
     if (!currentToken) return;
     
     const container = document.getElementById('segmentAnalyticsContainer');
+    const emptyState = document.getElementById('participationHistoryEmptyState');
     container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">Loading participation history...</p>';
+    emptyState.style.display = 'none';
     
     try {
         const res = await fetch(apiBase + '/api/v1/segments/' + segmentId + '/participation-history', {
@@ -896,19 +1069,27 @@ async function viewParticipationHistory() {
         const data = await res.json();
         
         if (!res.ok) {
-            const errorMsg = data.error || 'Failed to load history';
+            const errorMsg = data.error || '';
             if (errorMsg.toLowerCase().includes('expired') || errorMsg.toLowerCase().includes('token')) {
                 handleTokenExpiration();
                 return;
             }
-            container.innerHTML = '<p style="text-align: center; color: #dc2626; padding: 20px;">Error: ' + errorMsg + '</p>';
+            // Hide technical errors
+            if (errorMsg.toLowerCase().includes('sqlstate') || errorMsg.toLowerCase().includes('table') || errorMsg.toLowerCase().includes('database') || errorMsg.toLowerCase().includes('not found')) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Unable to load history</p><p style="margin:0; font-size:14px;">We couldn\'t load participation history for this segment right now. Please try again or contact the administrator.</p></div>';
+            } else {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Unable to load history</p><p style="margin:0; font-size:14px;">' + (errorMsg || 'Please try again or contact the administrator.') + '</p></div>';
+            }
+            emptyState.style.display = 'none';
             return;
         }
         
         const history = data.data || [];
         
         if (history.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 40px;">No participation history found for this segment.</p>';
+            container.innerHTML = '';
+            emptyState.style.display = 'block';
+            emptyState.querySelector('p:last-child').innerHTML = 'No history found for this segment yet. This segment has not participated in any campaigns or events. Once members of this segment attend events or respond to campaigns, their participation will appear here.';
             return;
         }
         
@@ -951,8 +1132,10 @@ async function viewParticipationHistory() {
         `;
         
         container.innerHTML = html;
+        emptyState.style.display = 'none';
     } catch (err) {
-        container.innerHTML = '<p style="text-align: center; color: #dc2626; padding: 20px;">Network error: ' + err.message + '</p>';
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-wifi"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Connection problem</p><p style="margin:0; font-size:14px;">We couldn\'t connect to the server. Please check your internet connection and try again.</p></div>';
+        emptyState.style.display = 'none';
     }
 }
 
@@ -984,28 +1167,35 @@ document.getElementById('importForm').addEventListener('submit', async (e) => {
         
         const data = await res.json();
         if (res.ok) {
-            let message = '✓ Imported successfully! ' + (data.message || '');
+            let message = '✓ Members imported successfully! ' + (data.message || '');
             if (data.errors && data.errors.length > 0) {
-                message += '\n\nErrors: ' + data.errors.slice(0, 5).join('; ');
-                if (data.errors.length > 5) {
-                    message += ' (and ' + (data.errors.length - 5) + ' more)';
-                }
+                message += '\n\nNote: Some rows had issues (' + data.errors.length + ' row' + (data.errors.length !== 1 ? 's' : '') + '). Please check your CSV file format and try again if needed.';
             }
             statusEl.textContent = message;
             statusEl.style.color = '#166534';
             statusEl.style.whiteSpace = 'pre-wrap';
             e.target.reset();
+            // Refresh members view if viewing the same segment
+            const importSegmentId = document.getElementById('importSegmentId').value;
+            if (importSegmentId && document.getElementById('viewMembersSegmentId').value === importSegmentId) {
+                setTimeout(() => viewSegmentMembers(), 500);
+            }
         } else {
-            const errorMsg = data.error || 'Import failed';
+            const errorMsg = data.error || '';
             if (errorMsg.toLowerCase().includes('expired') || errorMsg.toLowerCase().includes('token')) {
                 handleTokenExpiration();
                 return;
             }
-            statusEl.textContent = '✗ Error: ' + errorMsg;
+            // Hide technical errors
+            if (errorMsg.toLowerCase().includes('sqlstate') || errorMsg.toLowerCase().includes('table') || errorMsg.toLowerCase().includes('database') || errorMsg.toLowerCase().includes('parse') || errorMsg.toLowerCase().includes('format')) {
+                statusEl.textContent = '⚠️ Unable to import members. Please check that your CSV file has the correct format (see requirements above) and try again.';
+            } else {
+                statusEl.textContent = '⚠️ ' + (errorMsg || 'Unable to import members. Please check your file and try again.');
+            }
             statusEl.style.color = '#dc2626';
         }
     } catch (err) {
-        statusEl.textContent = '✗ Network error: ' + err.message;
+        statusEl.textContent = '⚠️ Connection problem. Please check your internet connection and try again.';
         statusEl.style.color = '#dc2626';
     }
 });
@@ -1150,8 +1340,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (nameInput) {
         nameInput.addEventListener('input', updateSegmentPreview);
     }
+    
+    // Auto-populate dropdowns when segments are loaded
+    const observer = new MutationObserver(() => {
+        if (allSegmentsCache.length > 0) {
+            populateSegmentDropdowns(allSegmentsCache);
+        }
+    });
+    
+    const segmentsContainer = document.getElementById('segmentsListContainer');
+    if (segmentsContainer) {
+        observer.observe(segmentsContainer, { childList: true, subtree: true });
+    }
 });
 </script>
+    
+    <?php include __DIR__ . '/../header/includes/footer.php'; ?>
     </main>
-</body>
-</html>

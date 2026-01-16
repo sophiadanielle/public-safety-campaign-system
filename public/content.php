@@ -1783,6 +1783,6 @@ loadContent();
     loadMediaGallery();
 });
 </script>
+    
+    <?php include __DIR__ . '/../header/includes/footer.php'; ?>
     </main>
-</body>
-</html>

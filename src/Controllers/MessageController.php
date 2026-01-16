@@ -46,18 +46,18 @@ class MessageController
                     m.created_at as last_message_at,
                     m.is_read as last_message_read,
                     COUNT(CASE WHEN m2.is_read = 0 AND m2.recipient_id = :user_id THEN 1 END) as unread_count
-                FROM conversations c
-                INNER JOIN users u ON (
+                FROM campaign_department_conversations c
+                INNER JOIN campaign_department_users u ON (
                     (c.participant1_id = :user_id AND u.id = c.participant2_id) OR
                     (c.participant2_id = :user_id AND u.id = c.participant1_id)
                 )
-                LEFT JOIN messages m ON m.id = (
-                    SELECT id FROM messages m3 
+                LEFT JOIN campaign_department_messages m ON m.id = (
+                    SELECT id FROM campaign_department_messages m3 
                     WHERE m3.conversation_id = c.id 
                     ORDER BY m3.created_at DESC 
                     LIMIT 1
                 )
-                LEFT JOIN messages m2 ON m2.conversation_id = c.id AND m2.recipient_id = :user_id
+                LEFT JOIN campaign_department_messages m2 ON m2.conversation_id = c.id AND m2.recipient_id = :user_id
                 WHERE c.participant1_id = :user_id OR c.participant2_id = :user_id
                 GROUP BY c.id, other_user_id, u.name, u.email, m.message_text, m.created_at, m.is_read
                 ORDER BY c.last_message_at DESC, c.created_at DESC
@@ -73,7 +73,7 @@ class MessageController
 
             // Get total unread count
             $unreadStmt = $this->pdo->prepare('
-                SELECT COUNT(*) FROM messages 
+                SELECT COUNT(*) FROM campaign_department_messages 
                 WHERE recipient_id = :user_id AND is_read = 0
             ');
             $unreadStmt->execute(['user_id' => $userId]);
@@ -107,7 +107,7 @@ class MessageController
 
         // Verify user is part of this conversation
         $checkStmt = $this->pdo->prepare('
-            SELECT id FROM conversations 
+            SELECT id FROM campaign_department_conversations 
             WHERE id = :conv_id AND (participant1_id = :user_id OR participant2_id = :user_id)
         ');
         $checkStmt->execute(['conv_id' => $conversationId, 'user_id' => $userId]);
@@ -130,8 +130,8 @@ class MessageController
                 m.created_at,
                 u.name as sender_name,
                 u.email as sender_email
-            FROM messages m
-            INNER JOIN users u ON u.id = m.sender_id
+            FROM campaign_department_messages m
+            INNER JOIN campaign_department_users u ON u.id = m.sender_id
             WHERE m.conversation_id = :conv_id
             ORDER BY m.created_at ASC
             LIMIT :limit
@@ -144,7 +144,7 @@ class MessageController
 
         // Mark messages as read
         $this->pdo->prepare('
-            UPDATE messages 
+            UPDATE campaign_department_messages 
             SET is_read = 1, read_at = NOW() 
             WHERE conversation_id = :conv_id AND recipient_id = :user_id AND is_read = 0
         ')->execute(['conv_id' => $conversationId, 'user_id' => $userId]);
@@ -181,9 +181,9 @@ class MessageController
         // Validate context if provided
         if ($contextId && in_array($contextType, ['campaign', 'event', 'content'], true)) {
             $tableMap = [
-                'campaign' => 'campaigns',
-                'event' => 'events',
-                'content' => 'content_items',
+                'campaign' => 'campaign_department_campaigns',
+                'event' => 'campaign_department_events',
+                'content' => 'campaign_department_content_items',
             ];
             $table = $tableMap[$contextType];
             $checkStmt = $this->pdo->prepare("SELECT id FROM {$table} WHERE id = :id");
@@ -198,7 +198,7 @@ class MessageController
         try {
             // Get or create conversation
             $convStmt = $this->pdo->prepare('
-                SELECT id FROM conversations 
+                SELECT id FROM campaign_department_conversations 
                 WHERE (participant1_id = :user1 AND participant2_id = :user2)
                    OR (participant1_id = :user2 AND participant2_id = :user1)
             ');
@@ -213,7 +213,7 @@ class MessageController
             } else {
                 // Create new conversation
                 $insertConv = $this->pdo->prepare('
-                    INSERT INTO conversations (participant1_id, participant2_id, last_message_at)
+                    INSERT INTO campaign_department_conversations (participant1_id, participant2_id, last_message_at)
                     VALUES (:user1, :user2, NOW())
                 ');
                 $insertConv->execute([
@@ -225,7 +225,7 @@ class MessageController
 
             // Insert message
             $msgStmt = $this->pdo->prepare('
-                INSERT INTO messages (
+                INSERT INTO campaign_department_messages (
                     conversation_id, sender_id, recipient_id, message_text, 
                     context_type, context_id
                 ) VALUES (
@@ -245,7 +245,7 @@ class MessageController
 
             // Update conversation last_message_at
             $this->pdo->prepare('
-                UPDATE conversations SET last_message_at = NOW() WHERE id = :conv_id
+                UPDATE campaign_department_conversations SET last_message_at = NOW() WHERE id = :conv_id
             ')->execute(['conv_id' => $conversationId]);
 
             $this->pdo->commit();
@@ -278,7 +278,7 @@ class MessageController
 
         // Verify user is part of conversation
         $checkStmt = $this->pdo->prepare('
-            SELECT id FROM conversations 
+            SELECT id FROM campaign_department_conversations 
             WHERE id = :conv_id AND (participant1_id = :user_id OR participant2_id = :user_id)
         ');
         $checkStmt->execute(['conv_id' => $conversationId, 'user_id' => $userId]);
@@ -289,7 +289,7 @@ class MessageController
         }
 
         $stmt = $this->pdo->prepare('
-            UPDATE messages 
+            UPDATE campaign_department_messages 
             SET is_read = 1, read_at = NOW() 
             WHERE conversation_id = :conv_id AND recipient_id = :user_id AND is_read = 0
         ');

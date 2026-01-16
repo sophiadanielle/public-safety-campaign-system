@@ -1378,6 +1378,6 @@ loadAudienceSegments();
 loadEvents();
 </script>
     </div>
+    
+    <?php include __DIR__ . '/../header/includes/footer.php'; ?>
     </main>
-</body>
-</html>

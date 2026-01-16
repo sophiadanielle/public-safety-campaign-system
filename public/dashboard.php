@@ -710,7 +710,6 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             </div>
         </div>
     </section>
-</main>
 
 <script>
 <?php require_once __DIR__ . '/../header/includes/path_helper.php'; ?>
@@ -1059,7 +1058,7 @@ function toggleSystemOverview() {
 // Refresh every 5 minutes
 setInterval(loadDashboard, 300000);
 </script>
+    
+    <?php include __DIR__ . '/../header/includes/footer.php'; ?>
     </main>
-</body>
-</html>
 

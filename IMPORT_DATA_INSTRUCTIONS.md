@@ -192,3 +192,4 @@ Once data is imported, make sure your application connects to `lgu`:
 - If import fails: Check file size limits in phpMyAdmin or use command line
 - If tables are empty after import: Verify the SQL file contains INSERT statements
 
+

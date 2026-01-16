@@ -368,6 +368,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 const targetElement = document.querySelector(anchorHref);
                 if (targetElement) {
+                    // Make element visible if it's hidden (for sections like survey-builder, survey-analytics)
+                    const originalDisplay = window.getComputedStyle(targetElement).display;
+                    if (originalDisplay === 'none') {
+                        targetElement.style.display = 'block';
+                        // Force reflow to ensure element is laid out
+                        targetElement.offsetHeight;
+                    }
+                    
                     const headerOffset = 90;
                     const elementPosition = targetElement.getBoundingClientRect().top;
                     const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
@@ -387,6 +395,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         document.querySelectorAll('.sidebar-module-toggle').forEach(t => t.classList.remove('active'));
                         parentToggle.classList.add('active');
                     }
+                } else {
+                    // Element not found - log for debugging
+                    console.warn('Navigation target not found:', anchorHref);
                 }
             }
         });
@@ -396,6 +407,29 @@ document.addEventListener('DOMContentLoaded', function() {
     function highlightActiveSubmenuItem() {
         const hash = window.location.hash;
         if (hash) {
+            // Make target element visible if hidden, then scroll to it
+            const targetElement = document.querySelector(hash);
+            if (targetElement) {
+                const originalDisplay = window.getComputedStyle(targetElement).display;
+                if (originalDisplay === 'none') {
+                    targetElement.style.display = 'block';
+                    // Force reflow
+                    targetElement.offsetHeight;
+                }
+                
+                // Scroll to element after a brief delay to ensure it's visible
+                setTimeout(() => {
+                    const headerOffset = 90;
+                    const elementPosition = targetElement.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                    
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }, 100);
+            }
+            
             const targetLink = document.querySelector(`.sidebar-submenu-link[data-href="${hash}"], .sidebar-submenu-link[href*="${hash}"]`);
             if (targetLink) {
                 submenuLinks.forEach(l => l.classList.remove('active'));

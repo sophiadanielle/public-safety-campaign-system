@@ -37,10 +37,14 @@ ALTER TABLE `campaign_department_surveys`
     ADD COLUMN IF NOT EXISTS closed_at TIMESTAMP NULL AFTER published_at,
     ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER closed_at;
 
--- Add foreign keys for audit fields
-ALTER TABLE `campaign_department_surveys`
-    ADD CONSTRAINT IF NOT EXISTS fk_surveys_created_by FOREIGN KEY (created_by) REFERENCES `campaign_department_users`(id) ON DELETE SET NULL,
-    ADD CONSTRAINT IF NOT EXISTS fk_surveys_published_by FOREIGN KEY (published_by) REFERENCES `campaign_department_users`(id) ON DELETE SET NULL;
+-- Add foreign keys for audit fields (MariaDB compatible - check first)
+SET @constraint_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_surveys' AND CONSTRAINT_NAME = 'fk_surveys_created_by');
+SET @sql = IF(@constraint_exists = 0, 'ALTER TABLE `campaign_department_surveys` ADD CONSTRAINT fk_surveys_created_by FOREIGN KEY (created_by) REFERENCES `campaign_department_users`(id) ON DELETE SET NULL', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @constraint_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_surveys' AND CONSTRAINT_NAME = 'fk_surveys_published_by');
+SET @sql = IF(@constraint_exists = 0, 'ALTER TABLE `campaign_department_surveys` ADD CONSTRAINT fk_surveys_published_by FOREIGN KEY (published_by) REFERENCES `campaign_department_users`(id) ON DELETE SET NULL', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ============================================
 -- 2. ENHANCE SURVEY_QUESTIONS TABLE

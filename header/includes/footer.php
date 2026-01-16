@@ -1,109 +1,134 @@
-    <footer class="footer">
-        <div class="main-container">
-            <div class="sub-container">
-                <div class="footer-container">
-            <div class="footer-main">
-                <!-- Footer Brand Section -->
-                <div class="footer-brand">
-                    <?php
-                    // Include path helper if not already included
-                    if (!isset($basePath)) {
-                        require_once __DIR__ . '/path_helper.php';
-                    }
-                    ?>
-                    <a href="<?php echo htmlspecialchars($publicPath . '/index.php'); ?>" class="footer-logo">
-                        <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="" class="logo-img">
-                    </a>
-                    <p class="footer-description">
-                        Building modern web applications with clean code, responsive design, and user-friendly interfaces. Your trusted partner for digital solutions.
-                    </p>
-                    <div class="footer-social">
-                        <a href="#" class="social-link" aria-label="Facebook">
-                            <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="#" class="social-link" aria-label="Twitter">
-                            <i class="fab fa-twitter"></i>
-                        </a>
-                        <a href="#" class="social-link" aria-label="LinkedIn">
-                            <i class="fab fa-linkedin-in"></i>
-                        </a>
-                        <a href="#" class="social-link" aria-label="GitHub">
-                            <i class="fab fa-github"></i>
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- Footer Columns -->
-                <div class="footer-column">
-                    <h4>Navigation</h4>
-                    <ul class="footer-links">
-                        <li><a href="<?php echo htmlspecialchars($publicPath . '/index.php'); ?>" class="footer-link">Home</a></li>
-                        <li><a href="<?php echo htmlspecialchars($publicPath . '/campaigns.php'); ?>" class="footer-link">Campaigns</a></li>
-                        <li><a href="<?php echo htmlspecialchars($publicPath . '/content.php'); ?>" class="footer-link">Content</a></li>
-                        <li><a href="<?php echo htmlspecialchars($publicPath . '/events.php'); ?>" class="footer-link">Events</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-column">
-                    <h4>Resources</h4>
-                    <ul class="footer-links">
-                        <li><a href="#" class="footer-link">Documentation</a></li>
-                        <li><a href="#" class="footer-link">API Reference</a></li>
-                        <li><a href="#" class="footer-link">Tutorials</a></li>
-                        <li><a href="#" class="footer-link">Blog</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-column">
-                    <h4>Support</h4>
-                    <ul class="footer-links">
-                        <li><a href="#" class="footer-link">Help Center</a></li>
-                        <li><a href="#" class="footer-link">Contact Us</a></li>
-                        <li><a href="#" class="footer-link">FAQ</a></li>
-                        <li><a href="#" class="footer-link">Status</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-column">
-                    <h4>Company</h4>
-                    <ul class="footer-links">
-                        <li><a href="#" class="footer-link">About Us</a></li>
-                        <li><a href="#" class="footer-link">Careers</a></li>
-                        <li><a href="#" class="footer-link">Privacy Policy</a></li>
-                        <li><a href="#" class="footer-link">Terms of Service</a></li>
-                    </ul>
-                </div>
+    <!-- Minimal Admin Footer -->
+    <footer class="admin-footer-minimal">
+        <div class="footer-content">
+            <div class="footer-left">
+                <p class="footer-copyright">&copy; 2026 Alertara LGU System – Quezon City</p>
+                <p class="footer-internal-use">For internal use only</p>
             </div>
-            
-            <!-- Footer Bottom -->
-            <div class="footer-bottom">
-                <div class="footer-copyright">
-                    <p>&copy; <?php echo date('Y'); ?> LGU #4. All rights reserved.</p>
-                </div>
-                
-                <div class="footer-legal">
-                    <a href="#" class="footer-link">Privacy Policy</a>
-                    <a href="#" class="footer-link">Terms of Service</a>
-                    <a href="#" class="footer-link">Cookie Policy</a>
-                </div>
-                
-                <div class="theme-toggle">
-                    <button class="theme-toggle-btn" data-theme="system" aria-label="System theme">
-                        <i class="fas fa-desktop"></i>
-                    </button>
-                    <button class="theme-toggle-btn" data-theme="light" aria-label="Light theme">
-                        <i class="fas fa-sun"></i>
-                    </button>
-                    <button class="theme-toggle-btn" data-theme="dark" aria-label="Dark theme">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-                </div>
+            <div class="footer-right">
+                <p class="footer-user-info" id="footerUserInfo">Logged in as: <span id="footerUserName">Loading...</span></p>
             </div>
         </div>
     </footer>
+
+    <style>
+        .admin-footer-minimal {
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            padding: 12px 0;
+            margin-top: 32px;
+            font-size: 12px;
+            color: #64748b;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .footer-content {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            box-sizing: border-box;
+        }
+        
+        .footer-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .footer-copyright {
+            margin: 0;
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        .footer-internal-use {
+            margin: 0;
+            font-size: 11px;
+            color: #94a3b8;
+            font-style: italic;
+        }
+        
+        .footer-right {
+            display: flex;
+            align-items: center;
+        }
+        
+        .footer-user-info {
+            margin: 0;
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        .footer-user-info span {
+            color: #475569;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+                padding: 0 16px;
+            }
+            
+            .footer-left,
+            .footer-right {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+
+    <script>
+        // Load user info for footer (similar to admin header)
+        (function() {
+            function updateFooterUserInfo() {
+                try {
+                    const userInfo = localStorage.getItem('currentUser');
+                    const footerUserName = document.getElementById('footerUserName');
+                    
+                    if (userInfo && footerUserName) {
+                        try {
+                            const user = JSON.parse(userInfo);
+                            const displayName = user.name || user.username || 'User';
+                            const role = user.role ? ` (${user.role})` : '';
+                            footerUserName.textContent = displayName + role;
+                        } catch (e) {
+                            footerUserName.textContent = 'User';
+                        }
+                    } else if (footerUserName) {
+                        footerUserName.textContent = 'User';
+                    }
+                } catch (e) {
+                    console.error('Error updating footer user info:', e);
+                }
+            }
+            
+            // Update on page load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', updateFooterUserInfo);
+            } else {
+                updateFooterUserInfo();
+            }
+            
+            // Update when user info changes (listen for storage events)
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'currentUser') {
+                    updateFooterUserInfo();
+                }
+            });
+            
+            // Also update after a short delay to catch async user loading
+            setTimeout(updateFooterUserInfo, 500);
+            setTimeout(updateFooterUserInfo, 1500);
+        })();
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
@@ -232,27 +257,6 @@
                 }
             } catch (e) {}
         })();
-
-        // Header scroll effect - disabled to keep header always on top
-        // let lastScrollTop = 0;
-        // const header = document.querySelector('.header');
-
-        // window.addEventListener('scroll', () => {
-        //     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        //     
-        //     if (scrollTop > lastScrollTop && scrollTop > 100) {
-        //         // Scrolling down
-        //         header.style.transform = 'translateY(-100%)';
-        //     } else {
-        //         // Scrolling up
-        //         header.style.transform = 'translateY(0)';
-        //     }
-        //     
-        //     lastScrollTop = scrollTop;
-        // });
-
-        // Add transition for smooth header movement
-        // header.style.transition = 'transform 0.3s ease-in-out';
 
         // ===================================
         // BUTTON ENHANCEMENTS - STATES & COLORS

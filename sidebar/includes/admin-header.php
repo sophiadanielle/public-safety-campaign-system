@@ -684,6 +684,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             const token = localStorage.getItem('jwtToken') || '';
+            if (!token) {
+                console.warn('No JWT token found, skipping notification load');
+                return;
+            }
+            
             const apiBase = '<?php echo $apiPath; ?>';
             
             const res = await fetch(apiBase + '/api/v1/notifications?limit=10', {
@@ -692,19 +697,42 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!res.ok) {
                 if (res.status === 401) {
+                    console.warn('Unauthorized access to notifications');
                     return;
                 }
-                throw new Error('Failed to load notifications');
+                
+                // Try to get error message from response
+                let errorMsg = 'Failed to load notifications';
+                try {
+                    const errorData = await res.json();
+                    if (errorData.error) {
+                        errorMsg = errorData.error;
+                    }
+                } catch (e) {
+                    // Response might not be JSON
+                }
+                
+                console.error('Notification API error:', res.status, errorMsg);
+                throw new Error(errorMsg);
             }
             
             const data = await res.json();
+            
+            // Check if response has error field (backend returned error but 200 status)
+            if (data.error) {
+                console.error('Notification API returned error:', data.error);
+                throw new Error(data.error);
+            }
+            
             const notifications = data.data || [];
             
+            // Show empty state if no notifications
             if (notifications.length === 0) {
                 notificationBody.innerHTML = `
                     <div style="text-align: center; padding: 24px; color: #64748b;">
                         <i class="fas fa-bell-slash" style="font-size: 32px; margin-bottom: 8px; opacity: 0.5;"></i>
-                        <div>No notifications</div>
+                        <div style="font-weight: 500; margin-bottom: 4px;">No notifications yet</div>
+                        <div style="font-size: 12px; opacity: 0.7;">You'll see alerts and updates here</div>
                     </div>
                 `;
                 return;
@@ -748,10 +776,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (err) {
             console.error('Error loading notifications:', err);
+            console.error('Error details:', {
+                message: err.message,
+                stack: err.stack
+            });
             notificationBody.innerHTML = `
                 <div style="text-align: center; padding: 24px; color: #dc2626;">
-                    <i class="fas fa-exclamation-circle" style="font-size: 24px; margin-bottom: 8px;"></i>
-                    <div>Error loading notifications</div>
+                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 8px;"></i>
+                    <div style="font-weight: 500; margin-bottom: 4px;">Unable to load notifications</div>
+                    <div style="font-size: 12px; opacity: 0.8;">Please try again or contact support if the problem persists</div>
                 </div>
             `;
         }
@@ -873,6 +906,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             const token = localStorage.getItem('jwtToken') || '';
+            if (!token) {
+                console.warn('No JWT token found, skipping message load');
+                return;
+            }
+            
             const apiBase = '<?php echo $apiPath; ?>';
             
             const res = await fetch(apiBase + '/api/v1/messages/conversations?limit=10', {
@@ -881,19 +919,42 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!res.ok) {
                 if (res.status === 401) {
+                    console.warn('Unauthorized access to messages');
                     return;
                 }
-                throw new Error('Failed to load messages');
+                
+                // Try to get error message from response
+                let errorMsg = 'Failed to load messages';
+                try {
+                    const errorData = await res.json();
+                    if (errorData.error) {
+                        errorMsg = errorData.error;
+                    }
+                } catch (e) {
+                    // Response might not be JSON
+                }
+                
+                console.error('Message API error:', res.status, errorMsg);
+                throw new Error(errorMsg);
             }
             
             const data = await res.json();
+            
+            // Check if response has error field (backend returned error but 200 status)
+            if (data.error) {
+                console.error('Message API returned error:', data.error);
+                throw new Error(data.error);
+            }
+            
             const conversations = data.data || [];
             
+            // Show empty state if no conversations
             if (conversations.length === 0) {
                 messageBody.innerHTML = `
                     <div style="text-align: center; padding: 24px; color: #64748b;">
                         <i class="fas fa-envelope-open" style="font-size: 32px; margin-bottom: 8px; opacity: 0.5;"></i>
-                        <div>No messages</div>
+                        <div style="font-weight: 500; margin-bottom: 4px;">No messages yet</div>
+                        <div style="font-size: 12px; opacity: 0.7;">Start a conversation with a team member</div>
                     </div>
                 `;
                 return;
@@ -901,19 +962,20 @@ document.addEventListener('DOMContentLoaded', function() {
             
             let html = '';
             conversations.forEach(conv => {
-                const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.other_user_name)}&background=4c8a89&color=fff&size=64`;
+                const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(conv.other_user_name || 'User')}&background=4c8a89&color=fff&size=64`;
                 const timeAgo = formatTimeAgo(conv.last_message_at);
                 const unreadClass = conv.unread_count > 0 ? 'unread-message' : '';
                 const unreadDot = conv.unread_count > 0 ? '<div class="message-status unread"></div>' : '<div class="message-status"></div>';
                 const lastMessage = conv.last_message ? escapeHtml(conv.last_message.substring(0, 50)) : 'No messages';
+                const otherUserName = escapeHtml(conv.other_user_name || 'Unknown User');
                 
                 html += `
-                    <div class="message-item ${unreadClass}" onclick="openConversation(${conv.conversation_id}, ${conv.other_user_id}, '${escapeHtml(conv.other_user_name)}')" data-conv-id="${conv.conversation_id}">
+                    <div class="message-item ${unreadClass}" onclick="openConversation(${conv.conversation_id}, ${conv.other_user_id}, '${otherUserName}')" data-conv-id="${conv.conversation_id}">
                         <div class="message-avatar">
-                            <img src="${avatarUrl}" alt="${escapeHtml(conv.other_user_name)}">
+                            <img src="${avatarUrl}" alt="${otherUserName}">
                         </div>
                         <div class="message-details">
-                            <div class="message-title">${escapeHtml(conv.other_user_name)}</div>
+                            <div class="message-title">${otherUserName}</div>
                             <div class="message-text">${lastMessage}</div>
                             <div class="message-time">${timeAgo}</div>
                         </div>
@@ -926,10 +988,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (err) {
             console.error('Error loading messages:', err);
+            console.error('Error details:', {
+                message: err.message,
+                stack: err.stack
+            });
             messageBody.innerHTML = `
                 <div style="text-align: center; padding: 24px; color: #dc2626;">
-                    <i class="fas fa-exclamation-circle" style="font-size: 24px; margin-bottom: 8px;"></i>
-                    <div>Error loading messages</div>
+                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 8px;"></i>
+                    <div style="font-weight: 500; margin-bottom: 4px;">Unable to load messages</div>
+                    <div style="font-size: 12px; opacity: 0.8;">Please try again or contact support if the problem persists</div>
                 </div>
             `;
         }
