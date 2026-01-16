@@ -17,8 +17,10 @@ class AutoMLService
     private ?string $googleProjectId;
     private ?string $googleRegion;
     private ?string $googleServiceAccountKey;
+    private ?string $openAiApiKey;
     private bool $useGoogleAutoML;
     private bool $isTrainingConfigured;
+    private bool $useOpenAI;
 
     public function __construct(
         private PDO $pdo,
@@ -26,7 +28,8 @@ class AutoMLService
         ?string $googleApiKey = null,
         ?string $googleProjectId = null,
         ?string $googleRegion = null,
-        ?string $googleServiceAccountKey = null
+        ?string $googleServiceAccountKey = null,
+        ?string $openAiApiKey = null
     ) {
         // getenv() returns false if not found, so we need to convert to string or null
         $envEndpoint = getenv('GOOGLE_AUTOML_ENDPOINT');
@@ -44,8 +47,13 @@ class AutoMLService
         $envServiceAccount = getenv('GOOGLE_SERVICE_ACCOUNT_KEY');
         $this->googleServiceAccountKey = $googleServiceAccountKey ?? ($envServiceAccount !== false ? (string)$envServiceAccount : null);
         
+        // Load OpenAI API key from environment
+        $envOpenAiKey = getenv('OPENAI_API_KEY');
+        $this->openAiApiKey = $openAiApiKey ?? ($envOpenAiKey !== false ? (string)$envOpenAiKey : null);
+        
         $this->useGoogleAutoML = !empty($this->googleAutoMLEndpoint) && !empty($this->googleApiKey);
         $this->isTrainingConfigured = !empty($this->googleProjectId) && !empty($this->googleServiceAccountKey);
+        $this->useOpenAI = !empty($this->openAiApiKey);
     }
 
     /**
@@ -68,7 +76,20 @@ class AutoMLService
         // Prepare features for prediction
         $preparedFeatures = $this->prepareFeatures($campaignId, $campaign, $features);
 
-        // Use Google AutoML if configured, otherwise use heuristic
+        // Use OpenAI API if configured (preferred), otherwise Google AutoML, otherwise heuristic
+        if ($this->useOpenAI) {
+            error_log("AutoMLService: Using OpenAI API for prediction (Campaign ID: $campaignId)");
+            try {
+                $result = $this->predictWithOpenAI($campaignId, $campaign, $preparedFeatures);
+                error_log("AutoMLService: OpenAI prediction successful - Model: " . ($result['model_source'] ?? 'unknown'));
+                return $result;
+            } catch (\Exception $e) {
+                error_log("AutoMLService: OpenAI prediction failed: " . $e->getMessage());
+                error_log("AutoMLService: Falling back to Google AutoML or heuristic");
+                // Fallback to Google AutoML or heuristics
+            }
+        }
+        
         if ($this->useGoogleAutoML) {
             error_log("AutoMLService: Using Google AutoML for prediction (Campaign ID: $campaignId)");
             error_log("AutoMLService: Endpoint: " . ($this->googleAutoMLEndpoint ?? 'NOT SET'));
@@ -86,9 +107,7 @@ class AutoMLService
             }
         }
 
-        error_log("AutoMLService: Using heuristic prediction (Google AutoML not configured) (Campaign ID: $campaignId)");
-        error_log("AutoMLService: GOOGLE_AUTOML_ENDPOINT: " . (getenv('GOOGLE_AUTOML_ENDPOINT') !== false ? 'SET' : 'NOT SET'));
-        error_log("AutoMLService: GOOGLE_AUTOML_API_KEY: " . (getenv('GOOGLE_AUTOML_API_KEY') !== false ? 'SET' : 'NOT SET'));
+        error_log("AutoMLService: Using heuristic prediction (No AI API configured) (Campaign ID: $campaignId)");
         $heuristicResult = $this->predictWithHeuristics($campaignId, $preparedFeatures);
         $heuristicResult['automl_configured'] = false;
         return $heuristicResult;
@@ -115,16 +134,16 @@ class AutoMLService
         foreach ($similarCampaigns as $similarId) {
             // Views/Reach from notification logs
             $views = (int) $this->scalar(
-                'SELECT COUNT(*) FROM notification_logs WHERE campaign_id = :cid AND status = "sent"',
+                'SELECT COUNT(*) FROM campaign_department_notification_logs WHERE campaign_id = :cid AND status = "sent"',
                 ['cid' => $similarId]
             );
             $totalViews += $views;
             
             // Attendance from events (count from attendance table)
             $attendance = (int) $this->scalar(
-                'SELECT COALESCE(COUNT(ea.attendance_id), 0) 
-                 FROM events e 
-                 LEFT JOIN attendance ea ON ea.event_id = e.id 
+                'SELECT COALESCE(COUNT(ea.id), 0) 
+                 FROM campaign_department_events e 
+                 LEFT JOIN campaign_department_attendance ea ON ea.event_id = e.id 
                  WHERE e.linked_campaign_id = :cid',
                 ['cid' => $similarId]
             );
@@ -132,8 +151,8 @@ class AutoMLService
             
             // Ratings from feedback
             $avgRating = (float) $this->scalar(
-                'SELECT AVG(f.rating) FROM feedback f 
-                 INNER JOIN surveys s ON s.id = f.survey_id 
+                'SELECT AVG(f.rating) FROM campaign_department_feedback f 
+                 INNER JOIN campaign_department_surveys s ON s.id = f.survey_id 
                  WHERE s.campaign_id = :cid',
                 ['cid' => $similarId]
             );
@@ -159,23 +178,23 @@ class AutoMLService
         
         // Current campaign metrics (if any)
         $currentReach = (int) $this->scalar(
-            'SELECT COUNT(*) FROM notification_logs WHERE campaign_id = :cid AND status = "sent"',
+            'SELECT COUNT(*) FROM campaign_department_notification_logs WHERE campaign_id = :cid AND status = "sent"',
             ['cid' => $campaignId]
         );
         $currentAttendance = (int) $this->scalar(
-            'SELECT COALESCE(COUNT(ea.attendance_id), 0) 
-             FROM events e 
-             LEFT JOIN attendance ea ON ea.event_id = e.id 
+            'SELECT COALESCE(COUNT(ea.id), 0) 
+             FROM campaign_department_events e 
+             LEFT JOIN campaign_department_attendance ea ON ea.event_id = e.id 
              WHERE e.linked_campaign_id = :cid',
             ['cid' => $campaignId]
         );
         $currentResponses = (int) $this->scalar(
-            'SELECT COUNT(*) FROM survey_responses sr INNER JOIN surveys s ON s.id = sr.survey_id WHERE s.campaign_id = :cid',
+            'SELECT COUNT(*) FROM campaign_department_survey_responses sr INNER JOIN campaign_department_surveys s ON s.id = sr.survey_id WHERE s.campaign_id = :cid',
             ['cid' => $campaignId]
         );
         $currentAvgRating = (float) $this->scalar(
-            'SELECT AVG(f.rating) FROM feedback f 
-             INNER JOIN surveys s ON s.id = f.survey_id 
+            'SELECT AVG(f.rating) FROM campaign_department_feedback f 
+             INNER JOIN campaign_department_surveys s ON s.id = f.survey_id 
              WHERE s.campaign_id = :cid',
             ['cid' => $campaignId]
         ) ?: 0;
@@ -232,7 +251,7 @@ class AutoMLService
     private function getSimilarCampaigns(string $category, int $excludeId): array
     {
         $stmt = $this->pdo->prepare('
-            SELECT id FROM campaigns 
+            SELECT id FROM campaign_department_campaigns 
             WHERE category = :category AND id != :exclude_id
             ORDER BY created_at DESC 
             LIMIT 20
@@ -248,13 +267,184 @@ class AutoMLService
     {
         $stmt = $this->pdo->prepare('
             SELECT e.date as event_date, e.start_time as event_time, 
-                   COALESCE((SELECT COUNT(*) FROM attendance ea WHERE ea.event_id = e.id), 0) as attendance
-            FROM events e 
+                   COALESCE((SELECT COUNT(*) FROM campaign_department_attendance ea WHERE ea.event_id = e.id), 0) as attendance
+            FROM campaign_department_events e 
             WHERE e.linked_campaign_id = :cid AND e.date IS NOT NULL AND e.start_time IS NOT NULL
             ORDER BY e.date DESC
         ');
         $stmt->execute(['cid' => $campaignId]);
         return $stmt->fetchAll() ?: [];
+    }
+
+    /**
+     * Call OpenAI API for prediction
+     */
+    private function predictWithOpenAI(int $campaignId, array $campaign, array $features): array
+    {
+        // Build prompt with campaign data
+        $campaignTitle = $campaign['title'] ?? 'Untitled Campaign';
+        $campaignCategory = $campaign['category'] ?? 'general';
+        $objectives = $campaign['objectives'] ?? '';
+        $geographicScope = $campaign['geographic_scope'] ?? '';
+        $startDate = $campaign['start_date'] ?? null;
+        $endDate = $campaign['end_date'] ?? null;
+        
+        // Get historical engagement data
+        $historicalEngagement = $features['historical_engagement'] ?? [];
+        $avgEngagement = $features['engagement_rate'] ?? 0;
+        $bestDay = $features['best_day_of_week'] ?? null;
+        $bestTime = $features['best_time'] ?? null;
+        
+        // Build comprehensive prompt
+        $prompt = "You are an AI assistant helping optimize campaign deployment timing for a public safety campaign management system.\n\n";
+        $prompt .= "Campaign Details:\n";
+        $prompt .= "- Title: {$campaignTitle}\n";
+        $prompt .= "- Category: {$campaignCategory}\n";
+        if ($objectives) {
+            $prompt .= "- Objectives: {$objectives}\n";
+        }
+        if ($geographicScope) {
+            $prompt .= "- Geographic Scope: {$geographicScope}\n";
+        }
+        if ($startDate) {
+            $prompt .= "- Planned Start Date: {$startDate}\n";
+        }
+        if ($endDate) {
+            $prompt .= "- Planned End Date: {$endDate}\n";
+        }
+        
+        $prompt .= "\nHistorical Performance Data:\n";
+        if ($bestDay && $bestTime) {
+            $dayNames = [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday'];
+            $prompt .= "- Best performing day: {$dayNames[$bestDay]}\n";
+            $prompt .= "- Best performing time: {$bestTime}\n";
+        }
+        if ($avgEngagement > 0) {
+            $prompt .= "- Average engagement rate: " . round($avgEngagement * 100, 1) . "%\n";
+        }
+        if (!empty($historicalEngagement)) {
+            $views = $historicalEngagement['views'] ?? [];
+            $attendance = $historicalEngagement['attendance'] ?? [];
+            if (!empty($views)) {
+                $prompt .= "- Historical views: " . implode(', ', array_slice($views, 0, 5)) . "\n";
+            }
+            if (!empty($attendance)) {
+                $prompt .= "- Historical attendance: " . implode(', ', array_slice($attendance, 0, 5)) . "\n";
+            }
+        }
+        
+        $prompt .= "\nTask: Analyze this campaign and recommend the optimal deployment date and time.\n";
+        $prompt .= "Consider factors like:\n";
+        $prompt .= "- Campaign category and objectives\n";
+        $prompt .= "- Historical performance patterns\n";
+        $prompt .= "- Day of week preferences (1=Monday, 7=Sunday)\n";
+        $prompt .= "- Time of day effectiveness\n";
+        $prompt .= "- Geographic scope and target audience\n\n";
+        $prompt .= "Respond with a JSON object in this exact format:\n";
+        $prompt .= '{"recommended_day": 1-7, "recommended_time": "HH:MM", "confidence": 0.0-1.0, "reasoning": "brief explanation"}\n';
+        $prompt .= "Where recommended_day is 1 (Monday) through 7 (Sunday), recommended_time is in 24-hour format (e.g., \"14:00\"), and confidence is a decimal between 0 and 1.";
+        
+        // Call OpenAI API
+        $ch = curl_init('https://api.openai.com/v1/chat/completions');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $this->openAiApiKey,
+            ],
+            CURLOPT_POSTFIELDS => json_encode([
+                'model' => 'gpt-4o-mini',
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'You are an expert in campaign deployment optimization. Always respond with valid JSON only, no additional text.'
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $prompt
+                    ]
+                ],
+                'temperature' => 0.7,
+                'max_tokens' => 300
+            ]),
+            CURLOPT_TIMEOUT => 30,
+        ]);
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        
+        if ($error) {
+            error_log("OpenAI API cURL error: $error");
+            throw new RuntimeException("OpenAI API connection failed: $error");
+        }
+        
+        if ($httpCode !== 200) {
+            error_log("OpenAI API error: HTTP $httpCode");
+            error_log("Response: " . ($response ? substr($response, 0, 500) : 'EMPTY'));
+            throw new RuntimeException("OpenAI API returned HTTP $httpCode: " . substr($response ?: 'No response', 0, 200));
+        }
+        
+        $result = json_decode($response, true);
+        
+        // Parse OpenAI response
+        if (isset($result['choices'][0]['message']['content'])) {
+            $content = $result['choices'][0]['message']['content'];
+            // Extract JSON from response (handle cases where there's extra text)
+            $jsonStart = strpos($content, '{');
+            $jsonEnd = strrpos($content, '}');
+            if ($jsonStart !== false && $jsonEnd !== false) {
+                $jsonContent = substr($content, $jsonStart, $jsonEnd - $jsonStart + 1);
+                $pred = json_decode($jsonContent, true);
+            } else {
+                $pred = json_decode($content, true);
+            }
+            
+            if ($pred && isset($pred['recommended_day']) && isset($pred['recommended_time'])) {
+                $recommendedDay = (int) $pred['recommended_day'];
+                $recommendedTime = $pred['recommended_time'];
+                $confidence = isset($pred['confidence']) ? (float) $pred['confidence'] : 0.7;
+                $reasoning = $pred['reasoning'] ?? 'AI-generated recommendation based on campaign data and historical patterns';
+                
+                // Validate day (1-7)
+                if ($recommendedDay < 1 || $recommendedDay > 7) {
+                    $recommendedDay = date('N'); // Current day of week
+                }
+                
+                // Validate time format
+                if (!preg_match('/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/', $recommendedTime)) {
+                    $recommendedTime = '14:00'; // Default to 2 PM
+                }
+                
+                // Convert to datetime
+                $today = date('N'); // Current day of week (1-7)
+                $daysUntil = ($recommendedDay - $today + 7) % 7;
+                if ($daysUntil === 0) {
+                    $daysUntil = 7; // Next week if same day
+                }
+                $baseDate = date('Y-m-d', strtotime("+{$daysUntil} days"));
+                $suggestedDatetime = $baseDate . ' ' . $recommendedTime . ':00';
+                
+                error_log("AutoMLService: Parsed OpenAI response - Day: $recommendedDay, Time: $recommendedTime, Confidence: $confidence");
+                
+                return [
+                    'recommended_day' => $recommendedDay,
+                    'recommended_time' => $recommendedTime,
+                    'suggested_datetime' => $suggestedDatetime,
+                    'confidence_score' => round($confidence, 3),
+                    'features_used' => $features,
+                    'model_source' => 'openai_gpt4',
+                    'automl_configured' => true,
+                    'reasoning' => $reasoning,
+                ];
+            }
+        }
+        
+        // Fallback if response format is unexpected
+        error_log("AutoMLService: Unexpected OpenAI response format: " . json_encode($result));
+        throw new RuntimeException("Unexpected OpenAI response format");
     }
 
     /**
@@ -393,8 +583,8 @@ class AutoMLService
     private function getCampaignData(int $campaignId): ?array
     {
         $stmt = $this->pdo->prepare('
-            SELECT id, title, category, start_date, end_date, status, geographic_scope
-            FROM campaigns 
+            SELECT id, title, category, start_date, end_date, status, geographic_scope, objectives
+            FROM campaign_department_campaigns 
             WHERE id = :id LIMIT 1
         ');
         $stmt->execute(['id' => $campaignId]);
@@ -403,7 +593,7 @@ class AutoMLService
 
     public function savePrediction(int $campaignId, array $prediction, string $modelVersion = 'mock-1'): int
     {
-        $stmt = $this->pdo->prepare('INSERT INTO automl_predictions (campaign_id, model_version, prediction) VALUES (:cid, :model_version, :prediction)');
+        $stmt = $this->pdo->prepare('INSERT INTO campaign_department_automl_predictions (campaign_id, model_version, prediction) VALUES (:cid, :model_version, :prediction)');
         $stmt->execute([
             'cid' => $campaignId,
             'model_version' => $modelVersion,
@@ -638,7 +828,7 @@ class AutoMLService
     public function getActiveModel(string $modelType): ?array
     {
         $stmt = $this->pdo->prepare('
-            SELECT * FROM ai_model_versions 
+            SELECT * FROM campaign_department_ai_model_versions 
             WHERE model_type = :type AND is_active = TRUE AND training_status = "deployed"
             ORDER BY deployed_at DESC LIMIT 1
         ');
@@ -651,7 +841,7 @@ class AutoMLService
      */
     public function listModelVersions(?string $modelType = null, ?string $status = null): array
     {
-        $sql = 'SELECT mv.*, u.name as created_by_name FROM ai_model_versions mv LEFT JOIN users u ON u.id = mv.created_by WHERE 1=1';
+        $sql = 'SELECT mv.*, u.name as created_by_name FROM campaign_department_ai_model_versions mv LEFT JOIN campaign_department_users u ON u.id = mv.created_by WHERE 1=1';
         $params = [];
 
         if ($modelType) {
@@ -684,12 +874,12 @@ class AutoMLService
                 DAYOFWEEK(c.start_date) as day_of_week, MONTH(c.start_date) as month,
                 HOUR(c.ai_recommended_datetime) as recommended_hour,
                 c.budget, c.staff_count,
-                (SELECT COUNT(*) FROM campaign_audience ca WHERE ca.campaign_id = c.id) as audience_segment_size,
-                (SELECT COUNT(*) FROM notification_logs nl WHERE nl.campaign_id = c.id AND nl.status = "sent") as reach,
-                (SELECT COUNT(*) FROM attendance a INNER JOIN events e ON e.id = a.event_id WHERE e.linked_campaign_id = c.id) as attendance,
-                (SELECT AVG(f.rating) FROM feedback f INNER JOIN surveys s ON s.id = f.survey_id WHERE s.campaign_id = c.id) as avg_rating,
-                CASE WHEN EXISTS (SELECT 1 FROM campaigns c2 WHERE c2.id != c.id AND ABS(TIMESTAMPDIFF(HOUR, c.ai_recommended_datetime, c2.ai_recommended_datetime)) < 2) THEN 1 ELSE 0 END as has_conflict
-            FROM campaigns c
+                (SELECT COUNT(*) FROM campaign_department_campaign_audience ca WHERE ca.campaign_id = c.id) as audience_segment_size,
+                (SELECT COUNT(*) FROM campaign_department_notification_logs nl WHERE nl.campaign_id = c.id AND nl.status = "sent") as reach,
+                (SELECT COUNT(*) FROM campaign_department_attendance a INNER JOIN campaign_department_events e ON e.id = a.event_id WHERE e.linked_campaign_id = c.id) as attendance,
+                (SELECT AVG(f.rating) FROM campaign_department_feedback f INNER JOIN campaign_department_surveys s ON s.id = f.survey_id WHERE s.campaign_id = c.id) as avg_rating,
+                CASE WHEN EXISTS (SELECT 1 FROM campaign_department_campaigns c2 WHERE c2.id != c.id AND ABS(TIMESTAMPDIFF(HOUR, c.ai_recommended_datetime, c2.ai_recommended_datetime)) < 2) THEN 1 ELSE 0 END as has_conflict
+            FROM campaign_department_campaigns c
             WHERE c.ai_recommended_datetime IS NOT NULL AND c.start_date IS NOT NULL
         ';
         if ($limit) $sql .= " LIMIT " . (int) $limit;
@@ -728,10 +918,10 @@ class AutoMLService
                 c.id, c.category, c.geographic_scope,
                 DAYOFWEEK(c.start_date) as day_of_week, HOUR(c.start_date) as hour,
                 c.staff_count,
-                (SELECT COUNT(*) FROM campaigns c2 WHERE c2.id != c.id AND c2.start_date BETWEEN DATE_SUB(c.start_date, INTERVAL 1 DAY) AND DATE_ADD(c.start_date, INTERVAL 1 DAY) AND c2.geographic_scope = c.geographic_scope) as concurrent_campaigns,
-                (SELECT COUNT(*) FROM events e WHERE e.linked_campaign_id IS NULL AND e.date = DATE(c.start_date) AND TIME(e.start_time) BETWEEN TIME(DATE_SUB(c.start_date, INTERVAL 2 HOUR)) AND TIME(DATE_ADD(c.start_date, INTERVAL 2 HOUR))) as concurrent_events,
-                CASE WHEN EXISTS (SELECT 1 FROM campaigns c4 WHERE c4.id != c.id AND ABS(TIMESTAMPDIFF(HOUR, c.start_date, c4.start_date)) < 2 AND c4.geographic_scope = c.geographic_scope) THEN 1 ELSE 0 END as actual_conflict
-            FROM campaigns c
+                (SELECT COUNT(*) FROM campaign_department_campaigns c2 WHERE c2.id != c.id AND c2.start_date BETWEEN DATE_SUB(c.start_date, INTERVAL 1 DAY) AND DATE_ADD(c.start_date, INTERVAL 1 DAY) AND c2.geographic_scope = c.geographic_scope) as concurrent_campaigns,
+                (SELECT COUNT(*) FROM campaign_department_events e WHERE e.linked_campaign_id IS NULL AND e.date = DATE(c.start_date) AND TIME(e.start_time) BETWEEN TIME(DATE_SUB(c.start_date, INTERVAL 2 HOUR)) AND TIME(DATE_ADD(c.start_date, INTERVAL 2 HOUR))) as concurrent_events,
+                CASE WHEN EXISTS (SELECT 1 FROM campaign_department_campaigns c4 WHERE c4.id != c.id AND ABS(TIMESTAMPDIFF(HOUR, c.start_date, c4.start_date)) < 2 AND c4.geographic_scope = c.geographic_scope) THEN 1 ELSE 0 END as actual_conflict
+            FROM campaign_department_campaigns c
             WHERE c.start_date IS NOT NULL
         ';
         if ($limit) $sql .= " LIMIT " . (int) $limit;
@@ -764,10 +954,10 @@ class AutoMLService
             SELECT 
                 c.id, c.category, c.geographic_scope,
                 DAYOFWEEK(c.start_date) as day_of_week, HOUR(c.start_date) as hour,
-                (SELECT COUNT(*) FROM campaign_audience ca WHERE ca.campaign_id = c.id) as audience_size,
-                (SELECT COUNT(*) FROM notification_logs nl WHERE nl.campaign_id = c.id AND nl.status = "sent") as notifications_sent,
-                (SELECT COUNT(*) FROM attendance a INNER JOIN events e ON e.id = a.event_id WHERE e.linked_campaign_id = c.id) as actual_attendance
-            FROM campaigns c
+                (SELECT COUNT(*) FROM campaign_department_campaign_audience ca WHERE ca.campaign_id = c.id) as audience_size,
+                (SELECT COUNT(*) FROM campaign_department_notification_logs nl WHERE nl.campaign_id = c.id AND nl.status = "sent") as notifications_sent,
+                (SELECT COUNT(*) FROM campaign_department_attendance a INNER JOIN campaign_department_events e ON e.id = a.event_id WHERE e.linked_campaign_id = c.id) as actual_attendance
+            FROM campaign_department_campaigns c
             WHERE c.start_date IS NOT NULL
         ';
         if ($limit) $sql .= " LIMIT " . (int) $limit;
@@ -804,12 +994,12 @@ class AutoMLService
                 c.id, c.category, c.status,
                 DATEDIFF(c.start_date, c.created_at) as days_until_start,
                 c.staff_count,
-                (SELECT COUNT(*) FROM campaign_audience ca WHERE ca.campaign_id = c.id) as audience_segments_assigned,
-                (SELECT COUNT(*) FROM campaign_content_items cci WHERE cci.campaign_id = c.id) as content_items_attached,
-                (SELECT COUNT(*) FROM events e WHERE e.linked_campaign_id = c.id) as events_linked,
+                (SELECT COUNT(*) FROM campaign_department_campaign_audience ca WHERE ca.campaign_id = c.id) as audience_segments_assigned,
+                (SELECT COUNT(*) FROM campaign_department_campaign_content_items cci WHERE cci.campaign_id = c.id) as content_items_attached,
+                (SELECT COUNT(*) FROM campaign_department_events e WHERE e.linked_campaign_id = c.id) as events_linked,
                 CASE WHEN c.ai_recommended_datetime IS NOT NULL THEN 1 ELSE 0 END as has_schedule,
                 CASE WHEN c.status IN ("scheduled", "ongoing", "completed") THEN 1 ELSE 0 END as is_ready
-            FROM campaigns c
+            FROM campaign_department_campaigns c
             WHERE c.start_date IS NOT NULL
         ';
         if ($limit) $sql .= " LIMIT " . (int) $limit;
@@ -868,13 +1058,13 @@ class AutoMLService
     private function prepareConflictFeatures(string $entityType, int $entityId, array $context): array
     {
         if ($entityType === 'campaign') {
-            $stmt = $this->pdo->prepare('SELECT category, geographic_scope, start_date, staff_count FROM campaigns WHERE id = :id');
+            $stmt = $this->pdo->prepare('SELECT category, geographic_scope, start_date, staff_count FROM campaign_department_campaigns WHERE id = :id');
             $stmt->execute(['id' => $entityId]);
             $entity = $stmt->fetch();
 
             if (!$entity) throw new RuntimeException("Campaign not found: $entityId");
 
-            $concurrentCampaigns = (int) $this->pdo->query("SELECT COUNT(*) FROM campaigns c2 WHERE c2.id != $entityId AND c2.start_date BETWEEN DATE_SUB('{$entity['start_date']}', INTERVAL 1 DAY) AND DATE_ADD('{$entity['start_date']}', INTERVAL 1 DAY)")->fetchColumn();
+            $concurrentCampaigns = (int) $this->pdo->query("SELECT COUNT(*) FROM campaign_department_campaigns c2 WHERE c2.id != $entityId AND c2.start_date BETWEEN DATE_SUB('{$entity['start_date']}', INTERVAL 1 DAY) AND DATE_ADD('{$entity['start_date']}', INTERVAL 1 DAY)")->fetchColumn();
 
             return [
                 'campaign_category' => $entity['category'] ?? 'general',
@@ -897,11 +1087,11 @@ class AutoMLService
     {
         $stmt = $this->pdo->prepare('
             SELECT category, start_date, created_at, staff_count,
-                   (SELECT COUNT(*) FROM campaign_audience WHERE campaign_id = :id) as segments,
-                   (SELECT COUNT(*) FROM campaign_content_items WHERE campaign_id = :id) as content,
-                   (SELECT COUNT(*) FROM events WHERE linked_campaign_id = :id) as events,
+                   (SELECT COUNT(*) FROM campaign_department_campaign_audience WHERE campaign_id = :id) as segments,
+                   (SELECT COUNT(*) FROM campaign_department_campaign_content_items WHERE campaign_id = :id) as content,
+                   (SELECT COUNT(*) FROM campaign_department_events WHERE linked_campaign_id = :id) as events,
                    ai_recommended_datetime
-            FROM campaigns WHERE id = :id
+            FROM campaign_department_campaigns WHERE id = :id
         ');
         $stmt->execute(['id' => $campaignId]);
         $campaign = $stmt->fetch();
@@ -989,7 +1179,7 @@ class AutoMLService
     // Caching methods
     private function getCachedPrediction(string $cacheKey, string $modelType): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT prediction_result, confidence_score FROM ai_prediction_cache WHERE cache_key = :key AND expires_at > NOW()');
+        $stmt = $this->pdo->prepare('SELECT prediction_result, confidence_score FROM campaign_department_ai_prediction_cache WHERE cache_key = :key AND expires_at > NOW()');
         $stmt->execute(['key' => $cacheKey]);
         $result = $stmt->fetch();
 
@@ -1007,7 +1197,7 @@ class AutoMLService
         $expiresAt = date('Y-m-d H:i:s', time() + self::CACHE_TTL_SECONDS);
 
         $stmt = $this->pdo->prepare('
-            INSERT INTO ai_prediction_cache (cache_key, model_type, model_version_id, entity_type, entity_id, feature_hash, prediction_result, confidence_score, expires_at)
+            INSERT INTO campaign_department_ai_prediction_cache (cache_key, model_type, model_version_id, entity_type, entity_id, feature_hash, prediction_result, confidence_score, expires_at)
             VALUES (:key, :type, :model_id, :entity_type, :entity_id, :feature_hash, :result, :confidence, :expires)
             ON DUPLICATE KEY UPDATE prediction_result = VALUES(prediction_result), confidence_score = VALUES(confidence_score), expires_at = VALUES(expires_at)
         ');
@@ -1026,7 +1216,7 @@ class AutoMLService
     private function logPredictionRequest(string $modelType, string $entityType, int $entityId, array $requestPayload, array $prediction, bool $usedCache, string $cacheKey, ?int $modelVersionId = null, ?int $responseTime = null): void
     {
         $stmt = $this->pdo->prepare('
-            INSERT INTO ai_prediction_requests (model_type, entity_type, entity_id, model_version_id, request_payload, prediction_result, used_cache, cache_key, response_time_ms, success, requested_by)
+            INSERT INTO campaign_department_ai_prediction_requests (model_type, entity_type, entity_id, model_version_id, request_payload, prediction_result, used_cache, cache_key, response_time_ms, success, requested_by)
             VALUES (:type, :entity_type, :entity_id, :model_id, :request, :result, :cache, :cache_key, :time, :success, :user)
         ');
         $stmt->execute([
@@ -1040,7 +1230,7 @@ class AutoMLService
     private function createModelVersionRecord(string $modelType, string $modelName, string $version, string $targetColumn, array $featureColumns, int $dataSize, ?int $createdBy): int
     {
         $stmt = $this->pdo->prepare('
-            INSERT INTO ai_model_versions (model_name, model_type, training_version, target_column, feature_columns, training_data_size, project_id, region, created_by, training_status, model_id)
+            INSERT INTO campaign_department_ai_model_versions (model_name, model_type, training_version, target_column, feature_columns, training_data_size, project_id, region, created_by, training_status, model_id)
             VALUES (:name, :type, :version, :target, :features, :size, :project, :region, :created_by, "pending", "")
         ');
         $stmt->execute([
@@ -1062,32 +1252,32 @@ class AutoMLService
             }
         }
         if (empty($fields)) return;
-        $sql = 'UPDATE ai_model_versions SET ' . implode(', ', $fields) . ' WHERE id = :id';
+        $sql = 'UPDATE campaign_department_ai_model_versions SET ' . implode(', ', $fields) . ' WHERE id = :id';
         $this->pdo->prepare($sql)->execute($params);
     }
 
     private function getModelVersion(int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT mv.*, u.name as created_by_name FROM ai_model_versions mv LEFT JOIN users u ON u.id = mv.created_by WHERE mv.id = :id');
+        $stmt = $this->pdo->prepare('SELECT mv.*, u.name as created_by_name FROM campaign_department_ai_model_versions mv LEFT JOIN campaign_department_users u ON u.id = mv.created_by WHERE mv.id = :id');
         $stmt->execute(['id' => $id]);
         return $stmt->fetch() ?: null;
     }
 
     private function logTrainingEvent(int $modelVersionId, string $actionType, string $message, array $metadata = [], ?int $createdBy = null): void
     {
-        $stmt = $this->pdo->prepare('INSERT INTO ai_training_logs (model_version_id, action_type, message, metadata, created_by) VALUES (:model_id, :action, :message, :metadata, :created_by)');
+        $stmt = $this->pdo->prepare('INSERT INTO campaign_department_ai_training_logs (model_version_id, action_type, message, metadata, created_by) VALUES (:model_id, :action, :message, :metadata, :created_by)');
         $stmt->execute(['model_id' => $modelVersionId, 'action' => $actionType, 'message' => $message, 'metadata' => json_encode($metadata), 'created_by' => $createdBy]);
     }
 
     private function deactivateOtherModels(string $modelType, int $excludeId): void
     {
-        $this->pdo->prepare('UPDATE ai_model_versions SET is_active = FALSE WHERE model_type = :type AND id != :exclude_id AND is_active = TRUE')
+        $this->pdo->prepare('UPDATE campaign_department_ai_model_versions SET is_active = FALSE WHERE model_type = :type AND id != :exclude_id AND is_active = TRUE')
             ->execute(['type' => $modelType, 'exclude_id' => $excludeId]);
     }
 
     private function generateVersionTag(string $modelType): string
     {
-        $stmt = $this->pdo->prepare('SELECT training_version FROM ai_model_versions WHERE model_type = :type ORDER BY created_at DESC LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT training_version FROM campaign_department_ai_model_versions WHERE model_type = :type ORDER BY created_at DESC LIMIT 1');
         $stmt->execute(['type' => $modelType]);
         $latest = $stmt->fetchColumn();
 

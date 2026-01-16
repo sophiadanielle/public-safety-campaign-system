@@ -78,7 +78,7 @@ class ContentController
             $userColCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items")->fetchAll(PDO::FETCH_COLUMN);
             $userColumn = in_array('uploaded_by', $userColCheck) ? 'uploaded_by' : 'created_by';
             
-            $sql = "SELECT ci.id, ci.title, ci.body, ci.content_type, ci.visibility, ci.created_at, 
+            $sql = "SELECT DISTINCT ci.id, ci.title, ci.body, ci.content_type, ci.visibility, ci.created_at, 
                            ci.hazard_category, ci.{$audienceColumn} as intended_audience_segment, ci.source, 
                            ci.approval_status, ci.version_number, ci.approved_by, ci.approval_notes,
                            ci.date_uploaded, ci.file_reference, ci.last_updated,
@@ -290,7 +290,13 @@ class ContentController
         $tagsInput = $_POST['tags'] ?? '';
         // Content Repository fields
         $hazardCategory = trim($_POST['hazard_category'] ?? '');
-        $intendedAudience = trim($_POST['intended_audience_segment'] ?? '');
+        // Handle intended_audience_segment as array (multi-select) or string
+        $intendedAudienceInput = $_POST['intended_audience_segment'] ?? '';
+        if (is_array($intendedAudienceInput)) {
+            $intendedAudience = implode(', ', array_filter(array_map('trim', $intendedAudienceInput)));
+        } else {
+            $intendedAudience = trim($intendedAudienceInput);
+        }
         $source = trim($_POST['source'] ?? '');
 
         if (!$title) {
@@ -581,7 +587,13 @@ class ContentController
         // Check which audience column exists
         $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
         $audienceColumn = !empty($audienceColCheck) ? $audienceColCheck[0] : 'intended_audience';
-        $intendedAudience = trim($input['intended_audience_segment'] ?? $input[$audienceColumn] ?? $current[$audienceColumn] ?? '');
+        // Handle intended_audience_segment as array (multi-select) or string
+        $intendedAudienceInput = $input['intended_audience_segment'] ?? $input[$audienceColumn] ?? $current[$audienceColumn] ?? '';
+        if (is_array($intendedAudienceInput)) {
+            $intendedAudience = implode(', ', array_filter(array_map('trim', $intendedAudienceInput)));
+        } else {
+            $intendedAudience = trim($intendedAudienceInput);
+        }
         $source = trim($input['source'] ?? $current['source'] ?? '');
 
         if (!$title) {
@@ -975,7 +987,7 @@ class ContentController
     private function ensureTags(array $tags): array
     {
         $ids = [];
-        $insert = $this->pdo->prepare('INSERT IGNORE INTO tags (name) VALUES (:name)');
+        $insert = $this->pdo->prepare('INSERT IGNORE INTO campaign_department_tags (name) VALUES (:name)');
         $select = $this->pdo->prepare('SELECT id FROM campaign_department_tags WHERE name = :name LIMIT 1');
         foreach ($tags as $name) {
             $insert->execute(['name' => $name]);

@@ -860,7 +860,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         width: 100%;
         border: 2px solid #e2e8f0;
         border-radius: 12px;
-        padding: 12px 16px;
+        padding: 8px 12px;
         font-size: 14px;
         transition: all 0.2s;
         background: #fafbfc;
@@ -868,11 +868,12 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         appearance: none;
         -webkit-appearance: none;
         -moz-appearance: none;
-        max-height: 120px;
         overflow-y: auto;
         overflow-x: hidden;
         position: relative;
         box-sizing: border-box;
+        height: auto;
+        min-height: 0;
     }
     
     .multi-select-container .multi-select-dropdown:focus {
@@ -887,8 +888,9 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     }
     
     .multi-select-container .multi-select-dropdown option {
-        padding: 8px 12px;
+        padding: 10px 12px;
         cursor: pointer;
+        line-height: 1.5;
     }
     
     .multi-select-container .multi-select-dropdown option:checked {
@@ -1235,7 +1237,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                     </label>
                     <div class="multi-select-container assigned-staff-select">
                         <div class="multi-select-tags" id="assigned_staff_tags"></div>
-                        <select class="multi-select-dropdown" id="assigned_staff" multiple size="3">
+                        <select class="multi-select-dropdown" id="assigned_staff" name="assigned_staff[]" multiple size="3">
                         </select>
                     </div>
                     <small style="color: #94a3b8; font-size: 12px; margin-top: 8px; display: block; line-height: 1.5;">
@@ -1250,7 +1252,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                     </label>
                     <div class="multi-select-container materials-select">
                         <div class="multi-select-tags" id="materials_json_tags"></div>
-                        <select class="multi-select-dropdown" id="materials_json" multiple size="3">
+                        <select class="multi-select-dropdown" id="materials_json" name="materials[]" multiple size="3">
                         </select>
                     </div>
                     <small style="color: #94a3b8; font-size: 12px; margin-top: 8px; display: block; line-height: 1.5;">
@@ -1921,6 +1923,22 @@ function initMultiSelectEnhanced(selectId, options = {}) {
         });
     }
     
+    // Handle multiple selection - allow single click to toggle (not replace)
+    select.addEventListener('mousedown', function(e) {
+        const option = e.target;
+        if (option.tagName === 'OPTION') {
+            // If Ctrl/Cmd is held, allow default behavior (toggle)
+            if (e.ctrlKey || e.metaKey) {
+                return; // Let browser handle it
+            }
+            // For single click, toggle the selection without deselecting others
+            e.preventDefault();
+            option.selected = !option.selected;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            updateTags();
+        }
+    });
+    
     // Listen for changes
     select.addEventListener('change', updateTags);
     
@@ -1929,6 +1947,27 @@ function initMultiSelectEnhanced(selectId, options = {}) {
     
     // Expose getSelectedValues for form submission
     select.getSelectedValues = () => Array.from(select.selectedOptions).map(opt => opt.value);
+    
+    // Expose setSelectedValues for editing campaigns
+    select.setSelectedValues = (values) => {
+        if (!Array.isArray(values)) return;
+        
+        // Clear all selections first
+        Array.from(select.options).forEach(opt => {
+            opt.selected = false;
+        });
+        
+        // Set selected values
+        values.forEach(value => {
+            const option = Array.from(select.options).find(opt => opt.value === value);
+            if (option) {
+                option.selected = true;
+            }
+        });
+        
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        updateTags();
+    };
 }
 
 // Initialize all dropdown fields when DOM is ready

@@ -470,33 +470,33 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             </div>
             <div class="form-field">
                 <label>Intended Audience</label>
-                <input type="text" name="intended_audience_segment" id="intendedAudience" list="audienceSuggestions" placeholder="e.g., youth, households, schools...">
-                <datalist id="audienceSuggestions">
-                    <option value="general public">
-                    <option value="households">
-                    <option value="residential areas">
-                    <option value="youth">
-                    <option value="teenagers">
-                    <option value="students">
-                    <option value="schools">
-                    <option value="teachers">
-                    <option value="senior citizens">
-                    <option value="elderly">
-                    <option value="caregivers">
-                    <option value="families">
-                    <option value="flood-prone areas">
-                    <option value="coastal communities">
-                    <option value="commercial districts">
-                    <option value="workplaces">
-                    <option value="community volunteers">
-                    <option value="barangay health workers">
-                    <option value="building administrators">
-                    <option value="trainers">
-                    <option value="facilitators">
-                    <option value="barangay officials">
-                    <option value="residential buildings">
-                    <option value="commercial buildings">
-                </datalist>
+                <select name="intended_audience_segment[]" id="intendedAudience" multiple size="3">
+                    <option value="general public">General Public</option>
+                    <option value="households">Households</option>
+                    <option value="residential areas">Residential Areas</option>
+                    <option value="youth">Youth</option>
+                    <option value="teenagers">Teenagers</option>
+                    <option value="students">Students</option>
+                    <option value="schools">Schools</option>
+                    <option value="teachers">Teachers</option>
+                    <option value="senior citizens">Senior Citizens</option>
+                    <option value="elderly">Elderly</option>
+                    <option value="caregivers">Caregivers</option>
+                    <option value="families">Families</option>
+                    <option value="flood-prone areas">Flood-prone Areas</option>
+                    <option value="coastal communities">Coastal Communities</option>
+                    <option value="commercial districts">Commercial Districts</option>
+                    <option value="workplaces">Workplaces</option>
+                    <option value="community volunteers">Community Volunteers</option>
+                    <option value="barangay health workers">Barangay Health Workers</option>
+                    <option value="building administrators">Building Administrators</option>
+                    <option value="trainers">Trainers</option>
+                    <option value="facilitators">Facilitators</option>
+                    <option value="barangay officials">Barangay Officials</option>
+                    <option value="residential buildings">Residential Buildings</option>
+                    <option value="commercial buildings">Commercial Buildings</option>
+                </select>
+                <small style="color: #94a3b8; font-size: 12px; margin-top: 4px; display: block;">Hold Ctrl (or Cmd on Mac) to select multiple audiences</small>
             </div>
             <div class="form-field">
                 <label>Source</label>
@@ -1288,7 +1288,19 @@ function useTemplate(contentId) {
             if (form.elements['description']) form.elements['description'].value = item.body || '';
             if (form.elements['content_type']) form.elements['content_type'].value = item.content_type || '';
             if (form.elements['hazard_category']) form.elements['hazard_category'].value = item.hazard_category || '';
-            if (form.elements['intended_audience_segment']) form.elements['intended_audience_segment'].value = item.intended_audience_segment || '';
+            if (form.elements['intended_audience_segment']) {
+                const audienceSelect = form.elements['intended_audience_segment'];
+                // Clear previous selections
+                Array.from(audienceSelect.options).forEach(opt => opt.selected = false);
+                // Set selections from comma-separated string
+                if (item.intended_audience_segment) {
+                    const audiences = item.intended_audience_segment.split(',').map(s => s.trim()).filter(Boolean);
+                    audiences.forEach(audience => {
+                        const option = Array.from(audienceSelect.options).find(opt => opt.value === audience);
+                        if (option) option.selected = true;
+                    });
+                }
+            }
             if (form.elements['source']) form.elements['source'].value = item.source || '';
             if (form.elements['visibility']) form.elements['visibility'].value = item.visibility || 'public';
             
