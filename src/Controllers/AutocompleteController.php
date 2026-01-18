@@ -29,7 +29,7 @@ class AutocompleteController
 
         $stmt = $this->pdo->prepare('
             SELECT DISTINCT title 
-            FROM campaigns 
+            FROM `campaign_department_campaigns` 
             WHERE title LIKE :query 
             ORDER BY title ASC 
             LIMIT 10
@@ -115,7 +115,7 @@ class AutocompleteController
         // Get from campaigns.location field (Quezon City only)
         $stmt = $this->pdo->prepare('
             SELECT DISTINCT location 
-            FROM campaigns 
+            FROM `campaign_department_campaigns` 
             WHERE location IS NOT NULL 
             AND location LIKE :query 
             AND (location LIKE "%Quezon City%" OR location LIKE "%QC%" OR location LIKE "Quezon City%")
@@ -128,7 +128,7 @@ class AutocompleteController
         // Also get from events.venue
         $stmt = $this->pdo->prepare('
             SELECT DISTINCT venue 
-            FROM events 
+            FROM `campaign_department_events` 
             WHERE venue IS NOT NULL 
             AND venue LIKE :query 
             ORDER BY venue ASC 
@@ -194,8 +194,8 @@ class AutocompleteController
         // Get from users table (staff roles: Barangay Staff and Administrator)
         $stmt = $this->pdo->prepare('
             SELECT DISTINCT u.name 
-            FROM users u
-            INNER JOIN roles r ON r.id = u.role_id
+            FROM `campaign_department_users` u
+            INNER JOIN `campaign_department_roles` r ON r.id = u.role_id
             WHERE u.is_active = 1 
             AND (r.name LIKE "%Staff%" OR r.name LIKE "%Administrator%")
             AND u.name LIKE :query 
@@ -208,7 +208,7 @@ class AutocompleteController
         // Also get from existing campaigns.assigned_staff JSON arrays
         $stmt = $this->pdo->prepare('
             SELECT assigned_staff 
-            FROM campaigns 
+            FROM `campaign_department_campaigns` 
             WHERE assigned_staff IS NOT NULL 
             AND assigned_staff LIKE :query
             LIMIT 50
@@ -276,7 +276,7 @@ class AutocompleteController
         // Get from content_items.title
         $stmt = $this->pdo->prepare('
             SELECT DISTINCT ci.title, ci.content_type, a.file_path
-            FROM content_items ci
+            FROM `campaign_department_content_items` ci
             LEFT JOIN attachments a ON a.content_item_id = ci.id
             WHERE ci.title LIKE :query 
             ORDER BY ci.created_at DESC 
@@ -288,7 +288,7 @@ class AutocompleteController
         // Also get from existing campaigns.materials_json
         $stmt = $this->pdo->prepare('
             SELECT materials_json 
-            FROM campaigns 
+            FROM `campaign_department_campaigns` 
             WHERE materials_json IS NOT NULL 
             AND materials_json LIKE :query
             LIMIT 50
@@ -335,7 +335,7 @@ class AutocompleteController
         // Get from events.event_title or events.event_name
         $stmt = $this->pdo->prepare('
             SELECT DISTINCT COALESCE(event_title, event_name, name) as title 
-            FROM events 
+            FROM `campaign_department_events` 
             WHERE (event_title LIKE :query OR event_name LIKE :query OR name LIKE :query)
             AND COALESCE(event_title, event_name, name) IS NOT NULL
             ORDER BY title ASC 
@@ -381,7 +381,7 @@ class AutocompleteController
         // Get from existing events
         $stmt = $this->pdo->prepare('
             SELECT DISTINCT hazard_focus 
-            FROM events 
+            FROM `campaign_department_events` 
             WHERE hazard_focus IS NOT NULL 
             AND hazard_focus LIKE :query
             ORDER BY hazard_focus ASC 
@@ -423,7 +423,7 @@ class AutocompleteController
         // Get from events.venue
         $stmt = $this->pdo->prepare('
             SELECT DISTINCT venue 
-            FROM events 
+            FROM `campaign_department_events` 
             WHERE venue IS NOT NULL 
             AND venue LIKE :query 
             ORDER BY venue ASC 

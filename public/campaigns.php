@@ -1171,6 +1171,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                         <option value="scheduled">Scheduled</option>
                         <option value="completed">Completed</option>
                         <option value="archived">Archived</option>
+                        <option value="rejected">Rejected</option>
                     </select>
                 </div>
                 <div class="form-field">
@@ -2011,6 +2012,11 @@ function initMultiSelectEnhanced(selectId, options = {}) {
 
 // Also initialize on window load as a fallback
 window.addEventListener('load', function() {
+    // Initialize status options to show only 'draft' for new campaigns
+    if (typeof updateStatusOptions === 'function') {
+        updateStatusOptions('draft');
+    }
+    
     if (document.getElementById('assigned_staff') && !document.getElementById('assigned_staff').dataset.multiSelectInit) {
         console.log('Re-initializing multi-select dropdowns on window load...');
         if (typeof initMultiSelectEnhanced === 'function') {
@@ -2348,6 +2354,9 @@ function clearForm() {
     if (finalScheduleValue) {
         finalScheduleValue.textContent = '-';
     }
+    
+    // Reset status options to show only 'draft' for new campaigns
+    updateStatusOptions('draft');
     
     // Clear form fields
     document.getElementById('planningForm').reset();
@@ -3944,6 +3953,62 @@ async function loadCampaignContent() {
     }
 }
 
+// Update status dropdown options based on current status and valid transitions
+// Matches backend validation rules in CampaignController.php
+function updateStatusOptions(currentStatus) {
+    const statusSelect = document.getElementById('status');
+    if (!statusSelect) return;
+    
+    // Valid transitions matching backend rules
+    const validTransitions = {
+        'draft': ['draft', 'pending', 'approved'],
+        'pending': ['pending', 'approved', 'rejected'],
+        'approved': ['approved', 'ongoing', 'scheduled'],
+        'ongoing': ['ongoing', 'completed'],
+        'scheduled': ['scheduled', 'ongoing'],
+        'completed': ['completed', 'archived'],
+        'rejected': ['rejected', 'draft'],
+        'archived': ['archived']
+    };
+    
+    // Get allowed statuses for current status
+    const allowedStatuses = validTransitions[currentStatus] || ['draft'];
+    
+    // Status labels
+    const statusLabels = {
+        'draft': 'Draft',
+        'pending': 'Pending',
+        'approved': 'Approved',
+        'ongoing': 'Ongoing',
+        'scheduled': 'Scheduled',
+        'completed': 'Completed',
+        'archived': 'Archived',
+        'rejected': 'Rejected'
+    };
+    
+    // Store current value
+    const currentValue = statusSelect.value;
+    
+    // Clear all options except the placeholder
+    statusSelect.innerHTML = '<option value="">Select status...</option>';
+    
+    // Add only allowed statuses
+    allowedStatuses.forEach(status => {
+        const option = document.createElement('option');
+        option.value = status;
+        option.textContent = statusLabels[status] || status;
+        statusSelect.appendChild(option);
+    });
+    
+    // Restore current value if it's still valid
+    if (currentValue && allowedStatuses.includes(currentValue)) {
+        statusSelect.value = currentValue;
+    } else if (allowedStatuses.length > 0) {
+        // Set to first allowed status if current is invalid
+        statusSelect.value = allowedStatuses[0];
+    }
+}
+
 // Edit Campaign
 async function editCampaign(campaignId) {
     try {
@@ -3982,6 +4047,8 @@ async function editCampaign(campaignId) {
             }
         }
         if (document.getElementById('status')) {
+            // Filter status options based on current status and valid transitions
+            updateStatusOptions(c.status || 'draft');
             document.getElementById('status').value = c.status || 'draft';
             if (typeof document.getElementById('status').setSelectedValues === 'function') {
                 document.getElementById('status').setSelectedValues(c.status);

@@ -126,7 +126,7 @@ class DashboardController
             // Upcoming events (next 30 days, planned or ongoing)
             $upcomingEventsQuery = "
                 SELECT COUNT(*) 
-                FROM events 
+                FROM `campaign_department_events` 
                 WHERE date >= CURDATE() 
                 AND date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
                 AND event_status IN ('planned', 'ongoing')
@@ -138,7 +138,7 @@ class DashboardController
 
         try {
             // Defined audience segments
-            $segmentsQuery = "SELECT COUNT(*) FROM audience_segments";
+            $segmentsQuery = "SELECT COUNT(*) FROM `campaign_department_audience_segments`";
             $definedSegments = (int) $this->pdo->query($segmentsQuery)->fetchColumn();
         } catch (\Exception $e) {
             error_log('Error getting segments: ' . $e->getMessage());
@@ -268,8 +268,8 @@ class DashboardController
                     e.venue,
                     e.capacity,
                     e.event_status,
-                    (SELECT COUNT(*) FROM attendance WHERE event_id = e.id) as registered_count
-                FROM events e
+                    (SELECT COUNT(*) FROM `campaign_department_attendance` WHERE event_id = e.id) as registered_count
+                FROM `campaign_department_events` e
                 WHERE e.date >= CURDATE()
                 AND e.date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
                 AND e.event_status IN ('planned', 'ongoing')
@@ -285,7 +285,7 @@ class DashboardController
             // Event types breakdown
             $typesQuery = "
                 SELECT event_type, COUNT(*) as count
-                FROM events
+                FROM `campaign_department_events`
                 WHERE event_status IN ('planned', 'ongoing')
                 GROUP BY event_type
             ";
@@ -303,8 +303,8 @@ class DashboardController
                 SELECT 
                     COUNT(*) as total_events,
                     SUM(CASE WHEN capacity IS NOT NULL THEN 1 ELSE 0 END) as events_with_capacity,
-                    SUM(CASE WHEN capacity IS NOT NULL AND (SELECT COUNT(*) FROM attendance WHERE event_id = e.id) >= e.capacity THEN 1 ELSE 0 END) as at_capacity
-                FROM events e
+                    SUM(CASE WHEN capacity IS NOT NULL AND (SELECT COUNT(*) FROM `campaign_department_attendance` WHERE event_id = e.id) >= e.capacity THEN 1 ELSE 0 END) as at_capacity
+                FROM `campaign_department_events` e
                 WHERE e.event_status IN ('planned', 'ongoing')
             ";
             $capacityData = $this->pdo->query($capacityQuery)->fetch(PDO::FETCH_ASSOC) ?: [];
@@ -319,7 +319,7 @@ class DashboardController
                     COUNT(*) as total,
                     SUM(CASE WHEN linked_campaign_id IS NOT NULL THEN 1 ELSE 0 END) as linked,
                     SUM(CASE WHEN linked_campaign_id IS NULL THEN 1 ELSE 0 END) as standalone
-                FROM events
+                FROM `campaign_department_events`
                 WHERE event_status IN ('planned', 'ongoing')
             ";
             $linkageData = $this->pdo->query($linkedQuery)->fetch(PDO::FETCH_ASSOC) ?: [];
@@ -346,7 +346,7 @@ class DashboardController
 
         try {
             // Total segments
-            $totalSegments = (int) $this->pdo->query("SELECT COUNT(*) FROM audience_segments")->fetchColumn();
+            $totalSegments = (int) $this->pdo->query("SELECT COUNT(*) FROM `campaign_department_audience_segments`")->fetchColumn();
         } catch (\Exception $e) {
             error_log('Error getting total segments: ' . $e->getMessage());
         }
@@ -358,8 +358,8 @@ class DashboardController
                     s.id,
                     s.segment_name,
                     COUNT(DISTINCT ca.campaign_id) as campaign_count
-                FROM audience_segments s
-                LEFT JOIN campaign_audience ca ON ca.segment_id = s.id
+                FROM `campaign_department_audience_segments` s
+                LEFT JOIN `campaign_department_campaign_audience` ca ON ca.segment_id = s.id
                 GROUP BY s.id, s.segment_name
                 ORDER BY campaign_count DESC
                 LIMIT 5
@@ -375,7 +375,7 @@ class DashboardController
                 SELECT 
                     COUNT(DISTINCT ca.campaign_id) as campaigns_with_segments,
                     COUNT(DISTINCT ca.segment_id) as segments_used
-                FROM campaign_audience ca
+                FROM `campaign_department_campaign_audience` ca
             ";
             $summary = $this->pdo->query($summaryQuery)->fetch(PDO::FETCH_ASSOC) ?: [];
         } catch (\Exception $e) {
@@ -403,7 +403,7 @@ class DashboardController
             // Campaigns with feedback
             $campaignsWithFeedbackQuery = "
                 SELECT COUNT(DISTINCT s.campaign_id)
-                FROM surveys s
+                FROM `campaign_department_surveys` s
                 WHERE EXISTS (
                     SELECT 1 FROM survey_responses sr WHERE sr.survey_id = s.id
                 )
@@ -417,7 +417,7 @@ class DashboardController
             // Events with completed attendance
             $eventsWithAttendanceQuery = "
                 SELECT COUNT(DISTINCT event_id)
-                FROM attendance
+                FROM `campaign_department_attendance`
             ";
             $eventsWithAttendance = (int) $this->pdo->query($eventsWithAttendanceQuery)->fetchColumn();
         } catch (\Exception $e) {
@@ -426,7 +426,7 @@ class DashboardController
 
         try {
             // Total attendance count
-            $totalAttendanceQuery = "SELECT COUNT(*) FROM attendance";
+            $totalAttendanceQuery = "SELECT COUNT(*) FROM `campaign_department_attendance`";
             $totalAttendance = (int) $this->pdo->query($totalAttendanceQuery)->fetchColumn();
         } catch (\Exception $e) {
             error_log('Error getting total attendance: ' . $e->getMessage());
@@ -436,8 +436,8 @@ class DashboardController
             // Engagement trend (events with attendance in last 30 days)
             $trendQuery = "
                 SELECT COUNT(DISTINCT a.event_id)
-                FROM attendance a
-                JOIN events e ON e.id = a.event_id
+                FROM `campaign_department_attendance` a
+                JOIN `campaign_department_events` e ON e.id = a.event_id
                 WHERE a.checkin_timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
             ";
             $recentEngagement = (int) $this->pdo->query($trendQuery)->fetchColumn();
@@ -469,7 +469,7 @@ class DashboardController
                 SELECT COUNT(DISTINCT p.id)
                 FROM partners p
                 WHERE EXISTS (
-                    SELECT 1 FROM events e WHERE e.linked_campaign_id IS NOT NULL LIMIT 1
+                    SELECT 1 FROM `campaign_department_events` e WHERE e.linked_campaign_id IS NOT NULL LIMIT 1
                 )
             ";
             $activePartners = (int) $this->pdo->query($activePartnersQuery)->fetchColumn();
@@ -485,7 +485,7 @@ class DashboardController
                     e.name as event_name,
                     e.date,
                     0 as partner_count
-                FROM events e
+                FROM `campaign_department_events` e
                 WHERE e.date >= CURDATE()
                 AND e.event_status IN ('planned', 'ongoing')
                 AND e.linked_campaign_id IS NOT NULL
@@ -543,7 +543,7 @@ class DashboardController
 
         try {
             // Total content items
-            $totalContent = (int) $this->pdo->query("SELECT COUNT(*) FROM content_items")->fetchColumn();
+            $totalContent = (int) $this->pdo->query("SELECT COUNT(*) FROM `campaign_department_content_items`")->fetchColumn();
         } catch (\Exception $e) {
             error_log('Error getting total content: ' . $e->getMessage());
         }
@@ -552,7 +552,7 @@ class DashboardController
             // Content by approval status
             $statusQuery = "
                 SELECT approval_status, COUNT(*) as count
-                FROM content_items
+                FROM `campaign_department_content_items`
                 GROUP BY approval_status
             ";
             $statusResults = $this->pdo->query($statusQuery)->fetchAll(PDO::FETCH_ASSOC);
@@ -577,7 +577,7 @@ class DashboardController
             // Recent approved content (last 5)
             $recentQuery = "
                 SELECT id, title, content_type, hazard_category, approval_status
-                FROM content_items
+                FROM `campaign_department_content_items`
                 WHERE approval_status = 'approved'
                 ORDER BY updated_at DESC, created_at DESC
                 LIMIT 5
@@ -591,7 +591,7 @@ class DashboardController
             // Content by type
             $typeQuery = "
                 SELECT content_type, COUNT(*) as count
-                FROM content_items
+                FROM `campaign_department_content_items`
                 WHERE approval_status = 'approved'
                 GROUP BY content_type
             ";
@@ -607,7 +607,7 @@ class DashboardController
             // Content by hazard category
             $categoryQuery = "
                 SELECT hazard_category, COUNT(*) as count
-                FROM content_items
+                FROM `campaign_department_content_items`
                 WHERE approval_status = 'approved'
                 AND hazard_category IS NOT NULL
                 GROUP BY hazard_category
@@ -686,7 +686,7 @@ class DashboardController
             // Events happening within 72 hours
             $upcomingEventsQuery = "
                 SELECT id, name as event_name, date, start_time, venue
-                FROM events
+                FROM `campaign_department_events`
                 WHERE date >= CURDATE()
                 AND date <= DATE_ADD(CURDATE(), INTERVAL 3 DAY)
                 AND event_status IN ('planned', 'ongoing')
@@ -713,7 +713,7 @@ class DashboardController
             $noSegmentsQuery = "
                 SELECT c.id, c.title, c.status
                 FROM campaign_department_campaigns c
-                LEFT JOIN campaign_audience ca ON ca.campaign_id = c.id
+                LEFT JOIN `campaign_department_campaign_audience` ca ON ca.campaign_id = c.id
                 WHERE ca.campaign_id IS NULL
                 AND c.status IN ('draft', 'scheduled', 'active')
                 LIMIT 5
@@ -735,7 +735,7 @@ class DashboardController
             // Events not linked to any campaign
             $standaloneEventsQuery = "
                 SELECT id, name as event_name, date, event_status
-                FROM events
+                FROM `campaign_department_events`
                 WHERE linked_campaign_id IS NULL
                 AND event_status IN ('planned', 'ongoing')
                 LIMIT 5
@@ -783,7 +783,7 @@ class DashboardController
         // Search events
         $eventsQuery = "
             SELECT 'event' as type, id, name, 'events.php' as url
-            FROM events
+            FROM `campaign_department_events`
             WHERE name LIKE :query
             LIMIT 5
         ";
@@ -795,7 +795,7 @@ class DashboardController
         // Search content
         $contentQuery = "
             SELECT 'content' as type, id, title as name, 'content.php' as url
-            FROM content_items
+            FROM `campaign_department_content_items`
             WHERE title LIKE :query
             AND approval_status = 'approved'
             LIMIT 5

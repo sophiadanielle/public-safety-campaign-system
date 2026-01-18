@@ -91,3 +91,4 @@ After the fix:
 The Survey sidebar navigation is now fully functional. All links correctly scroll to their intended sections on the page. The fix was minimal - only adding/updating HTML IDs to match the sidebar navigation expectations.
 
 
+

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Middleware\RoleMiddleware;
 use App\Services\AutoMLService;
 use PDO;
 use RuntimeException;
@@ -24,6 +25,13 @@ class CampaignController
 
     public function index(?array $user, array $params = []): array
     {
+        // RBAC: All authenticated users can view campaigns (read access)
+        // Viewer role is allowed for read operations
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
         try {
             $sql = '
                 SELECT id, title, description, category, geographic_scope, status, 
@@ -63,6 +71,33 @@ class CampaignController
 
     public function store(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can create campaigns (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only - cannot create anything
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot create campaigns.'];
+            }
+            
+            // Allowed roles: admin, staff, secretary, kagawad, captain (and legacy roles for compatibility)
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can create campaigns.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
         
         // Log received input for debugging
@@ -72,6 +107,16 @@ class CampaignController
         $title = isset($input['title']) ? trim((string)$input['title']) : '';
         $description = isset($input['description']) ? trim((string)$input['description']) : null;
         $status = isset($input['status']) ? trim((string)$input['status']) : 'draft';
+        
+        // LGU Governance: New campaigns must start as 'draft' - staff cannot create with other statuses
+        if ($status !== 'draft') {
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            $isAdmin = in_array($userRoleName, ['admin', 'barangay administrator', 'system_admin'], true);
+            if (!$isAdmin) {
+                http_response_code(403);
+                return ['error' => 'New campaigns must be created as drafts. Only administrators can create campaigns with other statuses.'];
+            }
+        }
         $startDate = isset($input['start_date']) && $input['start_date'] ? trim((string)$input['start_date']) : null;
         $endDate = isset($input['end_date']) && $input['end_date'] ? trim((string)$input['end_date']) : null;
         $ownerId = $user['id'] ?? null;
@@ -200,6 +245,12 @@ class CampaignController
 
     public function show(?array $user, array $params = []): array
     {
+        // RBAC: All authenticated users can view campaigns (read access)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
         $id = (int) ($params['id'] ?? 0);
         $campaign = $this->findCampaign($id);
         return ['data' => $campaign];
@@ -207,6 +258,33 @@ class CampaignController
 
     public function update(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can update campaigns (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only - cannot update anything
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot modify campaigns.'];
+            }
+            
+            // Allowed roles: admin, staff, secretary, kagawad, captain (and legacy roles for compatibility)
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can update campaigns.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $id = (int) ($params['id'] ?? 0);
         $this->findCampaign($id); // ensure exists
 
@@ -224,13 +302,128 @@ class CampaignController
             $fields[] = 'description = :description';
             $bindings['description'] = trim((string) $input['description']) ?: null;
         }
+        // LGU Governance Workflow Enforcement
+        // Workflow: Draft → Pending Review → For Approval → Approved → Ongoing → Completed
+        // Role-based restrictions: staff → secretary → kagawad → captain
         if (isset($input['status'])) {
-            if (!in_array($input['status'], $allowedStatus, true)) {
+            $newStatus = trim((string)$input['status']);
+            if (!in_array($newStatus, $allowedStatus, true)) {
                 http_response_code(422);
                 return ['error' => 'Invalid status'];
             }
+            
+            // Get current status
+            $currentStatus = $current['status'] ?? 'draft';
+            
+            // Get user's role using RoleMiddleware
+            $userRole = null;
+            try {
+                $userRole = $user ? RoleMiddleware::getUserRole($user, $this->pdo) : null;
+            } catch (\Exception $e) {
+                error_log('CampaignController::update - Error getting user role: ' . $e->getMessage());
+            }
+            
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            $isAdmin = in_array($userRoleName, ['admin', 'barangay administrator', 'system_admin'], true);
+            $isCaptain = in_array($userRoleName, ['captain'], true);
+            $isKagawad = in_array($userRoleName, ['kagawad'], true);
+            $isSecretary = in_array($userRoleName, ['secretary'], true);
+            $isStaff = in_array($userRoleName, ['staff', 'barangay staff'], true);
+            
+            // LGU Governance Workflow: Draft → Pending Review → For Approval → Approved → Ongoing → Completed
+            // Map status names (support both old and new naming)
+            $statusMap = [
+                'draft' => 'draft',
+                'pending_review' => 'pending_review',
+                'pending' => 'pending_review', // Legacy support
+                'for_approval' => 'for_approval',
+                'approved' => 'approved',
+                'rejected' => 'rejected',
+                'ongoing' => 'ongoing',
+                'completed' => 'completed',
+                'archived' => 'archived'
+            ];
+            
+            $normalizedCurrent = $statusMap[strtolower($currentStatus)] ?? strtolower($currentStatus);
+            $normalizedNew = $statusMap[strtolower($newStatus)] ?? strtolower($newStatus);
+            
+            // Role-based status change restrictions
+            $canChangeStatus = false;
+            $errorMessage = '';
+            
+            // Staff: Can only create drafts, cannot change status
+            if ($isStaff) {
+                if ($normalizedCurrent === 'draft' && $normalizedNew === 'draft') {
+                    $canChangeStatus = true; // Can update draft content
+                } else {
+                    $canChangeStatus = false;
+                    $errorMessage = 'Staff can only create and edit drafts. Status changes require review.';
+                }
+            }
+            // Secretary: Can change draft → pending_review
+            elseif ($isSecretary) {
+                if ($normalizedCurrent === 'draft' && $normalizedNew === 'pending_review') {
+                    $canChangeStatus = true;
+                } elseif ($normalizedCurrent === $normalizedNew) {
+                    $canChangeStatus = true; // Can update same status
+                } else {
+                    $canChangeStatus = false;
+                    $errorMessage = 'Secretary can only mark drafts as Pending Review.';
+                }
+            }
+            // Kagawad: Can change pending_review → for_approval
+            elseif ($isKagawad) {
+                if ($normalizedCurrent === 'pending_review' && $normalizedNew === 'for_approval') {
+                    $canChangeStatus = true;
+                } elseif ($normalizedCurrent === $normalizedNew) {
+                    $canChangeStatus = true; // Can update same status
+                } else {
+                    $canChangeStatus = false;
+                    $errorMessage = 'Kagawad can only recommend campaigns for approval (Pending Review → For Approval).';
+                }
+            }
+            // Captain: Can change for_approval → approved/rejected (final authority)
+            elseif ($isCaptain) {
+                if ($normalizedCurrent === 'for_approval' && in_array($normalizedNew, ['approved', 'rejected'], true)) {
+                    $canChangeStatus = true;
+                } elseif ($normalizedCurrent === 'approved' && in_array($normalizedNew, ['ongoing', 'completed'], true)) {
+                    $canChangeStatus = true; // Can start/complete approved campaigns
+                } elseif ($normalizedCurrent === $normalizedNew) {
+                    $canChangeStatus = true; // Can update same status
+                } else {
+                    $canChangeStatus = false;
+                    $errorMessage = 'Barangay Captain can only approve/reject campaigns in "For Approval" status, or manage approved campaigns.';
+                }
+            }
+            // Admin: Can override (with logging if available)
+            elseif ($isAdmin) {
+                $canChangeStatus = true;
+                // Log admin override if logging exists
+                try {
+                    if (method_exists($this, 'logAudit')) {
+                        $this->logAudit($user['id'] ?? null, 'campaign', 'status_override', $id, [
+                            'from' => $currentStatus,
+                            'to' => $newStatus,
+                            'reason' => 'Admin override'
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    error_log('CampaignController::update - Failed to log admin override: ' . $e->getMessage());
+                }
+            }
+            // No role or unauthorized role
+            else {
+                $canChangeStatus = false;
+                $errorMessage = 'Insufficient permissions to change campaign status.';
+            }
+            
+            if (!$canChangeStatus) {
+                http_response_code(403);
+                return ['error' => $errorMessage ?: 'You do not have permission to change campaign status from ' . $currentStatus . ' to ' . $newStatus];
+            }
+            
             $fields[] = 'status = :status';
-            $bindings['status'] = $input['status'];
+            $bindings['status'] = $newStatus;
         }
         if (isset($input['start_date'])) {
             $fields[] = 'start_date = :start_date';
@@ -321,7 +514,7 @@ class CampaignController
 
         $stmt = $this->pdo->prepare('
             SELECT ci.id, ci.title, ci.body, ci.content_type, ci.created_at
-            FROM content_items ci
+            FROM `campaign_department_content_items` ci
             WHERE ci.campaign_id = :cid
             ORDER BY ci.created_at DESC
         ');
@@ -331,6 +524,31 @@ class CampaignController
 
     public function addSchedule(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can add schedules (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot add schedules.'];
+            }
+            
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can add schedules.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $campaignId = (int) ($params['id'] ?? 0);
         $this->findCampaign($campaignId);
 
@@ -345,7 +563,7 @@ class CampaignController
         }
 
         // Insert schedule with status 'pending'
-        $stmt = $this->pdo->prepare('INSERT INTO campaign_schedules (campaign_id, scheduled_at, channel, notes, status) VALUES (:campaign_id, :scheduled_at, :channel, :notes, :status)');
+        $stmt = $this->pdo->prepare('INSERT INTO `campaign_department_campaign_schedules` (campaign_id, scheduled_at, channel, notes, status) VALUES (:campaign_id, :scheduled_at, :channel, :notes, :status)');
         $stmt->execute([
             'campaign_id' => $campaignId,
             'scheduled_at' => $scheduledAt,
@@ -377,8 +595,8 @@ class CampaignController
                 cs.status,
                 cs.created_at,
                 MAX(nl.created_at) as last_posting_attempt
-            FROM campaign_schedules cs
-            LEFT JOIN notification_logs nl ON nl.campaign_id = cs.campaign_id 
+            FROM `campaign_department_campaign_schedules` cs
+            LEFT JOIN `campaign_department_notification_logs` nl ON nl.campaign_id = cs.campaign_id 
                 AND nl.channel = cs.channel 
                 AND DATE(nl.created_at) = DATE(cs.scheduled_at)
             WHERE cs.campaign_id = :campaign_id 
@@ -391,6 +609,31 @@ class CampaignController
 
     public function sendSchedule(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can send schedules (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot send schedules.'];
+            }
+            
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can send schedules.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $campaignId = (int) ($params['id'] ?? 0);
         $scheduleId = (int) ($params['sid'] ?? 0);
 
@@ -399,7 +642,7 @@ class CampaignController
 
         try {
             // Simulate sending by inserting a notification_log entry and integration log
-            $stmt = $this->pdo->prepare('INSERT INTO notification_logs (campaign_id, audience_member_id, channel, status, response_message) VALUES (:campaign_id, NULL, :channel, :status, :response_message)');
+            $stmt = $this->pdo->prepare('INSERT INTO `campaign_department_notification_logs` (campaign_id, audience_member_id, channel, status, response_message) VALUES (:campaign_id, NULL, :channel, :status, :response_message)');
             $stmt->execute([
                 'campaign_id' => $campaignId,
                 'channel' => $schedule['channel'],
@@ -413,7 +656,7 @@ class CampaignController
                 'channel' => $schedule['channel'],
                 'scheduled_at' => $schedule['scheduled_at'],
             ];
-            $log = $this->pdo->prepare('INSERT INTO integration_logs (source, payload, status) VALUES (:source, :payload, :status)');
+            $log = $this->pdo->prepare('INSERT INTO `campaign_department_integration_logs` (source, payload, status) VALUES (:source, :payload, :status)');
             $log->execute([
                 'source' => 'notification_dispatch',
                 'payload' => json_encode($payload),
@@ -429,7 +672,7 @@ class CampaignController
 
             // Update schedule status to 'sent' on success, 'failed' on failure
             $scheduleStatus = $webhookSuccess ? 'sent' : 'failed';
-            $updateStmt = $this->pdo->prepare('UPDATE campaign_schedules SET status = :status WHERE id = :id');
+            $updateStmt = $this->pdo->prepare('UPDATE `campaign_department_campaign_schedules` SET status = :status WHERE id = :id');
             $updateStmt->execute([
                 'id' => $scheduleId,
                 'status' => $scheduleStatus,
@@ -446,7 +689,7 @@ class CampaignController
             ];
         } catch (\Exception $e) {
             // Update schedule status to 'failed' on error
-            $updateStmt = $this->pdo->prepare('UPDATE campaign_schedules SET status = :status WHERE id = :id');
+            $updateStmt = $this->pdo->prepare('UPDATE `campaign_department_campaign_schedules` SET status = :status WHERE id = :id');
             $updateStmt->execute([
                 'id' => $scheduleId,
                 'status' => 'failed',
@@ -464,8 +707,8 @@ class CampaignController
 
         $stmt = $this->pdo->prepare('
             SELECT s.id, s.name, s.criteria, s.created_at
-            FROM campaign_audience ca
-            INNER JOIN audience_segments s ON s.id = ca.segment_id
+            FROM `campaign_department_campaign_audience` ca
+            INNER JOIN `campaign_department_audience_segments` s ON s.id = ca.segment_id
             WHERE ca.campaign_id = :cid
             ORDER BY s.created_at DESC
         ');
@@ -475,6 +718,31 @@ class CampaignController
 
     public function syncSegments(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can sync segments (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot sync segments.'];
+            }
+            
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can sync segments.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $campaignId = (int) ($params['id'] ?? 0);
         $this->findCampaign($campaignId);
 
@@ -494,10 +762,10 @@ class CampaignController
 
         $this->pdo->beginTransaction();
         try {
-            $del = $this->pdo->prepare('DELETE FROM campaign_audience WHERE campaign_id = :cid');
+            $del = $this->pdo->prepare('DELETE FROM `campaign_department_campaign_audience` WHERE campaign_id = :cid');
             $del->execute(['cid' => $campaignId]);
 
-            $ins = $this->pdo->prepare('INSERT INTO campaign_audience (campaign_id, segment_id) VALUES (:cid, :sid)');
+            $ins = $this->pdo->prepare('INSERT INTO `campaign_department_campaign_audience` (campaign_id, segment_id) VALUES (:cid, :sid)');
             foreach ($segmentIds as $sid) {
                 $ins->execute(['cid' => $campaignId, 'sid' => $sid]);
             }
@@ -516,6 +784,31 @@ class CampaignController
      */
     public function requestAIRecommendation(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can request AI recommendations (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot request AI recommendations.'];
+            }
+            
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can request AI recommendations.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $campaignId = (int) ($params['id'] ?? 0);
         $campaign = $this->findCampaign($campaignId);
 
@@ -586,6 +879,31 @@ class CampaignController
      */
     public function setFinalSchedule(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can set final schedule (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot set final schedule.'];
+            }
+            
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can set final schedule.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $campaignId = (int) ($params['id'] ?? 0);
         $this->findCampaign($campaignId);
 
@@ -702,7 +1020,7 @@ class CampaignController
         // Check for conflicts with events and seminars
         $stmt = $this->pdo->prepare('
             SELECT e.id, e.name, e.event_type, e.event_date, e.event_time, e.venue, e.location
-            FROM events e
+            FROM `campaign_department_events` e
             WHERE e.event_date = :proposed_date
               AND e.status IN ("scheduled", "ongoing")
         ');
@@ -741,7 +1059,7 @@ class CampaignController
 
     private function findSchedule(int $campaignId, int $scheduleId): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, campaign_id, scheduled_at, channel, notes, status FROM campaign_schedules WHERE id = :sid AND campaign_id = :cid LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, campaign_id, scheduled_at, channel, notes, status FROM `campaign_department_campaign_schedules` WHERE id = :sid AND campaign_id = :cid LIMIT 1');
         $stmt->execute(['sid' => $scheduleId, 'cid' => $campaignId]);
         $schedule = $stmt->fetch();
         if (!$schedule) {
@@ -756,6 +1074,31 @@ class CampaignController
      */
     public function resendSchedule(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can resend schedules (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot resend schedules.'];
+            }
+            
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can resend schedules.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $campaignId = (int) ($params['id'] ?? 0);
         $scheduleId = (int) ($params['sid'] ?? 0);
 
@@ -769,7 +1112,7 @@ class CampaignController
         }
 
         // Reset status to pending and call sendSchedule logic
-        $updateStmt = $this->pdo->prepare('UPDATE campaign_schedules SET status = :status WHERE id = :id');
+        $updateStmt = $this->pdo->prepare('UPDATE `campaign_department_campaign_schedules` SET status = :status WHERE id = :id');
         $updateStmt->execute([
             'id' => $scheduleId,
             'status' => 'pending',
@@ -785,7 +1128,7 @@ class CampaignController
             return;
         }
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM audience_segments WHERE id IN ($placeholders)");
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM `campaign_department_audience_segments` WHERE id IN ($placeholders)");
         $stmt->execute($ids);
         $found = (int) $stmt->fetchColumn();
         if ($found !== count($ids)) {
@@ -856,12 +1199,12 @@ class CampaignController
         // we don't want to block campaign creation. Just log and return.
         try {
             // Ensure integration_logs table exists
-            $check = $this->pdo->query("SHOW TABLES LIKE 'integration_logs'");
+            $check = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_integration_logs'");
             if (!$check || $check->rowCount() === 0) {
                 return;
             }
 
-            $stmt = $this->pdo->prepare('INSERT INTO integration_logs (source, payload, status) VALUES (:source, :payload, :status)');
+            $stmt = $this->pdo->prepare('INSERT INTO `campaign_department_integration_logs` (source, payload, status) VALUES (:source, :payload, :status)');
         } catch (\Throwable $e) {
             error_log('logCampaignIntegrations init failed: ' . $e->getMessage());
             return;

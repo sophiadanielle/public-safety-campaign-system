@@ -637,6 +637,17 @@ include __DIR__ . '/header/includes/header.php';
                             </button>
                         </div>
 
+                        <label for="signup-role">Role <span style="color: #dc2626;">*</span></label>
+                        <select id="signup-role" name="role" required style="width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-top: 6px; background: #fff;">
+                            <option value="">Select your role</option>
+                            <option value="staff">Staff - Create campaign drafts</option>
+                            <option value="secretary">Secretary - Review and route drafts</option>
+                            <option value="kagawad">Kagawad - Review and recommend approval</option>
+                            <option value="captain">Captain - Final approval authority</option>
+                            <option value="partner">Partner - External partner access</option>
+                            <option value="viewer">Viewer - Read-only access</option>
+                        </select>
+
                         <button class="btn btn-primary" onclick="signup()">Sign Up</button>
                         
                         <div style="margin: 20px 0; text-align: center; position: relative; height: 1px;">
@@ -937,16 +948,18 @@ async function signup() {
     const nameInput = document.querySelector('#signup-panel #name');
     const emailInput = document.querySelector('#signup-panel #signup-email');
     const passwordInput = document.querySelector('#signup-panel #signup-password');
+    const roleInput = document.querySelector('#signup-panel #signup-role');
     const statusEl = document.getElementById('signup-status');
 
     const name = nameInput ? nameInput.value.trim() : '';
     const email = emailInput ? emailInput.value.trim() : '';
     const password = passwordInput ? passwordInput.value : '';
+    const role = roleInput ? roleInput.value.trim() : '';
 
     statusEl.style.color = '#0f172a';
 
-    if (!name || !email || !password) {
-        statusEl.textContent = 'Please fill in all fields.';
+    if (!name || !email || !password || !role) {
+        statusEl.textContent = 'Please fill in all fields including role selection.';
         statusEl.style.color = '#dc2626';
         return;
     }
@@ -954,7 +967,7 @@ async function signup() {
     const res = await fetch(apiBase + '/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
+        body: JSON.stringify({ name, email, password, role })
     });
 
     try {
@@ -967,6 +980,18 @@ async function signup() {
         }
         
         const data = await res.json();
+        
+        // Provide helpful error messages
+        if (!data.token && data.error) {
+            let errorMsg = data.error;
+            if (errorMsg.includes('already exists')) {
+                errorMsg = 'An account with this email already exists. Please try logging in instead, or use a different email address.';
+            }
+            statusEl.textContent = 'Error: ' + errorMsg;
+            statusEl.style.color = '#dc2626';
+            return;
+        }
+        
         if (data.token) {
             // Check if localStorage is available
             try {

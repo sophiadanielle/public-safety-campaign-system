@@ -271,7 +271,7 @@ class AutoMLController
             // Get high-risk schedules
             $stmt = $this->pdo->query('
                 SELECT c.id, c.title, c.start_date, c.status
-                FROM campaigns c
+                FROM `campaign_department_campaigns` c
                 WHERE c.status IN ("draft", "scheduled") AND c.start_date > NOW()
                 ORDER BY c.start_date ASC LIMIT 10
             ');
@@ -298,7 +298,7 @@ class AutoMLController
             // Get optimized upcoming events
             $stmt = $this->pdo->query('
                 SELECT e.id, e.event_name, e.date, e.start_time, e.linked_campaign_id, c.title as campaign_title
-                FROM events e LEFT JOIN campaigns c ON c.id = e.linked_campaign_id
+                FROM `campaign_department_events` e LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
                 WHERE e.date >= CURDATE() AND e.event_status = "planned"
                 ORDER BY e.date ASC, e.start_time ASC LIMIT 10
             ');
@@ -307,8 +307,8 @@ class AutoMLController
             $stmt2 = $this->pdo->query('
                 SELECT DATE_FORMAT(c.start_date, "%Y-%m") as month,
                        COUNT(DISTINCT c.id) as campaign_count,
-                       AVG((SELECT COUNT(*) FROM attendance a INNER JOIN events e ON e.id = a.event_id WHERE e.linked_campaign_id = c.id)) as avg_attendance
-                FROM campaigns c
+                       AVG((SELECT COUNT(*) FROM `campaign_department_attendance` a INNER JOIN `campaign_department_events` e ON e.id = a.event_id WHERE e.linked_campaign_id = c.id)) as avg_attendance
+                FROM `campaign_department_campaigns` c
                 WHERE c.start_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH) AND c.status IN ("completed", "ongoing")
                 GROUP BY DATE_FORMAT(c.start_date, "%Y-%m")
                 ORDER BY month DESC LIMIT 6

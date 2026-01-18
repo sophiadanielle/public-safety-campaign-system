@@ -221,6 +221,17 @@ include __DIR__ . '/../header/includes/header.php';
                 </button>
             </div>
 
+            <label for="role">Role <span style="color: #dc2626;">*</span></label>
+            <select id="role" name="role" required style="width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-top: 6px; background: #fff;">
+                <option value="">Select your role</option>
+                <option value="staff">Staff - Create campaign drafts</option>
+                <option value="secretary">Secretary - Review and route drafts</option>
+                <option value="kagawad">Kagawad - Review and recommend approval</option>
+                <option value="captain">Captain - Final approval authority</option>
+                <option value="partner">Partner - External partner access</option>
+                <option value="viewer">Viewer - Read-only access</option>
+            </select>
+
             <button class="btn btn-primary" onclick="signup()">Sign Up</button>
             
             <div style="margin: 20px 0; text-align: center; position: relative;">
@@ -290,12 +301,13 @@ async function signup() {
     const name = document.getElementById('name').value.trim();
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
+    const role = document.getElementById('role').value.trim();
 
     const statusEl = document.getElementById('status');
     statusEl.style.color = '#0f172a';
 
-    if (!name || !email || !password) {
-        statusEl.textContent = 'Please fill in all fields.';
+    if (!name || !email || !password || !role) {
+        statusEl.textContent = 'Please fill in all fields including role selection.';
         statusEl.style.color = '#dc2626';
         return;
     }
@@ -303,7 +315,7 @@ async function signup() {
     const res = await fetch(apiBase + '/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password })
+        body: JSON.stringify({ name, email, password, role })
     });
 
     try {
@@ -332,7 +344,12 @@ async function signup() {
                 window.location.replace(basePath + '/public/campaigns.php?signed_up=1');
             }, 300);
         } else {
-            statusEl.textContent = 'Error: ' + (data.error || JSON.stringify(data));
+            // Provide helpful error messages
+            let errorMsg = data.error || JSON.stringify(data);
+            if (errorMsg.includes('already exists')) {
+                errorMsg = 'An account with this email already exists. Please try logging in instead, or use a different email address.';
+            }
+            statusEl.textContent = 'Error: ' + errorMsg;
             statusEl.style.color = '#dc2626';
         }
     } catch (e) {

@@ -300,14 +300,26 @@ document.addEventListener('DOMContentLoaded', function() {
             userNameEl.textContent = finalName;
         }
         if (userRoleEl) {
-            // Map role_id to role name
-            const roleNames = {
-                1: 'Administrator',
-                2: 'Barangay Admin',
-                3: 'Campaign Creator',
-                4: 'Staff'
-            };
-            userRoleEl.textContent = roleNames[user.role_id] || user.role || 'User';
+            // Use role name from API if available, otherwise fallback to hardcoded mapping
+            let roleDisplayName = user.role || 'User';
+            
+            // Fallback mapping for legacy role_ids (if role name not in API response)
+            if (!user.role && user.role_id) {
+                const roleNames = {
+                    1: 'Barangay Administrator',
+                    2: 'Barangay Staff',
+                    3: 'School Partner',
+                    4: 'NGO Partner'
+                };
+                roleDisplayName = roleNames[user.role_id] || 'User';
+            }
+            
+            // Capitalize first letter of each word for display
+            roleDisplayName = roleDisplayName.split(' ').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            ).join(' ');
+            
+            userRoleEl.textContent = roleDisplayName;
         }
         if (userAvatarEl) {
             const encodedName = encodeURIComponent(user.name || 'User');

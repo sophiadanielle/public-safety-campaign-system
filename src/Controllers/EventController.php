@@ -82,9 +82,9 @@ class EventController
                 c.title as campaign_title,
                 a.name as audience_segment_name,
                 a.risk_level as audience_risk_level
-            FROM events e
-            LEFT JOIN campaigns c ON c.id = e.linked_campaign_id
-            LEFT JOIN audience_segments a ON a.id = e.target_audience_profile_id
+            FROM `campaign_department_events` e
+            LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
+            LEFT JOIN `campaign_department_audience_segments` a ON a.id = e.target_audience_profile_id
             {$whereClause}
             ORDER BY e.date DESC, e.start_time DESC
             LIMIT 100
@@ -115,6 +115,12 @@ class EventController
      */
     public function show(?array $user, array $params = []): array
     {
+        // RBAC: All authenticated users can view events (read access)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
         $eventId = (int) ($params['id'] ?? 0);
         if ($eventId <= 0) {
             http_response_code(422);
@@ -129,10 +135,10 @@ class EventController
                 a.name as audience_segment_name,
                 a.risk_level as audience_risk_level,
                 u.name as created_by_name
-            FROM events e
-            LEFT JOIN campaigns c ON c.id = e.linked_campaign_id
-            LEFT JOIN audience_segments a ON a.id = e.target_audience_profile_id
-            LEFT JOIN users u ON u.id = e.created_by
+            FROM `campaign_department_events` e
+            LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
+            LEFT JOIN `campaign_department_audience_segments` a ON a.id = e.target_audience_profile_id
+            LEFT JOIN `campaign_department_users` u ON u.id = e.created_by
             WHERE e.id = :id
         ');
         $stmt->execute(['id' => $eventId]);
@@ -146,8 +152,8 @@ class EventController
         // Get facilitators
         $stmt = $this->pdo->prepare('
             SELECT u.id, u.name, u.email
-            FROM event_facilitators ef
-            JOIN users u ON u.id = ef.user_id
+            FROM `campaign_department_event_facilitators` ef
+            JOIN `campaign_department_users` u ON u.id = ef.user_id
             WHERE ef.event_id = :id
         ');
         $stmt->execute(['id' => $eventId]);
@@ -156,8 +162,8 @@ class EventController
         // Get audience segments
         $stmt = $this->pdo->prepare('
             SELECT a.id, a.name, a.risk_level
-            FROM event_audience_segments eas
-            JOIN audience_segments a ON a.id = eas.segment_id
+            FROM `campaign_department_event_audience_segments` eas
+            JOIN `campaign_department_audience_segments` a ON a.id = eas.segment_id
             WHERE eas.event_id = :id
         ');
         $stmt->execute(['id' => $eventId]);
@@ -165,7 +171,7 @@ class EventController
 
         // Get agency coordination
         $stmt = $this->pdo->prepare('
-            SELECT * FROM event_agency_coordination
+            SELECT * FROM `campaign_department_event_agency_coordination`
             WHERE event_id = :id
             ORDER BY agency_type, requested_at
         ');
@@ -174,7 +180,7 @@ class EventController
 
         // Get conflicts
         $stmt = $this->pdo->prepare('
-            SELECT * FROM event_conflicts
+            SELECT * FROM `campaign_department_event_conflicts`
             WHERE event_id = :id AND resolved = FALSE
         ');
         $stmt->execute(['id' => $eventId]);
@@ -186,7 +192,7 @@ class EventController
                 COUNT(*) as total_attendance,
                 SUM(CASE WHEN checkin_method = "QR" THEN 1 ELSE 0 END) as qr_checkins,
                 SUM(CASE WHEN checkin_method = "manual" THEN 1 ELSE 0 END) as manual_checkins
-            FROM attendance
+            FROM `campaign_department_attendance`
             WHERE event_id = :id
         ');
         $stmt->execute(['id' => $eventId]);
@@ -215,10 +221,19 @@ class EventController
         }
 
         $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
-        $allowedRoles = ['system_admin', 'barangay_admin', 'campaign_creator'];
-        if (!in_array($userRole, $allowedRoles, true)) {
+        $userRoleName = $userRole ? strtolower($userRole) : '';
+        
+        // Viewer is read-only
+        if ($userRoleName === 'viewer') {
             http_response_code(403);
-            return ['error' => 'Insufficient permissions to create events'];
+            return ['error' => 'Viewer role is read-only. You cannot create events.'];
+        }
+        
+        // Allowed roles: admin, staff, secretary, kagawad, captain (and legacy roles for compatibility)
+        $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'];
+        if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+            http_response_code(403);
+            return ['error' => 'Insufficient permissions. Only authorized LGU personnel can create events.'];
         }
 
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
@@ -275,7 +290,7 @@ class EventController
         try {
             // Insert event
             $stmt = $this->pdo->prepare('
-                INSERT INTO events (
+                INSERT INTO `campaign_department_events` (
                     event_title, event_name, event_type, event_description, hazard_focus,
                     target_audience_profile_id, linked_campaign_id, date, start_time, end_time,
                     venue, location, event_status, transport_requirements, trainer_requirements,
@@ -314,7 +329,7 @@ class EventController
 
             // Handle facilitators
             if (isset($input['facilitator_ids']) && is_array($input['facilitator_ids'])) {
-                $facStmt = $this->pdo->prepare('INSERT INTO event_facilitators (event_id, user_id) VALUES (:event_id, :user_id)');
+                $facStmt = $this->pdo->prepare('INSERT INTO `campaign_department_event_facilitators` (event_id, user_id) VALUES (:event_id, :user_id)');
                 foreach ($input['facilitator_ids'] as $facilitatorId) {
                     $facStmt->execute(['event_id' => $eventId, 'user_id' => (int) $facilitatorId]);
                 }
@@ -322,7 +337,7 @@ class EventController
 
             // Handle audience segments
             if (isset($input['segment_ids']) && is_array($input['segment_ids'])) {
-                $segStmt = $this->pdo->prepare('INSERT INTO event_audience_segments (event_id, segment_id) VALUES (:event_id, :segment_id)');
+                $segStmt = $this->pdo->prepare('INSERT INTO `campaign_department_event_audience_segments` (event_id, segment_id) VALUES (:event_id, :segment_id)');
                 foreach ($input['segment_ids'] as $segmentId) {
                     $segStmt->execute(['event_id' => $eventId, 'segment_id' => (int) $segmentId]);
                 }
@@ -364,12 +379,22 @@ class EventController
         $eventId = (int) ($params['id'] ?? 0);
         $event = $this->findEvent($eventId);
 
-        // Check permissions
+        // RBAC: Check permissions - viewer cannot update
         $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
-        $isAdmin = in_array($userRole, ['system_admin', 'barangay_admin'], true);
+        $userRoleName = $userRole ? strtolower($userRole) : '';
+        
+        // Viewer is read-only
+        if ($userRoleName === 'viewer') {
+            http_response_code(403);
+            return ['error' => 'Viewer role is read-only. You cannot update events.'];
+        }
+        
+        $isAdmin = in_array($userRoleName, ['admin', 'system_admin', 'barangay_admin', 'barangay administrator'], true);
         $isOwner = $event['created_by'] == $user['id'];
+        $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'];
+        $hasAllowedRole = in_array($userRoleName, $allowedRoles, true);
 
-        if (!$isAdmin && !$isOwner) {
+        if (!$isAdmin && !$isOwner && !$hasAllowedRole) {
             http_response_code(403);
             return ['error' => 'Insufficient permissions to update this event'];
         }
@@ -443,7 +468,7 @@ class EventController
 
         $this->pdo->beginTransaction();
         try {
-            $sql = 'UPDATE events SET ' . implode(', ', $updates) . ', last_updated = NOW() WHERE id = :event_id';
+            $sql = 'UPDATE `campaign_department_events` SET ' . implode(', ', $updates) . ', last_updated = NOW() WHERE id = :event_id';
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($updateParams);
 
@@ -508,7 +533,7 @@ class EventController
             $params['venue'] = $venue;
         }
 
-        $sql = 'SELECT id, event_title, event_name, start_time, end_time, venue FROM events WHERE ' . implode(' AND ', $where);
+        $sql = 'SELECT id, event_title, event_name, start_time, end_time, venue FROM `campaign_department_events` WHERE ' . implode(' AND ', $where);
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $existingEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -565,7 +590,7 @@ class EventController
         }
 
         $stmt = $this->pdo->prepare('
-            INSERT INTO event_agency_coordination (
+            INSERT INTO `campaign_department_event_agency_coordination` (
                 event_id, agency_type, agency_name, request_status, request_details
             ) VALUES (
                 :event_id, :agency_type, :agency_name, "requested", :request_details
@@ -635,14 +660,14 @@ class EventController
         }
 
         $stmt = $this->pdo->prepare('
-            UPDATE event_agency_coordination 
+            UPDATE `campaign_department_event_agency_coordination` 
             SET ' . implode(', ', $updates) . '
             WHERE id = :id
         ');
         $stmt->execute($updateParams);
 
         // Get event_id for audit
-        $stmt = $this->pdo->prepare('SELECT event_id FROM event_agency_coordination WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT event_id FROM `campaign_department_event_agency_coordination` WHERE id = :id');
         $stmt->execute(['id' => $coordinationId]);
         $coordination = $stmt->fetch();
         if ($coordination) {
@@ -672,7 +697,7 @@ class EventController
                 start_time,
                 end_time,
                 venue
-            FROM events
+            FROM `campaign_department_events`
             WHERE date BETWEEN :start_date AND :end_date
             AND event_status NOT IN ("cancelled")
             ORDER BY date, start_time
@@ -721,7 +746,7 @@ class EventController
         }
 
         if (!$audienceMemberId) {
-            $ins = $this->pdo->prepare('INSERT INTO audience_members (segment_id, full_name, contact, channel) VALUES (NULL, :full_name, :contact, :channel)');
+            $ins = $this->pdo->prepare('INSERT INTO `campaign_department_audience_members` (segment_id, full_name, contact, channel) VALUES (NULL, :full_name, :contact, :channel)');
             $ins->execute([
                 'full_name' => $fullName,
                 'contact' => $contact ?: null,
@@ -731,7 +756,7 @@ class EventController
         }
 
         $stmt = $this->pdo->prepare('
-            INSERT INTO attendance (event_id, audience_member_id, participant_identifier, checkin_method, checkin_timestamp) 
+            INSERT INTO `campaign_department_attendance` (event_id, audience_member_id, participant_identifier, checkin_method, checkin_timestamp) 
             VALUES (:event_id, :audience_member_id, :participant_identifier, :checkin_method, NOW())
         ');
         $stmt->execute([
@@ -743,8 +768,8 @@ class EventController
 
         // Update attendance count
         $this->pdo->prepare('
-            UPDATE events 
-            SET attendance_count = (SELECT COUNT(*) FROM attendance WHERE event_id = :id)
+            UPDATE `campaign_department_events` 
+            SET attendance_count = (SELECT COUNT(*) FROM `campaign_department_attendance` WHERE event_id = :id)
             WHERE id = :id
         ')->execute(['id' => $event['id']]);
 
@@ -771,8 +796,8 @@ class EventController
                 a.checkin_timestamp,
                 am.full_name,
                 am.contact
-            FROM attendance a
-            LEFT JOIN audience_members am ON am.id = a.audience_member_id
+            FROM `campaign_department_attendance` a
+            LEFT JOIN `campaign_department_audience_members` am ON am.id = a.audience_member_id
             WHERE a.event_id = :event_id
             ORDER BY a.checkin_timestamp DESC
         ');
@@ -796,8 +821,8 @@ class EventController
                 am.contact,
                 a.checkin_method,
                 a.checkin_timestamp
-            FROM attendance a
-            LEFT JOIN audience_members am ON am.id = a.audience_member_id
+            FROM `campaign_department_attendance` a
+            LEFT JOIN `campaign_department_audience_members` am ON am.id = a.audience_member_id
             WHERE a.event_id = :eid
             ORDER BY a.checkin_timestamp ASC
         ');
@@ -858,7 +883,7 @@ class EventController
 
         // Update integration checkpoint
         $stmt = $this->pdo->prepare('
-            INSERT INTO event_integration_checkpoints (
+            INSERT INTO `campaign_department_event_integration_checkpoints` (
                 event_id, subsystem_type, integration_status, sent_data, last_sync_at, sync_attempts
             ) VALUES (
                 :event_id, :subsystem_type, "sent", :sent_data, NOW(), 1
@@ -887,7 +912,7 @@ class EventController
 
     private function findEvent(int $id): array
     {
-        $stmt = $this->pdo->prepare('SELECT * FROM events WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT * FROM `campaign_department_events` WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $id]);
         $event = $stmt->fetch();
         if (!$event) {
@@ -900,7 +925,7 @@ class EventController
     private function logAudit(int $eventId, int $userId, string $actionType, ?string $fieldName, ?string $oldValue, ?string $newValue): void
     {
         $stmt = $this->pdo->prepare('
-            INSERT INTO event_audit_log (
+            INSERT INTO `campaign_department_event_audit_log` (
                 event_id, user_id, action_type, field_name, old_value, new_value, change_details
             ) VALUES (
                 :event_id, :user_id, :action_type, :field_name, :old_value, :new_value, :change_details
@@ -922,7 +947,7 @@ class EventController
     {
         $subsystems = ['law_enforcement', 'traffic_transport', 'fire_rescue', 'emergency_response', 'community_policing', 'target_audience'];
         $stmt = $this->pdo->prepare('
-            INSERT INTO event_integration_checkpoints (event_id, subsystem_type, integration_status)
+            INSERT INTO `campaign_department_event_integration_checkpoints` (event_id, subsystem_type, integration_status)
             VALUES (:event_id, :subsystem_type, "pending")
         ');
         foreach ($subsystems as $subsystem) {
@@ -933,7 +958,7 @@ class EventController
     private function createIntegrationCheckpoint(int $eventId, string $subsystemType): void
     {
         $stmt = $this->pdo->prepare('
-            INSERT INTO event_integration_checkpoints (event_id, subsystem_type, integration_status)
+            INSERT INTO `campaign_department_event_integration_checkpoints` (event_id, subsystem_type, integration_status)
             VALUES (:event_id, :subsystem_type, "pending")
             ON DUPLICATE KEY UPDATE integration_status = "pending"
         ');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Middleware\RoleMiddleware;
 use PDO;
 use RuntimeException;
 
@@ -34,6 +35,12 @@ class ContentController
 
     public function index(?array $user, array $params = []): array
     {
+        // RBAC: All authenticated users can view content (read access)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
         try {
             // Content Repository filters
             $q = $_GET['q'] ?? '';
@@ -252,6 +259,18 @@ class ContentController
 
     public function store(?array $user, array $params = []): array
     {
+        // Role-based access control: Only admin and staff can create content
+        try {
+            $userRole = $user ? RoleMiddleware::getUserRole($user, $this->pdo) : null;
+            if (!$userRole || !in_array($userRole, ['Barangay Administrator', 'Barangay Staff', 'system_admin', 'barangay_admin', 'content_manager', 'campaign_creator'], true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only administrators and staff can create content.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             return ['error' => 'Method not allowed'];
@@ -291,10 +310,13 @@ class ContentController
         // Content Repository fields
         $hazardCategory = trim($_POST['hazard_category'] ?? '');
         // Handle intended_audience_segment as array (multi-select) or string
+        // FormData with name[] sends as array in $_POST
         $intendedAudienceInput = $_POST['intended_audience_segment'] ?? '';
         if (is_array($intendedAudienceInput)) {
+            // Multiple selections received as array
             $intendedAudience = implode(', ', array_filter(array_map('trim', $intendedAudienceInput)));
         } else {
+            // Single value or empty string
             $intendedAudience = trim($intendedAudienceInput);
         }
         $source = trim($_POST['source'] ?? '');
@@ -475,6 +497,12 @@ class ContentController
      */
     public function show(?array $user, array $params = []): array
     {
+        // RBAC: All authenticated users can view content (read access)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
         $contentId = (int) ($params['id'] ?? 0);
 
         // Check which audience column exists
@@ -567,6 +595,18 @@ class ContentController
      */
     public function update(?array $user, array $params = []): array
     {
+        // Role-based access control: Only admin and staff can update content
+        try {
+            $userRole = $user ? RoleMiddleware::getUserRole($user, $this->pdo) : null;
+            if (!$userRole || !in_array($userRole, ['Barangay Administrator', 'Barangay Staff', 'system_admin', 'barangay_admin', 'content_manager', 'campaign_creator'], true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only administrators and staff can update content.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $contentId = (int) ($params['id'] ?? 0);
 
         $stmt = $this->pdo->prepare('SELECT * FROM campaign_department_content_items WHERE id = :id');
@@ -672,6 +712,18 @@ class ContentController
      */
     public function updateApproval(?array $user, array $params = []): array
     {
+        // Role-based access control: Only admin can approve/reject content
+        try {
+            $userRole = $user ? RoleMiddleware::getUserRole($user, $this->pdo) : null;
+            if (!$userRole || !in_array($userRole, ['Barangay Administrator', 'system_admin', 'barangay_admin'], true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only administrators can approve or reject content.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $contentId = (int) ($params['id'] ?? 0);
 
         $input = json_decode(file_get_contents('php://input'), true) ?? [];

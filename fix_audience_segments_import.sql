@@ -12,3 +12,4 @@ VALUES
 (4, 'Senior Citizens', 'Barangay', 'All Areas', 'Senior Citizens', 'High', 'Historical trend', '{"age_min": 60, "special_needs": true}');
 
 
+

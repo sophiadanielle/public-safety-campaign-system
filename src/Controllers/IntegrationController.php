@@ -35,7 +35,7 @@ class IntegrationController
         $body = json_decode($payload, true);
         $source = $body['source'] ?? 'external';
 
-        $stmt = $this->pdo->prepare('INSERT INTO integration_logs (source, payload, status) VALUES (:source, :payload, :status)');
+        $stmt = $this->pdo->prepare('INSERT INTO `campaign_department_integration_logs` (source, payload, status) VALUES (:source, :payload, :status)');
         $stmt->execute([
             'source' => $source,
             'payload' => $payload ?: '{}',

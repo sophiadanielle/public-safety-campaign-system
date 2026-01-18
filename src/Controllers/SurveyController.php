@@ -72,9 +72,31 @@ class SurveyController
 
     public function store(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can create surveys (viewer cannot)
         if (!$user) {
             http_response_code(401);
             return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot create surveys.'];
+            }
+            
+            // Allowed roles: admin, staff, secretary, kagawad, captain
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can create surveys.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
         }
 
         $input = json_decode(file_get_contents('php://input'), true) ?? [];

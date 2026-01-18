@@ -335,13 +335,26 @@ async function loadProfile() {
         document.getElementById('profileName').textContent = currentUser.name || 'User';
         document.getElementById('profileEmail').textContent = currentUser.email || '';
         
-        const roleNames = {
-            1: 'Administrator',
-            2: 'Barangay Admin',
-            3: 'Campaign Creator',
-            4: 'Staff'
-        };
-        document.getElementById('profileRole').textContent = roleNames[currentUser.role_id] || currentUser.role || 'User';
+        // Use role name from API if available, otherwise fallback to hardcoded mapping
+        let roleDisplayName = currentUser.role || 'User';
+        
+        // Fallback mapping for legacy role_ids (if role name not in API response)
+        if (!currentUser.role && currentUser.role_id) {
+            const roleNames = {
+                1: 'Barangay Administrator',
+                2: 'Barangay Staff',
+                3: 'School Partner',
+                4: 'NGO Partner'
+            };
+            roleDisplayName = roleNames[currentUser.role_id] || 'User';
+        }
+        
+        // Capitalize first letter of each word for display
+        roleDisplayName = roleDisplayName.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
+        
+        document.getElementById('profileRole').textContent = roleDisplayName;
         
         // Update avatar
         const encodedName = encodeURIComponent(currentUser.name || 'User');
@@ -352,7 +365,23 @@ async function loadProfile() {
         document.getElementById('email').value = currentUser.email || '';
         document.getElementById('phone').value = currentUser.phone || '';
         document.getElementById('barangay').value = currentUser.barangay_name || 'N/A';
-        document.getElementById('role').value = roleNames[currentUser.role_id] || currentUser.role || 'User';
+        
+        // Use role name from API if available
+        let roleFormValue = currentUser.role || 'User';
+        if (!currentUser.role && currentUser.role_id) {
+            const roleNames = {
+                1: 'Barangay Administrator',
+                2: 'Barangay Staff',
+                3: 'School Partner',
+                4: 'NGO Partner'
+            };
+            roleFormValue = roleNames[currentUser.role_id] || 'User';
+        }
+        roleFormValue = roleFormValue.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
+        document.getElementById('role').value = roleFormValue;
+        
         document.getElementById('memberSince').value = currentUser.created_at ? new Date(currentUser.created_at).toLocaleDateString() : 'N/A';
         
     } catch (err) {

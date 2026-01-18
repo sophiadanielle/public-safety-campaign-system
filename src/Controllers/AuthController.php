@@ -133,10 +133,25 @@ class AuthController
         $name = isset($input['name']) ? trim((string) $input['name']) : '';
         $email = isset($input['email']) ? filter_var($input['email'], FILTER_VALIDATE_EMAIL) : null;
         $password = $input['password'] ?? '';
+        $roleName = isset($input['role']) ? trim((string) $input['role']) : '';
 
         if (!$name || !$email || !$password) {
             http_response_code(422);
             return ['error' => 'Name, email, and password are required.'];
+        }
+
+        // RBAC: Role selection is REQUIRED - no auto-assignment
+        if (!$roleName) {
+            http_response_code(422);
+            return ['error' => 'Role selection is required. Please select your role: staff, secretary, kagawad, captain, partner, or viewer.'];
+        }
+
+        // Validate role name against allowed LGU roles
+        $allowedRoles = ['staff', 'secretary', 'kagawad', 'captain', 'partner', 'viewer'];
+        $normalizedRoleName = strtolower($roleName);
+        if (!in_array($normalizedRoleName, $allowedRoles, true)) {
+            http_response_code(422);
+            return ['error' => 'Invalid role. Allowed roles: staff, secretary, kagawad, captain, partner, viewer.'];
         }
 
         // Ensure email is unique
@@ -149,8 +164,17 @@ class AuthController
 
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
-        // For now, default new signups to role_id = 1 and barangay_id = 1 so they can log in.
-        $roleId = 1;
+        // Get role ID from selected role name
+        $roleStmt = $this->pdo->prepare('SELECT id FROM campaign_department_roles WHERE LOWER(name) = :role_name LIMIT 1');
+        $roleStmt->execute(['role_name' => $normalizedRoleName]);
+        $role = $roleStmt->fetch();
+        
+        if (!$role) {
+            http_response_code(422);
+            return ['error' => 'Selected role does not exist in the system. Please contact administrator.'];
+        }
+        
+        $roleId = (int) $role['id'];
         $barangayId = 1;
 
         $stmt = $this->pdo->prepare('
@@ -237,12 +261,14 @@ class AuthController
                 return ['user' => $this->publicUser($user)];
             }
 
-            // Fetch full user data with barangay name
+            // Fetch full user data with barangay name and role name
             $userId = (int) $user['id'];
             $stmt = $this->pdo->prepare('
-                SELECT u.id, u.name, u.email, u.role_id, u.barangay_id, u.phone_number, u.created_at, b.name as barangay_name 
+                SELECT u.id, u.name, u.email, u.role_id, u.barangay_id, u.phone_number, u.created_at, 
+                       b.name as barangay_name, r.name as role_name
                 FROM campaign_department_users u 
                 LEFT JOIN `campaign_department_barangays` b ON b.id = u.barangay_id 
+                LEFT JOIN `campaign_department_roles` r ON r.id = u.role_id
                 WHERE u.id = :id AND u.is_active = 1
             ');
             $stmt->execute(['id' => $userId]);
@@ -345,6 +371,7 @@ class AuthController
             'name' => $userName,
             'email' => $user['email'] ?? '',
             'role_id' => isset($user['role_id']) ? (int) $user['role_id'] : null,
+            'role' => $user['role_name'] ?? $user['role'] ?? null, // Include role name from database
             'barangay_id' => isset($user['barangay_id']) ? (int) $user['barangay_id'] : null,
             'barangay_name' => $user['barangay_name'] ?? null,
             'phone_number' => $user['phone_number'] ?? $user['phone'] ?? null,
@@ -521,7 +548,7 @@ class AuthController
                 is_active TINYINT(1) NOT NULL DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                CONSTRAINT fk_campaign_department_users_role FOREIGN KEY (role_id) REFERENCES roles(id),
+                CONSTRAINT fk_campaign_department_users_role FOREIGN KEY (role_id) REFERENCES `campaign_department_roles`(id),
                 CONSTRAINT fk_campaign_department_users_barangay FOREIGN KEY (barangay_id) REFERENCES barangays(id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         ");

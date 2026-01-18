@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Middleware\RoleMiddleware;
 use PDO;
 use RuntimeException;
 
@@ -20,12 +21,45 @@ class PartnerController
 
     public function index(?array $user, array $params = []): array
     {
+        // RBAC: All authenticated users can view partners (read access)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
         $stmt = $this->pdo->query('SELECT id, name, contact_person, contact_email, contact_phone, created_at FROM partners ORDER BY created_at DESC');
         return ['data' => $stmt->fetchAll()];
     }
 
     public function store(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can create partners (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot create partners.'];
+            }
+            
+            // Allowed roles: admin, staff, secretary, kagawad, captain
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can create partners.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
         $name = trim($input['name'] ?? '');
         $contactPerson = $input['contact_person'] ?? null;
@@ -50,6 +84,33 @@ class PartnerController
 
     public function engage(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can engage partners (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot engage partners.'];
+            }
+            
+            // Allowed roles: admin, staff, secretary, kagawad, captain, partner
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'partner', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can engage partners.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $partnerId = (int) ($params['id'] ?? 0);
         $partner = $this->findPartner($partnerId);
 
@@ -105,8 +166,8 @@ class PartnerController
             SELECT pe.id as engagement_id, c.id as campaign_id, c.title as campaign_title, c.status,
                    e.id as event_id, e.name as event_name, e.starts_at
             FROM partner_engagements pe
-            INNER JOIN campaigns c ON c.id = pe.campaign_id
-            LEFT JOIN events e ON e.id = pe.event_id
+            INNER JOIN `campaign_department_campaigns` c ON c.id = pe.campaign_id
+            LEFT JOIN `campaign_department_events` e ON e.id = pe.event_id
             WHERE pe.partner_id = :pid
             ORDER BY c.created_at DESC, e.starts_at ASC
         ');
@@ -130,7 +191,7 @@ class PartnerController
 
     private function assertCampaign(int $id): void
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM campaigns WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id FROM `campaign_department_campaigns` WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $id]);
         if (!$stmt->fetch()) {
             throw new RuntimeException('Campaign not found');
@@ -139,7 +200,7 @@ class PartnerController
 
     private function assertEvent(int $id): void
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM events WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id FROM `campaign_department_events` WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $id]);
         if (!$stmt->fetch()) {
             throw new RuntimeException('Event not found');
@@ -171,7 +232,7 @@ class PartnerController
 
     private function logIntegration(string $source, array $payload, string $status): void
     {
-        $stmt = $this->pdo->prepare('INSERT INTO integration_logs (source, payload, status) VALUES (:source, :payload, :status)');
+        $stmt = $this->pdo->prepare('INSERT INTO `campaign_department_integration_logs` (source, payload, status) VALUES (:source, :payload, :status)');
         $stmt->execute([
             'source' => $source,
             'payload' => json_encode($payload),

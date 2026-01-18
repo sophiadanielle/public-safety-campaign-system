@@ -271,14 +271,17 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                     </button>
                 </div>
                 <div style="position: relative;">
-                    <input id="segment_name" type="text" placeholder="e.g., High-Risk Households in Payatas" required 
-                           oninput="updateSegmentNameSuggestions()">
+                    <select id="segment_name" required onchange="updateSegmentPreview()" style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; background: white;">
+                        <option value="">Select existing segment or create new...</option>
+                        <option value="__new__">+ Create New Segment Name</option>
+                    </select>
+                    <input id="segment_name_new" type="text" placeholder="Enter new segment name..." style="display: none; width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-top: 8px;" oninput="updateSegmentNameSuggestions(); updateSegmentPreview();">
                     <div id="segmentNameSuggestions" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-radius: 8px; margin-top: 4px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                         <div style="padding: 8px 12px; font-size: 12px; color: #64748b; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Suggestions:</div>
                         <div id="suggestionsList"></div>
                     </div>
                 </div>
-                <p style="color: #64748b; font-size: 12px; margin: 4px 0 0 0;">💡 Tip: Select fields below and click "Auto-Generate" for smart suggestions</p>
+                <p style="color: #64748b; font-size: 12px; margin: 4px 0 0 0;">💡 Tip: Select existing segment or create new. Use "Auto-Generate" for smart suggestions.</p>
             </div>
             <div class="form-field">
                 <label>Geographic Scope</label>
@@ -556,6 +559,27 @@ async function loadSegments() {
         // Populate dropdowns
         populateSegmentDropdowns(segments);
         
+        // Populate segment name dropdown with existing segments
+        const segmentNameSelect = document.getElementById('segment_name');
+        if (segmentNameSelect) {
+            // Keep first two options (empty and "Create New")
+            const emptyOpt = segmentNameSelect.options[0];
+            const newOpt = segmentNameSelect.options[1];
+            segmentNameSelect.innerHTML = '';
+            if (emptyOpt) segmentNameSelect.appendChild(emptyOpt);
+            if (newOpt) segmentNameSelect.appendChild(newOpt);
+            
+            // Add existing segments
+            segments.forEach(seg => {
+                if (seg.segment_name) {
+                    const option = document.createElement('option');
+                    option.value = seg.segment_name;
+                    option.textContent = seg.segment_name;
+                    segmentNameSelect.appendChild(option);
+                }
+            });
+        }
+        
         if (segments.length === 0) {
             container.innerHTML = '';
             emptyState.style.display = 'block';
@@ -662,10 +686,19 @@ function generateSegmentName() {
         }
     }
     
-    // Show suggestions
+    // Show suggestions and auto-select first one if available
     if (suggestions.length > 0) {
         const suggestionsDiv = document.getElementById('segmentNameSuggestions');
         const suggestionsList = document.getElementById('suggestionsList');
+        const segmentNameInput = document.getElementById('segment_name');
+        
+        // Auto-set the first suggestion if creating new segment
+        const segmentNameSelect = document.getElementById('segment_name');
+        const segmentNameNew = document.getElementById('segment_name_new');
+        if (segmentNameSelect && segmentNameSelect.value === '__new__' && segmentNameNew && !segmentNameNew.value.trim()) {
+            segmentNameNew.value = suggestions[0];
+            updateSegmentPreview();
+        }
         
         suggestionsList.innerHTML = suggestions.map((suggestion, index) => `
             <div onclick="selectSuggestion('${suggestion.replace(/'/g, "\\'")}')" 
@@ -700,7 +733,21 @@ function updateSegmentNameSuggestions() {
 
 // Select a suggestion
 function selectSuggestion(suggestion) {
-    document.getElementById('segment_name').value = suggestion;
+    const segmentNameSelect = document.getElementById('segment_name');
+    const segmentNameNew = document.getElementById('segment_name_new');
+    
+    if (segmentNameSelect && segmentNameSelect.value === '__new__' && segmentNameNew) {
+        segmentNameNew.value = suggestion;
+    } else if (segmentNameSelect) {
+        // If not in "new" mode, switch to new mode and set value
+        segmentNameSelect.value = '__new__';
+        if (segmentNameNew) {
+            segmentNameNew.style.display = 'block';
+            segmentNameNew.required = true;
+            segmentNameNew.value = suggestion;
+        }
+    }
+    
     document.getElementById('segmentNameSuggestions').style.display = 'none';
     updateSegmentPreview();
 }
@@ -710,7 +757,17 @@ function updateSegmentPreview() {
     const preview = document.getElementById('segmentPreview');
     const previewContent = document.getElementById('previewContent');
     
-    const segmentName = document.getElementById('segment_name').value.trim();
+    // Get segment name from dropdown or new input
+    const segmentNameSelect = document.getElementById('segment_name');
+    const segmentNameNew = document.getElementById('segment_name_new');
+    let segmentName = '';
+    
+    if (segmentNameSelect && segmentNameSelect.value === '__new__' && segmentNameNew) {
+        segmentName = segmentNameNew.value.trim();
+    } else if (segmentNameSelect && segmentNameSelect.value) {
+        segmentName = segmentNameSelect.value.trim();
+    }
+    
     const geographicScope = document.getElementById('geographic_scope').value;
     const locationRef = document.getElementById('location_reference').value;
     const sectorType = document.getElementById('sector_type').value;
@@ -829,7 +886,20 @@ function showSegmentHelp() {
 // Create segment with validation
 async function createSegment() {
     const statusEl = document.getElementById('createStatus');
-    const segmentName = document.getElementById('segment_name').value.trim();
+    
+    // Get segment name from dropdown or new input field
+    const segmentNameSelect = document.getElementById('segment_name');
+    const segmentNameNew = document.getElementById('segment_name_new');
+    let segmentName = '';
+    
+    if (segmentNameSelect && segmentNameSelect.value === '__new__') {
+        // User selected "Create New" - use the new input field
+        segmentName = segmentNameNew ? segmentNameNew.value.trim() : '';
+    } else if (segmentNameSelect && segmentNameSelect.value) {
+        // User selected existing segment
+        segmentName = segmentNameSelect.value.trim();
+    }
+    
     const riskLevel = document.getElementById('risk_level').value;
     const geographicScope = document.getElementById('geographic_scope').value;
     const locationRef = document.getElementById('location_reference').value;
@@ -838,7 +908,11 @@ async function createSegment() {
     if (!segmentName) {
         statusEl.textContent = '✗ Error: Segment Name is required';
         statusEl.style.color = '#dc2626';
-        document.getElementById('segment_name').focus();
+        if (segmentNameSelect && segmentNameSelect.value === '__new__' && segmentNameNew) {
+            segmentNameNew.focus();
+        } else if (segmentNameSelect) {
+            segmentNameSelect.focus();
+        }
         return;
     }
     

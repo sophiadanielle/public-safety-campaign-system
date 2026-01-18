@@ -469,7 +469,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                 </select>
             </div>
             <div class="form-field">
-                <label>Intended Audience</label>
+                <label>Intended Audience <span style="font-size: 12px; font-weight: normal; color: #64748b;">(Hold Ctrl/Cmd to select multiple)</span></label>
                 <select name="intended_audience_segment[]" id="intendedAudience" multiple size="3">
                     <option value="general public">General Public</option>
                     <option value="households">Households</option>
@@ -902,6 +902,19 @@ function showSearchFilterHelp() {
 document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    
+    // Ensure intended_audience_segment[] is sent as array
+    // FormData with name[] should work, but explicitly handle it
+    const audienceSelect = e.target.querySelector('[name="intended_audience_segment[]"]');
+    if (audienceSelect) {
+        // Remove existing entries
+        formData.delete('intended_audience_segment[]');
+        // Add each selected option
+        Array.from(audienceSelect.selectedOptions).forEach(option => {
+            formData.append('intended_audience_segment[]', option.value);
+        });
+    }
+    
     const statusEl = document.getElementById('uploadStatus');
     statusEl.textContent = 'Uploading...';
     statusEl.style.color = '#64748b';
@@ -1288,16 +1301,21 @@ function useTemplate(contentId) {
             if (form.elements['description']) form.elements['description'].value = item.body || '';
             if (form.elements['content_type']) form.elements['content_type'].value = item.content_type || '';
             if (form.elements['hazard_category']) form.elements['hazard_category'].value = item.hazard_category || '';
-            if (form.elements['intended_audience_segment']) {
-                const audienceSelect = form.elements['intended_audience_segment'];
+            // Handle multi-select intended_audience_segment[] field
+            const audienceSelect = form.querySelector('[name="intended_audience_segment[]"]') || form.elements.namedItem('intended_audience_segment[]');
+            if (audienceSelect) {
                 // Clear previous selections
                 Array.from(audienceSelect.options).forEach(opt => opt.selected = false);
                 // Set selections from comma-separated string
                 if (item.intended_audience_segment) {
-                    const audiences = item.intended_audience_segment.split(',').map(s => s.trim()).filter(Boolean);
+                    // Split by comma (with optional space after comma)
+                    const audiences = item.intended_audience_segment.split(/\s*,\s*/).filter(Boolean);
                     audiences.forEach(audience => {
-                        const option = Array.from(audienceSelect.options).find(opt => opt.value === audience);
-                        if (option) option.selected = true;
+                        const trimmedAudience = audience.trim();
+                        const option = Array.from(audienceSelect.options).find(opt => opt.value === trimmedAudience);
+                        if (option) {
+                            option.selected = true;
+                        }
                     });
                 }
             }

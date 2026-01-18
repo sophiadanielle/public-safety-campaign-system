@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Middleware\RoleMiddleware;
 use PDO;
 use RuntimeException;
 
@@ -51,6 +52,12 @@ class SegmentController
 
     public function index(?array $user, array $params = []): array
     {
+        // RBAC: All authenticated users can view segments (read access)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
         $stmt = $this->pdo->query('
             SELECT 
                 id AS segment_id,
@@ -62,7 +69,7 @@ class SegmentController
                 basis_of_segmentation,
                 created_at,
                 updated_at
-            FROM audience_segments 
+            FROM `campaign_department_audience_segments` 
             ORDER BY created_at DESC
         ');
         return ['data' => $stmt->fetchAll(\PDO::FETCH_ASSOC)];
@@ -70,6 +77,12 @@ class SegmentController
 
     public function show(?array $user, array $params = []): array
     {
+        // RBAC: All authenticated users can view segments (read access)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
         $id = (int) ($params['id'] ?? 0);
         $stmt = $this->pdo->prepare('
             SELECT 
@@ -82,7 +95,7 @@ class SegmentController
                 basis_of_segmentation,
                 created_at,
                 updated_at
-            FROM audience_segments 
+            FROM `campaign_department_audience_segments` 
             WHERE id = :id
         ');
         $stmt->execute(['id' => $id]);
@@ -98,6 +111,33 @@ class SegmentController
 
     public function store(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can create segments (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot create segments.'];
+            }
+            
+            // Allowed roles: admin, staff, secretary, kagawad, captain
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can create segments.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
         
         $segmentName = trim($input['segment_name'] ?? '');
@@ -139,7 +179,7 @@ class SegmentController
         }
 
         // Check for duplicate segment names
-        $checkStmt = $this->pdo->prepare('SELECT id FROM audience_segments WHERE segment_name = :name');
+        $checkStmt = $this->pdo->prepare('SELECT id FROM `campaign_department_audience_segments` WHERE segment_name = :name');
         $checkStmt->execute(['name' => $segmentName]);
         if ($checkStmt->fetch()) {
             http_response_code(422);
@@ -147,7 +187,7 @@ class SegmentController
         }
 
         $stmt = $this->pdo->prepare('
-            INSERT INTO audience_segments (
+            INSERT INTO `campaign_department_audience_segments` (
                 segment_name, 
                 geographic_scope, 
                 location_reference, 
@@ -178,6 +218,33 @@ class SegmentController
 
     public function update(?array $user, array $params = []): array
     {
+        // RBAC: Only authorized LGU roles can update segments (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot update segments.'];
+            }
+            
+            // Allowed roles: admin, staff, secretary, kagawad, captain
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can update segments.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
         $id = (int) ($params['id'] ?? 0);
         $segment = $this->findSegment($id);
         
@@ -222,7 +289,7 @@ class SegmentController
         }
 
         // Check for duplicate names (excluding current segment)
-        $checkStmt = $this->pdo->prepare('SELECT id FROM audience_segments WHERE segment_name = :name AND id != :id');
+        $checkStmt = $this->pdo->prepare('SELECT id FROM `campaign_department_audience_segments` WHERE segment_name = :name AND id != :id');
         $checkStmt->execute(['name' => $segmentName, 'id' => $id]);
         if ($checkStmt->fetch()) {
             http_response_code(422);
@@ -230,7 +297,7 @@ class SegmentController
         }
 
         $stmt = $this->pdo->prepare('
-            UPDATE audience_segments SET
+            UPDATE `campaign_department_audience_segments` SET
                 segment_name = :segment_name,
                 geographic_scope = :geographic_scope,
                 location_reference = :location_reference,
@@ -268,7 +335,7 @@ class SegmentController
                 zone,
                 purok,
                 contact
-            FROM audience_members 
+            FROM `campaign_department_audience_members` 
             WHERE segment_id = :segment_id
             ORDER BY full_name
         ');
@@ -318,7 +385,7 @@ class SegmentController
         }
         
         // Verify campaign exists
-        $campaignStmt = $this->pdo->prepare('SELECT id FROM campaigns WHERE id = :id');
+        $campaignStmt = $this->pdo->prepare('SELECT id FROM `campaign_department_campaigns` WHERE id = :id');
         $campaignStmt->execute(['id' => $campaignId]);
         if (!$campaignStmt->fetch()) {
             http_response_code(404);
@@ -351,8 +418,8 @@ class SegmentController
                 c.status,
                 c.start_date,
                 c.end_date
-            FROM campaigns c
-            INNER JOIN campaign_audience ca ON ca.campaign_id = c.id
+            FROM `campaign_department_campaigns` c
+            INNER JOIN `campaign_department_campaign_audience` ca ON ca.campaign_id = c.id
             WHERE ca.segment_id = :segment_id
             ORDER BY c.start_date DESC
         ');
@@ -490,7 +557,7 @@ class SegmentController
                 sector_type,
                 risk_level,
                 basis_of_segmentation
-            FROM audience_segments 
+            FROM `campaign_department_audience_segments` 
             WHERE id = :id 
             LIMIT 1
         ');
