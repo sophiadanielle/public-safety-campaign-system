@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\PartnerController;
 use App\Middleware\JWTMiddleware;
+use App\Middleware\ViewerBlockMiddleware;
 
 return [
     [
@@ -16,7 +17,7 @@ return [
         'method' => 'POST',
         'path' => '/api/v1/partners',
         'handler' => [PartnerController::class, 'store'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'POST',

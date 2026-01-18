@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\EventController;
 use App\Middleware\JWTMiddleware;
+use App\Middleware\ViewerBlockMiddleware;
 
 return [
     // List events (with filters)
@@ -27,7 +28,7 @@ return [
         'method' => 'POST',
         'path' => '/api/v1/events',
         'handler' => [EventController::class, 'store'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     
     // Update event
@@ -35,7 +36,7 @@ return [
         'method' => 'PUT',
         'path' => '/api/v1/events/{id}',
         'handler' => [EventController::class, 'update'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     
     // Check-in attendee (public for QR, requires auth for manual)

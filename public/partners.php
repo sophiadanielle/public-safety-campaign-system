@@ -1,6 +1,9 @@
 <?php
 $pageTitle = 'Partner Management';
 require_once __DIR__ . '/../header/includes/path_helper.php';
+
+// RBAC: Block Viewer role from accessing operational pages (contains forms/workflows)
+require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -23,6 +26,22 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     </script>
 </head>
 <body class="module-partners" data-module="partners">
+    <?php
+    // RBAC: Page-level protection - Viewer cannot access Partners module
+    require_once __DIR__ . '/../sidebar/includes/get_user_role.php';
+    $currentUserRole = getCurrentUserRole();
+    $isViewer = false;
+    if ($currentUserRole) {
+        $roleLower = strtolower(trim($currentUserRole));
+        $isViewer = ($roleLower === 'viewer' || $roleLower === 'partner' || 
+                    strpos($roleLower, 'partner') !== false || strpos($roleLower, 'viewer') !== false);
+    }
+    if ($isViewer) {
+        http_response_code(403);
+        header('Location: ' . $publicPath . '/dashboard.php');
+        exit;
+    }
+    ?>
     <?php include __DIR__ . '/../sidebar/includes/sidebar.php'; ?>
     <?php include __DIR__ . '/../sidebar/includes/admin-header.php'; ?>
     

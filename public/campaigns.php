@@ -2,6 +2,9 @@
 $pageTitle = 'Campaign Planning';
 // Custom header setup for sidebar + admin-header layout
 require_once __DIR__ . '/../header/includes/path_helper.php';
+
+// RBAC: Block Viewer role from accessing operational pages (contains forms/workflows)
+require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -88,6 +91,29 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         // Force light theme
         document.documentElement.setAttribute('data-theme', 'light');
         localStorage.setItem('theme', 'light');
+        
+        // RBAC FIX: Set role cookie IMMEDIATELY in <head> BEFORE sidebar renders
+        // This ensures PHP can read the cookie when sidebar is included
+        (function() {
+            try {
+                const token = localStorage.getItem('jwtToken');
+                if (token) {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        const roleId = payload.role_id || payload.rid;
+                        if (roleId && typeof roleId === 'number') {
+                            const expires = new Date();
+                            expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000));
+                            document.cookie = 'user_role_id=' + roleId + ';path=/;expires=' + expires.toUTCString() + ';SameSite=Lax';
+                            console.log('RBAC: Set user_role_id cookie in <head> =', roleId);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('RBAC: Failed to set role cookie in <head>:', e);
+            }
+        })();
         
         // IMMEDIATE DEBUG: Check localStorage access right away
         console.log('=== IMMEDIATE CHECK (before any scripts) ===');
@@ -1113,7 +1139,20 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <!-- Campaign features are now in the main sidebar as nested submenu -->
         <div class="campaign-main">
 
+    <?php
+    // RBAC: $isViewer is already set by block_viewer_access.php (included at top)
+    // If Viewer tries to access planning form directly, redirect to list section
+    if ($isViewer && isset($_GET['section']) && $_GET['section'] === 'planning-section') {
+        header('Location: ' . $publicPath . '/campaigns.php#list-section');
+        exit;
+    }
+    
+    // Viewers can view approved campaigns in the list section (read-only)
+    // Forms are hidden via PHP conditionals below
+    ?>
+
     <!-- Planning Form -->
+    <?php if (!$isViewer): ?>
     <section class="card" id="planning-section">
         <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
             <h2 class="section-title analytics-accent" style="margin: 0;">Plan New Campaign</h2>
@@ -1160,27 +1199,28 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                         <option value="">Select barangay...</option>
                     </select>
                 </div>
+                <!-- Status field is hidden - role-based workflow enforced in backend -->
+                <!-- Staff: Creates as Draft (automatic) -->
+                <!-- Secretary: Can forward Draft → Pending via button in campaign details -->
+                <!-- Kagawad: Can review but cannot change status -->
+                <!-- Captain: Can approve Pending → Approved via button in campaign details -->
+                <input type="hidden" id="status" value="draft">
+                
                 <div class="form-field">
-                    <label for="status">Status</label>
-                    <select class="standard-select" id="status">
-                        <option value="">Select status...</option>
-                        <option value="draft">Draft</option>
-                        <option value="pending">Pending</option>
-                        <option value="approved">Approved</option>
-                        <option value="ongoing">Ongoing</option>
-                        <option value="scheduled">Scheduled</option>
-                        <option value="completed">Completed</option>
-                        <option value="archived">Archived</option>
-                        <option value="rejected">Rejected</option>
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label for="start_date">Start Date</label>
+                    <label for="start_date">Start Date *</label>
                     <input id="start_date" type="date">
                 </div>
                 <div class="form-field">
-                    <label for="end_date">End Date</label>
+                    <label for="start_time">Start Time *</label>
+                    <input id="start_time" type="time">
+                </div>
+                <div class="form-field">
+                    <label for="end_date">End Date *</label>
                     <input id="end_date" type="date">
+                </div>
+                <div class="form-field">
+                    <label for="end_time">End Time *</label>
+                    <input id="end_time" type="time">
                 </div>
                 <div class="form-field" id="final_schedule_field" style="display: none;">
                     <label for="final_schedule_display" style="display: flex; align-items: center; gap: 6px; font-weight: 600;">
@@ -1270,8 +1310,10 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             <div id="createStatus" class="status-text" style="display:none;"></div>
         </form>
     </section>
+    <?php endif; // End RBAC: Hide planning section for Viewer ?>
 
     <!-- AutoML Panel -->
+    <?php if (!$isViewer): // RBAC: Hide AutoML section for Viewer (management tool) ?>
     <section class="card" id="automl-section">
         <div class="section-header">
             <h2 class="section-title analytics-accent">🤖 AI-Powered Deployment Optimization</h2>
@@ -1293,27 +1335,11 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                         AI-Powered Scheduling Intelligence
                     </h3>
                     <p style="margin: 0; opacity: 0.95; line-height: 1.6; font-size: 14px;">
-                        Our AI analyzes historical campaign data, audience engagement patterns from the <strong>Surveys module</strong>, and event conflicts from the <strong>Events module</strong> to recommend the optimal deployment schedule for maximum reach and effectiveness.
+                        The scheduler analyzes historical campaign data, attendance trends, survey feedback, and event conflicts to recommend optimal deployment schedules. 
+                        <button type="button" onclick="showAIHowItWorksModal()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-left: 8px; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                            View How the AI Works
+                        </button>
                     </p>
-                </div>
-            </div>
-            
-            <!-- How It Works Card -->
-            <div style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 16px; margin-bottom: 20px; backdrop-filter: blur(10px);">
-                <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
-                    <div style="font-size: 24px; line-height: 1;">💡</div>
-                    <div style="flex: 1;">
-                        <strong style="display: block; margin-bottom: 8px; font-size: 15px;">How the AI Works:</strong>
-                        <p style="margin: 0 0 12px 0; font-size: 13px; line-height: 1.6; opacity: 0.95;">
-                            The system uses Google AutoML (if configured) or intelligent heuristic predictions based on historical campaign data. Both methods analyze:
-                        </p>
-                        <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.8; opacity: 0.95;">
-                            <li>Similar campaigns and their performance metrics</li>
-                            <li>Historical engagement patterns from the <strong>Surveys module</strong></li>
-                            <li>Optimal timing based on audience segments from the <strong>Segments module</strong></li>
-                            <li>Event conflicts from the <strong>Events module</strong> to avoid scheduling overlaps</li>
-                        </ul>
-                    </div>
                 </div>
             </div>
             
@@ -1431,6 +1457,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             </div>
         </div>
     </section>
+    <?php endif; // End RBAC: Hide AutoML section for Viewer ?>
 
     <!-- Timeline & Calendar Tabs -->
     <section class="card" id="timeline-section">
@@ -1610,14 +1637,19 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                     Segment IDs *
                 </label>
                 <input id="segment_ids" type="text" placeholder="Enter segment IDs separated by commas (e.g., 1, 2, 5)" style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#667eea';" onblur="this.style.borderColor='#e2e8f0';">
-                <div style="margin-top: 8px; padding: 12px; background: #f1f5f9; border-radius: 6px; font-size: 12px; color: #475569; line-height: 1.6;">
-                    <strong style="display: block; margin-bottom: 4px; color: #0f172a;">💡 How to use:</strong>
-                    <ul style="margin: 4px 0 0 0; padding-left: 20px;">
-                        <li>Enter segment IDs separated by commas (e.g., <code style="background: white; padding: 2px 6px; border-radius: 3px;">1, 2, 5</code>)</li>
-                        <li>To find segment IDs, go to the <strong>Segments module</strong> and check the ID column</li>
-                        <li>You can assign multiple segments to target different audience groups</li>
-                        <li>Segments use data from the <strong>Segments module</strong> which may include attendance records, incident reports, and demographic data</li>
-                    </ul>
+                <div style="margin-top: 8px;">
+                    <button type="button" onclick="toggleSegmentHelp()" style="display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; color: #475569; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                        <i class="fas fa-chevron-down" id="segmentHelpIcon" style="transition: transform 0.2s;"></i>
+                        <span>💡 How to use</span>
+                    </button>
+                    <div id="segmentHelpContainer" style="display: none; margin-top: 8px; padding: 12px; background: #f1f5f9; border-radius: 6px; font-size: 12px; color: #475569; line-height: 1.6;">
+                        <ul style="margin: 4px 0 0 0; padding-left: 20px;">
+                            <li>Enter segment IDs separated by commas (e.g., <code style="background: white; padding: 2px 6px; border-radius: 3px;">1, 2, 5</code>)</li>
+                            <li>To find segment IDs, go to the <strong>Segments module</strong> and check the ID column</li>
+                            <li>You can assign multiple segments to target different audience groups</li>
+                            <li>Segments use data from the <strong>Segments module</strong> which may include attendance records, incident reports, and demographic data</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1760,6 +1792,130 @@ function getToken() {
 let calendar, gantt;
 let activeCampaignId = null;
 let allCampaigns = [];
+
+// RBAC: Get user role for UI visibility
+let currentUserRole = null;
+(function() {
+    try {
+        const currentUserStr = localStorage.getItem('currentUser');
+        if (currentUserStr) {
+            const currentUser = JSON.parse(currentUserStr);
+            currentUserRole = currentUser.role ? currentUser.role.toLowerCase() : null;
+            
+            // If role not in user object, try to decode from JWT
+            if (!currentUserRole) {
+                const token = localStorage.getItem('jwtToken');
+                if (token) {
+                    try {
+                        const parts = token.split('.');
+                        if (parts.length === 3) {
+                            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                            currentUserRole = payload.role ? payload.role.toLowerCase() : null;
+                        }
+                    } catch (e) {
+                        console.error('RBAC: Failed to decode JWT for role check:', e);
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.error('RBAC: Error checking user role:', e);
+    }
+})();
+
+// RBAC: Hide action buttons/forms for Viewer role (read-only)
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        const currentUserStr = localStorage.getItem('currentUser');
+        if (currentUserStr) {
+            const currentUser = JSON.parse(currentUserStr);
+            // Try to get role from user object or decode from JWT
+            let userRole = currentUser.role ? currentUser.role.toLowerCase() : null;
+            
+            // If role not in user object, try to decode from JWT
+            if (!userRole) {
+                const token = localStorage.getItem('jwtToken');
+                if (token) {
+                    try {
+                        const parts = token.split('.');
+                        if (parts.length === 3) {
+                            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                            userRole = payload.role ? payload.role.toLowerCase() : null;
+                        }
+                    } catch (e) {
+                        console.error('RBAC: Failed to decode JWT for role check:', e);
+                    }
+                }
+            }
+            
+            // Get roleId from JWT for better detection
+            let roleId = null;
+            if (!userRole) {
+                const token = localStorage.getItem('jwtToken');
+                if (token) {
+                    try {
+                        const parts = token.split('.');
+                        if (parts.length === 3) {
+                            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                            roleId = payload.role_id || payload.rid;
+                            if (!userRole) userRole = payload.role ? payload.role.toLowerCase() : null;
+                        }
+                    } catch (e) {}
+                }
+            }
+            if (!roleId && currentUser && currentUser.role_id) {
+                roleId = currentUser.role_id;
+            }
+            
+            // Check if Viewer/Partner (multiple checks for robustness)
+            const isViewer = userRole === 'viewer' || 
+                            userRole === 'partner' || 
+                            userRole === 'partner representative' ||
+                            roleId === 6 || // Adjust if Partner/Viewer has different role_id
+                            (userRole && (userRole.includes('partner') || userRole.includes('viewer')));
+            
+            if (isViewer) {
+                console.log('RBAC: Viewer/Partner detected (role:', userRole, 'roleId:', roleId, ') - hiding forms and redirecting to list');
+                
+                // Hide planning section (create form)
+                const planningSection = document.getElementById('planning-section');
+                if (planningSection) {
+                    planningSection.style.display = 'none';
+                    planningSection.remove(); // Remove from DOM entirely
+                }
+                
+                // Hide AutoML section (management tool)
+                const automlSection = document.getElementById('automl-section');
+                if (automlSection) {
+                    automlSection.style.display = 'none';
+                    automlSection.remove(); // Remove from DOM entirely
+                }
+                
+                // Aggressively hide ALL create/edit buttons
+                document.querySelectorAll('button, a.btn, .btn-primary, .btn-secondary').forEach(btn => {
+                    const text = btn.textContent.toLowerCase();
+                    if (text.includes('create') || text.includes('add') || text.includes('edit') || 
+                        text.includes('delete') || text.includes('approve') || text.includes('schedule') ||
+                        text.includes('upload') || text.includes('manage')) {
+                        btn.style.display = 'none';
+                        btn.remove(); // Remove from DOM entirely
+                    }
+                });
+                
+                // Auto-scroll to list section (read-only view)
+                setTimeout(() => {
+                    const listSection = document.getElementById('list-section');
+                    if (listSection) {
+                        listSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        window.location.hash = 'list-section';
+                    }
+                }, 100);
+            }
+        }
+    } catch (e) {
+        console.error('RBAC: Error checking user role for UI visibility:', e);
+    }
+});
 
 // Sample data for quick campaign creation (used as local combobox options)
 const SAMPLE_CAMPAIGN_TITLES = [
@@ -2189,20 +2345,29 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
         const descriptionValue = document.getElementById('description').value.trim();
         const objectivesValue = document.getElementById('objectives').value.trim();
         const startDateValue = document.getElementById('start_date').value;
+        const startTimeValue = document.getElementById('start_time').value;
         const endDateValue = document.getElementById('end_date').value;
+        const endTimeValue = document.getElementById('end_time').value;
         // NOTE: draft_schedule_datetime is NOT set during initial creation per sequence diagram
         // Schedule should ONLY be set after user requests AI recommendation and confirms it (Step 9)
         const budgetInput = document.getElementById('budget').value.trim();
         const staffCountInput = document.getElementById('staff_count').value.trim();
+
+        // GOVERNANCE WORKFLOW: Staff can ONLY create Draft campaigns
+        // Status is enforced in backend, but we always send 'draft' from frontend
+        // Secretary and Captain actions are handled via separate API endpoints/buttons
+        const finalStatusValue = 'draft'; // Always draft for new campaigns - workflow enforced backend
 
         const payload = {
             title: titleValue,
             description: descriptionValue || null,
             category: categoryValue,
             geographic_scope: geographicScopeValue,
-            status: statusValue,
+            status: finalStatusValue, // Always 'draft' - workflow enforced backend
             start_date: startDateValue || null,
+            start_time: startTimeValue || null,
             end_date: endDateValue || null,
+            end_time: endTimeValue || null,
             // draft_schedule_datetime: REMOVED - Schedule must be set via AI recommendation flow (Steps 3-9)
             objectives: objectivesValue || null,
             location: locationValue,
@@ -2977,6 +3142,12 @@ async function getAutoMLPrediction() {
                 </div>
             </div>
             
+            ${getDataFactorsHTML(pred.data_sources_used || [])}
+            
+            ${getAIRecommendationsHTML(pred.recommendations || {})}
+            
+            ${getAIDecisionBasisHTML(pred.recommendations || {})}
+            
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 <button type="button" class="btn btn-primary" onclick="acceptAIRecommendation()" style="background: #10b981; color: white; border: none; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#10b981'; this.style.transform='translateY(0)'">
                     <i class="fas fa-check"></i>
@@ -3052,6 +3223,7 @@ async function acceptAIRecommendation() {
     }
     
     try {
+        // First, set the final schedule
         const res = await fetch(apiBase + `/api/v1/campaigns/${currentCampaignId}/final-schedule`, {
             method: 'POST',
             headers: {
@@ -3065,6 +3237,110 @@ async function acceptAIRecommendation() {
         if (data.error) {
             alert('Error: ' + data.error);
             return;
+        }
+        
+        // Populate campaign form with AI recommendations
+        const recommendations = currentPrediction.recommendations || {};
+        
+        // Populate title
+        if (recommendations.title && recommendations.title.value) {
+            const titleEl = document.getElementById('title');
+            if (titleEl) {
+                // Try to set value or add as option
+                const option = Array.from(titleEl.options).find(opt => opt.textContent === recommendations.title.value);
+                if (option) {
+                    titleEl.value = option.value;
+                } else {
+                    // Add as new option
+                    const newOption = document.createElement('option');
+                    newOption.value = recommendations.title.value;
+                    newOption.textContent = recommendations.title.value;
+                    titleEl.appendChild(newOption);
+                    titleEl.value = recommendations.title.value;
+                }
+            }
+        }
+        
+        // Populate category
+        if (recommendations.category && recommendations.category.value) {
+            const categoryEl = document.getElementById('category');
+            if (categoryEl) {
+                categoryEl.value = recommendations.category.value;
+            }
+        }
+        
+        // Populate budget
+        if (recommendations.budget && recommendations.budget.value) {
+            const budgetEl = document.getElementById('budget');
+            if (budgetEl) {
+                budgetEl.value = recommendations.budget.value;
+            }
+        }
+        
+        // Populate staff count
+        if (recommendations.staff_count && recommendations.staff_count.value) {
+            const staffCountEl = document.getElementById('staff_count');
+            if (staffCountEl) {
+                staffCountEl.value = recommendations.staff_count.value;
+            }
+        }
+        
+        // Populate assigned staff (multi-select)
+        if (recommendations.assigned_staff && Array.isArray(recommendations.assigned_staff.value)) {
+            const assignedStaffEl = document.getElementById('assigned_staff');
+            if (assignedStaffEl && typeof initMultiSelectEnhanced === 'function') {
+                // Clear existing selections
+                Array.from(assignedStaffEl.options).forEach(opt => opt.selected = false);
+                
+                // Select recommended staff
+                recommendations.assigned_staff.value.forEach(staffName => {
+                    const option = Array.from(assignedStaffEl.options).find(opt => opt.textContent === staffName || opt.value === staffName);
+                    if (option) {
+                        option.selected = true;
+                    } else {
+                        // Add as new option and select
+                        const newOption = document.createElement('option');
+                        newOption.value = staffName;
+                        newOption.textContent = staffName;
+                        newOption.selected = true;
+                        assignedStaffEl.appendChild(newOption);
+                    }
+                });
+                
+                // Trigger multi-select update if function exists
+                if (typeof assignedStaffEl.updateTags === 'function') {
+                    assignedStaffEl.updateTags();
+                }
+            }
+        }
+        
+        // Populate materials (multi-select)
+        if (recommendations.materials && recommendations.materials.value && typeof recommendations.materials.value === 'object') {
+            const materialsEl = document.getElementById('materials_json');
+            if (materialsEl && typeof initMultiSelectEnhanced === 'function') {
+                // Clear existing selections
+                Array.from(materialsEl.options).forEach(opt => opt.selected = false);
+                
+                // Select recommended materials
+                Object.keys(recommendations.materials.value).forEach(materialName => {
+                    const option = Array.from(materialsEl.options).find(opt => opt.textContent === materialName || opt.value === materialName);
+                    if (option) {
+                        option.selected = true;
+                    } else {
+                        // Add as new option and select
+                        const newOption = document.createElement('option');
+                        newOption.value = materialName;
+                        newOption.textContent = materialName;
+                        newOption.selected = true;
+                        materialsEl.appendChild(newOption);
+                    }
+                });
+                
+                // Trigger multi-select update if function exists
+                if (typeof materialsEl.updateTags === 'function') {
+                    materialsEl.updateTags();
+                }
+            }
         }
         
         // Update final schedule display in form
@@ -3085,14 +3361,19 @@ async function acceptAIRecommendation() {
             
             if (finalScheduleField) {
                 finalScheduleField.style.display = 'block';
-                // Smooth scroll to the field
-                setTimeout(() => {
-                    finalScheduleField.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }, 100);
             }
         }
         
-        alert('AI recommendation accepted! Final schedule has been set.');
+        // Scroll to planning form
+        const planningSection = document.getElementById('planning-section');
+        if (planningSection) {
+            setTimeout(() => {
+                planningSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+        
+        const recCount = Object.keys(recommendations).length;
+        alert(`AI recommendations accepted! ${recCount > 0 ? recCount + ' field(s) have been populated in the campaign form.' : 'Final schedule has been set.'}`);
         loadCampaigns();
         if (calendar) calendar.refetchEvents();
     } catch (err) {
@@ -3563,9 +3844,45 @@ async function loadResources() {
         allCampaigns = data.data || [];
         console.log('loadCampaigns() - Campaigns count:', allCampaigns.length);
         
+        // RBAC: Show sample data for Viewer if no real data exists (read-only view)
         if (!allCampaigns.length) {
-            tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:24px;">No campaigns yet.</td></tr>';
-            return;
+            // Check if user is Viewer - show sample data for demonstration
+            const isViewerCheck = currentUserRole === 'viewer';
+            if (isViewerCheck) {
+                // Sample data for Viewer to see results view
+                allCampaigns = [
+                    {
+                        id: 1,
+                        title: 'Fire Safety Awareness Campaign',
+                        category: 'Fire',
+                        status: 'ongoing',
+                        start_date: '2024-01-15',
+                        end_date: '2024-02-28',
+                        draft_schedule_datetime: '2024-01-20 09:00:00',
+                        ai_recommended_datetime: '2024-01-22 10:00:00',
+                        final_schedule_datetime: '2024-01-22 10:00:00',
+                        location: 'Barangay Hall',
+                        budget: '50000.00'
+                    },
+                    {
+                        id: 2,
+                        title: 'Earthquake Preparedness Orientation',
+                        category: 'Earthquake',
+                        status: 'scheduled',
+                        start_date: '2024-02-01',
+                        end_date: '2024-02-28',
+                        draft_schedule_datetime: '2024-02-05 14:00:00',
+                        ai_recommended_datetime: '2024-02-06 14:00:00',
+                        final_schedule_datetime: null,
+                        location: 'Covered Court',
+                        budget: '35000.00'
+                    }
+                ];
+                // Continue to render sample data below
+            } else {
+                tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:24px;">No campaigns yet. Create a campaign to get started.</td></tr>';
+                return;
+            }
         }
         
         tbody.innerHTML = '';
@@ -3610,8 +3927,10 @@ async function loadResources() {
                 <td>${c.location || '-'}</td>
                 <td>${c.budget ? '₱' + parseFloat(c.budget).toLocaleString('en-US', {minimumFractionDigits: 2}) : '-'}</td>
                 <td>
-                    <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">✏️ Edit</button>
-                    ${c.status !== 'archived' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px;">📦 Archive</button>` : '<span style="color: #9ca3af; font-size: 12px;">Archived</span>'}
+                    ${currentUserRole !== 'viewer' ? `
+                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">✏️ Edit</button>
+                        ${c.status !== 'archived' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px;">📦 Archive</button>` : '<span style="color: #9ca3af; font-size: 12px;">Archived</span>'}
+                    ` : '<span style="color: #9ca3af; font-size: 12px;">Read-only</span>'}
                 </td>
             `;
             tbody.appendChild(tr);
@@ -4342,6 +4661,17 @@ async function archiveCampaign(campaignId) {
 }
 
 // Segments
+// Toggle segment help container
+function toggleSegmentHelp() {
+    const container = document.getElementById('segmentHelpContainer');
+    const icon = document.getElementById('segmentHelpIcon');
+    if (container && icon) {
+        const isVisible = container.style.display !== 'none';
+        container.style.display = isVisible ? 'none' : 'block';
+        icon.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
+}
+
 async function loadSegments() {
     const cid = activeCampaignId || parseInt(document.getElementById('active_campaign').value);
     if (!cid) {
@@ -4684,6 +5014,218 @@ const automlSection = document.getElementById('automl-section');
 if (automlSection) {
     observer.observe(automlSection, { childList: true, subtree: true });
 }
+
+// Helper function to generate HTML for data factors actually used
+function getDataFactorsHTML(dataSourcesUsed) {
+    if (!dataSourcesUsed || dataSourcesUsed.length === 0) {
+        return '';
+    }
+    
+    const factorLabels = {
+        'past_event_records': 'Past event records (dates, outcomes, effectiveness)',
+        'attendance_trends': 'Attendance trends across previous campaigns and events',
+        'feedback_results': 'Feedback results collected from post-event surveys',
+        'audience_targeting_data': 'Audience targeting data from the Segments module',
+        'event_conflicts': 'Event conflicts from the Events module'
+    };
+    
+    const factorsList = dataSourcesUsed.map(source => {
+        const label = factorLabels[source] || source;
+        return `<li style="margin-bottom: 6px;"><i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i>${label}</li>`;
+    }).join('');
+    
+    return `
+        <div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <i class="fas fa-database" style="color: #0ea5e9; font-size: 18px;"></i>
+                <strong style="color: #0c4a6e; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Data Factors Actually Used in This Prediction</strong>
+            </div>
+            <ul style="margin: 0; padding-left: 20px; color: #0c4a6e; font-size: 13px; line-height: 1.8;">
+                ${factorsList}
+            </ul>
+        </div>
+    `;
+}
+
+// Show modal explaining how the AI works (only implemented factors)
+function showAIHowItWorksModal() {
+    const modal = document.createElement('div');
+    modal.id = 'aiHowItWorksModal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+    
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 12px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 20px; font-weight: 700;">How the Scheduling Intelligence Works</h3>
+                <button onclick="this.closest('#aiHowItWorksModal').remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;">&times;</button>
+            </div>
+            <div style="padding: 24px;">
+                <p style="margin: 0 0 16px 0; color: #475569; font-size: 14px; line-height: 1.6;">
+                    The scheduler analyzes multiple historical and operational data sources to generate realistic schedule recommendations. 
+                    <strong>Only factors actually implemented in the system are listed below:</strong>
+                </p>
+                <ul style="margin: 0 0 20px 0; padding-left: 20px; color: #0f172a; font-size: 14px; line-height: 2;">
+                    <li><strong>Past event records</strong> - Queries <code>campaign_department_events</code> table for dates, outcomes, and effectiveness metrics</li>
+                    <li><strong>Attendance trends</strong> - Aggregates attendance data from <code>campaign_department_attendance</code> across previous campaigns and events</li>
+                    <li><strong>Feedback results</strong> - Analyzes survey feedback from <code>campaign_department_feedback</code> and <code>campaign_department_surveys</code> tables</li>
+                    <li><strong>Audience targeting data</strong> - Uses segment information from <code>campaign_department_audience_segments</code> module</li>
+                    <li><strong>Event conflicts</strong> - Checks for scheduling conflicts via <code>campaign_department_events</code> conflict detection</li>
+                </ul>
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; padding: 12px; margin-bottom: 16px;">
+                    <strong style="color: #92400e; display: block; margin-bottom: 6px;">⚠️ Not Yet Implemented:</strong>
+                    <ul style="margin: 0; padding-left: 20px; color: #78350f; font-size: 13px; line-height: 1.8;">
+                        <li>Seasonal patterns (month-based grouping) - TODO: Add GROUP BY MONTH(date) query</li>
+                        <li>Event risk levels - TODO: Add risk_level column to events/campaigns tables</li>
+                        <li>Incident history - TODO: Create campaign_department_incidents table</li>
+                        <li>Detailed participation rates per segment - TODO: JOIN attendance with segments for per-segment rates</li>
+                    </ul>
+                </div>
+                <p style="margin: 16px 0 0 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+                    The system uses these datasets to: <strong>recommend optimal dates and times</strong>, <strong>avoid schedule conflicts</strong>, 
+                    <strong>maximize expected attendance</strong>, and <strong>improve preparedness impact</strong>.
+                </p>
+                <p style="margin: 12px 0 0 0; color: #94a3b8; font-size: 12px; font-style: italic;">
+                    If advanced ML is not configured, the system uses a rule-based heuristic model derived from these same datasets.
+                </p>
+            </div>
+        </div>
+    `;
+    
+    modal.onclick = function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    };
+    
+    document.body.appendChild(modal);
+}
+
+// Helper function to generate HTML for AI recommendations
+function getAIRecommendationsHTML(recommendations) {
+    if (!recommendations || Object.keys(recommendations).length === 0) {
+        return `
+            <div style="background: #f3f4f6; border: 2px solid #9ca3af; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <i class="fas fa-info-circle" style="color: #6b7280; font-size: 18px;"></i>
+                    <strong style="color: #374151; font-size: 14px;">AI Recommendations</strong>
+                </div>
+                <p style="margin: 0; color: #6b7280; font-size: 13px; line-height: 1.6;">
+                    Not generated – insufficient factual records in Nagkaisang Nayon dataset. Schedule recommendation is still available.
+                </p>
+            </div>
+        `;
+    }
+    
+    const fieldLabels = {
+        'title': 'Campaign Title',
+        'category': 'Category',
+        'budget': 'Budget',
+        'staff_count': 'Staff Count',
+        'assigned_staff': 'Assigned Staff',
+        'materials': 'Materials'
+    };
+    
+    let html = `
+        <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <i class="fas fa-lightbulb" style="color: #f59e0b; font-size: 18px;"></i>
+                <strong style="color: #92400e; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">AI Recommendations for Campaign Planning</strong>
+            </div>
+            <p style="margin: 0 0 12px 0; color: #78350f; font-size: 13px; line-height: 1.6;">
+                The AI has generated recommendations for the following fields based on historical data analysis. Click "Accept AI Recommendation" to populate the campaign form.
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+    `;
+    
+    for (const [field, rec] of Object.entries(recommendations)) {
+        if (!rec || !rec.value) continue;
+        
+        const label = fieldLabels[field] || field;
+        let valueDisplay = '';
+        
+        if (field === 'assigned_staff' && Array.isArray(rec.value)) {
+            valueDisplay = rec.value.length > 0 ? rec.value.join(', ') : 'None';
+        } else if (field === 'materials' && typeof rec.value === 'object') {
+            const materials = Object.entries(rec.value);
+            valueDisplay = materials.length > 0 ? materials.map(([mat, qty]) => `${mat} (${qty})`).join(', ') : 'None';
+        } else if (field === 'budget') {
+            valueDisplay = '₱' + parseFloat(rec.value).toLocaleString('en-US', {minimumFractionDigits: 2});
+        } else {
+            valueDisplay = String(rec.value);
+        }
+        
+        html += `
+            <div style="background: white; border: 1px solid #fcd34d; border-radius: 6px; padding: 10px;">
+                <div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">${label}</div>
+                <div style="font-size: 13px; color: #0f172a; font-weight: 600;">${valueDisplay}</div>
+            </div>
+        `;
+    }
+    
+    html += `
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+// Helper function to generate HTML for AI Decision Basis
+function getAIDecisionBasisHTML(recommendations) {
+    if (!recommendations || Object.keys(recommendations).length === 0) {
+        return '';
+    }
+    
+    const fieldLabels = {
+        'title': 'Campaign Title',
+        'category': 'Category',
+        'budget': 'Budget',
+        'staff_count': 'Staff Count',
+        'assigned_staff': 'Assigned Staff',
+        'materials': 'Materials'
+    };
+    
+    let html = `
+        <div style="background: #eff6ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <i class="fas fa-brain" style="color: #3b82f6; font-size: 18px;"></i>
+                <strong style="color: #1e40af; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">AI Decision Basis</strong>
+            </div>
+            <p style="margin: 0 0 12px 0; color: #1e3a8a; font-size: 13px; line-height: 1.6;">
+                Explanation of how each recommendation was generated from real system data:
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+    `;
+    
+    for (const [field, rec] of Object.entries(recommendations)) {
+        if (!rec || !rec.decision_basis) continue;
+        
+        const label = fieldLabels[field] || field;
+        const confidence = rec.confidence ? (rec.confidence * 100).toFixed(0) + '%' : 'N/A';
+        
+        html += `
+            <div style="background: white; border-left: 4px solid #3b82f6; border-radius: 4px; padding: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <strong style="color: #0f172a; font-size: 13px;">${label}</strong>
+                    <span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${confidence} confidence</span>
+                </div>
+                <p style="margin: 0; color: #475569; font-size: 12px; line-height: 1.6;">${rec.decision_basis}</p>
+            </div>
+        `;
+    }
+    
+    html += `
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+window.showAIHowItWorksModal = showAIHowItWorksModal;
+window.getDataFactorsHTML = getDataFactorsHTML;
+window.getAIRecommendationsHTML = getAIRecommendationsHTML;
+window.getAIDecisionBasisHTML = getAIDecisionBasisHTML;
 </script>
     
     <?php include __DIR__ . '/../header/includes/footer.php'; ?>

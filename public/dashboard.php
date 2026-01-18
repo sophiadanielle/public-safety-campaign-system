@@ -79,6 +79,122 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <script>
         document.documentElement.setAttribute('data-theme', 'light');
         localStorage.setItem('theme', 'light');
+        
+        // RBAC FIX: Set role cookie IMMEDIATELY in <head> BEFORE sidebar renders
+        (function() {
+            try {
+                const token = localStorage.getItem('jwtToken');
+                if (token) {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        const roleId = payload.role_id || payload.rid;
+                        if (roleId && typeof roleId === 'number') {
+                            const expires = new Date();
+                            expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000));
+                            document.cookie = 'user_role_id=' + roleId + ';path=/;expires=' + expires.toUTCString() + ';SameSite=Lax';
+                            console.log('RBAC: Set user_role_id cookie in <head> =', roleId);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('RBAC: Failed to set role cookie in <head>:', e);
+            }
+        })();
+        
+        // RBAC: IMMEDIATE CSS injection to hide Viewer-restricted content BEFORE page renders
+        (function() {
+            try {
+                let userRole = null;
+                let roleId = null;
+                const token = localStorage.getItem('jwtToken');
+                if (token) {
+                    try {
+                        const parts = token.split('.');
+                        if (parts.length === 3) {
+                            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                            roleId = payload.role_id || payload.rid;
+                            userRole = payload.role ? payload.role.toLowerCase() : null;
+                        }
+                    } catch (e) {}
+                }
+                if (!userRole) {
+                    const currentUserStr = localStorage.getItem('currentUser');
+                    if (currentUserStr) {
+                        try {
+                            const currentUser = JSON.parse(currentUserStr);
+                            userRole = currentUser.role ? currentUser.role.toLowerCase() : null;
+                            if (!roleId) roleId = currentUser.role_id;
+                        } catch (e) {}
+                    }
+                }
+                const isViewer = userRole === 'viewer' || userRole === 'partner' || 
+                                userRole === 'partner representative' || roleId === 6 ||
+                                (userRole && (userRole.includes('partner') || userRole.includes('viewer')));
+                
+                if (isViewer) {
+                    console.log('RBAC HEAD: Viewer detected - injecting blocking CSS');
+                    const style = document.createElement('style');
+                    style.id = 'rbac-viewer-block';
+                    style.textContent = `
+                        #dashboard-quick-actions,
+                        .quick-actions,
+                        #dashboard-quick-actions .quick-action-btn,
+                        .quick-actions .quick-action-btn,
+                        .quick-action-btn,
+                        #campaign-planning,
+                        #event-readiness,
+                        #audience-coverage,
+                        #partners-snapshot,
+                        #content-snapshot,
+                        a.widget-link,
+                        a[href*="campaigns.php"]:not([href*="dashboard"]),
+                        a[href*="events.php"]:not([href*="dashboard"]),
+                        a[href*="segments.php"],
+                        a[href*="partners.php"],
+                        a[href*="content.php"] {
+                            display: none !important;
+                            visibility: hidden !important;
+                            height: 0 !important;
+                            overflow: hidden !important;
+                            opacity: 0 !important;
+                            pointer-events: none !important;
+                            position: absolute !important;
+                            left: -9999px !important;
+                            width: 0 !important;
+                            margin: 0 !important;
+                            padding: 0 !important;
+                        }
+                    `;
+                    document.head.appendChild(style);
+                    
+                    // IMMEDIATELY remove buttons from DOM (runs before page renders)
+                    const removeButtons = function() {
+                        const quickActions = document.querySelector('#dashboard-quick-actions') || document.querySelector('.quick-actions');
+                        if (quickActions) {
+                            quickActions.querySelectorAll('.quick-action-btn').forEach(btn => btn.remove());
+                            quickActions.remove(); // Remove entire container
+                        }
+                        // Also remove any stray buttons
+                        document.querySelectorAll('.quick-action-btn').forEach(btn => btn.remove());
+                    };
+                    // Run immediately and on DOM ready
+                    if (document.body) {
+                        removeButtons();
+                    } else {
+                        document.addEventListener('DOMContentLoaded', removeButtons);
+                    }
+                    // Also run after delays to catch any late-rendered buttons
+                    setTimeout(removeButtons, 0);
+                    setTimeout(removeButtons, 100);
+                    setTimeout(removeButtons, 500);
+                    setTimeout(removeButtons, 1000);
+                    document.head.appendChild(style);
+                }
+            } catch (e) {
+                console.error('RBAC HEAD: Error:', e);
+            }
+        })();
     </script>
 </head>
 <body class="module-dashboard" data-module="dashboard">
@@ -471,13 +587,54 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     </div>
 
     <!-- Top Actions Row: Search + Quick Actions -->
+    <?php
+    // RBAC: Get user role to hide action buttons for Viewer
+    require_once __DIR__ . '/../sidebar/includes/get_user_role.php';
+    $currentUserRole = getCurrentUserRole();
+    
+    // More robust check: Viewer can be 'viewer', 'partner', 'Partner Representative', etc.
+    $isViewer = false;
+    if ($currentUserRole) {
+        $roleLower = strtolower(trim($currentUserRole));
+        $isViewer = ($roleLower === 'viewer' || $roleLower === 'partner' || 
+                    strpos($roleLower, 'partner') !== false || strpos($roleLower, 'viewer') !== false);
+    }
+    
+    // Also check cookie directly for role_id (role_id 6 is typically Partner/Viewer)
+    if (!$isViewer && isset($_COOKIE['user_role_id'])) {
+        $roleIdFromCookie = (int)($_COOKIE['user_role_id'] ?? 0);
+        // Check if role_id is 6 (Partner/Viewer) OR query database to confirm
+        if ($roleIdFromCookie > 0) {
+            try {
+                require_once __DIR__ . '/../src/Config/db_connect.php';
+                if (isset($pdo) && $pdo instanceof PDO) {
+                    $stmt = $pdo->prepare('SELECT name FROM campaign_department_roles WHERE id = :id LIMIT 1');
+                    $stmt->execute(['id' => $roleIdFromCookie]);
+                    $roleResult = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($roleResult) {
+                        $roleName = strtolower(trim($roleResult['name']));
+                        $isViewer = ($roleName === 'viewer' || $roleName === 'partner' || 
+                                    strpos($roleName, 'partner') !== false || strpos($roleName, 'viewer') !== false ||
+                                    $roleIdFromCookie === 6);
+                    }
+                }
+            } catch (Exception $e) {
+                error_log('RBAC DASHBOARD: Error checking role from cookie: ' . $e->getMessage());
+            }
+        }
+    }
+    
+    // Debug logging
+    error_log('RBAC DASHBOARD: currentUserRole=' . ($currentUserRole ?? 'NULL') . ', cookie_role_id=' . ($_COOKIE['user_role_id'] ?? 'NULL') . ', isViewer=' . ($isViewer ? 'YES' : 'NO'));
+    ?>
     <div class="top-actions-row">
         <div class="search-bar">
             <i class="fas fa-search search-icon"></i>
             <input type="text" id="globalSearch" placeholder="Search campaigns, events, content..." autocomplete="off">
             <div id="searchResults" class="search-results"></div>
         </div>
-        <div class="quick-actions">
+        <div class="quick-actions" id="dashboard-quick-actions">
+        <?php if (!$isViewer): // RBAC: Hide action buttons for Viewer (read-only) ?>
             <a href="<?php echo $publicPath; ?>/campaigns.php#planning-section" class="quick-action-btn primary">
                 <i class="fas fa-plus"></i> Create Campaign
             </a>
@@ -491,6 +648,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                 <i class="fas fa-calendar-alt"></i> View Calendar
             </a>
         </div>
+        <?php endif; ?>
     </div>
 
     <!-- System Overview Panel -->
@@ -545,7 +703,8 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
 
     <!-- Dashboard Grid -->
     <div class="dashboard-grid">
-        <!-- Campaign Planning Snapshot -->
+        <!-- Campaign Planning Snapshot (Hidden for Viewer - shows process info) -->
+        <?php if (!$isViewer): ?>
         <section id="campaign-planning" class="dashboard-section">
             <div class="dashboard-card">
             <h3>📊 Campaign Planning Snapshot</h3>
@@ -565,13 +724,13 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                     <span id="manualScheduledCount">-</span> Manual
                 </div>
             </div>
-            <a href="<?php echo $publicPath; ?>/campaigns.php" class="widget-link">
+            <a href="<?php echo $publicPath; ?>/campaigns.php#list-section" class="widget-link">
                 View All Campaigns <i class="fas fa-arrow-right"></i>
             </a>
             </div>
         </section>
 
-        <!-- Event & Seminar Readiness -->
+        <!-- Event & Seminar Readiness (Hidden for Viewer - shows process info) -->
         <section id="event-readiness" class="dashboard-section">
             <div class="dashboard-card">
             <h3>🎯 Event & Seminar Readiness</h3>
@@ -588,13 +747,13 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                 <div><strong>Capacity Readiness:</strong> <span id="capacityInfo">-</span></div>
                 <div style="margin-top: 8px;"><strong>Linkage:</strong> <span id="linkageInfo">-</span></div>
             </div>
-            <a href="<?php echo $publicPath; ?>/events.php" class="widget-link">
+            <a href="<?php echo $publicPath; ?>/events.php#events-list" class="widget-link">
                 View All Events <i class="fas fa-arrow-right"></i>
             </a>
             </div>
         </section>
 
-        <!-- Audience Coverage Overview -->
+        <!-- Audience Coverage Overview (Hidden for Viewer - shows process info) -->
         <section id="audience-coverage" class="dashboard-section">
             <div class="dashboard-card">
             <h3>👥 Audience Coverage Overview</h3>
@@ -617,8 +776,9 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             </a>
             </div>
         </section>
+        <?php endif; // End RBAC: Hide process cards for Viewer ?>
 
-        <!-- Engagement & Impact Preview -->
+        <!-- Engagement & Impact Preview (Visible to Viewer - results only) -->
         <section id="engagement-impact" class="dashboard-section">
             <div class="dashboard-card">
             <h3>📈 Engagement & Impact Preview</h3>
@@ -636,13 +796,20 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                 <div><strong>Total Attendance:</strong> <span id="totalAttendance">-</span></div>
                 <div style="margin-top: 4px;"><strong>Recent Engagement (30 days):</strong> <span id="recentEngagement">-</span> events</div>
             </div>
+            <?php if (!$isViewer): // RBAC: Hide "View Impact Reports" link for Viewer ?>
             <a href="<?php echo $publicPath; ?>/impact.php" class="widget-link">
                 View Impact Reports <i class="fas fa-arrow-right"></i>
             </a>
+            <?php else: ?>
+            <div style="margin-top: 16px; padding: 12px; background: #f0f9ff; border-left: 4px solid #0ea5e9; border-radius: 6px; color: #0c4a6e; font-size: 13px;">
+                <i class="fas fa-info-circle"></i> Summary view only for partners. Contact administrator for detailed reports.
+            </div>
+            <?php endif; ?>
             </div>
         </section>
 
-        <!-- Partner & Collaboration Snapshot -->
+        <!-- Partner & Collaboration Snapshot (Hidden for Viewer - internal management) -->
+        <?php if (!$isViewer): ?>
         <section id="partners-snapshot" class="dashboard-section">
             <div class="dashboard-card">
             <h3>🤝 Partner & Collaboration Snapshot</h3>
@@ -666,7 +833,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             </div>
         </section>
 
-        <!-- Content Repository Snapshot -->
+        <!-- Content Repository Snapshot (Hidden for Viewer - internal management) -->
         <section id="content-snapshot" class="dashboard-section">
             <div class="dashboard-card">
             <h3>📚 Content Repository Snapshot</h3>
@@ -699,6 +866,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             </a>
             </div>
         </section>
+        <?php endif; // End RBAC: Hide internal management cards for Viewer ?>
     </div>
 
     <!-- Alerts & Reminders Panel -->
@@ -720,6 +888,148 @@ const publicPath = '<?php echo $publicPath; ?>';
 
 let campaignStatusChart = null;
 let eventTypeChart = null;
+
+// RBAC: JavaScript fallback - hide action buttons and forms for Viewer (client-side check)
+// This runs immediately and aggressively hides Viewer-restricted content
+(function() {
+    function hideViewerRestrictedContent() {
+        try {
+            let userRole = null;
+            let roleId = null;
+            
+            // Method 1: Try to get role from JWT payload
+            const token = localStorage.getItem('jwtToken');
+            if (token) {
+                try {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        roleId = payload.role_id || payload.rid;
+                        userRole = payload.role ? payload.role.toLowerCase() : null;
+                    }
+                } catch (e) {
+                    console.error('RBAC: Failed to decode JWT:', e);
+                }
+            }
+            
+            // Method 2: Try to get role from localStorage user object
+            if (!userRole) {
+                const currentUserStr = localStorage.getItem('currentUser');
+                if (currentUserStr) {
+                    try {
+                        const currentUser = JSON.parse(currentUserStr);
+                        userRole = currentUser.role ? currentUser.role.toLowerCase() : null;
+                        if (!roleId) roleId = currentUser.role_id;
+                    } catch (e) {
+                        console.error('RBAC: Failed to parse currentUser:', e);
+                    }
+                }
+            }
+            
+            // Check if Viewer/Partner (role_id 6 is typically Partner Representative/Viewer)
+            // Also check role name for 'viewer', 'partner', 'partner representative'
+            const isViewerRole = userRole === 'viewer' || 
+                                userRole === 'partner' || 
+                                userRole === 'partner representative' ||
+                                roleId === 6 || // Adjust this ID if Partner/Viewer has different role_id
+                                (userRole && (userRole.includes('partner') || userRole.includes('viewer')));
+            
+            if (isViewerRole) {
+                console.log('RBAC: Viewer role detected (role:', userRole, 'roleId:', roleId, '). Hiding restricted content.');
+                
+                // IMMEDIATELY inject CSS to hide process cards (runs before DOM is ready)
+                const style = document.createElement('style');
+                style.id = 'rbac-viewer-hide';
+                style.textContent = `
+                    #campaign-planning, 
+                    #event-readiness, 
+                    #audience-coverage, 
+                    #partners-snapshot, 
+                    #content-snapshot,
+                    .quick-actions {
+                        display: none !important;
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                // Also hide via JavaScript (in case CSS didn't catch them)
+                function hideProcessCards() {
+                    // AGGRESSIVELY remove action buttons
+                    const quickActions = document.querySelector('#dashboard-quick-actions') || document.querySelector('.quick-actions');
+                    if (quickActions) {
+                        // Remove all action buttons inside
+                        quickActions.querySelectorAll('.quick-action-btn').forEach(btn => {
+                            btn.remove(); // Remove from DOM entirely
+                        });
+                        // Hide the container if empty
+                        if (quickActions.children.length === 0 || (quickActions.children.length === 1 && quickActions.querySelector('div'))) {
+                            quickActions.style.display = 'none';
+                        }
+                    }
+                    
+                    // Hide ALL create/edit/action buttons anywhere on page
+                    document.querySelectorAll('button.btn-primary, a.quick-action-btn, button, a.btn').forEach(btn => {
+                        const text = btn.textContent.toLowerCase();
+                        if (text.includes('create') || text.includes('add') || text.includes('schedule') || 
+                            text.includes('edit') || text.includes('delete') || text.includes('approve') ||
+                            text.includes('upload') || text.includes('manage') || text.includes('configure') ||
+                            text.includes('view calendar')) {
+                            btn.remove(); // Remove from DOM entirely
+                        }
+                    });
+                    
+                    // Hide process cards
+                    ['#campaign-planning', '#event-readiness', '#audience-coverage', 
+                     '#partners-snapshot', '#content-snapshot'].forEach(selector => {
+                        const card = document.querySelector(selector);
+                        if (card) {
+                            card.style.display = 'none';
+                            card.style.visibility = 'hidden';
+                        }
+                    });
+                    
+                    // AGGRESSIVELY remove ALL "View All" links (they lead to forms, not results)
+                    document.querySelectorAll('a.widget-link, a[href*="campaigns.php"], a[href*="events.php"], a[href*="segments.php"], a[href*="partners.php"], a[href*="content.php"]').forEach(link => {
+                        const text = link.textContent.toLowerCase();
+                        const href = link.getAttribute('href') || '';
+                        // Remove any link that goes to campaigns, events, segments, partners, content
+                        // These lead to forms/processes, not just results
+                        if (text.includes('view all') || text.includes('view impact') || text.includes('view content') ||
+                            text.includes('view campaigns') || text.includes('view events') || text.includes('view segments') ||
+                            text.includes('view partners') || href.includes('campaigns.php') || href.includes('events.php') ||
+                            href.includes('segments.php') || href.includes('partners.php') || href.includes('content.php')) {
+                            link.remove(); // Remove from DOM entirely
+                        }
+                    });
+                }
+                
+                // Run immediately
+                hideProcessCards();
+                // Run when DOM is ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', hideProcessCards);
+                }
+                // Run again after a delay
+                setTimeout(hideProcessCards, 100);
+                setTimeout(hideProcessCards, 500);
+            } else {
+                console.log('RBAC: NOT Viewer (role:', userRole, 'roleId:', roleId, ')');
+            }
+        } catch (e) {
+            console.error('RBAC: Error in hideViewerRestrictedContent:', e);
+        }
+    }
+    
+    // Run immediately (before DOM fully loads)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideViewerRestrictedContent);
+    } else {
+        hideViewerRestrictedContent();
+    }
+    
+    // Also run after a short delay to catch dynamically loaded content
+    setTimeout(hideViewerRestrictedContent, 100);
+})();
 
 // Load dashboard data
 async function loadDashboard() {

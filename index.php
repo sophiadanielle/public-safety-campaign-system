@@ -216,23 +216,35 @@ if ($isApiRequest) {
         exit;
     }
 
-    // Handle middleware
+    // Handle middleware (support single class or array of classes)
     $user = null;
     if (isset($matchedRoute['middleware'])) {
-        $middlewareClass = $matchedRoute['middleware'];
-        try {
-            $user = $middlewareClass::authenticate($pdo, $jwtSecret, $jwtAudience, $jwtIssuer);
-        } catch (\RuntimeException $e) {
-            if (ob_get_level() > 0) {
-                ob_clean();
+        $middlewares = is_array($matchedRoute['middleware']) ? $matchedRoute['middleware'] : [$matchedRoute['middleware']];
+        
+        foreach ($middlewares as $middlewareClass) {
+            // JWTMiddleware handles authentication
+            if ($middlewareClass === \App\Middleware\JWTMiddleware::class) {
+                try {
+                    $user = $middlewareClass::authenticate($pdo, $jwtSecret, $jwtAudience, $jwtIssuer);
+                } catch (\RuntimeException $e) {
+                    if (ob_get_level() > 0) {
+                        ob_clean();
+                    }
+                    http_response_code(401);
+                    header('Content-Type: application/json');
+                    echo json_encode(['error' => $e->getMessage()]);
+                    if (ob_get_level() > 0) {
+                        ob_end_flush();
+                    }
+                    exit;
+                }
             }
-            http_response_code(401);
-            header('Content-Type: application/json');
-            echo json_encode(['error' => $e->getMessage()]);
-            if (ob_get_level() > 0) {
-                ob_end_flush();
+            // ViewerBlockMiddleware blocks Viewer from write operations
+            elseif ($middlewareClass === \App\Middleware\ViewerBlockMiddleware::class) {
+                if ($user) {
+                    \App\Middleware\ViewerBlockMiddleware::blockViewer($user, $pdo, $method);
+                }
             }
-            exit;
         }
     }
 
@@ -718,6 +730,26 @@ function togglePasswordVisibility(inputId) {
     }
 }
 
+// RBAC FIX: Set role cookie from JWT for PHP server-side rendering
+function setRoleCookieFromJWT(token) {
+    try {
+        if (!token) return;
+        const parts = token.split('.');
+        if (parts.length === 3) {
+            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+            const roleId = payload.role_id || payload.rid;
+            if (roleId && typeof roleId === 'number') {
+                const expires = new Date();
+                expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000));
+                document.cookie = 'user_role_id=' + roleId + ';path=/;expires=' + expires.toUTCString() + ';SameSite=Lax';
+                console.log('RBAC: Set user_role_id cookie =', roleId);
+            }
+        }
+    } catch (e) {
+        console.error('RBAC: Failed to set role cookie:', e);
+    }
+}
+
 // Login uses the login panel fields and existing API/redirect logic
 async function login() {
     const emailInput = document.querySelector('#login-panel #email');
@@ -825,6 +857,9 @@ async function login() {
                     localStorage.setItem('currentUser', JSON.stringify(data.user));
                 }
                 
+                // RBAC FIX: Set role cookie BEFORE redirect so PHP can read it
+                setRoleCookieFromJWT(data.token);
+                
                 console.log('Token stored, verifying...');
                 
                 // Force synchronous write by reading back immediately
@@ -880,6 +915,8 @@ async function login() {
                             if (data.user) {
                                 localStorage.setItem('currentUser', JSON.stringify(data.user));
                             }
+                            // RBAC FIX: Set role cookie
+                            setRoleCookieFromJWT(data.token);
                             console.log('✅ Token re-stored before redirect');
                             
                             // Verify token is still there after setting
@@ -1021,6 +1058,9 @@ async function signup() {
                 if (data.user) {
                     localStorage.setItem('currentUser', JSON.stringify(data.user));
                 }
+                
+                // RBAC FIX: Set role cookie BEFORE redirect so PHP can read it
+                setRoleCookieFromJWT(data.token);
                 
                 console.log('Token stored, verifying...');
                 

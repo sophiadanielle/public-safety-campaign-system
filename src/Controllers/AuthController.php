@@ -141,17 +141,25 @@ class AuthController
         }
 
         // RBAC: Role selection is REQUIRED - no auto-assignment
+        // Official user roles from research defense: admin, captain, kagawad, secretary, staff, viewer
         if (!$roleName) {
             http_response_code(422);
-            return ['error' => 'Role selection is required. Please select your role: staff, secretary, kagawad, captain, partner, or viewer.'];
+            return ['error' => 'Role selection is required. Please select your role: admin, captain, kagawad, secretary, staff, or viewer.'];
         }
 
-        // Validate role name against allowed LGU roles
-        $allowedRoles = ['staff', 'secretary', 'kagawad', 'captain', 'partner', 'viewer'];
-        $normalizedRoleName = strtolower($roleName);
+        // Validate role name against allowed LGU roles (official defense roles)
+        $allowedRoles = ['admin', 'captain', 'kagawad', 'secretary', 'staff', 'viewer'];
+        // Also allow 'partner' as legacy mapping to 'viewer'
+        $normalizedRoleName = strtolower(trim($roleName));
+        
+        // Map legacy 'partner' role to 'viewer'
+        if ($normalizedRoleName === 'partner') {
+            $normalizedRoleName = 'viewer';
+        }
+        
         if (!in_array($normalizedRoleName, $allowedRoles, true)) {
             http_response_code(422);
-            return ['error' => 'Invalid role. Allowed roles: staff, secretary, kagawad, captain, partner, viewer.'];
+            return ['error' => 'Invalid role. Allowed roles: admin, captain, kagawad, secretary, staff, viewer.'];
         }
 
         // Ensure email is unique

@@ -36,6 +36,13 @@
                         $page = basename($_SERVER['PHP_SELF']);
                         require_once __DIR__ . '/../../header/includes/path_helper.php';
                         
+                        // Get current user role for module filtering
+                        require_once __DIR__ . '/get_user_role.php';
+                        $currentUserRole = getCurrentUserRole();
+                        
+                        // DEBUG: Log role detection (remove in production)
+                        error_log('RBAC SIDEBAR DEBUG: Detected role = ' . ($currentUserRole ?? 'NULL') . ', Cookie user_role_id = ' . ($_COOKIE['user_role_id'] ?? 'NOT SET'));
+                        
                         // Define modules with their nested features
                         $modules = [
                             'dashboard.php' => [
@@ -134,12 +141,88 @@
                             ],
                         ];
                         
+                        // RBAC: Filter modules based on user role
+                        // OFFICIAL USER ROLES (FROM RESEARCH DEFENSE)
+                        // Module visibility must match role exactly - server-side enforcement
+                        $roleModulePermissions = [
+                            // Viewer (Partner Representative) - Limited external collaborator
+                            // Can: Dashboard (read-only), Campaigns (view only), Events (view only), Surveys (respond only), Impact (view reports if shared)
+                            // Cannot: Content, Segments, Partners, Planning tools, Creation/edit forms
+                            'viewer' => ['dashboard.php', 'campaigns.php', 'events.php', 'surveys.php', 'impact.php'],
+                            // Partner (legacy - maps to viewer)
+                            'partner' => ['dashboard.php', 'campaigns.php', 'events.php', 'surveys.php', 'impact.php'],
+                            
+                            // Staff (BDRRMO / Admin Staff - Encoder) - Operational worker
+                            // Can: Create campaign drafts, Encode events, Manage segments, Upload content drafts, View impact reports
+                            'staff' => ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php'],
+                            
+                            // Secretary - Coordinator role
+                            // Can: Everything Staff can + Organize scheduling drafts, Forward campaigns for approval
+                            'secretary' => ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php'],
+                            
+                            // Kagawad (Public Safety) - Reviewer / oversight
+                            // Can: View campaigns, Review drafts, View impact data, Provide recommendations, View content and segments
+                            'kagawad' => ['dashboard.php', 'campaigns.php', 'events.php', 'impact.php', 'content.php'],
+                            
+                            // Captain - Final authority
+                            // Can: Approve campaigns, Finalize schedules, Close campaigns, View all operational data, Partners
+                            'captain' => ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php', 'partners.php'],
+                            
+                            // Admin (Technical Admin Staff) - System maintainer
+                            // Can: Access everything, Manage users, Manage roles, System configuration
+                            'admin' => ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php', 'partners.php'],
+                            
+                            // Legacy role support (case-insensitive normalization handled by get_user_role.php)
+                            'barangay administrator' => ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php', 'partners.php'],
+                            'barangay staff' => ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php'],
+                        ];
+                        
+                        // Filter modules based on role (STRICT RBAC)
+                        // If role is null/not detected, default to Viewer permissions (most restrictive)
+                        if ($currentUserRole && isset($roleModulePermissions[$currentUserRole])) {
+                            $allowedModules = $roleModulePermissions[$currentUserRole];
+                        } else {
+                            // If role cannot be determined, default to Viewer (safest for security)
+                            // JavaScript will override this once it sets the cookie and detects role
+                            $allowedModules = $roleModulePermissions['viewer'] ?? [];
+                        }
+                        
+                        // Filter modules - only show allowed ones
+                        $modules = array_filter($modules, function($key) use ($allowedModules) {
+                            return in_array($key, $allowedModules, true);
+                        }, ARRAY_FILTER_USE_KEY);
+                        
                         foreach ($modules as $href => $module):
                             $linkUrl = $publicPath . '/' . $href;
                             $isActive = $page === $href;
                             $moduleName = str_replace('.php', '', $href);
                             $hasFeatures = isset($module['features']) && !empty($module['features']);
                             $hasActiveFeature = false;
+                            
+                            // RBAC: Filter features for Viewer (hide create/edit/management features)
+                            if ($hasFeatures && $currentUserRole === 'viewer') {
+                                // Viewer can only see read-only features
+                                $allowedFeatures = [
+                                    'dashboard.php' => ['kpi-overview', 'engagement-impact'], // Limited dashboard features
+                                    'campaigns.php' => ['list-section'], // Only "All Campaigns", not "Plan New Campaign" or AI tools
+                                    'events.php' => ['events-list'], // Only "All Events", not create
+                                    'surveys.php' => [], // Surveys for responding only (no management features)
+                                    'impact.php' => ['impact-dashboard', 'evaluation-reports', 'metrics-overview'], // Read-only reports
+                                ];
+                                
+                                if (isset($allowedFeatures[$href])) {
+                                    $allowedFeatureIds = $allowedFeatures[$href];
+                                    $module['features'] = array_filter($module['features'], function($feature) use ($allowedFeatureIds) {
+                                        $featureId = str_replace('#', '', $feature['href']);
+                                        return in_array($featureId, $allowedFeatureIds, true);
+                                    });
+                                    $hasFeatures = !empty($module['features']);
+                                } else {
+                                    // No allowed features for this module - hide all features
+                                    $module['features'] = [];
+                                    $hasFeatures = false;
+                                }
+                            }
                             
                             // Check if any feature is active (for campaigns page with anchors)
                             if ($hasFeatures && $isActive) {
@@ -195,6 +278,36 @@
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <script>
+// RBAC FIX: Set role cookie from JWT for PHP server-side rendering
+// JWT is stored in localStorage, but PHP needs it in a cookie
+(function() {
+    try {
+        const token = localStorage.getItem('jwtToken');
+        if (token) {
+            // Decode JWT payload (base64-encoded JSON, no verification needed for role_id extraction)
+            try {
+                const parts = token.split('.');
+                if (parts.length === 3) {
+                    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                    const roleId = payload.role_id || payload.rid;
+                    
+                    if (roleId && typeof roleId === 'number') {
+                        // Set cookie with role_id (expires in 24 hours)
+                        const expires = new Date();
+                        expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000));
+                        document.cookie = 'user_role_id=' + roleId + ';path=/;expires=' + expires.toUTCString() + ';SameSite=Lax';
+                        console.log('RBAC: Set user_role_id cookie =', roleId);
+                    }
+                }
+            } catch (e) {
+                console.error('RBAC: Failed to decode JWT for role cookie:', e);
+            }
+        }
+    } catch (e) {
+        console.error('RBAC: Error setting role cookie:', e);
+    }
+})();
+
 document.addEventListener('DOMContentLoaded', function() {
     // Sidebar functionality
     const sidebar = document.getElementById('sidebar');
@@ -460,5 +573,101 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Run on page load
     highlightActiveSubmenuItem();
+    
+    // RBAC: Client-side module filtering based on user role from localStorage
+    // This provides fallback if PHP role detection fails
+    function filterSidebarByRole() {
+        try {
+            const currentUserStr = localStorage.getItem('currentUser');
+            if (!currentUserStr) {
+                console.warn('RBAC: No currentUser in localStorage, cannot filter sidebar');
+                return;
+            }
+            
+            const currentUser = JSON.parse(currentUserStr);
+            const userRole = currentUser.role ? currentUser.role.toLowerCase() : null;
+            const roleId = currentUser.role_id;
+            
+            if (!userRole && !roleId) {
+                console.warn('RBAC: No role or role_id found in currentUser');
+                return;
+            }
+            
+            // Map role_id to role name if role name not available
+            let effectiveRole = userRole;
+            if (!effectiveRole && roleId) {
+                const roleIdMap = {
+                    1: 'admin',
+                    2: 'staff',
+                    // Add other mappings if needed
+                };
+                effectiveRole = roleIdMap[roleId] || null;
+            }
+            
+            if (!effectiveRole) {
+                console.warn('RBAC: Could not determine effective role');
+                return;
+            }
+            
+            // Define which modules each role can access (same as PHP)
+            // OFFICIAL USER ROLES (FROM RESEARCH DEFENSE) - JavaScript fallback
+            const roleModulePermissions = {
+                'viewer': ['dashboard.php', 'campaigns.php', 'events.php', 'surveys.php', 'impact.php'],
+                'partner': ['dashboard.php', 'campaigns.php', 'events.php', 'surveys.php', 'impact.php'], // Legacy - maps to viewer
+                'staff': ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php'],
+                'secretary': ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php'],
+                'kagawad': ['dashboard.php', 'campaigns.php', 'events.php', 'impact.php', 'content.php'],
+                'captain': ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php', 'partners.php'],
+                'admin': ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php', 'partners.php'],
+                'barangay administrator': ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php', 'partners.php'],
+                'barangay staff': ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php'],
+            };
+            
+            const allowedModules = roleModulePermissions[effectiveRole] || [];
+            
+            if (allowedModules.length === 0) {
+                console.warn('RBAC: No allowed modules for role:', effectiveRole);
+                // If role not in map, hide all modules (fail-safe)
+                document.querySelectorAll('.sidebar-menu-item').forEach(item => {
+                    item.style.display = 'none';
+                });
+                return;
+            }
+            
+            // Hide modules not in allowed list
+            document.querySelectorAll('.sidebar-menu-item').forEach(item => {
+                const link = item.querySelector('a.sidebar-link, a.sidebar-module-toggle');
+                if (link) {
+                    const href = link.getAttribute('href') || link.getAttribute('data-href') || '';
+                    const moduleFile = href.split('/').pop() || href;
+                    
+                    // Check if this module is allowed
+                    const isAllowed = allowedModules.some(allowed => {
+                        return moduleFile === allowed || href.includes(allowed);
+                    });
+                    
+                    if (!isAllowed) {
+                        item.style.display = 'none';
+                    } else {
+                        item.style.display = '';
+                    }
+                }
+            });
+            
+            console.log('RBAC: Sidebar filtered for role:', effectiveRole, 'Allowed modules:', allowedModules);
+        } catch (e) {
+            console.error('RBAC: Error filtering sidebar by role:', e);
+        }
+    }
+    
+    // Filter sidebar on page load
+    filterSidebarByRole();
+    
+    // Re-filter if user data is updated
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'currentUser') {
+            filterSidebarByRole();
+        }
+    });
 });
 </script>

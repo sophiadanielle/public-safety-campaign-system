@@ -1,6 +1,9 @@
 <?php
 $pageTitle = 'Events & Seminars';
 require_once __DIR__ . '/../header/includes/path_helper.php';
+
+// RBAC: Block Viewer role from accessing operational pages (contains forms/workflows)
+require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -153,6 +156,23 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <p>Schedule and manage campaign events, seminars, and workshops</p>
     </div>
 
+    <?php
+    // RBAC: Ensure $isViewer is defined (set by block_viewer_access.php at top)
+    if (!isset($isViewer)) {
+        $isViewer = false;
+    }
+    
+    // If Viewer tries to access create form directly, redirect to events list
+    if ($isViewer && isset($_GET['section']) && $_GET['section'] === 'create-event') {
+        header('Location: ' . $publicPath . '/events.php#events-list');
+        exit;
+    }
+    
+    // Viewers can view approved events in the list section (read-only)
+    // Forms are hidden via conditionals below
+    ?>
+    
+    <?php if (!$isViewer): ?>
     <section id="create-event" class="card" style="margin-bottom:24px;">
         <h2 class="section-title">Create Event</h2>
         <div id="conflictWarning" style="display:none; background:#fef3c7; border:2px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:16px;">
@@ -264,6 +284,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <button class="btn btn-primary" style="margin-top:16px;" onclick="createEvent()">Create Event</button>
         <div class="status" id="createStatus" style="margin-top:12px;"></div>
     </section>
+    <?php endif; // End RBAC: Hide create form for Viewer ?>
 
     <section id="agency-coordination" class="card" style="margin-bottom:24px;">
         <h2 class="section-title">Agency Coordination</h2>
@@ -274,6 +295,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             </select>
         </div>
         <div id="agencyCoordinationList" style="margin-bottom:16px;"></div>
+        <?php if (!$isViewer): // RBAC: Hide add button for Viewer (read-only) ?>
         <button class="btn btn-secondary" onclick="showAddAgencyForm()">+ Add Agency Coordination</button>
         <div id="addAgencyForm" style="display:none; margin-top:16px; padding:16px; background:#f8fafc; border-radius:8px;">
             <form id="agencyForm" class="form-grid">
@@ -301,6 +323,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             <button class="btn btn-primary" style="margin-top:12px;" onclick="addAgencyCoordination()">Submit Request</button>
             <button class="btn btn-secondary" style="margin-top:12px; margin-left:8px;" onclick="hideAddAgencyForm()">Cancel</button>
         </div>
+        <?php endif; // End RBAC: Hide add button for Viewer ?>
     </section>
 
     <section id="events-list" class="card" style="margin-bottom:24px;">
@@ -1337,6 +1360,126 @@ function setupRequirementAutocomplete(textareaId, fieldName) {
     });
 }
 
+// RBAC: Force Viewer to events list and hide all forms
+(function() {
+    function enforceViewerReadOnly() {
+        try {
+            let userRole = null;
+            let roleId = null;
+            const token = localStorage.getItem('jwtToken');
+            if (token) {
+                try {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        roleId = payload.role_id || payload.rid;
+                        userRole = payload.role ? payload.role.toLowerCase() : null;
+                    }
+                } catch (e) {}
+            }
+            if (!userRole) {
+                const currentUserStr = localStorage.getItem('currentUser');
+                if (currentUserStr) {
+                    try {
+                        const currentUser = JSON.parse(currentUserStr);
+                        userRole = currentUser.role ? currentUser.role.toLowerCase() : null;
+                        if (!roleId) roleId = currentUser.role_id;
+                    } catch (e) {}
+                }
+            }
+            const isViewer = userRole === 'viewer' || userRole === 'partner' || 
+                            userRole === 'partner representative' || roleId === 6 ||
+                            (userRole && (userRole.includes('partner') || userRole.includes('viewer')));
+            
+            if (isViewer) {
+                // Force hash to events-list (read-only view)
+                if (window.location.hash !== '#events-list') {
+                    window.location.hash = 'events-list';
+                }
+            }
+        } catch (e) {}
+    }
+    enforceViewerReadOnly();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', enforceViewerReadOnly);
+    }
+})();
+
+// RBAC: Aggressively hide create form for Viewer
+(function() {
+    function hideViewerForms() {
+        try {
+            let userRole = null;
+            let roleId = null;
+            const token = localStorage.getItem('jwtToken');
+            if (token) {
+                try {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        roleId = payload.role_id || payload.rid;
+                        userRole = payload.role ? payload.role.toLowerCase() : null;
+                    }
+                } catch (e) {}
+            }
+            if (!userRole) {
+                const currentUserStr = localStorage.getItem('currentUser');
+                if (currentUserStr) {
+                    try {
+                        const currentUser = JSON.parse(currentUserStr);
+                        userRole = currentUser.role ? currentUser.role.toLowerCase() : null;
+                        if (!roleId) roleId = currentUser.role_id;
+                    } catch (e) {}
+                }
+            }
+            const isViewer = userRole === 'viewer' || userRole === 'partner' || 
+                            userRole === 'partner representative' || roleId === 6 ||
+                            (userRole && (userRole.includes('partner') || userRole.includes('viewer')));
+            if (isViewer) {
+                console.log('RBAC: Viewer detected - hiding forms and redirecting to list');
+                // Hide create event form
+                const createEventSection = document.getElementById('create-event');
+                if (createEventSection) {
+                    createEventSection.style.display = 'none';
+                    createEventSection.remove(); // Remove from DOM entirely
+                }
+                // Hide add agency button and form
+                const agencySection = document.getElementById('agency-coordination');
+                if (agencySection) {
+                    const addBtn = agencySection.querySelector('button[onclick*="showAddAgencyForm"]');
+                    if (addBtn) {
+                        addBtn.style.display = 'none';
+                        addBtn.remove();
+                    }
+                }
+                // Hide ALL create/edit buttons
+                document.querySelectorAll('button').forEach(btn => {
+                    const text = btn.textContent.toLowerCase();
+                    if (text.includes('add') || text.includes('create') || text.includes('edit') || 
+                        text.includes('delete') || text.includes('approve') || text.includes('schedule')) {
+                        btn.style.display = 'none';
+                        btn.remove(); // Remove from DOM entirely
+                    }
+                });
+                
+                // Auto-scroll to events list (read-only view)
+                setTimeout(() => {
+                    const eventsList = document.getElementById('events-list');
+                    if (eventsList) {
+                        eventsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        window.location.hash = 'events-list';
+                    }
+                }, 100);
+            }
+        } catch (e) {}
+    }
+    hideViewerForms();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', hideViewerForms);
+    }
+    setTimeout(hideViewerForms, 200);
+})();
+
 // Handle sidebar navigation for event calendar
 document.addEventListener('DOMContentLoaded', function() {
     // Show calendar section when sidebar link is clicked
@@ -1381,3 +1524,4 @@ loadEvents();
     
     <?php include __DIR__ . '/../header/includes/footer.php'; ?>
     </main>
+

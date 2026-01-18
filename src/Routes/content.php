@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\ContentController;
 use App\Middleware\JWTMiddleware;
+use App\Middleware\ViewerBlockMiddleware;
 
 return [
     [
@@ -16,7 +17,7 @@ return [
         'method' => 'POST',
         'path' => '/api/v1/content',
         'handler' => [ContentController::class, 'store'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'GET',
@@ -34,19 +35,19 @@ return [
         'method' => 'PUT',
         'path' => '/api/v1/content/{id}',
         'handler' => [ContentController::class, 'update'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'POST',
         'path' => '/api/v1/content/{id}/approval',
         'handler' => [ContentController::class, 'updateApproval'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'POST',
         'path' => '/api/v1/content/{id}/attach-campaign',
         'handler' => [ContentController::class, 'attachToCampaign'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'GET',

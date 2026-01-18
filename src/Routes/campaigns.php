@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\CampaignController;
 use App\Middleware\JWTMiddleware;
+use App\Middleware\ViewerBlockMiddleware;
 
 return [
     [
@@ -16,7 +17,7 @@ return [
         'method' => 'POST',
         'path' => '/api/v1/campaigns',
         'handler' => [CampaignController::class, 'store'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'GET',
@@ -28,13 +29,13 @@ return [
         'method' => 'PUT',
         'path' => '/api/v1/campaigns/{id}',
         'handler' => [CampaignController::class, 'update'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'POST',
         'path' => '/api/v1/campaigns/{id}/schedules',
         'handler' => [CampaignController::class, 'addSchedule'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'GET',
@@ -46,13 +47,13 @@ return [
         'method' => 'PATCH',
         'path' => '/api/v1/campaigns/{id}/schedules/{sid}/send',
         'handler' => [CampaignController::class, 'sendSchedule'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'POST',
         'path' => '/api/v1/campaigns/{id}/schedules/{sid}/resend',
         'handler' => [CampaignController::class, 'resendSchedule'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'GET',
@@ -64,7 +65,7 @@ return [
         'method' => 'POST',
         'path' => '/api/v1/campaigns/{id}/segments',
         'handler' => [CampaignController::class, 'syncSegments'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'GET',
@@ -76,13 +77,13 @@ return [
         'method' => 'POST',
         'path' => '/api/v1/campaigns/{id}/ai-recommendation',
         'handler' => [CampaignController::class, 'requestAIRecommendation'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'POST',
         'path' => '/api/v1/campaigns/{id}/final-schedule',
         'handler' => [CampaignController::class, 'setFinalSchedule'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'GET',

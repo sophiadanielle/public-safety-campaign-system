@@ -259,12 +259,27 @@ class ContentController
 
     public function store(?array $user, array $params = []): array
     {
-        // Role-based access control: Only admin and staff can create content
+        // RBAC: Viewer is read-only - cannot create content
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
         try {
             $userRole = $user ? RoleMiddleware::getUserRole($user, $this->pdo) : null;
-            if (!$userRole || !in_array($userRole, ['Barangay Administrator', 'Barangay Staff', 'system_admin', 'barangay_admin', 'content_manager', 'campaign_creator'], true)) {
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only - cannot create anything
+            if ($userRoleName === 'viewer') {
                 http_response_code(403);
-                return ['error' => 'Insufficient permissions. Only administrators and staff can create content.'];
+                return ['error' => 'Viewer role is read-only. You cannot create content.'];
+            }
+            
+            // Role-based access control: Only admin and staff can create content
+            $allowedRoles = ['barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'content_manager', 'campaign_creator', 'admin', 'staff', 'secretary', 'kagawad', 'captain'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can create content.'];
             }
         } catch (\Exception $e) {
             http_response_code(403);
@@ -595,12 +610,27 @@ class ContentController
      */
     public function update(?array $user, array $params = []): array
     {
-        // Role-based access control: Only admin and staff can update content
+        // RBAC: Viewer is read-only - cannot update content
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
         try {
             $userRole = $user ? RoleMiddleware::getUserRole($user, $this->pdo) : null;
-            if (!$userRole || !in_array($userRole, ['Barangay Administrator', 'Barangay Staff', 'system_admin', 'barangay_admin', 'content_manager', 'campaign_creator'], true)) {
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only - cannot update anything
+            if ($userRoleName === 'viewer') {
                 http_response_code(403);
-                return ['error' => 'Insufficient permissions. Only administrators and staff can update content.'];
+                return ['error' => 'Viewer role is read-only. You cannot update content.'];
+            }
+            
+            // Role-based access control: Only admin and staff can update content
+            $allowedRoles = ['barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'content_manager', 'campaign_creator', 'admin', 'staff', 'secretary', 'kagawad', 'captain'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can update content.'];
             }
         } catch (\Exception $e) {
             http_response_code(403);

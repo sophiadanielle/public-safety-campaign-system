@@ -224,12 +224,12 @@ include __DIR__ . '/../header/includes/header.php';
             <label for="role">Role <span style="color: #dc2626;">*</span></label>
             <select id="role" name="role" required style="width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; margin-top: 6px; background: #fff;">
                 <option value="">Select your role</option>
-                <option value="staff">Staff - Create campaign drafts</option>
-                <option value="secretary">Secretary - Review and route drafts</option>
-                <option value="kagawad">Kagawad - Review and recommend approval</option>
+                <option value="admin">Admin - Technical Admin Staff (System maintainer)</option>
                 <option value="captain">Captain - Final approval authority</option>
-                <option value="partner">Partner - External partner access</option>
-                <option value="viewer">Viewer - Read-only access</option>
+                <option value="kagawad">Kagawad - Public Safety (Reviewer/oversight)</option>
+                <option value="secretary">Secretary - Coordinator role</option>
+                <option value="staff">Staff - BDRRMO/Admin Staff (Encoder/Operational worker)</option>
+                <option value="viewer">Viewer - Partner Representative (Read-only access)</option>
             </select>
 
             <button class="btn btn-primary" onclick="signup()">Sign Up</button>
@@ -326,6 +326,23 @@ async function signup() {
                 localStorage.setItem('jwtToken', data.token);
                 if (data.user) {
                     localStorage.setItem('currentUser', JSON.stringify(data.user));
+                }
+                
+                // RBAC FIX: Set role cookie from JWT for PHP server-side rendering
+                try {
+                    const parts = data.token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        const roleId = payload.role_id || payload.rid;
+                        if (roleId && typeof roleId === 'number') {
+                            const expires = new Date();
+                            expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000));
+                            document.cookie = 'user_role_id=' + roleId + ';path=/;expires=' + expires.toUTCString() + ';SameSite=Lax';
+                            console.log('RBAC: Set user_role_id cookie =', roleId);
+                        }
+                    }
+                } catch (e) {
+                    console.error('RBAC: Failed to set role cookie:', e);
                 }
                 // Force synchronous write by reading back immediately
                 const verifyToken = localStorage.getItem('jwtToken');

@@ -108,17 +108,31 @@ class CampaignController
         $description = isset($input['description']) ? trim((string)$input['description']) : null;
         $status = isset($input['status']) ? trim((string)$input['status']) : 'draft';
         
-        // LGU Governance: New campaigns must start as 'draft' - staff cannot create with other statuses
+        // LGU GOVERNANCE WORKFLOW ENFORCEMENT: Staff can ONLY create Draft campaigns
+        // Workflow: Staff creates → Draft, Secretary forwards → Pending, Captain approves → Approved
+        // No role can skip steps - Staff cannot set Approved, Secretary cannot set Approved, etc.
         if ($status !== 'draft') {
             $userRoleName = $userRole ? strtolower($userRole) : '';
             $isAdmin = in_array($userRoleName, ['admin', 'barangay administrator', 'system_admin'], true);
+            $isStaff = in_array($userRoleName, ['staff', 'barangay staff'], true);
+            
+            // Staff MUST create Draft campaigns only
+            if ($isStaff) {
+                http_response_code(403);
+                return ['error' => 'Staff can only create campaigns with Draft status. Status changes must follow the approval workflow.'];
+            }
+            
+            // Non-admin non-staff roles also cannot create non-draft campaigns
             if (!$isAdmin) {
                 http_response_code(403);
                 return ['error' => 'New campaigns must be created as drafts. Only administrators can create campaigns with other statuses.'];
             }
         }
+        
         $startDate = isset($input['start_date']) && $input['start_date'] ? trim((string)$input['start_date']) : null;
+        $startTime = isset($input['start_time']) && $input['start_time'] ? trim((string)$input['start_time']) : null;
         $endDate = isset($input['end_date']) && $input['end_date'] ? trim((string)$input['end_date']) : null;
+        $endTime = isset($input['end_time']) && $input['end_time'] ? trim((string)$input['end_time']) : null;
         $ownerId = $user['id'] ?? null;
 
         if (!$title) {
@@ -172,12 +186,12 @@ class CampaignController
         $stmt = $this->pdo->prepare('
             INSERT INTO campaign_department_campaigns (
                 title, description, category, geographic_scope, status, 
-                start_date, end_date, draft_schedule_datetime, owner_id, 
+                start_date, start_time, end_date, end_time, draft_schedule_datetime, owner_id, 
                 objectives, location, assigned_staff, barangay_target_zones, 
                 budget, staff_count, materials_json
             ) VALUES (
                 :title, :description, :category, :geographic_scope, :status,
-                :start_date, :end_date, :draft_schedule_datetime, :owner_id,
+                :start_date, :start_time, :end_date, :end_time, :draft_schedule_datetime, :owner_id,
                 :objectives, :location, :assigned_staff, :barangay_target_zones,
                 :budget, :staff_count, :materials_json
             )
@@ -189,7 +203,9 @@ class CampaignController
             'geographic_scope' => $geographicScope ?: null,
             'status' => $status,
             'start_date' => $startDate ?: null,
+            'start_time' => $startTime ?: null,
             'end_date' => $endDate ?: null,
+            'end_time' => $endTime ?: null,
             'draft_schedule_datetime' => null, // Schedule must be set via AI recommendation flow (Steps 3-9)
             'owner_id' => $ownerId,
             'objectives' => $objectives ?: null,
@@ -286,7 +302,7 @@ class CampaignController
         }
         
         $id = (int) ($params['id'] ?? 0);
-        $this->findCampaign($id); // ensure exists
+        $currentCampaign = $this->findCampaign($id); // ensure exists and get current state
 
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
         $fields = [];
@@ -302,9 +318,10 @@ class CampaignController
             $fields[] = 'description = :description';
             $bindings['description'] = trim((string) $input['description']) ?: null;
         }
-        // LGU Governance Workflow Enforcement
-        // Workflow: Draft → Pending Review → For Approval → Approved → Ongoing → Completed
-        // Role-based restrictions: staff → secretary → kagawad → captain
+        // LGU GOVERNANCE WORKFLOW ENFORCEMENT (STRICT)
+        // Required workflow: Staff → Draft | Secretary → Pending | Captain → Approved
+        // Staff CANNOT set Approved | Secretary CANNOT set Approved | Kagawad CANNOT change status
+        // No skipping steps: Draft → Approved is forbidden
         if (isset($input['status'])) {
             $newStatus = trim((string)$input['status']);
             if (!in_array($newStatus, $allowedStatus, true)) {
@@ -312,17 +329,10 @@ class CampaignController
                 return ['error' => 'Invalid status'];
             }
             
-            // Get current status
-            $currentStatus = $current['status'] ?? 'draft';
+            // Get current campaign status from already-fetched campaign
+            $currentStatus = $currentCampaign['status'] ?? 'draft';
             
-            // Get user's role using RoleMiddleware
-            $userRole = null;
-            try {
-                $userRole = $user ? RoleMiddleware::getUserRole($user, $this->pdo) : null;
-            } catch (\Exception $e) {
-                error_log('CampaignController::update - Error getting user role: ' . $e->getMessage());
-            }
-            
+            // Get user's role
             $userRoleName = $userRole ? strtolower($userRole) : '';
             $isAdmin = in_array($userRoleName, ['admin', 'barangay administrator', 'system_admin'], true);
             $isCaptain = in_array($userRoleName, ['captain'], true);
@@ -330,93 +340,81 @@ class CampaignController
             $isSecretary = in_array($userRoleName, ['secretary'], true);
             $isStaff = in_array($userRoleName, ['staff', 'barangay staff'], true);
             
-            // LGU Governance Workflow: Draft → Pending Review → For Approval → Approved → Ongoing → Completed
-            // Map status names (support both old and new naming)
-            $statusMap = [
-                'draft' => 'draft',
-                'pending_review' => 'pending_review',
-                'pending' => 'pending_review', // Legacy support
-                'for_approval' => 'for_approval',
-                'approved' => 'approved',
-                'rejected' => 'rejected',
-                'ongoing' => 'ongoing',
-                'completed' => 'completed',
-                'archived' => 'archived'
-            ];
+            // Normalize status (map 'pending_review' to 'pending' for consistency)
+            $normalizedCurrent = strtolower($currentStatus);
+            $normalizedNew = strtolower($newStatus);
+            if ($normalizedCurrent === 'pending_review') $normalizedCurrent = 'pending';
+            if ($normalizedNew === 'pending_review') $normalizedNew = 'pending';
             
-            $normalizedCurrent = $statusMap[strtolower($currentStatus)] ?? strtolower($currentStatus);
-            $normalizedNew = $statusMap[strtolower($newStatus)] ?? strtolower($newStatus);
-            
-            // Role-based status change restrictions
+            // Role-based status change restrictions (STRICT ENFORCEMENT)
             $canChangeStatus = false;
             $errorMessage = '';
             
-            // Staff: Can only create drafts, cannot change status
+            // Staff: CANNOT change status - can only edit draft content
             if ($isStaff) {
                 if ($normalizedCurrent === 'draft' && $normalizedNew === 'draft') {
-                    $canChangeStatus = true; // Can update draft content
+                    $canChangeStatus = true; // Can update draft content, but status remains draft
                 } else {
                     $canChangeStatus = false;
-                    $errorMessage = 'Staff can only create and edit drafts. Status changes require review.';
+                    $errorMessage = 'Staff cannot change campaign status. Only Draft campaigns can be created/edited by Staff.';
                 }
             }
-            // Secretary: Can change draft → pending_review
+            // Secretary: Can ONLY forward Draft → Pending, CANNOT approve
             elseif ($isSecretary) {
-                if ($normalizedCurrent === 'draft' && $normalizedNew === 'pending_review') {
-                    $canChangeStatus = true;
-                } elseif ($normalizedCurrent === $normalizedNew) {
-                    $canChangeStatus = true; // Can update same status
+                if ($normalizedCurrent === 'draft' && $normalizedNew === 'pending') {
+                    $canChangeStatus = true; // Secretary forwards for approval
+                } elseif ($normalizedCurrent === $normalizedNew && $normalizedCurrent === 'pending') {
+                    $canChangeStatus = true; // Can update pending campaign content
                 } else {
                     $canChangeStatus = false;
-                    $errorMessage = 'Secretary can only mark drafts as Pending Review.';
+                    $errorMessage = 'Secretary can only forward Draft campaigns to Pending status. Secretary cannot approve campaigns.';
                 }
             }
-            // Kagawad: Can change pending_review → for_approval
+            // Kagawad: CANNOT change status - can only review/recommend
             elseif ($isKagawad) {
-                if ($normalizedCurrent === 'pending_review' && $normalizedNew === 'for_approval') {
-                    $canChangeStatus = true;
-                } elseif ($normalizedCurrent === $normalizedNew) {
-                    $canChangeStatus = true; // Can update same status
+                if ($normalizedCurrent === $normalizedNew) {
+                    $canChangeStatus = true; // Can update same status content, but cannot change status
                 } else {
                     $canChangeStatus = false;
-                    $errorMessage = 'Kagawad can only recommend campaigns for approval (Pending Review → For Approval).';
+                    $errorMessage = 'Kagawad cannot change campaign status. Kagawad can only review and add recommendations.';
                 }
             }
-            // Captain: Can change for_approval → approved/rejected (final authority)
+            // Captain: Can ONLY approve Pending → Approved (final authority)
             elseif ($isCaptain) {
-                if ($normalizedCurrent === 'for_approval' && in_array($normalizedNew, ['approved', 'rejected'], true)) {
-                    $canChangeStatus = true;
+                if ($normalizedCurrent === 'pending' && $normalizedNew === 'approved') {
+                    $canChangeStatus = true; // Captain approves pending campaigns
                 } elseif ($normalizedCurrent === 'approved' && in_array($normalizedNew, ['ongoing', 'completed'], true)) {
-                    $canChangeStatus = true; // Can start/complete approved campaigns
+                    $canChangeStatus = true; // Can manage approved campaigns
                 } elseif ($normalizedCurrent === $normalizedNew) {
                     $canChangeStatus = true; // Can update same status
                 } else {
                     $canChangeStatus = false;
-                    $errorMessage = 'Barangay Captain can only approve/reject campaigns in "For Approval" status, or manage approved campaigns.';
+                    $errorMessage = 'Captain can only approve campaigns from Pending to Approved status. Current status: ' . $currentStatus;
                 }
             }
-            // Admin: Can override (with logging if available)
+            // Admin: Can override (with audit logging)
             elseif ($isAdmin) {
                 $canChangeStatus = true;
-                // Log admin override if logging exists
+                // Log admin override
                 try {
                     if (method_exists($this, 'logAudit')) {
                         $this->logAudit($user['id'] ?? null, 'campaign', 'status_override', $id, [
                             'from' => $currentStatus,
                             'to' => $newStatus,
-                            'reason' => 'Admin override'
+                            'reason' => 'Admin override - workflow bypass'
                         ]);
                     }
                 } catch (\Exception $e) {
                     error_log('CampaignController::update - Failed to log admin override: ' . $e->getMessage());
                 }
             }
-            // No role or unauthorized role
+            // Unauthorized role
             else {
                 $canChangeStatus = false;
                 $errorMessage = 'Insufficient permissions to change campaign status.';
             }
             
+            // Block unauthorized status changes
             if (!$canChangeStatus) {
                 http_response_code(403);
                 return ['error' => $errorMessage ?: 'You do not have permission to change campaign status from ' . $currentStatus . ' to ' . $newStatus];
@@ -429,18 +427,35 @@ class CampaignController
             $fields[] = 'start_date = :start_date';
             $bindings['start_date'] = $input['start_date'] ?: null;
         }
+        if (isset($input['start_time'])) {
+            $fields[] = 'start_time = :start_time';
+            $bindings['start_time'] = $input['start_time'] ?: null;
+        }
         if (isset($input['end_date'])) {
             $fields[] = 'end_date = :end_date';
             $bindings['end_date'] = $input['end_date'] ?: null;
         }
+        if (isset($input['end_time'])) {
+            $fields[] = 'end_time = :end_time';
+            $bindings['end_time'] = $input['end_time'] ?: null;
+        }
         
-        // Validate date range if both dates are provided
+        // Validate date/time range if both dates are provided
         if (isset($input['start_date']) && isset($input['end_date']) && $input['start_date'] && $input['end_date']) {
             $startTimestamp = strtotime($input['start_date']);
             $endTimestamp = strtotime($input['end_date']);
             if ($startTimestamp > $endTimestamp) {
                 http_response_code(422);
                 return ['error' => 'Start date must not be later than end date'];
+            }
+            // If same date, validate time range
+            if ($startTimestamp === $endTimestamp && isset($input['start_time']) && isset($input['end_time']) && $input['start_time'] && $input['end_time']) {
+                $startDateTime = strtotime($input['start_date'] . ' ' . $input['start_time']);
+                $endDateTime = strtotime($input['end_date'] . ' ' . $input['end_time']);
+                if ($startDateTime >= $endDateTime) {
+                    http_response_code(422);
+                    return ['error' => 'Start time must be earlier than end time when dates are the same'];
+                }
             }
         }
         if (isset($input['objectives'])) {
@@ -1018,14 +1033,23 @@ class CampaignController
         $campaignConflicts = $stmt->fetchAll();
 
         // Check for conflicts with events and seminars
+        // Use correct column names: event_name/event_title, date (not event_date), start_time/end_time (not event_time), event_status (not status)
         $stmt = $this->pdo->prepare('
-            SELECT e.id, e.name, e.event_type, e.event_date, e.event_time, e.venue, e.location
+            SELECT e.id, e.event_name, e.event_title, e.event_type, e.date, e.start_time, e.end_time, e.venue, e.location
             FROM `campaign_department_events` e
-            WHERE e.event_date = :proposed_date
-              AND e.status IN ("scheduled", "ongoing")
+            WHERE e.date = :proposed_date
+              AND e.event_status IN ("planned", "ongoing")
         ');
         $stmt->execute(['proposed_date' => $proposedDate]);
         $eventConflicts = $stmt->fetchAll();
+        
+        // Format event conflicts to include event_name as 'name' for frontend compatibility
+        $eventConflicts = array_map(function($event) {
+            $event['name'] = $event['event_name'] ?? $event['event_title'] ?? 'Untitled Event';
+            $event['event_date'] = $event['date'] ?? null;
+            $event['event_time'] = ($event['start_time'] ?? '') . ($event['end_time'] ? ' - ' . $event['end_time'] : '');
+            return $event;
+        }, $eventConflicts);
 
         $hasConflicts = !empty($campaignConflicts) || !empty($eventConflicts);
 

@@ -94,7 +94,7 @@ class AutoMLService
             error_log("AutoMLService: Using Google AutoML for prediction (Campaign ID: $campaignId)");
             error_log("AutoMLService: Endpoint: " . ($this->googleAutoMLEndpoint ?? 'NOT SET'));
             try {
-                $result = $this->predictWithGoogleAutoML($preparedFeatures);
+                $result = $this->predictWithGoogleAutoML($campaignId, $campaign, $preparedFeatures);
                 error_log("AutoMLService: Google AutoML prediction successful - Model: " . ($result['model_source'] ?? 'unknown'));
                 return $result;
             } catch (\Exception $e) {
@@ -110,7 +110,518 @@ class AutoMLService
         error_log("AutoMLService: Using heuristic prediction (No AI API configured) (Campaign ID: $campaignId)");
         $heuristicResult = $this->predictWithHeuristics($campaignId, $preparedFeatures);
         $heuristicResult['automl_configured'] = false;
+        
+        // Generate comprehensive recommendations for all fields
+        $comprehensiveRecommendations = $this->generateComprehensiveRecommendations($campaignId, $campaign, $preparedFeatures);
+        $heuristicResult['recommendations'] = $comprehensiveRecommendations;
+        
         return $heuristicResult;
+    }
+    
+    /**
+     * Get barangay ID for Nagkaisang Nayon (strict geographic scope enforcement)
+     * Returns null if barangay not found
+     */
+    private function getNagkaisangNayonBarangayId(): ?int
+    {
+        $stmt = $this->pdo->prepare('
+            SELECT id FROM campaign_department_barangays 
+            WHERE name = "Nagkaisang Nayon" 
+            LIMIT 1
+        ');
+        $stmt->execute();
+        $barangay = $stmt->fetch();
+        return $barangay ? (int)$barangay['id'] : null;
+    }
+    
+    /**
+     * Build WHERE clause for filtering by Nagkaisang Nayon only
+     * Returns SQL condition and parameters array
+     */
+    private function getNagkaisangNayonFilter(string $tableAlias = 'c'): array
+    {
+        $barangayId = $this->getNagkaisangNayonBarangayId();
+        $conditions = [];
+        $params = [];
+        
+        if ($barangayId) {
+            // Filter by owner's barangay_id OR geographic_scope containing "Nagkaisang Nayon"
+            $conditions[] = "(
+                EXISTS (
+                    SELECT 1 FROM campaign_department_users u 
+                    WHERE u.id = {$tableAlias}.owner_id 
+                    AND u.barangay_id = :barangay_id
+                )
+                OR {$tableAlias}.geographic_scope LIKE :geographic_scope_pattern
+            )";
+            $params['barangay_id'] = $barangayId;
+            $params['geographic_scope_pattern'] = '%Nagkaisang Nayon%';
+        } else {
+            // Fallback: only geographic_scope if barangay table entry not found
+            $conditions[] = "{$tableAlias}.geographic_scope LIKE :geographic_scope_pattern";
+            $params['geographic_scope_pattern'] = '%Nagkaisang Nayon%';
+        }
+        
+        return [
+            'where' => implode(' AND ', $conditions),
+            'params' => $params
+        ];
+    }
+    
+    /**
+     * Calculate confidence based on record count (data-based, not arbitrary)
+     */
+    private function calculateConfidence(int $recordCount): float
+    {
+        if ($recordCount === 0) {
+            return 0.0;
+        } elseif ($recordCount <= 2) {
+            return 0.3; // Low confidence
+        } elseif ($recordCount <= 6) {
+            return 0.5 + (($recordCount - 2) * 0.05); // Medium confidence: 0.5-0.7
+        } else {
+            return min(0.9, 0.7 + (($recordCount - 6) * 0.02)); // High confidence: 0.7-0.9
+        }
+    }
+
+    /**
+     * Generate comprehensive AI recommendations for campaign planning fields
+     * STRICT DATA INTEGRITY: All recommendations MUST come from Nagkaisang Nayon data only
+     * 
+     * @param int $campaignId Current campaign ID
+     * @param array $campaign Current campaign data
+     * @param array $features Prepared features from historical data
+     * @return array Recommendations with decision basis for each field
+     */
+    private function generateComprehensiveRecommendations(int $campaignId, array $campaign, array $features): array
+    {
+        $recommendations = [];
+        $category = $campaign['category'] ?? 'general';
+        
+        // 1. Campaign Title - Based on successful campaigns in same category (Nagkaisang Nayon only)
+        $titleRecommendation = $this->recommendCampaignTitle($category);
+        if ($titleRecommendation) {
+            $recommendations['title'] = $titleRecommendation;
+        }
+        
+        // 2. Category - Based on historical effectiveness (if objectives provided) (Nagkaisang Nayon only)
+        if (!empty($campaign['objectives'])) {
+            $categoryRecommendation = $this->recommendCategory($campaign['objectives']);
+            if ($categoryRecommendation) {
+                $recommendations['category'] = $categoryRecommendation;
+            }
+        }
+        
+        // 3. Budget - Based on average budget of similar successful campaigns (Nagkaisang Nayon only)
+        $budgetRecommendation = $this->recommendBudget($category);
+        if ($budgetRecommendation) {
+            $recommendations['budget'] = $budgetRecommendation;
+        }
+        
+        // 4. Staff Count - Based on attendance vs manpower ratios from past events (Nagkaisang Nayon only)
+        $staffCountRecommendation = $this->recommendStaffCount($category, $features);
+        if ($staffCountRecommendation) {
+            $recommendations['staff_count'] = $staffCountRecommendation;
+        }
+        
+        // 5. Assigned Staff - Based on staff availability and past performance (Nagkaisang Nayon only)
+        $assignedStaffRecommendation = $this->recommendAssignedStaff($category);
+        if ($assignedStaffRecommendation) {
+            $recommendations['assigned_staff'] = $assignedStaffRecommendation;
+        }
+        
+        // 6. Materials/Content - Based on most effective materials in similar campaigns (Nagkaisang Nayon only)
+        $materialsRecommendation = $this->recommendMaterials($category);
+        if ($materialsRecommendation) {
+            $recommendations['materials'] = $materialsRecommendation;
+        }
+        
+        return $recommendations;
+    }
+    
+    /**
+     * Recommend campaign title based on successful campaigns in same category
+     * STRICT: Only from Nagkaisang Nayon, Quezon City
+     */
+    private function recommendCampaignTitle(string $category): ?array
+    {
+        $barangayFilter = $this->getNagkaisangNayonFilter('c');
+        
+        // Get most successful campaigns in same category from Nagkaisang Nayon only
+        $stmt = $this->pdo->prepare('
+            SELECT c.title, 
+                   COALESCE((SELECT COUNT(*) FROM campaign_department_attendance a 
+                             INNER JOIN campaign_department_events e ON e.id = a.event_id 
+                             WHERE e.linked_campaign_id = c.id), 0) as attendance,
+                   COALESCE((SELECT AVG(f.rating) FROM campaign_department_feedback f 
+                             INNER JOIN campaign_department_surveys s ON s.id = f.survey_id 
+                             WHERE s.campaign_id = c.id), 0) as avg_rating
+            FROM campaign_department_campaigns c
+            WHERE c.category = :category 
+              AND c.status IN ("approved", "ongoing", "completed")
+              AND ' . $barangayFilter['where'] . '
+            ORDER BY attendance DESC, avg_rating DESC
+            LIMIT 5
+        ');
+        $params = array_merge(['category' => $category], $barangayFilter['params']);
+        $stmt->execute($params);
+        $successfulCampaigns = $stmt->fetchAll();
+        
+        if (empty($successfulCampaigns)) {
+            return null; // No factual data available for Nagkaisang Nayon
+        }
+        
+        // Find most common title pattern or use top performer
+        $topCampaign = $successfulCampaigns[0];
+        $count = count($successfulCampaigns);
+        $confidence = $this->calculateConfidence($count);
+        
+        return [
+            'value' => $topCampaign['title'],
+            'decision_basis' => "Based on {$count} past campaign(s) conducted in Nagkaisang Nayon, Quezon City in the {$category} category. Top campaign: '{$topCampaign['title']}' (attendance: {$topCampaign['attendance']} participants, rating: " . round($topCampaign['avg_rating'], 1) . "/5). Derived from campaign_department_campaigns table filtered by geographic scope.",
+            'confidence' => $confidence
+        ];
+    }
+    
+    /**
+     * Recommend category based on objectives analysis
+     * STRICT: Only from Nagkaisang Nayon, Quezon City
+     */
+    private function recommendCategory(string $objectives): ?array
+    {
+        // Extract keywords from objectives and match to category patterns
+        $objectivesLower = strtolower($objectives);
+        $categoryKeywords = [
+            'fire' => ['fire', 'flame', 'burn', 'smoke', 'evacuation', 'fire safety'],
+            'flood' => ['flood', 'water', 'rain', 'drainage', 'evacuation', 'flood safety'],
+            'earthquake' => ['earthquake', 'shake', 'seismic', 'structural', 'evacuation'],
+            'health' => ['health', 'disease', 'vaccination', 'hygiene', 'medical', 'wellness'],
+            'road safety' => ['road', 'traffic', 'vehicle', 'pedestrian', 'safety', 'accident']
+        ];
+        
+        $matchedCategory = null;
+        $maxMatches = 0;
+        
+        foreach ($categoryKeywords as $cat => $keywords) {
+            $matches = 0;
+            foreach ($keywords as $keyword) {
+                if (strpos($objectivesLower, $keyword) !== false) {
+                    $matches++;
+                }
+            }
+            if ($matches > $maxMatches) {
+                $maxMatches = $matches;
+                $matchedCategory = $cat;
+            }
+        }
+        
+        if (!$matchedCategory || $maxMatches === 0) {
+            return null; // No clear category match
+        }
+        
+        // Get effectiveness data for this category from Nagkaisang Nayon only
+        $barangayFilter = $this->getNagkaisangNayonFilter('c');
+        $stmt = $this->pdo->prepare('
+            SELECT COUNT(*) as campaign_count,
+                   AVG(budget) as avg_budget,
+                   AVG(COALESCE((SELECT COUNT(*) FROM campaign_department_attendance a 
+                        INNER JOIN campaign_department_events e ON e.id = a.event_id 
+                        WHERE e.linked_campaign_id = c.id), 0)) as avg_attendance
+            FROM campaign_department_campaigns c
+            WHERE c.category = :category
+              AND c.status IN ("approved", "ongoing", "completed")
+              AND ' . $barangayFilter['where'] . '
+        ');
+        $params = array_merge(['category' => $matchedCategory], $barangayFilter['params']);
+        $stmt->execute($params);
+        $effectiveness = $stmt->fetch();
+        
+        if (!$effectiveness || $effectiveness['campaign_count'] == 0) {
+            return null; // No factual data available for Nagkaisang Nayon
+        }
+        
+        $recordCount = (int)$effectiveness['campaign_count'];
+        $confidence = $this->calculateConfidence($recordCount);
+        
+        return [
+            'value' => $matchedCategory,
+            'decision_basis' => "Based on keyword analysis of objectives ({$maxMatches} matching terms). Category '{$matchedCategory}' has {$recordCount} recorded campaign(s) in Nagkaisang Nayon, Quezon City with average attendance of " . round($effectiveness['avg_attendance'] ?? 0) . " participants. Derived from campaign_department_campaigns table filtered by geographic scope.",
+            'confidence' => $confidence
+        ];
+    }
+    
+    /**
+     * Recommend budget based on average of similar successful campaigns
+     * STRICT: Only from Nagkaisang Nayon, Quezon City
+     */
+    private function recommendBudget(string $category): ?array
+    {
+        $barangayFilter = $this->getNagkaisangNayonFilter('c');
+        
+        $stmt = $this->pdo->prepare('
+            SELECT AVG(budget) as avg_budget,
+                   MIN(budget) as min_budget,
+                   MAX(budget) as max_budget,
+                   COUNT(*) as campaign_count
+            FROM campaign_department_campaigns c
+            WHERE c.category = :category
+              AND c.budget IS NOT NULL
+              AND c.budget > 0
+              AND c.status IN ("approved", "ongoing", "completed")
+              AND ' . $barangayFilter['where'] . '
+        ');
+        $params = array_merge(['category' => $category], $barangayFilter['params']);
+        $stmt->execute($params);
+        $budgetData = $stmt->fetch();
+        
+        if (!$budgetData || $budgetData['campaign_count'] == 0 || !$budgetData['avg_budget']) {
+            return null; // No sufficient factual data available for Barangay Nagkaisang Nayon
+        }
+        
+        $recommendedBudget = round((float)$budgetData['avg_budget'], 2);
+        $recordCount = (int)$budgetData['campaign_count'];
+        $confidence = $this->calculateConfidence($recordCount);
+        
+        return [
+            'value' => $recommendedBudget,
+            'decision_basis' => "Based on average budget of {$recordCount} recorded {$category} campaign(s) conducted in Nagkaisang Nayon, Quezon City. Average: ₱" . number_format($recommendedBudget, 2) . ". Range: ₱" . number_format($budgetData['min_budget'], 2) . " - ₱" . number_format($budgetData['max_budget'], 2) . ". Derived from campaign_department_campaigns.budget field filtered by geographic scope.",
+            'confidence' => $confidence
+        ];
+    }
+    
+    /**
+     * Recommend staff count based on attendance vs manpower ratios
+     * STRICT: Only from Nagkaisang Nayon, Quezon City
+     */
+    private function recommendStaffCount(string $category, array $features): ?array
+    {
+        $barangayFilter = $this->getNagkaisangNayonFilter('c');
+        
+        // Get average attendance and staff count from past events in similar campaigns (Nagkaisang Nayon only)
+        $stmt = $this->pdo->prepare('
+            SELECT AVG(c.staff_count) as avg_staff_count,
+                   AVG(COALESCE((SELECT COUNT(*) FROM campaign_department_attendance a 
+                        INNER JOIN campaign_department_events e ON e.id = a.event_id 
+                        WHERE e.linked_campaign_id = c.id), 0)) as avg_attendance,
+                   COUNT(*) as campaign_count
+            FROM campaign_department_campaigns c
+            WHERE c.category = :category
+              AND c.staff_count IS NOT NULL
+              AND c.staff_count > 0
+              AND c.status IN ("approved", "ongoing", "completed")
+              AND ' . $barangayFilter['where'] . '
+        ');
+        $params = array_merge(['category' => $category], $barangayFilter['params']);
+        $stmt->execute($params);
+        $staffData = $stmt->fetch();
+        
+        if (!$staffData || $staffData['campaign_count'] == 0) {
+            // Check if we have attendance data from Nagkaisang Nayon events in features
+            $historicalAttendance = $features['attendance'] ?? 0;
+            if ($historicalAttendance > 0) {
+                // Use standard ratio only if we have real attendance data from Nagkaisang Nayon
+                $recommendedStaff = max(2, min(10, (int)ceil($historicalAttendance / 25)));
+                return [
+                    'value' => $recommendedStaff,
+                    'decision_basis' => "Based on historical attendance data from Nagkaisang Nayon events ({$historicalAttendance} participants) using standard ratio of 1 staff per 25 attendees. Derived from campaign_department_attendance records.",
+                    'confidence' => 0.5 // Lower confidence when using ratio instead of actual data
+                ];
+            }
+            return null; // No sufficient factual data available for Barangay Nagkaisang Nayon
+        }
+        
+        $avgStaff = (float)$staffData['avg_staff_count'];
+        $avgAttendance = (float)$staffData['avg_attendance'];
+        $recordCount = (int)$staffData['campaign_count'];
+        
+        // Calculate ratio and recommend based on expected attendance
+        $ratio = $avgAttendance > 0 ? $avgStaff / $avgAttendance : 0.04; // Default 1:25 ratio
+        
+        // Use historical attendance if available, otherwise use category average
+        $expectedAttendance = $features['attendance'] ?? $avgAttendance;
+        $recommendedStaff = max(2, min(15, (int)ceil($expectedAttendance * $ratio)));
+        $confidence = $this->calculateConfidence($recordCount);
+        
+        return [
+            'value' => $recommendedStaff,
+            'decision_basis' => "Based on staff-to-attendee ratio from {$recordCount} recorded campaign(s) in Nagkaisang Nayon, Quezon City (avg: " . round($avgStaff, 1) . " staff for " . round($avgAttendance, 0) . " attendees). Recommended for expected attendance of {$expectedAttendance}. Derived from campaign_department_campaigns.staff_count and campaign_department_attendance records.",
+            'confidence' => $confidence
+        ];
+    }
+    
+    /**
+     * Recommend assigned staff based on staff availability and past performance
+     * STRICT: Only from Nagkaisang Nayon, Quezon City
+     */
+    private function recommendAssignedStaff(string $category): ?array
+    {
+        $barangayFilter = $this->getNagkaisangNayonFilter('c');
+        
+        // Get staff most frequently assigned to similar campaigns in Nagkaisang Nayon only
+        $stmt = $this->pdo->prepare('
+            SELECT c.assigned_staff
+            FROM campaign_department_campaigns c
+            WHERE c.category = :category
+              AND c.assigned_staff IS NOT NULL
+              AND c.assigned_staff != "[]"
+              AND c.status IN ("approved", "ongoing", "completed")
+              AND ' . $barangayFilter['where'] . '
+            ORDER BY c.created_at DESC
+            LIMIT 10
+        ');
+        $params = array_merge(['category' => $category], $barangayFilter['params']);
+        $stmt->execute($params);
+        $staffAssignments = $stmt->fetchAll();
+        
+        if (empty($staffAssignments)) {
+            return null; // No sufficient factual data available for Barangay Nagkaisang Nayon
+        }
+        
+        // Count frequency of each staff member
+        $staffFrequency = [];
+        foreach ($staffAssignments as $row) {
+            $staff = json_decode($row['assigned_staff'], true);
+            if (is_array($staff)) {
+                foreach ($staff as $member) {
+                    if (is_string($member)) {
+                        $staffFrequency[$member] = ($staffFrequency[$member] ?? 0) + 1;
+                    }
+                }
+            }
+        }
+        
+        if (empty($staffFrequency)) {
+            return null; // No valid staff data found
+        }
+        
+        // Get top 3-5 most frequently assigned staff
+        arsort($staffFrequency);
+        $recommendedStaff = array_slice(array_keys($staffFrequency), 0, 5);
+        $topStaff = array_keys($staffFrequency)[0];
+        $topCount = $staffFrequency[$topStaff];
+        $recordCount = count($staffAssignments);
+        $confidence = $this->calculateConfidence($recordCount);
+        
+        return [
+            'value' => $recommendedStaff,
+            'decision_basis' => "Based on most frequently assigned staff in {$recordCount} recorded {$category} campaign(s) conducted in Nagkaisang Nayon, Quezon City. Top staff: '{$topStaff}' (assigned {$topCount} time(s)). Derived from campaign_department_campaigns.assigned_staff JSON field filtered by geographic scope.",
+            'confidence' => $confidence
+        ];
+    }
+    
+    /**
+     * Recommend materials based on most effective materials in similar campaigns
+     * STRICT: Only from Nagkaisang Nayon, Quezon City
+     */
+    private function recommendMaterials(string $category): ?array
+    {
+        $barangayFilter = $this->getNagkaisangNayonFilter('c');
+        
+        // Get materials from successful campaigns in same category (Nagkaisang Nayon only)
+        $stmt = $this->pdo->prepare('
+            SELECT c.materials_json,
+                   COALESCE((SELECT COUNT(*) FROM campaign_department_attendance a 
+                             INNER JOIN campaign_department_events e ON e.id = a.event_id 
+                             WHERE e.linked_campaign_id = c.id), 0) as attendance
+            FROM campaign_department_campaigns c
+            WHERE c.category = :category
+              AND c.materials_json IS NOT NULL
+              AND c.materials_json != "{}"
+              AND c.status IN ("approved", "ongoing", "completed")
+              AND ' . $barangayFilter['where'] . '
+            ORDER BY attendance DESC
+            LIMIT 10
+        ');
+        $params = array_merge(['category' => $category], $barangayFilter['params']);
+        $stmt->execute($params);
+        $materialsData = $stmt->fetchAll();
+        
+        if (empty($materialsData)) {
+            // Try to get from content items linked to similar campaigns in Nagkaisang Nayon
+            $stmt = $this->pdo->prepare('
+                SELECT ci.title, ci.content_type, COUNT(*) as usage_count
+                FROM campaign_department_content_items ci
+                INNER JOIN campaign_department_campaigns c ON c.id = ci.campaign_id
+                WHERE c.category = :category
+                  AND ci.approval_status = "approved"
+                  AND ' . $barangayFilter['where'] . '
+                GROUP BY ci.title, ci.content_type
+                ORDER BY usage_count DESC
+                LIMIT 5
+            ');
+            $params = array_merge(['category' => $category], $barangayFilter['params']);
+            $stmt->execute($params);
+            $contentItems = $stmt->fetchAll();
+            
+            if (empty($contentItems)) {
+                return null; // No sufficient factual data available for Barangay Nagkaisang Nayon
+            }
+            
+            $recommendedMaterials = [];
+            foreach ($contentItems as $item) {
+                $recommendedMaterials[$item['title']] = 1;
+            }
+            
+            $recordCount = count($contentItems);
+            $confidence = $this->calculateConfidence($recordCount);
+            
+            return [
+                'value' => $recommendedMaterials,
+                'decision_basis' => "Based on approved content items from {$recordCount} recorded campaign(s) in Nagkaisang Nayon, Quezon City. Found " . count($contentItems) . " frequently used material(s). Derived from campaign_department_content_items table filtered by geographic scope.",
+                'confidence' => $confidence
+            ];
+        }
+        
+        // Aggregate materials from top campaigns
+        $materialsFrequency = [];
+        $totalAttendance = 0;
+        foreach ($materialsData as $row) {
+            $materials = json_decode($row['materials_json'], true);
+            if (is_array($materials)) {
+                foreach ($materials as $material => $quantity) {
+                    if (!isset($materialsFrequency[$material])) {
+                        $materialsFrequency[$material] = ['count' => 0, 'total_quantity' => 0, 'attendance' => 0];
+                    }
+                    $materialsFrequency[$material]['count']++;
+                    $materialsFrequency[$material]['total_quantity'] += (int)$quantity;
+                    $materialsFrequency[$material]['attendance'] += (int)$row['attendance'];
+                }
+            }
+            $totalAttendance += (int)$row['attendance'];
+        }
+        
+        if (empty($materialsFrequency)) {
+            return null;
+        }
+        
+        // Calculate effectiveness score (frequency + attendance correlation)
+        foreach ($materialsFrequency as $material => &$data) {
+            $data['effectiveness'] = $data['count'] * 0.5 + ($data['attendance'] / max(1, $totalAttendance)) * 0.5;
+        }
+        unset($data);
+        
+        // Sort by effectiveness and get top materials
+        uasort($materialsFrequency, function($a, $b) {
+            return $b['effectiveness'] <=> $a['effectiveness'];
+        });
+        
+        $recommendedMaterials = [];
+        $topMaterials = array_slice($materialsFrequency, 0, 5, true);
+        foreach ($topMaterials as $material => $data) {
+            $avgQuantity = (int)ceil($data['total_quantity'] / $data['count']);
+            $recommendedMaterials[$material] = $avgQuantity;
+        }
+        
+        $topMaterial = array_key_first($topMaterials);
+        $topData = $topMaterials[$topMaterial];
+        $recordCount = count($materialsData);
+        $confidence = $this->calculateConfidence($recordCount);
+        
+        return [
+            'value' => $recommendedMaterials,
+            'decision_basis' => "Based on most effective materials from {$recordCount} recorded {$category} campaign(s) conducted in Nagkaisang Nayon, Quezon City. Top material: '{$topMaterial}' (used in {$topData['count']} campaign(s) with avg attendance of " . round($topData['attendance'] / $topData['count']) . " participants). Derived from campaign_department_campaigns.materials_json and campaign_department_attendance records.",
+            'confidence' => $confidence
+        ];
     }
 
     /**
@@ -248,15 +759,25 @@ class AutoMLService
     /**
      * Get similar campaigns by category for historical data
      */
+    /**
+     * Get similar campaigns from same category
+     * STRICT: Only from Nagkaisang Nayon, Quezon City
+     */
     private function getSimilarCampaigns(string $category, int $excludeId): array
     {
+        $barangayFilter = $this->getNagkaisangNayonFilter('c');
+        
         $stmt = $this->pdo->prepare('
-            SELECT id FROM campaign_department_campaigns 
-            WHERE category = :category AND id != :exclude_id
-            ORDER BY created_at DESC 
+            SELECT c.id FROM campaign_department_campaigns c
+            WHERE c.category = :category 
+              AND c.id != :exclude_id
+              AND c.status IN ("approved", "ongoing", "completed")
+              AND ' . $barangayFilter['where'] . '
+            ORDER BY c.created_at DESC 
             LIMIT 20
         ');
-        $stmt->execute(['category' => $category, 'exclude_id' => $excludeId]);
+        $params = array_merge(['category' => $category, 'exclude_id' => $excludeId], $barangayFilter['params']);
+        $stmt->execute($params);
         return array_column($stmt->fetchAll(), 'id');
     }
     
@@ -429,12 +950,20 @@ class AutoMLService
                 
                 error_log("AutoMLService: Parsed OpenAI response - Day: $recommendedDay, Time: $recommendedTime, Confidence: $confidence");
                 
+                // Track which data sources were actually used (same logic as heuristic)
+                $dataSourcesUsed = $this->getDataSourcesUsed($features);
+                
+                // Generate comprehensive recommendations for all fields
+                $comprehensiveRecommendations = $this->generateComprehensiveRecommendations($campaignId, $campaign, $features);
+                
                 return [
                     'recommended_day' => $recommendedDay,
                     'recommended_time' => $recommendedTime,
                     'suggested_datetime' => $suggestedDatetime,
                     'confidence_score' => round($confidence, 3),
                     'features_used' => $features,
+                    'data_sources_used' => $dataSourcesUsed,
+                    'recommendations' => $comprehensiveRecommendations,
                     'model_source' => 'openai_gpt4',
                     'automl_configured' => true,
                     'reasoning' => $reasoning,
@@ -450,7 +979,7 @@ class AutoMLService
     /**
      * Call Google AutoML Prediction API
      */
-    private function predictWithGoogleAutoML(array $features): array
+    private function predictWithGoogleAutoML(int $campaignId, array $campaign, array $features): array
     {
         $payload = [
             'instances' => [
@@ -516,12 +1045,20 @@ class AutoMLService
 
             error_log("AutoMLService: Parsed Google AutoML response - Day: $recommendedDay, Time: $recommendedTime, Confidence: $confidence");
 
+            // Track which data sources were actually used
+            $dataSourcesUsed = $this->getDataSourcesUsed($features);
+            
+            // Generate comprehensive recommendations for all fields
+            $comprehensiveRecommendations = $this->generateComprehensiveRecommendations($campaignId, $campaign, $features);
+            
             return [
                 'recommended_day' => (int) $recommendedDay,
                 'recommended_time' => $recommendedTime,
                 'suggested_datetime' => $suggestedDatetime,
                 'confidence_score' => round($confidence, 3),
                 'features_used' => $features,
+                'data_sources_used' => $dataSourcesUsed,
+                'recommendations' => $comprehensiveRecommendations,
                 'model_source' => 'google_automl',
                 'automl_configured' => true,
             ];
@@ -567,14 +1104,72 @@ class AutoMLService
         $baseConfidence = $hasHistoricalData ? 0.6 : 0.3;
         $confidence = max(0.3, min(0.9, $baseConfidence + min($engagement, 0.3)));
 
+        // Track which data sources were actually used in this prediction
+        $dataSourcesUsed = $this->getDataSourcesUsed($features);
+
         return [
             'recommended_day' => (int) $dayOfWeek,
             'recommended_time' => substr($suggestedTime, 0, 5), // HH:MM format
             'suggested_datetime' => $suggestedDatetime,
             'confidence_score' => round($confidence, 3),
             'features_used' => $features,
+            'data_sources_used' => $dataSourcesUsed, // Track which data sources were actually used
             'model_source' => $hasHistoricalData ? 'heuristic_with_history' : 'heuristic',
         ];
+    }
+
+    /**
+     * Track which data sources were actually used in prediction
+     * Returns array of data source identifiers
+     */
+    private function getDataSourcesUsed(array $features): array
+    {
+        $dataSourcesUsed = [];
+        
+        // Past event records - check if we queried events
+        if (!empty($features['engagement_by_day']) || !empty($features['engagement_by_time'])) {
+            $dataSourcesUsed[] = 'past_event_records';
+        }
+        
+        // Attendance trends - check if attendance data was found
+        if (($features['attendance'] ?? 0) > 0 || !empty($features['historical_engagement']['attendance'] ?? [])) {
+            $dataSourcesUsed[] = 'attendance_trends';
+        }
+        
+        // Feedback results - check if ratings/feedback data exists
+        if (($features['avg_rating'] ?? 0) > 0 || !empty($features['historical_engagement']['ratings'] ?? [])) {
+            $dataSourcesUsed[] = 'feedback_results';
+        }
+        
+        // Audience targeting data - check if segment was used
+        if (!empty($features['audience_segment_id'])) {
+            $dataSourcesUsed[] = 'audience_targeting_data';
+        }
+        
+        // Event conflicts - always available (checked separately via checkConflicts endpoint)
+        $dataSourcesUsed[] = 'event_conflicts';
+        
+        // TODO: Seasonal patterns - NOT YET IMPLEMENTED
+        // Need to add: month-based grouping of events to identify seasonal patterns
+        // Table/field needed: campaign_department_events.date (extract month), aggregate by month
+        // Implementation: Add GROUP BY MONTH(date) query in prepareFeatures() to compute seasonal engagement patterns
+        
+        // TODO: Event risk levels - NOT YET IMPLEMENTED  
+        // Need to add: risk flags/tags on events or campaigns
+        // Table/field needed: campaign_department_events.risk_level ENUM('low','medium','high') or campaign_department_campaigns.risk_level
+        // Implementation: Add risk_level column and use it in prediction logic
+        
+        // TODO: Incident history - NOT YET IMPLEMENTED
+        // Need to add: incident/safety related tables
+        // Table/field needed: campaign_department_incidents table with columns: id, date, type, severity, location, description
+        // Implementation: Create incidents table and JOIN with campaigns/events to factor incident history into scheduling
+        
+        // TODO: Participation rates per segment - PARTIALLY IMPLEMENTED
+        // Currently: audience_segment_id is used but detailed participation rates per segment are not computed
+        // Need to add: JOIN campaign_department_attendance with campaign_department_audience_segments to compute per-segment rates
+        // Implementation: Add query in prepareFeatures() to compute attendance_rate per segment_id from campaign_department_attendance JOIN campaign_department_audience_members
+        
+        return $dataSourcesUsed;
     }
 
     /**

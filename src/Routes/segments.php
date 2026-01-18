@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Controllers\SegmentController;
 use App\Middleware\JWTMiddleware;
+use App\Middleware\ViewerBlockMiddleware;
 
 return [
     [
@@ -16,7 +17,7 @@ return [
         'method' => 'POST',
         'path' => '/api/v1/segments',
         'handler' => [SegmentController::class, 'store'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'GET',
@@ -28,7 +29,7 @@ return [
         'method' => 'PUT',
         'path' => '/api/v1/segments/{id}',
         'handler' => [SegmentController::class, 'update'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'GET',
@@ -46,7 +47,7 @@ return [
         'method' => 'POST',
         'path' => '/api/v1/segments/{id}/link-campaign',
         'handler' => [SegmentController::class, 'linkToCampaign'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
     [
         'method' => 'GET',
@@ -58,6 +59,6 @@ return [
         'method' => 'POST',
         'path' => '/api/v1/segments/{id}/members/batch',
         'handler' => [SegmentController::class, 'importMembers'],
-        'middleware' => JWTMiddleware::class,
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
 ];
