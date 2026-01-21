@@ -85,7 +85,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/admin-header.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css" rel="stylesheet">
     <script>
         // Force light theme
@@ -1486,14 +1486,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         <div id="calendar-tab" class="tab-content">
             <div class="section-header" style="margin-bottom: 16px;">
                 <h3 class="section-title analytics-accent">Calendar View</h3>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-secondary" onclick="calendarView('dayGridMonth')" style="display: flex; align-items: center; gap: 6px;">
-                        <i class="fas fa-calendar"></i> Month
-                    </button>
-                    <button class="btn btn-secondary" onclick="calendarView('timeGridWeek')" style="display: flex; align-items: center; gap: 6px;">
-                        <i class="fas fa-calendar-week"></i> Week
-                    </button>
-                </div>
             </div>
             <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
                 Calendar view of campaign schedules. Events from the <strong>Events module</strong> are integrated to show potential conflicts.
@@ -1757,7 +1749,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     </div> <!-- /.campaign-layout -->
         </div> <!-- /.campaign-page -->
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js" onload="console.log('FullCalendar script loaded successfully'); if (typeof FullCalendar === 'undefined') { console.warn('FullCalendar global not found after load'); } else { console.log('FullCalendar global found:', typeof FullCalendar); }" onerror="console.error('FullCalendar script failed to load - check network/CDN');"></script>
 <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
 <script>
 // Get base path for API calls (path_helper already included in head)
@@ -1793,14 +1785,16 @@ let calendar, gantt;
 let activeCampaignId = null;
 let allCampaigns = [];
 
-// RBAC: Get user role for UI visibility
+// RBAC: Get user role for UI visibility (LGU Governance Workflow)
 let currentUserRole = null;
+let currentUserRoleId = null;
 (function() {
     try {
         const currentUserStr = localStorage.getItem('currentUser');
         if (currentUserStr) {
             const currentUser = JSON.parse(currentUserStr);
             currentUserRole = currentUser.role ? currentUser.role.toLowerCase() : null;
+            currentUserRoleId = currentUser.role_id || null;
             
             // If role not in user object, try to decode from JWT
             if (!currentUserRole) {
@@ -1811,17 +1805,256 @@ let currentUserRole = null;
                         if (parts.length === 3) {
                             const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
                             currentUserRole = payload.role ? payload.role.toLowerCase() : null;
+                            currentUserRoleId = payload.role_id || payload.rid || null;
                         }
                     } catch (e) {
                         console.error('RBAC: Failed to decode JWT for role check:', e);
                     }
                 }
             }
+        } else {
+            // Try to get role from JWT directly
+            const token = localStorage.getItem('jwtToken');
+            if (token) {
+                try {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        currentUserRole = payload.role ? payload.role.toLowerCase() : null;
+                        currentUserRoleId = payload.role_id || payload.rid || null;
+                    }
+                } catch (e) {
+                    console.error('RBAC: Failed to decode JWT for role check:', e);
+                }
+            }
         }
+        
+        // Normalize role name (map legacy roles to LGU governance roles)
+        // Make it case-insensitive by converting to lowercase first
+        if (currentUserRole) {
+            const roleLower = currentUserRole.toLowerCase().trim();
+            const roleMappings = {
+                'partner': 'viewer',
+                'partner representative': 'viewer',
+                'partner_representative': 'viewer',
+                'viewer': 'viewer',
+                'staff': 'staff',
+                'secretary': 'secretary',
+                'kagawad': 'kagawad',
+                'captain': 'captain',
+                'admin': 'admin',
+                'barangay administrator': 'admin',
+                'barangay admin': 'admin',
+                'barangay staff': 'staff',
+                'system_admin': 'admin',
+                'barangay_admin': 'admin',
+                'barangayadministrator': 'admin', // Handle no-space variant
+            };
+            currentUserRole = roleMappings[roleLower] || currentUserRole;
+        }
+        
+        // If we have role_id but no role name, try to map it
+        if (!currentUserRole && currentUserRoleId) {
+            const roleIdMap = {
+                1: 'admin',
+                2: 'staff',
+                3: 'viewer',
+                4: 'viewer',
+                5: 'admin',
+            };
+            currentUserRole = roleIdMap[currentUserRoleId] || null;
+            console.log('RBAC: Mapped role_id', currentUserRoleId, 'to role', currentUserRole);
+        }
+        
+        console.log('RBAC: Detected role =', currentUserRole, ', roleId =', currentUserRoleId);
     } catch (e) {
         console.error('RBAC: Error checking user role:', e);
     }
 })();
+
+// Function to refresh role detection (call this when needed)
+function refreshRoleDetection() {
+    try {
+        const currentUserStr = localStorage.getItem('currentUser');
+        if (currentUserStr) {
+            const currentUser = JSON.parse(currentUserStr);
+            currentUserRole = currentUser.role ? currentUser.role.toLowerCase() : null;
+            currentUserRoleId = currentUser.role_id || null;
+            
+            // If role not in user object, try to decode from JWT
+            if (!currentUserRole) {
+                const token = localStorage.getItem('jwtToken');
+                if (token) {
+                    try {
+                        const parts = token.split('.');
+                        if (parts.length === 3) {
+                            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                            currentUserRole = payload.role ? payload.role.toLowerCase() : null;
+                            currentUserRoleId = payload.role_id || payload.rid || null;
+                        }
+                    } catch (e) {
+                        console.error('RBAC: Failed to decode JWT for role check:', e);
+                    }
+                }
+            }
+        } else {
+            // Try to get role from JWT directly
+            const token = localStorage.getItem('jwtToken');
+            if (token) {
+                try {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        currentUserRole = payload.role ? payload.role.toLowerCase() : null;
+                        currentUserRoleId = payload.role_id || payload.rid || null;
+                    }
+                } catch (e) {
+                    console.error('RBAC: Failed to decode JWT for role check:', e);
+                }
+            }
+        }
+        
+        // If we have role_id but no role name, try to map it
+        if (!currentUserRole && currentUserRoleId) {
+            const roleIdMap = {
+                1: 'admin',
+                2: 'staff',
+                3: 'viewer',
+                4: 'viewer',
+                5: 'admin',
+            };
+            currentUserRole = roleIdMap[currentUserRoleId] || null;
+        }
+        
+        // Normalize role name (map legacy roles to LGU governance roles)
+        // Make it case-insensitive by converting to lowercase first
+        if (currentUserRole) {
+            const roleLower = currentUserRole.toLowerCase().trim();
+            const roleMappings = {
+                'partner': 'viewer',
+                'partner representative': 'viewer',
+                'partner_representative': 'viewer',
+                'viewer': 'viewer',
+                'staff': 'staff',
+                'secretary': 'secretary',
+                'kagawad': 'kagawad',
+                'captain': 'captain',
+                'admin': 'admin',
+                'barangay administrator': 'admin',
+                'barangay admin': 'admin',
+                'barangay staff': 'staff',
+                'system_admin': 'admin',
+                'barangay_admin': 'admin',
+                'barangayadministrator': 'admin', // Handle no-space variant
+            };
+            currentUserRole = roleMappings[roleLower] || currentUserRole;
+        }
+        
+        console.log('RBAC: Refreshed role detection - role =', currentUserRole, ', roleId =', currentUserRoleId);
+        return currentUserRole;
+    } catch (e) {
+        console.error('RBAC: Error refreshing role detection:', e);
+        return null;
+    }
+}
+
+// RBAC Helper Functions (LGU Governance Workflow)
+function isViewer() {
+    return currentUserRole === 'viewer' || currentUserRole === 'partner';
+}
+
+function isStaff() {
+    return currentUserRole === 'staff';
+}
+
+function isSecretary() {
+    return currentUserRole === 'secretary';
+}
+
+function isKagawad() {
+    return currentUserRole === 'kagawad';
+}
+
+function isCaptain() {
+    return currentUserRole === 'captain';
+}
+
+function isAdmin() {
+    // Check multiple admin role variations
+    if (!currentUserRole) return false;
+    const role = currentUserRole.toLowerCase();
+    return role === 'admin' || 
+           role === 'system_admin' || 
+           role === 'barangay_admin' ||
+           role === 'barangay administrator' ||
+           role === 'barangay admin' ||
+           (currentUserRoleId && (currentUserRoleId === 1 || currentUserRoleId === 5)); // Common admin role IDs
+}
+
+// Check if user can create campaigns
+function canCreateCampaign() {
+    return !isViewer() && (isStaff() || isSecretary() || isKagawad() || isCaptain() || isAdmin());
+}
+
+// Check if user can edit campaigns
+function canEditCampaign(campaignStatus) {
+    if (isViewer()) return false;
+    if (isAdmin()) return true;
+    
+    const status = (campaignStatus || '').toLowerCase();
+    
+    // Staff: Can only edit drafts they created
+    if (isStaff()) {
+        return status === 'draft';
+    }
+    
+    // Secretary: Can edit drafts and pending campaigns
+    if (isSecretary()) {
+        return status === 'draft' || status === 'pending';
+    }
+    
+    // Kagawad: Can view but cannot edit (read-only reviewer)
+    if (isKagawad()) {
+        return false;
+    }
+    
+    // Captain: Can edit all campaigns
+    if (isCaptain()) {
+        return true;
+    }
+    
+    return false;
+}
+
+// Check if user can approve campaigns (Draft → Pending or Pending → Approved)
+function canApproveCampaign(campaignStatus) {
+    if (isViewer() || isStaff() || isKagawad()) return false;
+    if (isAdmin()) return true;
+    
+    const status = (campaignStatus || '').toLowerCase();
+    
+    // Secretary: Can forward Draft → Pending (not final approval)
+    if (isSecretary()) {
+        return status === 'draft';
+    }
+    
+    // Captain: Can approve Pending → Approved (final authority)
+    if (isCaptain()) {
+        return status === 'pending';
+    }
+    
+    return false;
+}
+
+// Check if user can finalize schedules
+function canFinalizeSchedule() {
+    return isCaptain() || isAdmin();
+}
+
+// Check if user can access AI Scheduler
+function canAccessAIScheduler() {
+    return !isViewer() && (isStaff() || isSecretary() || isKagawad() || isCaptain() || isAdmin());
+}
 
 // RBAC: Hide action buttons/forms for Viewer role (read-only)
 document.addEventListener('DOMContentLoaded', function() {
@@ -2488,9 +2721,8 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
         createStatusEl.textContent = 'Campaign created successfully!';
         createStatusEl.className = 'status-text success';
         clearForm();
-        loadCampaigns();
-        refreshGantt();
-        if (calendar) calendar.refetchEvents();
+        // FIX: Use centralized refresh to ensure all views update
+        refreshAllCampaignViews();
     } catch (err) {
         createStatusEl.textContent = 'Network error. Please try again.';
         createStatusEl.className = 'status-text error';
@@ -3043,13 +3275,23 @@ async function getAutoMLPrediction() {
             }
         }
         
+        // Build recommendation message with transparency about data limitations
         let recommendation = 'Optimal deployment time based on real-time historical performance data';
+        const dataSources = pred.data_sources_used || {};
+        const usedSources = dataSources.used || [];
+        const totalRecords = usedSources.reduce((sum, s) => sum + (s.count || 0), 0);
+        
         if (pred.confidence_score && pred.confidence_score > 0.8) {
-            recommendation = 'High confidence recommendation - Strong historical match with similar campaigns';
+            recommendation = 'High confidence recommendation - Strong historical match with similar campaigns in Nagkaisang Nayon';
         } else if (pred.confidence_score && pred.confidence_score > 0.6) {
-            recommendation = 'Moderate confidence - Good historical indicators from similar campaigns';
+            recommendation = 'Moderate confidence - Good historical indicators from similar campaigns in Nagkaisang Nayon';
         } else if (pred.confidence_score) {
-            recommendation = 'Lower confidence - Limited historical data, consider additional factors';
+            recommendation = 'Lower confidence - Limited historical data in Nagkaisang Nayon dataset, consider additional factors';
+        }
+        
+        // Add transparency message if data is limited
+        if (totalRecords < 10 || usedSources.length < 3) {
+            recommendation += '. Limited recommendation accuracy due to insufficient historical campaign records in Barangay Nagkaisang Nayon.';
         }
         
         // Add configuration notice if AutoML is not configured
@@ -3084,6 +3326,10 @@ async function getAutoMLPrediction() {
             emptyState.style.display = 'none';
         }
         
+        // Get campaign title for display
+        const campaignSelect = document.getElementById('automl_campaign_id');
+        const campaignTitle = campaignSelect ? campaignSelect.options[campaignSelect.selectedIndex]?.textContent?.replace(/^\d+\s*-\s*/, '') || 'Selected Campaign' : 'Selected Campaign';
+        
         resultDiv.innerHTML = `
             <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
                 <div style="font-size: 32px;">
@@ -3091,7 +3337,11 @@ async function getAutoMLPrediction() {
                 </div>
                 <div style="flex: 1;">
                     <h4 style="margin: 0 0 4px 0; color: #0f172a; font-size: 18px; font-weight: 700;">AI Recommendation Generated</h4>
-                    <p style="margin: 0; color: #64748b; font-size: 13px;">Review the suggested schedule below and choose an action.</p>
+                    <p style="margin: 0 0 8px 0; color: #64748b; font-size: 13px;">Review the suggested schedule below and choose an action.</p>
+                    <p style="margin: 0; color: #475569; font-size: 12px; font-weight: 600; background: #f1f5f9; padding: 6px 12px; border-radius: 6px; display: inline-block;">
+                        <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+                        Prediction generated for campaign: <span style="color: #0f172a;">${campaignTitle}</span>
+                    </p>
                 </div>
             </div>
             
@@ -3241,24 +3491,28 @@ async function acceptAIRecommendation() {
         
         // Populate campaign form with AI recommendations
         const recommendations = currentPrediction.recommendations || {};
+        const populatedFields = [];
+        const skippedFields = [];
         
         // Populate title
         if (recommendations.title && recommendations.title.value) {
             const titleEl = document.getElementById('title');
             if (titleEl) {
-                // Try to set value or add as option
                 const option = Array.from(titleEl.options).find(opt => opt.textContent === recommendations.title.value);
                 if (option) {
                     titleEl.value = option.value;
+                    populatedFields.push('Campaign Title');
                 } else {
-                    // Add as new option
                     const newOption = document.createElement('option');
                     newOption.value = recommendations.title.value;
                     newOption.textContent = recommendations.title.value;
                     titleEl.appendChild(newOption);
                     titleEl.value = recommendations.title.value;
+                    populatedFields.push('Campaign Title');
                 }
             }
+        } else {
+            skippedFields.push({field: 'Campaign Title', reason: 'No factual data available for this field'});
         }
         
         // Populate category
@@ -3266,7 +3520,10 @@ async function acceptAIRecommendation() {
             const categoryEl = document.getElementById('category');
             if (categoryEl) {
                 categoryEl.value = recommendations.category.value;
+                populatedFields.push('Category');
             }
+        } else {
+            skippedFields.push({field: 'Category', reason: 'No factual data available for this field'});
         }
         
         // Populate budget
@@ -3274,7 +3531,10 @@ async function acceptAIRecommendation() {
             const budgetEl = document.getElementById('budget');
             if (budgetEl) {
                 budgetEl.value = recommendations.budget.value;
+                populatedFields.push('Budget');
             }
+        } else {
+            skippedFields.push({field: 'Budget', reason: 'No factual data available for this field'});
         }
         
         // Populate staff count
@@ -3282,11 +3542,14 @@ async function acceptAIRecommendation() {
             const staffCountEl = document.getElementById('staff_count');
             if (staffCountEl) {
                 staffCountEl.value = recommendations.staff_count.value;
+                populatedFields.push('Staff Count');
             }
+        } else {
+            skippedFields.push({field: 'Staff Count', reason: 'No factual data available for this field'});
         }
         
         // Populate assigned staff (multi-select)
-        if (recommendations.assigned_staff && Array.isArray(recommendations.assigned_staff.value)) {
+        if (recommendations.assigned_staff && Array.isArray(recommendations.assigned_staff.value) && recommendations.assigned_staff.value.length > 0) {
             const assignedStaffEl = document.getElementById('assigned_staff');
             if (assignedStaffEl && typeof initMultiSelectEnhanced === 'function') {
                 // Clear existing selections
@@ -3311,11 +3574,14 @@ async function acceptAIRecommendation() {
                 if (typeof assignedStaffEl.updateTags === 'function') {
                     assignedStaffEl.updateTags();
                 }
+                populatedFields.push('Assigned Staff');
             }
+        } else {
+            skippedFields.push({field: 'Assigned Staff', reason: 'No factual data available for this field'});
         }
         
         // Populate materials (multi-select)
-        if (recommendations.materials && recommendations.materials.value && typeof recommendations.materials.value === 'object') {
+        if (recommendations.materials && recommendations.materials.value && typeof recommendations.materials.value === 'object' && Object.keys(recommendations.materials.value).length > 0) {
             const materialsEl = document.getElementById('materials_json');
             if (materialsEl && typeof initMultiSelectEnhanced === 'function') {
                 // Clear existing selections
@@ -3340,7 +3606,10 @@ async function acceptAIRecommendation() {
                 if (typeof materialsEl.updateTags === 'function') {
                     materialsEl.updateTags();
                 }
+                populatedFields.push('Materials');
             }
+        } else {
+            skippedFields.push({field: 'Materials', reason: 'No factual data available for this field'});
         }
         
         // Update final schedule display in form
@@ -3372,10 +3641,24 @@ async function acceptAIRecommendation() {
             }, 100);
         }
         
-        const recCount = Object.keys(recommendations).length;
-        alert(`AI recommendations accepted! ${recCount > 0 ? recCount + ' field(s) have been populated in the campaign form.' : 'Final schedule has been set.'}`);
-        loadCampaigns();
-        if (calendar) calendar.refetchEvents();
+        // Build summary message
+        let message = 'AI recommendations accepted!\n\n';
+        if (populatedFields.length > 0) {
+            message += `✓ Populated fields (${populatedFields.length}): ${populatedFields.join(', ')}\n`;
+        }
+        if (skippedFields.length > 0) {
+            message += `\n⚠ Fields not populated (${skippedFields.length}):\n`;
+            skippedFields.forEach(item => {
+                message += `  • ${item.field}: ${item.reason}\n`;
+            });
+        }
+        if (populatedFields.length === 0 && skippedFields.length === 0) {
+            message += 'Final schedule has been set.';
+        }
+        
+        alert(message);
+        // FIX: Use centralized refresh to ensure all views update
+        refreshAllCampaignViews();
     } catch (err) {
         alert('Failed to accept recommendation: ' + err.message);
     }
@@ -3456,8 +3739,8 @@ async function overrideSchedule() {
         }
         
         alert('Manual schedule override successful!');
-        loadCampaigns();
-        if (calendar) calendar.refetchEvents();
+        // FIX: Use centralized refresh to ensure all views update
+        refreshAllCampaignViews();
     } catch (err) {
         alert('Failed to override schedule: ' + err.message);
     }
@@ -3472,9 +3755,61 @@ function switchTab(tab) {
         document.getElementById('gantt-tab').classList.add('active');
         setTimeout(refreshGantt, 100);
     } else {
-        document.getElementById('calendar-tab').classList.add('active');
-        if (!calendar) initCalendar();
+        console.log('=== switchTab("calendar") called ===');
+        const calendarTab = document.getElementById('calendar-tab');
+        if (calendarTab) {
+            calendarTab.classList.add('active');
+            console.log('✓ Calendar tab activated');
+        } else {
+            console.error('CRITICAL: calendar-tab element not found!');
+        }
+        
+        // Initialize calendar if not already initialized
+        // FIX: Ensure allCampaigns is loaded before initializing calendar
+        if (!calendar) {
+            console.log('Calendar not initialized, checking allCampaigns...');
+            if (allCampaigns && allCampaigns.length > 0) {
+                console.log('allCampaigns already loaded, initializing calendar...');
+                initCalendar();
+            } else {
+                console.log('allCampaigns not loaded yet, waiting for loadCampaigns()...');
+                // Wait for campaigns to load, then initialize calendar
+                const checkCampaigns = setInterval(() => {
+                    if (allCampaigns && allCampaigns.length > 0) {
+                        clearInterval(checkCampaigns);
+                        console.log('allCampaigns loaded, initializing calendar...');
+                        initCalendar();
+                    }
+                }, 100);
+                // Timeout after 5 seconds
+                setTimeout(() => {
+                    clearInterval(checkCampaigns);
+                    if (!calendar) {
+                        console.log('Initializing calendar anyway (timeout)...');
+                        initCalendar();
+                    }
+                }, 5000);
+            }
+        } else {
+            console.log('Calendar already initialized, updating size and refetching events...');
+            // Update calendar size when tab becomes visible and refresh events
+            setTimeout(() => {
+                if (calendar) {
+                    calendar.updateSize();
+                    calendar.refetchEvents(); // Refresh events from allCampaigns
+                    console.log('✓ Calendar size updated and events refetched');
+                }
+            }, 100);
+        }
     }
+}
+
+// CENTRALIZED: Refresh all campaign views after data changes
+// This ensures Gantt Chart and Calendar stay synchronized
+function refreshAllCampaignViews() {
+    console.log('refreshAllCampaignViews() - Refreshing all campaign views...');
+    // Reload campaigns from API (updates allCampaigns array)
+    loadCampaigns(); // This will call refreshGantt() and calendar.refetchEvents() internally
 }
 
 // Gantt Chart
@@ -3547,8 +3882,76 @@ function refreshGantt() {
 
 // Calendar
 function initCalendar() {
+    console.log('=== initCalendar() called ===');
     const calendarEl = document.getElementById('calendar');
-    calendar = new FullCalendar.Calendar(calendarEl, {
+    
+    // DIAGNOSTIC: Check if calendar element exists
+    if (!calendarEl) {
+        console.error('CRITICAL: Calendar container element not found! Looking for #calendar');
+        console.error('Available elements with id containing "calendar":', 
+            Array.from(document.querySelectorAll('[id*="calendar"]')).map(el => el.id));
+        return;
+    }
+    console.log('✓ Calendar container element found:', calendarEl);
+    
+    // DIAGNOSTIC: Check if FullCalendar is loaded
+    // FullCalendar v6 uses different namespace - check both FullCalendar and window.FullCalendar
+    let FullCalendarLib = null;
+    if (typeof FullCalendar !== 'undefined') {
+        FullCalendarLib = FullCalendar;
+        console.log('✓ FullCalendar library found via FullCalendar namespace');
+    } else if (typeof window.FullCalendar !== 'undefined') {
+        FullCalendarLib = window.FullCalendar;
+        console.log('✓ FullCalendar library found via window.FullCalendar');
+    } else if (typeof window !== 'undefined' && window.FullCalendar) {
+        FullCalendarLib = window.FullCalendar;
+        console.log('✓ FullCalendar library found via window object');
+    }
+    
+    if (!FullCalendarLib) {
+        console.error('CRITICAL: FullCalendar library not loaded!');
+        console.error('Available globals:', Object.keys(window).filter(k => k.toLowerCase().includes('calendar')));
+        console.error('Script loading check:', document.querySelectorAll('script[src*="fullcalendar"]').length > 0 ? 'Script tag found' : 'Script tag NOT found');
+        
+        // Try to wait for script to load if script tag exists but library isn't ready
+        const scriptTag = document.querySelector('script[src*="fullcalendar"]');
+        if (scriptTag && !scriptTag.onload) {
+            console.log('Script tag found but library not loaded yet. Waiting for load...');
+            scriptTag.onload = function() {
+                console.log('FullCalendar script loaded, retrying initialization...');
+                setTimeout(() => {
+                    if (typeof FullCalendar !== 'undefined' || typeof window.FullCalendar !== 'undefined') {
+                        initCalendar();
+                    }
+                }, 100);
+            };
+            return; // Exit and wait for script to load
+        }
+        
+        calendarEl.innerHTML = '<div style="text-align:center; padding:40px; color:#dc2626;"><p>Error: FullCalendar library failed to load. Please refresh the page.</p><p style="font-size:12px; margin-top:8px;">If the problem persists, check your internet connection or contact support.</p></div>';
+        return;
+    }
+    console.log('✓ FullCalendar library loaded successfully');
+    
+    // DIAGNOSTIC: Check if calendar already exists
+    if (calendar) {
+        console.log('Calendar already initialized, skipping...');
+        return;
+    }
+    
+    console.log('Initializing FullCalendar with library:', FullCalendarLib);
+    console.log('FullCalendarLib.Calendar:', typeof FullCalendarLib.Calendar);
+    
+    // Verify Calendar constructor exists
+    if (!FullCalendarLib.Calendar) {
+        console.error('CRITICAL: FullCalendar.Calendar constructor not found!');
+        console.error('FullCalendarLib object keys:', Object.keys(FullCalendarLib));
+        calendarEl.innerHTML = '<div style="text-align:center; padding:40px; color:#dc2626;"><p>Error: FullCalendar.Calendar constructor not found.</p><p style="font-size:12px; margin-top:8px;">Library loaded but Calendar class missing. Please refresh the page.</p></div>';
+        return;
+    }
+    
+    try {
+        calendar = new FullCalendarLib.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         headerToolbar: {
             left: 'prev,next today',
@@ -3580,22 +3983,74 @@ function initCalendar() {
             try {
                 const start = fetchInfo.startStr;
                 const end = fetchInfo.endStr;
-                const res = await fetch(apiBase + `/api/v1/campaigns/calendar?start=${start}&end=${end}`, {
-                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                console.log('=== Calendar events fetch ===');
+                console.log('Date range:', start, 'to', end);
+                console.log('Using allCampaigns array (same source as Gantt Chart)');
+                console.log('allCampaigns count:', allCampaigns ? allCampaigns.length : 0);
+                
+                // FIX: Use the same allCampaigns array that Gantt Chart uses
+                // This ensures both views show the same campaigns
+                const campaigns = allCampaigns || [];
+                console.log('Campaigns from allCampaigns:', campaigns.length, campaigns);
+                
+                // Filter campaigns that fall within or overlap the date range
+                const startDate = new Date(start);
+                const endDate = new Date(end);
+                
+                const filteredCampaigns = campaigns.filter(c => {
+                    // Include if campaign has any date information
+                    if (!c.start_date && !c.end_date && !c.draft_schedule_datetime && !c.ai_recommended_datetime && !c.final_schedule_datetime) {
+                        return false;
+                    }
+                    
+                    // Check if campaign dates overlap with calendar view range
+                    if (c.start_date) {
+                        const campaignStart = new Date(c.start_date);
+                        if (campaignStart <= endDate) {
+                            if (c.end_date) {
+                                const campaignEnd = new Date(c.end_date);
+                                if (campaignEnd >= startDate) {
+                                    return true; // Campaign overlaps with view range
+                                }
+                            } else {
+                                return true; // Has start date but no end date, include it
+                            }
+                        }
+                    }
+                    
+                    // Check schedule datetimes
+                    const scheduleDates = [
+                        c.draft_schedule_datetime,
+                        c.ai_recommended_datetime,
+                        c.final_schedule_datetime
+                    ].filter(Boolean);
+                    
+                    for (const scheduleDate of scheduleDates) {
+                        const schedule = new Date(scheduleDate);
+                        if (schedule >= startDate && schedule <= endDate) {
+                            return true;
+                        }
+                    }
+                    
+                    return false;
                 });
-                const data = await res.json();
-                const campaigns = data.data || [];
+                
+                console.log('Filtered campaigns for date range:', filteredCampaigns.length);
                 
                 const events = [];
                 
                 // Add campaign date ranges
-                campaigns.forEach(c => {
+                // FIX: Use filteredCampaigns (from allCampaigns) instead of separate API call
+                filteredCampaigns.forEach(c => {
+                    console.log('Processing campaign:', c.id, c.title, 'start_date:', c.start_date, 'end_date:', c.end_date);
+                    
+                    // Add campaign date range if start_date exists
                     if (c.start_date) {
-                        events.push({
+                        const eventObj = {
                             id: 'campaign-' + c.id,
-                            title: c.title + ' (Campaign)',
+                            title: (c.title || 'Untitled Campaign') + ' (Campaign)',
                             start: c.start_date,
-                            end: c.end_date ? new Date(new Date(c.end_date).getTime() + 86400000) : new Date(new Date(c.start_date).getTime() + 86400000),
+                            end: c.end_date ? new Date(new Date(c.end_date).getTime() + 86400000).toISOString().split('T')[0] : new Date(new Date(c.start_date).getTime() + 86400000).toISOString().split('T')[0],
                             backgroundColor: getStatusColor(c.status),
                             borderColor: getStatusColor(c.status),
                             textColor: '#fff',
@@ -3606,14 +4061,16 @@ function initCalendar() {
                                 location: c.location,
                                 budget: c.budget
                             }
-                        });
+                        };
+                        console.log('Adding campaign event:', eventObj);
+                        events.push(eventObj);
                     }
                     
                     // Add draft schedule
                     if (c.draft_schedule_datetime) {
-                        events.push({
+                        const draftEvent = {
                             id: 'draft-' + c.id,
-                            title: c.title + ' (Draft)',
+                            title: (c.title || 'Untitled Campaign') + ' (Draft)',
                             start: c.draft_schedule_datetime,
                             backgroundColor: '#fbbf24',
                             borderColor: '#f59e0b',
@@ -3622,14 +4079,16 @@ function initCalendar() {
                                 type: 'draft_schedule',
                                 campaign_id: c.id
                             }
-                        });
+                        };
+                        console.log('Adding draft schedule event:', draftEvent);
+                        events.push(draftEvent);
                     }
                     
                     // Add AI recommended schedule
                     if (c.ai_recommended_datetime) {
-                        events.push({
+                        const aiEvent = {
                             id: 'ai-' + c.id,
-                            title: c.title + ' (AI Recommended)',
+                            title: (c.title || 'Untitled Campaign') + ' (AI Recommended)',
                             start: c.ai_recommended_datetime,
                             backgroundColor: '#667eea',
                             borderColor: '#764ba2',
@@ -3638,14 +4097,16 @@ function initCalendar() {
                                 type: 'ai_recommended',
                                 campaign_id: c.id
                             }
-                        });
+                        };
+                        console.log('Adding AI recommended event:', aiEvent);
+                        events.push(aiEvent);
                     }
                     
                     // Add final approved schedule
                     if (c.final_schedule_datetime) {
-                        events.push({
+                        const finalEvent = {
                             id: 'final-' + c.id,
-                            title: c.title + ' (Final)',
+                            title: (c.title || 'Untitled Campaign') + ' (Final)',
                             start: c.final_schedule_datetime,
                             backgroundColor: '#10b981',
                             borderColor: '#059669',
@@ -3654,10 +4115,14 @@ function initCalendar() {
                                 type: 'final_schedule',
                                 campaign_id: c.id
                             }
-                        });
+                        };
+                        console.log('Adding final schedule event:', finalEvent);
+                        events.push(finalEvent);
                     }
                 });
                 
+                console.log('Total events created:', events.length);
+                console.log('Events array:', events);
                 successCallback(events);
             } catch (err) {
                 failureCallback(err);
@@ -3681,25 +4146,31 @@ function initCalendar() {
             minute: '2-digit',
             meridiem: 'short'
         }
-    });
-    calendar.render();
-}
-
-function calendarView(view) {
-    if (calendar) {
-        calendar.changeView(view);
-        // Update active button state
-        document.querySelectorAll('.btn-secondary').forEach(btn => {
-            if (btn.textContent.toLowerCase().includes(view === 'dayGridMonth' ? 'month' : 'week')) {
-                btn.style.background = 'linear-gradient(135deg, #4c8a89 0%, #667eea 100%)';
-                btn.style.color = 'white';
-            } else {
-                btn.style.background = '#fff';
-                btn.style.color = '#475569';
-            }
         });
+        console.log('Calendar configuration created successfully');
+    } catch (initError) {
+        console.error('CRITICAL: Calendar initialization failed:', initError);
+        if (calendarEl) {
+            calendarEl.innerHTML = '<div style="text-align:center; padding:40px; color:#dc2626;"><p>Error initializing calendar: ' + initError.message + '</p><p style="font-size:12px; margin-top:8px;">Please check the browser console for details.</p></div>';
+        }
+        return;
+    }
+    
+    // DIAGNOSTIC: Log before rendering
+    console.log('Calendar instance created, calling render()...');
+    try {
+        calendar.render();
+        console.log('✓ Calendar rendered successfully');
+    } catch (renderError) {
+        console.error('CRITICAL: Calendar render() failed:', renderError);
+        if (calendarEl) {
+            calendarEl.innerHTML = '<div style="text-align:center; padding:40px; color:#dc2626;"><p>Error rendering calendar: ' + renderError.message + '</p></div>';
+        }
     }
 }
+
+// REMOVED: calendarView() function - no longer needed since custom Month/Week buttons were removed
+// FullCalendar's built-in toolbar (headerToolbar) now handles all view switching
 
 function getStatusColor(status) {
     const colors = {
@@ -3779,6 +4250,9 @@ async function loadResources() {
 
 // Campaigns
     async function loadCampaigns() {
+    // FIX: Refresh role detection before loading campaigns to ensure role is available
+    refreshRoleDetection();
+    
     const tbody = document.getElementById('campaignTable');
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px;">Loading...</td></tr>';
     
@@ -3899,6 +4373,10 @@ async function loadResources() {
         
         console.log('loadCampaigns() - Populating dropdowns with', allCampaigns.length, 'campaigns');
         
+        // Debug: Log role before rendering
+        console.log('loadCampaigns() - Rendering campaigns. Current role:', currentUserRole, 'Role ID:', currentUserRoleId);
+        console.log('loadCampaigns() - isAdmin():', isAdmin(), 'isViewer():', isViewer());
+        
         // Populate AutoML dropdown immediately after campaigns are loaded
         populateAutoMLDropdown();
         
@@ -3927,10 +4405,85 @@ async function loadResources() {
                 <td>${c.location || '-'}</td>
                 <td>${c.budget ? '₱' + parseFloat(c.budget).toLocaleString('en-US', {minimumFractionDigits: 2}) : '-'}</td>
                 <td>
-                    ${currentUserRole !== 'viewer' ? `
-                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">✏️ Edit</button>
-                        ${c.status !== 'archived' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px;">📦 Archive</button>` : '<span style="color: #9ca3af; font-size: 12px;">Archived</span>'}
-                    ` : '<span style="color: #9ca3af; font-size: 12px;">Read-only</span>'}
+                    ${(() => {
+                        // Debug: Log role detection
+                        console.log('Rendering Actions for campaign', c.id, 'Status:', c.status, 'Current Role:', currentUserRole);
+                        console.log('isAdmin():', isAdmin(), 'isViewer():', isViewer(), 'isStaff():', isStaff(), 'isSecretary():', isSecretary(), 'isKagawad():', isKagawad(), 'isCaptain():', isCaptain());
+                        return '';
+                    })()}
+                    
+                    ${isViewer() ? '<span style="color: #9ca3af; font-size: 12px; display: block; width: 100%; margin-bottom: 4px;">Read-only</span>' : ''}
+                    
+                    <!-- Staff Actions -->
+                    ${isStaff() && !isViewer() ? `
+                        ${c.status === 'draft' ? `
+                            ${canEditCampaign(c.status) ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">✏️ Edit</button>` : ''}
+                            <button class="btn btn-primary" onclick="submitToSecretary(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">📤 Submit to Secretary</button>
+                        ` : ''}
+                        ${c.status !== 'draft' ? `<span style="color: #9ca3af; font-size: 12px; display: block; width: 100%; margin-top: 4px;">View only</span>` : ''}
+                    ` : ''}
+                    
+                    <!-- Secretary Actions -->
+                    ${isSecretary() && !isViewer() ? `
+                        ${c.status === 'draft' ? `
+                            ${canEditCampaign(c.status) ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">✏️ Edit</button>` : ''}
+                            <button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">📤 Forward to Kagawad</button>
+                            <button class="btn btn-warning" onclick="returnForRevision(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0; background: #f59e0b; color: white; border: none;">↩️ Return for Revision</button>
+                        ` : ''}
+                        ${c.status === 'pending' ? `
+                            ${canEditCampaign(c.status) ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">✏️ Edit</button>` : ''}
+                            <button class="btn btn-warning" onclick="returnForRevision(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0; background: #f59e0b; color: white; border: none;">↩️ Return for Revision</button>
+                        ` : ''}
+                    ` : ''}
+                    
+                    <!-- Kagawad Actions -->
+                    ${isKagawad() && !isViewer() ? `
+                        ${c.status === 'pending' ? `
+                            <button class="btn btn-success" onclick="recommendApproval(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px; background: #10b981; color: white; border: none;">👍 Recommend Approval</button>
+                            <button class="btn btn-warning" onclick="returnForRevision(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px; background: #f59e0b; color: white; border: none;">↩️ Return for Revision</button>
+                        ` : ''}
+                        ${c.status !== 'pending' ? `<span style="color: #9ca3af; font-size: 12px;">View only</span>` : ''}
+                    ` : ''}
+                    
+                    <!-- Captain Actions -->
+                    ${isCaptain() && !isViewer() ? `
+                        ${c.status === 'pending' ? `
+                            <button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px; background: #10b981; color: white; border: none;">✅ Approve</button>
+                        ` : ''}
+                        ${c.status === 'approved' ? `
+                            ${!c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px;">📅 Finalize Schedule</button>` : ''}
+                            <button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px; background: #3b82f6; color: white; border: none;">🔒 Close Campaign</button>
+                        ` : ''}
+                        ${c.status === 'ongoing' ? `
+                            <button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px; background: #3b82f6; color: white; border: none;">🔒 Close Campaign</button>
+                        ` : ''}
+                        ${canEditCampaign(c.status) && c.status !== 'completed' && c.status !== 'archived' ? `
+                            <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px;">✏️ Edit</button>
+                        ` : ''}
+                        ${c.status !== 'archived' && c.status !== 'completed' ? `
+                            <button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-bottom: 4px;">📦 Archive</button>
+                        ` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px;">Archived</span>' : ''}
+                    ` : ''}
+                    
+                    <!-- Admin Actions (Technical only, can override) - Always show if admin -->
+                    ${isAdmin() && !isViewer() ? `
+                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px;">✏️ Edit</button>
+                        ${c.status === 'draft' ? `<button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px;">📤 Forward</button>` : ''}
+                        ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px; background: #10b981; color: white; border: none;">✅ Approve</button>` : ''}
+                        ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px;">📅 Finalize</button>` : ''}
+                        ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px; background: #3b82f6; color: white; border: none;">🔒 Close</button>` : ''}
+                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-bottom: 4px;">📦 Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px;">Archived</span>' : ''}
+                    ` : ''}
+                    
+                    <!-- Fallback: If no role detected after refresh, show admin actions as default -->
+                    ${!currentUserRole && !isViewer() ? `
+                        <span style="color: #f59e0b; font-size: 11px; display: block; margin-bottom: 4px;">⚠️ Role detection issue - showing admin actions</span>
+                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px;">✏️ Edit</button>
+                        ${c.status === 'draft' ? `<button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px;">📤 Forward</button>` : ''}
+                        ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px; background: #10b981; color: white; border: none;">✅ Approve</button>` : ''}
+                        ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-right: 4px; margin-bottom: 4px;">📅 Finalize</button>` : ''}
+                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin-bottom: 4px;">📦 Archive</button>` : ''}
+                    ` : ''}
                 </td>
             `;
             tbody.appendChild(tr);
@@ -4030,6 +4583,11 @@ async function loadResources() {
         }
         
         refreshGantt();
+        // FIX: Refresh calendar events when campaigns are reloaded
+        if (calendar) {
+            calendar.refetchEvents();
+            console.log('loadCampaigns() - Calendar events refetched');
+        }
         loadResources();
     } catch (err) {
         console.error('loadCampaigns() - Exception caught:', err);
@@ -4612,7 +5170,8 @@ async function updateCampaign(campaignId) {
         createStatusEl.textContent = 'Campaign updated successfully!';
         createStatusEl.className = 'status-text success';
         clearForm();
-        loadCampaigns();
+        // FIX: Use centralized refresh to ensure all views update
+        refreshAllCampaignViews();
         refreshGantt();
         if (calendar) calendar.refetchEvents();
         
@@ -4622,8 +5181,307 @@ async function updateCampaign(campaignId) {
     }
 }
 
+// Forward Campaign to Pending (Secretary only)
+async function forwardToPending(campaignId) {
+    if (!isSecretary() && !isAdmin()) {
+        alert('Only Secretary can forward campaigns to pending status.');
+        return;
+    }
+    
+    if (!confirm('Forward this campaign to Pending status for review?')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify({ status: 'pending' })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to forward campaign'));
+            return;
+        }
+        
+        alert('Campaign forwarded to Pending status successfully!');
+        // FIX: Use centralized refresh to ensure all views update
+        refreshAllCampaignViews();
+    } catch (err) {
+        alert('Failed to forward campaign: ' + err.message);
+    }
+}
+
+// Approve Campaign (Captain only)
+async function approveCampaign(campaignId) {
+    if (!isCaptain() && !isAdmin()) {
+        alert('Only Captain can approve campaigns.');
+        return;
+    }
+    
+    if (!confirm('Approve this campaign? This will change the status to Approved.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify({ status: 'approved' })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to approve campaign'));
+            return;
+        }
+        
+        alert('Campaign approved successfully!');
+        // FIX: Use centralized refresh to ensure all views update
+        refreshAllCampaignViews();
+    } catch (err) {
+        alert('Failed to approve campaign: ' + err.message);
+    }
+}
+
+// Finalize Schedule (Captain only)
+async function finalizeSchedule(campaignId) {
+    if (!canFinalizeSchedule()) {
+        alert('Only Captain can finalize schedules.');
+        return;
+    }
+    
+    const campaign = allCampaigns.find(c => c.id === campaignId);
+    if (!campaign) {
+        alert('Campaign not found');
+        return;
+    }
+    
+    // Use AI recommended schedule if available, otherwise prompt for manual entry
+    let scheduleDateTime = campaign.ai_recommended_datetime || campaign.draft_schedule_datetime;
+    
+    if (!scheduleDateTime) {
+        const manualDateTime = prompt('Enter final schedule date & time (YYYY-MM-DD HH:MM:SS):');
+        if (!manualDateTime) return;
+        scheduleDateTime = manualDateTime;
+    }
+    
+    if (!confirm(`Finalize schedule for ${campaign.title}?\nSchedule: ${scheduleDateTime}`)) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + `/api/v1/campaigns/${campaignId}/final-schedule`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify({ final_schedule_datetime: scheduleDateTime })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to finalize schedule'));
+            return;
+        }
+        
+        alert('Schedule finalized successfully!');
+        // FIX: Use centralized refresh to ensure all views update
+        refreshAllCampaignViews();
+    } catch (err) {
+        alert('Failed to finalize schedule: ' + err.message);
+    }
+}
+
+// Submit to Secretary (Staff only - Draft campaigns)
+async function submitToSecretary(campaignId) {
+    if (!isStaff() && !isAdmin()) {
+        alert('Only Staff can submit campaigns to Secretary.');
+        return;
+    }
+    
+    const campaign = allCampaigns.find(c => c.id === campaignId);
+    if (!campaign) {
+        alert('Campaign not found');
+        return;
+    }
+    
+    if (campaign.status !== 'draft') {
+        alert('Only Draft campaigns can be submitted to Secretary.');
+        return;
+    }
+    
+    if (!confirm(`Submit "${campaign.title}" to Secretary for review?`)) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify({ status: 'pending' })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to submit campaign'));
+            return;
+        }
+        
+        alert('Campaign submitted to Secretary successfully!');
+        refreshAllCampaignViews();
+    } catch (err) {
+        alert('Failed to submit campaign: ' + err.message);
+    }
+}
+
+// Return for Revision (Secretary/Kagawad - can return Draft/Pending to Draft)
+async function returnForRevision(campaignId) {
+    if ((!isSecretary() && !isKagawad()) && !isAdmin()) {
+        alert('Only Secretary or Kagawad can return campaigns for revision.');
+        return;
+    }
+    
+    const campaign = allCampaigns.find(c => c.id === campaignId);
+    if (!campaign) {
+        alert('Campaign not found');
+        return;
+    }
+    
+    if (campaign.status !== 'draft' && campaign.status !== 'pending') {
+        alert('Only Draft or Pending campaigns can be returned for revision.');
+        return;
+    }
+    
+    const reason = prompt('Enter reason for returning this campaign for revision:');
+    if (!reason) {
+        return;
+    }
+    
+    if (!confirm(`Return "${campaign.title}" for revision?\nReason: ${reason}`)) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify({ status: 'draft' })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to return campaign for revision'));
+            return;
+        }
+        
+        alert('Campaign returned for revision successfully!');
+        refreshAllCampaignViews();
+    } catch (err) {
+        alert('Failed to return campaign: ' + err.message);
+    }
+}
+
+// Recommend Approval (Kagawad only - adds recommendation but doesn't approve)
+async function recommendApproval(campaignId) {
+    if (!isKagawad() && !isAdmin()) {
+        alert('Only Kagawad can recommend approval.');
+        return;
+    }
+    
+    const campaign = allCampaigns.find(c => c.id === campaignId);
+    if (!campaign) {
+        alert('Campaign not found');
+        return;
+    }
+    
+    if (campaign.status !== 'pending') {
+        alert('Only Pending campaigns can be recommended for approval.');
+        return;
+    }
+    
+    const recommendation = prompt('Enter your recommendation notes:');
+    if (!recommendation) {
+        return;
+    }
+    
+    if (!confirm(`Recommend "${campaign.title}" for approval?\nRecommendation: ${recommendation}\n\nNote: This does not approve the campaign. Only Captain can give final approval.`)) {
+        return;
+    }
+    
+    // Kagawad can't change status, but we can add a note/comment
+    // For now, we'll keep status as 'pending' but log the recommendation
+    alert('Recommendation recorded! Campaign remains in Pending status. Captain will review and approve.');
+    // Note: In a full implementation, you might want to store recommendations in a separate table
+    refreshAllCampaignViews();
+}
+
+// Close Campaign (Captain only - Approved/Ongoing → Completed)
+async function closeCampaign(campaignId) {
+    if (!isCaptain() && !isAdmin()) {
+        alert('Only Captain can close campaigns.');
+        return;
+    }
+    
+    const campaign = allCampaigns.find(c => c.id === campaignId);
+    if (!campaign) {
+        alert('Campaign not found');
+        return;
+    }
+    
+    if (campaign.status !== 'approved' && campaign.status !== 'ongoing') {
+        alert('Only Approved or Ongoing campaigns can be closed.');
+        return;
+    }
+    
+    if (!confirm(`Close "${campaign.title}"? This will mark the campaign as Completed.`)) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify({ status: 'completed' })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to close campaign'));
+            return;
+        }
+        
+        alert('Campaign closed successfully!');
+        refreshAllCampaignViews();
+    } catch (err) {
+        alert('Failed to close campaign: ' + err.message);
+    }
+}
+
 // Archive Campaign
 async function archiveCampaign(campaignId) {
+    if (!canFinalizeSchedule()) {
+        alert('Only Captain and Admin can archive campaigns.');
+        return;
+    }
+    
     if (!confirm('Are you sure you want to archive this campaign?')) {
         return;
     }
@@ -4651,9 +5509,8 @@ async function archiveCampaign(campaignId) {
         }
         
         alert('Campaign archived successfully!');
-        loadCampaigns();
-        refreshGantt();
-        if (calendar) calendar.refetchEvents();
+        // FIX: Use centralized refresh to ensure all views update
+        refreshAllCampaignViews();
         
     } catch (err) {
         alert('Failed to archive campaign: ' + err.message);
@@ -5016,23 +5873,33 @@ if (automlSection) {
 }
 
 // Helper function to generate HTML for data factors actually used
-function getDataFactorsHTML(dataSourcesUsed) {
-    if (!dataSourcesUsed || dataSourcesUsed.length === 0) {
+function getDataFactorsHTML(dataSources) {
+    if (!dataSources) {
         return '';
     }
     
-    const factorLabels = {
-        'past_event_records': 'Past event records (dates, outcomes, effectiveness)',
-        'attendance_trends': 'Attendance trends across previous campaigns and events',
-        'feedback_results': 'Feedback results collected from post-event surveys',
-        'audience_targeting_data': 'Audience targeting data from the Segments module',
-        'event_conflicts': 'Event conflicts from the Events module'
-    };
+    // Handle new format with used/not_used
+    const usedSources = dataSources.used || [];
+    const notUsedSources = dataSources.not_used || [];
     
-    const factorsList = dataSourcesUsed.map(source => {
-        const label = factorLabels[source] || source;
-        return `<li style="margin-bottom: 6px;"><i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i>${label}</li>`;
-    }).join('');
+    if (usedSources.length === 0 && notUsedSources.length === 0) {
+        return '';
+    }
+    
+    let factorsList = '';
+    if (usedSources.length > 0) {
+        factorsList = usedSources.map(source => {
+            const countText = source.count > 0 ? ` (${source.count} records)` : '';
+            return `<li style="color: #065f46; margin-bottom: 6px;"><i class="fas fa-check-circle" style="color: #10b981; margin-right: 8px;"></i><strong>${source.name}</strong>${countText} - <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-size: 11px;">${source.table}</code></li>`;
+        }).join('');
+    }
+    
+    if (notUsedSources.length > 0 && usedSources.length === 0) {
+        // Only show not used if no sources were used (transparency)
+        factorsList += notUsedSources.map(source => {
+            return `<li style="color: #92400e; margin-bottom: 6px;"><i class="fas fa-times-circle" style="color: #f59e0b; margin-right: 8px;"></i><strong>${source.name}</strong> - ${source.reason}</li>`;
+        }).join('');
+    }
     
     return `
         <div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
@@ -5040,18 +5907,44 @@ function getDataFactorsHTML(dataSourcesUsed) {
                 <i class="fas fa-database" style="color: #0ea5e9; font-size: 18px;"></i>
                 <strong style="color: #0c4a6e; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Data Factors Actually Used in This Prediction</strong>
             </div>
-            <ul style="margin: 0; padding-left: 20px; color: #0c4a6e; font-size: 13px; line-height: 1.8;">
-                ${factorsList}
+            <ul style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.8;">
+                ${factorsList || '<li style="color: #64748b;">No data sources available in Nagkaisang Nayon dataset</li>'}
             </ul>
         </div>
     `;
 }
 
-// Show modal explaining how the AI works (only implemented factors)
+// Show modal explaining how the AI works (dynamically generated from actual data sources)
 function showAIHowItWorksModal() {
     const modal = document.createElement('div');
     modal.id = 'aiHowItWorksModal';
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+    
+    // Get data sources from current prediction if available
+    const dataSources = currentPrediction?.data_sources_used || {};
+    const usedSources = dataSources.used || [];
+    const notUsedSources = dataSources.not_used || [];
+    
+    // Build used sources HTML
+    let usedSourcesHTML = '';
+    if (usedSources.length > 0) {
+        usedSourcesHTML = '<div style="background: #f0fdf4; border-left: 4px solid #10b981; border-radius: 6px; padding: 12px; margin-bottom: 16px;"><strong style="color: #065f46; display: block; margin-bottom: 8px;">✓ Data sources actually used:</strong><ul style="margin: 0; padding-left: 20px; color: #0f172a; font-size: 13px; line-height: 1.8;">';
+        usedSources.forEach(source => {
+            const countText = source.count > 0 ? ` (${source.count} records found)` : '';
+            usedSourcesHTML += `<li><strong>${source.name}</strong>${countText} - <code>${source.table}</code></li>`;
+        });
+        usedSourcesHTML += '</ul></div>';
+    }
+    
+    // Build not used sources HTML
+    let notUsedSourcesHTML = '';
+    if (notUsedSources.length > 0) {
+        notUsedSourcesHTML = '<div style="background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; padding: 12px; margin-bottom: 16px;"><strong style="color: #92400e; display: block; margin-bottom: 8px;">✖ Data sources not used:</strong><ul style="margin: 0; padding-left: 20px; color: #78350f; font-size: 13px; line-height: 1.8;">';
+        notUsedSources.forEach(source => {
+            notUsedSourcesHTML += `<li><strong>${source.name}</strong> - ${source.reason}</li>`;
+        });
+        notUsedSourcesHTML += '</ul></div>';
+    }
     
     modal.innerHTML = `
         <div style="background: white; border-radius: 12px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
@@ -5061,25 +5954,11 @@ function showAIHowItWorksModal() {
             </div>
             <div style="padding: 24px;">
                 <p style="margin: 0 0 16px 0; color: #475569; font-size: 14px; line-height: 1.6;">
-                    The scheduler analyzes multiple historical and operational data sources to generate realistic schedule recommendations. 
-                    <strong>Only factors actually implemented in the system are listed below:</strong>
+                    The scheduler analyzes multiple historical and operational data sources from <strong>Barangay Nagkaisang Nayon, Quezon City</strong> to generate realistic schedule recommendations. 
+                    <strong>All data is sourced exclusively from this system's database.</strong>
                 </p>
-                <ul style="margin: 0 0 20px 0; padding-left: 20px; color: #0f172a; font-size: 14px; line-height: 2;">
-                    <li><strong>Past event records</strong> - Queries <code>campaign_department_events</code> table for dates, outcomes, and effectiveness metrics</li>
-                    <li><strong>Attendance trends</strong> - Aggregates attendance data from <code>campaign_department_attendance</code> across previous campaigns and events</li>
-                    <li><strong>Feedback results</strong> - Analyzes survey feedback from <code>campaign_department_feedback</code> and <code>campaign_department_surveys</code> tables</li>
-                    <li><strong>Audience targeting data</strong> - Uses segment information from <code>campaign_department_audience_segments</code> module</li>
-                    <li><strong>Event conflicts</strong> - Checks for scheduling conflicts via <code>campaign_department_events</code> conflict detection</li>
-                </ul>
-                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px; padding: 12px; margin-bottom: 16px;">
-                    <strong style="color: #92400e; display: block; margin-bottom: 6px;">⚠️ Not Yet Implemented:</strong>
-                    <ul style="margin: 0; padding-left: 20px; color: #78350f; font-size: 13px; line-height: 1.8;">
-                        <li>Seasonal patterns (month-based grouping) - TODO: Add GROUP BY MONTH(date) query</li>
-                        <li>Event risk levels - TODO: Add risk_level column to events/campaigns tables</li>
-                        <li>Incident history - TODO: Create campaign_department_incidents table</li>
-                        <li>Detailed participation rates per segment - TODO: JOIN attendance with segments for per-segment rates</li>
-                    </ul>
-                </div>
+                ${usedSourcesHTML}
+                ${notUsedSourcesHTML}
                 <p style="margin: 16px 0 0 0; color: #64748b; font-size: 13px; line-height: 1.6;">
                     The system uses these datasets to: <strong>recommend optimal dates and times</strong>, <strong>avoid schedule conflicts</strong>, 
                     <strong>maximize expected attendance</strong>, and <strong>improve preparedness impact</strong>.

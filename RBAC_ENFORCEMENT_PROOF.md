@@ -87,3 +87,4 @@ If Viewer can still access modules, possible causes:
 3. Test actual API calls with Viewer token
 4. Check if frontend has client-side only restrictions
 
+

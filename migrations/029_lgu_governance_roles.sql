@@ -74,3 +74,4 @@ CROSS JOIN `campaign_department_permissions` p
 WHERE r.name = 'viewer' 
 AND p.name IN ('reports.view');
 
+

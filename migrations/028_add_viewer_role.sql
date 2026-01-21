@@ -22,3 +22,4 @@ AND p.name IN ('reports.view');
 -- - reports.view
 -- But NOT: create, update, delete, approve, manage permissions
 
+

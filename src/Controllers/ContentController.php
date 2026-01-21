@@ -776,13 +776,29 @@ class ContentController
 
         // Validate workflow: draft → pending_review → approved/rejected/archived
         $currentStatus = $current['approval_status'];
-        // Check if user is admin by role_id (1 = Administrator, 2 = Barangay Admin)
-        $userRoleId = (int) ($user['role_id'] ?? 0);
-        $isAdmin = ($userRoleId === 1 || $userRoleId === 2);
+        
+        // Get user's role name
+        $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+        $userRoleName = $userRole ? strtolower($userRole) : '';
+        $isAdmin = in_array($userRoleName, ['admin', 'barangay administrator', 'system_admin'], true);
+        $isCaptain = in_array($userRoleName, ['captain'], true);
+        $isSecretary = in_array($userRoleName, ['secretary'], true);
+        $isStaff = in_array($userRoleName, ['staff', 'barangay staff'], true);
+        $isViewer = in_array($userRoleName, ['viewer', 'partner'], true);
+        
+        // Viewer cannot modify content
+        if ($isViewer) {
+            http_response_code(403);
+            return ['error' => 'Viewer role is read-only. You cannot modify content approval status.'];
+        }
         
         // Staff can submit for review (draft → pending_review)
         if ($currentStatus === 'draft' && $status === 'pending_review') {
-            // Allow staff to submit for review
+            // Allow staff and secretary to submit for review
+            if (!$isStaff && !$isSecretary && !$isAdmin) {
+                http_response_code(403);
+                return ['error' => 'Only Staff and Secretary can submit content for review.'];
+            }
         } elseif ($currentStatus === 'draft' && $status !== 'pending_review') {
             http_response_code(422);
             return ['error' => 'Draft content must be submitted as pending_review first'];
@@ -794,10 +810,13 @@ class ContentController
             return ['error' => 'Cannot revert to pending_review from ' . $currentStatus];
         }
         
-        // Role-based access control: Only admin can approve/reject/archive
-        if (in_array($status, ['approved', 'rejected', 'archived'], true) && !$isAdmin) {
-            http_response_code(403);
-            return ['error' => 'Only administrators can approve, reject, or archive content'];
+        // Role-based access control: Only Captain and Admin can approve/reject/archive
+        // LGU Governance Workflow: Staff submits → Secretary reviews → Captain approves
+        if (in_array($status, ['approved', 'rejected', 'archived'], true)) {
+            if (!$isCaptain && !$isAdmin) {
+                http_response_code(403);
+                return ['error' => 'Only Captain and Administrators can approve, reject, or archive content.'];
+            }
         }
 
         // Check which user column exists for notifications

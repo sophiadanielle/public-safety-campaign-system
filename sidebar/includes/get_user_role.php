@@ -7,9 +7,17 @@
  * Solution: JavaScript decodes JWT, extracts role_id, sets cookie, PHP reads cookie.
  */
 function getCurrentUserRole(): ?string {
-    // METHOD 1: Try to get role_id from cookie (set by JavaScript from JWT)
-    // Cookie is set by JavaScript after login: document.cookie = "user_role_id=123"
+    // METHOD 1: Try to get role_id from cookie (set server-side during login OR by JavaScript from JWT)
+    // IMPORTANT: Cookie must be set with path=/ to be available on all pages
+    // Server-side cookie (set during login) takes priority over JavaScript-set cookie
     $roleIdFromCookie = $_COOKIE['user_role_id'] ?? null;
+    
+    // Debug logging to help diagnose cookie issues
+    if (!$roleIdFromCookie) {
+        $availableCookies = array_keys($_COOKIE);
+        error_log('RBAC DEBUG: No user_role_id cookie found. Available cookies: ' . json_encode($availableCookies) . 
+                  ', Request URI: ' . ($_SERVER['REQUEST_URI'] ?? 'unknown'));
+    }
     
     if ($roleIdFromCookie && is_numeric($roleIdFromCookie)) {
         try {
@@ -22,21 +30,40 @@ function getCurrentUserRole(): ?string {
                 
                 if ($result) {
                     $roleName = strtolower(trim($result['name']));
+                    // LGU Governance Roles Mapping (Defense-Approved)
                     $roleMappings = [
+                        // External partners map to viewer (read-only)
                         'partner' => 'viewer',
                         'partner representative' => 'viewer',
                         'partner_representative' => 'viewer',
                         'viewer' => 'viewer',
+                        // LGU Governance Chain
+                        'staff' => 'staff',
+                        'secretary' => 'secretary',
+                        'kagawad' => 'kagawad',
+                        'captain' => 'captain',
+                        // Technical admin
+                        'admin' => 'admin',
+                        // Legacy role mappings (backward compatibility)
                         'barangay administrator' => 'admin',
                         'barangay admin' => 'admin',
                         'barangay staff' => 'staff',
+                        'system_admin' => 'admin',
+                        'barangay_admin' => 'admin',
                     ];
                     $mappedRole = $roleMappings[$roleName] ?? $roleName;
-                    // Also check if role name contains 'partner' or 'viewer'
-                    if (strpos($roleName, 'partner') !== false || strpos($roleName, 'viewer') !== false) {
+                    // Also check if role name contains 'partner' or 'viewer' (fallback)
+                    if (strpos($roleName, 'partner') !== false || (strpos($roleName, 'viewer') !== false && !isset($roleMappings[$roleName]))) {
                         $mappedRole = 'viewer';
                     }
                     error_log('RBAC get_user_role: role_id=' . $roleIdFromCookie . ', db_name=' . $result['name'] . ', mapped=' . $mappedRole);
+                    // Store in session for persistence across page loads (only if headers not sent)
+                    if (!headers_sent() && session_status() === PHP_SESSION_NONE) {
+                        session_start();
+                    }
+                    if (session_status() === PHP_SESSION_ACTIVE) {
+                        $_SESSION['user_role'] = $mappedRole;
+                    }
                     return $mappedRole;
                 }
             }
@@ -45,12 +72,20 @@ function getCurrentUserRole(): ?string {
         }
     }
     
-    // METHOD 2: Try to get JWT from Authorization header (for API routes)
-    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+    // METHOD 2: Try to get JWT from cookie (set during login)
+    $token = $_COOKIE['jwt_token'] ?? null;
     
-    if ($authHeader && preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
-        $token = $matches[1];
-        
+    // METHOD 3: Try to get JWT from Authorization header (for API routes)
+    if (!$token) {
+        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+        if ($authHeader && preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
+            $token = $matches[1];
+        }
+    }
+    
+    // CRITICAL FALLBACK: If role cookie is missing, decode JWT to get role
+    if ($token) {
+        error_log('RBAC get_user_role: Role cookie missing, attempting JWT fallback. JWT token: ' . (strlen($token) > 0 ? 'PRESENT (length: ' . strlen($token) . ')' : 'EMPTY'));
         try {
             require_once __DIR__ . '/../../vendor/autoload.php';
             
@@ -91,13 +126,50 @@ function getCurrentUserRole(): ?string {
                     
                     if ($result) {
                         $roleName = strtolower(trim($result['name']));
+                        // LGU Governance Roles Mapping (Defense-Approved)
                         $roleMappings = [
+                            // External partners map to viewer (read-only)
                             'partner' => 'viewer',
+                            'partner representative' => 'viewer',
+                            'partner_representative' => 'viewer',
+                            'viewer' => 'viewer',
+                            // LGU Governance Chain
+                            'staff' => 'staff',
+                            'secretary' => 'secretary',
+                            'kagawad' => 'kagawad',
+                            'captain' => 'captain',
+                            // Technical admin
+                            'admin' => 'admin',
+                            // Legacy role mappings (backward compatibility)
                             'barangay administrator' => 'admin',
                             'barangay admin' => 'admin',
                             'barangay staff' => 'staff',
+                            'system_admin' => 'admin',
+                            'barangay_admin' => 'admin',
                         ];
-                        return $roleMappings[$roleName] ?? $roleName;
+                        $mappedRole = $roleMappings[$roleName] ?? $roleName;
+                        // Also check if role name contains 'partner' or 'viewer' (fallback)
+                        if (strpos($roleName, 'partner') !== false || (strpos($roleName, 'viewer') !== false && !isset($roleMappings[$roleName]))) {
+                            $mappedRole = 'viewer';
+                        }
+                        error_log('RBAC get_user_role: JWT fallback SUCCESS - role_id=' . $roleId . ', db_name=' . $result['name'] . ', mapped=' . $mappedRole);
+                        // Store in session for persistence across page loads (only if headers not sent)
+                        if (!headers_sent() && session_status() === PHP_SESSION_NONE) {
+                            session_start();
+                        }
+                        if (session_status() === PHP_SESSION_ACTIVE) {
+                            $_SESSION['user_role'] = $mappedRole;
+                        }
+                        // Also set the role cookie for future requests (if headers not sent)
+                        if (!headers_sent()) {
+                            setcookie('user_role_id', (string)$roleId, [
+                                'expires' => time() + (30 * 24 * 60 * 60),
+                                'path' => '/',
+                                'samesite' => 'Lax'
+                            ]);
+                            $_COOKIE['user_role_id'] = (string)$roleId;
+                        }
+                        return $mappedRole;
                     }
                 }
             }
@@ -107,7 +179,13 @@ function getCurrentUserRole(): ?string {
     }
     
     // DEBUG: Log when role cannot be determined
-    error_log('RBAC DEBUG: getCurrentUserRole() returning null - no cookie or header found. Cookies: ' . json_encode($_COOKIE));
+    $availableCookies = array_keys($_COOKIE);
+    $hasRoleCookie = isset($_COOKIE['user_role_id']);
+    $hasJwtCookie = isset($_COOKIE['jwt_token']);
+    error_log('RBAC DEBUG: getCurrentUserRole() returning null - no role detected. ' .
+              'user_role_id cookie: ' . ($hasRoleCookie ? 'SET (' . $_COOKIE['user_role_id'] . ')' : 'NOT SET') .
+              ', jwt_token cookie: ' . ($hasJwtCookie ? 'SET' : 'NOT SET') .
+              ', All cookies: ' . implode(', ', $availableCookies));
     
     return null;
 }

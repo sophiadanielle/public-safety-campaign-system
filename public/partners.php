@@ -23,6 +23,29 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <script>
         document.documentElement.setAttribute('data-theme', 'light');
         localStorage.setItem('theme', 'light');
+        
+        // RBAC FIX: Set role cookie IMMEDIATELY in <head> BEFORE sidebar renders
+        // This ensures PHP can read the cookie when sidebar is included
+        (function() {
+            try {
+                const token = localStorage.getItem('jwtToken');
+                if (token) {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        const roleId = payload.role_id || payload.rid;
+                        if (roleId && typeof roleId === 'number') {
+                            const expires = new Date();
+                            expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000));
+                            document.cookie = 'user_role_id=' + roleId + ';path=/;expires=' + expires.toUTCString() + ';SameSite=Lax';
+                            console.log('RBAC: Set user_role_id cookie in <head> =', roleId);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('RBAC: Failed to set role cookie in <head>:', e);
+            }
+        })();
     </script>
 </head>
 <body class="module-partners" data-module="partners">

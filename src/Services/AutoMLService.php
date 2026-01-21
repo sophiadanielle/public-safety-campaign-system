@@ -951,7 +951,7 @@ class AutoMLService
                 error_log("AutoMLService: Parsed OpenAI response - Day: $recommendedDay, Time: $recommendedTime, Confidence: $confidence");
                 
                 // Track which data sources were actually used (same logic as heuristic)
-                $dataSourcesUsed = $this->getDataSourcesUsed($features);
+                $dataSourcesUsed = $this->getDataSourcesUsed($features, $campaignId);
                 
                 // Generate comprehensive recommendations for all fields
                 $comprehensiveRecommendations = $this->generateComprehensiveRecommendations($campaignId, $campaign, $features);
@@ -1046,7 +1046,7 @@ class AutoMLService
             error_log("AutoMLService: Parsed Google AutoML response - Day: $recommendedDay, Time: $recommendedTime, Confidence: $confidence");
 
             // Track which data sources were actually used
-            $dataSourcesUsed = $this->getDataSourcesUsed($features);
+            $dataSourcesUsed = $this->getDataSourcesUsed($features, $campaignId);
             
             // Generate comprehensive recommendations for all fields
             $comprehensiveRecommendations = $this->generateComprehensiveRecommendations($campaignId, $campaign, $features);
@@ -1105,7 +1105,7 @@ class AutoMLService
         $confidence = max(0.3, min(0.9, $baseConfidence + min($engagement, 0.3)));
 
         // Track which data sources were actually used in this prediction
-        $dataSourcesUsed = $this->getDataSourcesUsed($features);
+        $dataSourcesUsed = $this->getDataSourcesUsed($features, $campaignId);
 
         return [
             'recommended_day' => (int) $dayOfWeek,
@@ -1120,48 +1120,104 @@ class AutoMLService
 
     /**
      * Track which data sources were actually used in prediction
-     * Returns array of data source identifiers
+     * Returns array with 'used' and 'not_used' data sources with record counts
      */
-    private function getDataSourcesUsed(array $features): array
+    private function getDataSourcesUsed(array $features, int $campaignId): array
     {
         $dataSourcesUsed = [];
+        $dataSourcesNotUsed = [];
+        $barangayFilter = $this->getNagkaisangNayonFilter('c');
         
         // Past event records - check if we queried events
-        if (!empty($features['engagement_by_day']) || !empty($features['engagement_by_time'])) {
-            $dataSourcesUsed[] = 'past_event_records';
+        $eventCount = (int) $this->scalar(
+            'SELECT COUNT(*) FROM campaign_department_events e 
+             INNER JOIN campaign_department_campaigns c ON c.id = e.linked_campaign_id
+             WHERE ' . $barangayFilter['where'],
+            $barangayFilter['params']
+        );
+        if ($eventCount > 0 && (!empty($features['engagement_by_day']) || !empty($features['engagement_by_time']))) {
+            $dataSourcesUsed[] = ['name' => 'Past event records', 'count' => $eventCount, 'table' => 'campaign_department_events'];
+        } else {
+            $dataSourcesNotUsed[] = ['name' => 'Past event records', 'reason' => $eventCount === 0 ? 'No records available in Nagkaisang Nayon dataset' : 'No engagement data extracted'];
         }
         
         // Attendance trends - check if attendance data was found
-        if (($features['attendance'] ?? 0) > 0 || !empty($features['historical_engagement']['attendance'] ?? [])) {
-            $dataSourcesUsed[] = 'attendance_trends';
+        $attendanceCount = (int) $this->scalar(
+            'SELECT COUNT(*) FROM campaign_department_attendance a 
+             INNER JOIN campaign_department_events e ON e.id = a.event_id
+             INNER JOIN campaign_department_campaigns c ON c.id = e.linked_campaign_id
+             WHERE ' . $barangayFilter['where'],
+            $barangayFilter['params']
+        );
+        if ($attendanceCount > 0 && (($features['attendance'] ?? 0) > 0 || !empty($features['historical_engagement']['attendance'] ?? []))) {
+            $dataSourcesUsed[] = ['name' => 'Attendance trends', 'count' => $attendanceCount, 'table' => 'campaign_department_attendance'];
+        } else {
+            $dataSourcesNotUsed[] = ['name' => 'Attendance trends', 'reason' => $attendanceCount === 0 ? 'No records available in Nagkaisang Nayon dataset' : 'No attendance data extracted'];
         }
         
-        // Feedback results - check if ratings/feedback data exists
-        if (($features['avg_rating'] ?? 0) > 0 || !empty($features['historical_engagement']['ratings'] ?? [])) {
-            $dataSourcesUsed[] = 'feedback_results';
+        // Participation rates per segment (via audience_members.segment_id)
+        $segmentCount = (int) $this->scalar(
+            'SELECT COUNT(DISTINCT a.id) FROM campaign_department_attendance a 
+             INNER JOIN campaign_department_events e ON e.id = a.event_id
+             INNER JOIN campaign_department_campaigns c ON c.id = e.linked_campaign_id
+             INNER JOIN campaign_department_audience_members am ON am.id = a.audience_member_id
+             WHERE am.segment_id IS NOT NULL AND ' . $barangayFilter['where'],
+            $barangayFilter['params']
+        );
+        if ($segmentCount > 0) {
+            $dataSourcesUsed[] = ['name' => 'Participation rates per segment', 'count' => $segmentCount, 'table' => 'campaign_department_attendance + audience_members + segments'];
+        } else {
+            $dataSourcesNotUsed[] = ['name' => 'Participation rates per segment', 'reason' => 'No segment-linked attendance records in Nagkaisang Nayon dataset'];
+        }
+        
+        // Survey feedback - check if ratings/feedback data exists
+        $feedbackCount = (int) $this->scalar(
+            'SELECT COUNT(*) FROM campaign_department_feedback f 
+             INNER JOIN campaign_department_surveys s ON s.id = f.survey_id
+             INNER JOIN campaign_department_campaigns c ON c.id = s.campaign_id
+             WHERE ' . $barangayFilter['where'],
+            $barangayFilter['params']
+        );
+        if ($feedbackCount > 0 && (($features['avg_rating'] ?? 0) > 0 || !empty($features['historical_engagement']['ratings'] ?? []))) {
+            $dataSourcesUsed[] = ['name' => 'Survey feedback', 'count' => $feedbackCount, 'table' => 'campaign_department_feedback'];
+        } else {
+            $dataSourcesNotUsed[] = ['name' => 'Survey feedback', 'reason' => $feedbackCount === 0 ? 'No records available in Nagkaisang Nayon dataset' : 'No feedback data extracted'];
         }
         
         // Audience targeting data - check if segment was used
         if (!empty($features['audience_segment_id'])) {
-            $dataSourcesUsed[] = 'audience_targeting_data';
+            $segmentTargetCount = (int) $this->scalar(
+                'SELECT COUNT(*) FROM campaign_department_audience_segments WHERE id = :seg_id',
+                ['seg_id' => $features['audience_segment_id']]
+            );
+            if ($segmentTargetCount > 0) {
+                $dataSourcesUsed[] = ['name' => 'Segment targeting data', 'count' => $segmentTargetCount, 'table' => 'campaign_department_audience_segments'];
+            }
+        } else {
+            $dataSourcesNotUsed[] = ['name' => 'Segment targeting data', 'reason' => 'No segment selected for this campaign'];
         }
         
-        // Event conflicts - always available (checked separately via checkConflicts endpoint)
-        $dataSourcesUsed[] = 'event_conflicts';
+        // Event conflicts - always checked
+        $dataSourcesUsed[] = ['name' => 'Event conflicts', 'count' => 0, 'table' => 'campaign_department_events (conflict check)'];
         
-        // TODO: Seasonal patterns - NOT YET IMPLEMENTED
-        // Need to add: month-based grouping of events to identify seasonal patterns
-        // Table/field needed: campaign_department_events.date (extract month), aggregate by month
-        // Implementation: Add GROUP BY MONTH(date) query in prepareFeatures() to compute seasonal engagement patterns
+        // Seasonal patterns - not implemented
+        $dataSourcesNotUsed[] = ['name' => 'Seasonal patterns', 'reason' => 'Not implemented - requires month-based grouping query'];
         
-        // TODO: Event risk levels - NOT YET IMPLEMENTED  
-        // Need to add: risk flags/tags on events or campaigns
-        // Table/field needed: campaign_department_events.risk_level ENUM('low','medium','high') or campaign_department_campaigns.risk_level
-        // Implementation: Add risk_level column and use it in prediction logic
+        // Event risk levels - not implemented
+        $dataSourcesNotUsed[] = ['name' => 'Event risk levels', 'reason' => 'Not implemented - requires risk_level column in events/campaigns tables'];
         
-        // TODO: Incident history - NOT YET IMPLEMENTED
-        // Need to add: incident/safety related tables
-        // Table/field needed: campaign_department_incidents table with columns: id, date, type, severity, location, description
+        // Incident history - not implemented
+        $incidentCount = (int) $this->scalar(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'campaign_department_incidents'"
+        );
+        if ($incidentCount === 0) {
+            $dataSourcesNotUsed[] = ['name' => 'Incident history', 'reason' => 'Not implemented - campaign_department_incidents table does not exist'];
+        }
+        
+        return [
+            'used' => $dataSourcesUsed,
+            'not_used' => $dataSourcesNotUsed
+        ];
         // Implementation: Create incidents table and JOIN with campaigns/events to factor incident history into scheduling
         
         // TODO: Participation rates per segment - PARTIALLY IMPLEMENTED

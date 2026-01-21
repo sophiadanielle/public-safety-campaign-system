@@ -53,3 +53,4 @@
 3. **No read-only enforcement** - Viewer can access all modules
 4. **Signup auto-assigns role** - No user selection
 
+

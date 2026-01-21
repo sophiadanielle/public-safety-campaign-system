@@ -273,3 +273,4 @@ $roleId = (int) $role['id'];
 - All controllers now check authentication before allowing any operation
 - Role names are case-insensitive (normalized to lowercase for comparison)
 
+

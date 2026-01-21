@@ -51,9 +51,14 @@ class EventController
             $queryParams['filter_hazard_focus'] = $_GET['hazard_focus'];
         }
 
-        // Role-based filtering: General users only see finalized events
+        // Role-based filtering: Viewers only see finalized events, LGU roles see all
         $userRole = $user ? RoleMiddleware::getUserRole($user, $this->pdo) : null;
-        if ($userRole !== 'system_admin' && $userRole !== 'barangay_admin' && $userRole !== 'campaign_creator') {
+        $userRoleName = $userRole ? strtolower($userRole) : '';
+        $isViewer = in_array($userRoleName, ['viewer', 'partner'], true);
+        $isLGUStaff = in_array($userRoleName, ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'], true);
+        
+        // Viewers can only see confirmed/completed events (read-only)
+        if ($isViewer && !$isLGUStaff) {
             $where[] = "e.event_status IN ('confirmed', 'completed')";
         }
 

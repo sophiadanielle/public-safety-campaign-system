@@ -37,11 +37,121 @@
                         require_once __DIR__ . '/../../header/includes/path_helper.php';
                         
                         // Get current user role for module filtering
+                        // CRITICAL: This must work consistently across ALL pages
                         require_once __DIR__ . '/get_user_role.php';
                         $currentUserRole = getCurrentUserRole();
                         
-                        // DEBUG: Log role detection (remove in production)
-                        error_log('RBAC SIDEBAR DEBUG: Detected role = ' . ($currentUserRole ?? 'NULL') . ', Cookie user_role_id = ' . ($_COOKIE['user_role_id'] ?? 'NOT SET'));
+                        // CRITICAL FIX: If role is still null, try one more time with session fallback
+                        // This handles cases where cookies aren't available but user is logged in
+                        if (!$currentUserRole) {
+                            // Try to get from session if available (only if headers not sent)
+                            if (!headers_sent() && session_status() === PHP_SESSION_NONE) {
+                                session_start();
+                            }
+                            if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['user_role'])) {
+                                $currentUserRole = $_SESSION['user_role'];
+                                error_log('RBAC SIDEBAR: Using session fallback - role=' . $currentUserRole);
+                            } else {
+                                // Last resort: Try to decode JWT from cookie one more time with more aggressive error handling
+                                $jwtToken = $_COOKIE['jwt_token'] ?? null;
+                                if ($jwtToken) {
+                                    try {
+                                        require_once __DIR__ . '/../../vendor/autoload.php';
+                                        $envPath = __DIR__ . '/../../.env';
+                                        $jwtSecret = 'your-secret-key-change-in-production';
+                                        $jwtIssuer = 'public-safety-campaign-system';
+                                        $jwtAudience = 'public-safety-campaign-system';
+                                        
+                                        if (file_exists($envPath)) {
+                                            $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                                            foreach ($lines as $line) {
+                                                $line = trim($line);
+                                                if ($line === '' || strpos($line, '#') === 0) continue;
+                                                if (strpos($line, '=') === false) continue;
+                                                list($name, $value) = explode('=', $line, 2);
+                                                $name = trim($name);
+                                                $value = trim($value);
+                                                if ($name === 'JWT_SECRET') $jwtSecret = $value;
+                                                if ($name === 'JWT_ISSUER') $jwtIssuer = $value;
+                                                if ($name === 'JWT_AUDIENCE') $jwtAudience = $value;
+                                            }
+                                        }
+                                        
+                                        $decoded = Firebase\JWT\JWT::decode($jwtToken, new Firebase\JWT\Key($jwtSecret, 'HS256'));
+                                        if (($decoded->aud ?? null) === $jwtAudience && ($decoded->iss ?? null) === $jwtIssuer) {
+                                            $roleId = (int) ($decoded->role_id ?? 0);
+                                            if ($roleId > 0) {
+                                                require_once __DIR__ . '/../../src/Config/db_connect.php';
+                                                if (isset($pdo) && $pdo instanceof PDO) {
+                                                    $stmt = $pdo->prepare('SELECT r.name FROM campaign_department_roles r WHERE r.id = :role_id LIMIT 1');
+                                                    $stmt->execute(['role_id' => $roleId]);
+                                                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                                                    if ($result) {
+                                                        $roleName = strtolower(trim($result['name']));
+                                                        $roleMappings = [
+                                                            'partner' => 'viewer',
+                                                            'partner representative' => 'viewer',
+                                                            'partner_representative' => 'viewer',
+                                                            'viewer' => 'viewer',
+                                                            'staff' => 'staff',
+                                                            'secretary' => 'secretary',
+                                                            'kagawad' => 'kagawad',
+                                                            'captain' => 'captain',
+                                                            'admin' => 'admin',
+                                                            'barangay administrator' => 'admin',
+                                                            'barangay admin' => 'admin',
+                                                            'barangay staff' => 'staff',
+                                                            'system_admin' => 'admin',
+                                                            'barangay_admin' => 'admin',
+                                                        ];
+                                                        $currentUserRole = $roleMappings[$roleName] ?? $roleName;
+                                                        if (strpos($roleName, 'partner') !== false || (strpos($roleName, 'viewer') !== false && !isset($roleMappings[$roleName]))) {
+                                                            $currentUserRole = 'viewer';
+                                                        }
+                                                        // Store in session for future requests (only if headers not sent)
+                                                        if (!headers_sent() && session_status() === PHP_SESSION_NONE) {
+                                                            session_start();
+                                                        }
+                                                        if (session_status() === PHP_SESSION_ACTIVE) {
+                                                            $_SESSION['user_role'] = $currentUserRole;
+                                                        }
+                                                        // Also set cookie for future requests
+                                                        if (!headers_sent()) {
+                                                            setcookie('user_role_id', (string)$roleId, [
+                                                                'expires' => time() + (30 * 24 * 60 * 60),
+                                                                'path' => '/',
+                                                                'samesite' => 'Lax'
+                                                            ]);
+                                                            $_COOKIE['user_role_id'] = (string)$roleId;
+                                                        }
+                                                        error_log('RBAC SIDEBAR: Last resort JWT decode SUCCESS - role=' . $currentUserRole);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    } catch (Exception $e) {
+                                        error_log('RBAC SIDEBAR: Last resort JWT decode error: ' . $e->getMessage());
+                                    }
+                                }
+                            }
+                            
+                            // Final check: If still null, log critical error
+                            if (!$currentUserRole) {
+                                error_log('RBAC SIDEBAR CRITICAL: getCurrentUserRole() returned NULL after all fallbacks. ' .
+                                          'Cookies available: ' . json_encode(array_keys($_COOKIE)) . 
+                                          ', Request URI: ' . ($_SERVER['REQUEST_URI'] ?? 'unknown') .
+                                          ', Page: ' . basename($_SERVER['PHP_SELF'] ?? 'unknown'));
+                            }
+                        }
+                        
+                        // DEBUG: Log role detection and available cookies
+                        $availableCookies = array_keys($_COOKIE);
+                        $hasRoleCookie = isset($_COOKIE['user_role_id']);
+                        $hasJwtCookie = isset($_COOKIE['jwt_token']);
+                        error_log('RBAC SIDEBAR DEBUG: Detected role = ' . ($currentUserRole ?? 'NULL') . 
+                                  ', user_role_id cookie = ' . ($_COOKIE['user_role_id'] ?? 'NOT SET') .
+                                  ', jwt_token cookie = ' . ($hasJwtCookie ? 'SET' : 'NOT SET') .
+                                  ', All cookies: ' . implode(', ', $availableCookies));
                         
                         // Define modules with their nested features
                         $modules = [
@@ -142,6 +252,8 @@
                         ];
                         
                         // RBAC: Filter modules based on user role
+                        // SINGLE SOURCE OF TRUTH: This is the ONLY place where module visibility is determined
+                        // Module visibility is based ONLY on user role from session/cookie - NOT page-specific
                         // OFFICIAL USER ROLES (FROM RESEARCH DEFENSE)
                         // Module visibility must match role exactly - server-side enforcement
                         $roleModulePermissions = [
@@ -178,12 +290,84 @@
                         ];
                         
                         // Filter modules based on role (STRICT RBAC)
-                        // If role is null/not detected, default to Viewer permissions (most restrictive)
+                        // SINGLE SOURCE OF TRUTH: Module visibility is determined ONLY here, based on user role
+                        // This ensures consistent sidebar visibility across ALL pages for the same role
+                        // If role is null/not detected, try to get from JWT cookie as fallback
+                        if (!$currentUserRole) {
+                            // Fallback: Try to get role from JWT cookie if role cookie is missing
+                            $jwtToken = $_COOKIE['jwt_token'] ?? null;
+                            if ($jwtToken) {
+                                try {
+                                    require_once __DIR__ . '/../../vendor/autoload.php';
+                                    $envPath = __DIR__ . '/../../.env';
+                                    $jwtSecret = 'your-secret-key-change-in-production';
+                                    $jwtIssuer = 'public-safety-campaign-system';
+                                    $jwtAudience = 'public-safety-campaign-system';
+                                    
+                                    if (file_exists($envPath)) {
+                                        $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                                        foreach ($lines as $line) {
+                                            $line = trim($line);
+                                            if ($line === '' || strpos($line, '#') === 0) continue;
+                                            if (strpos($line, '=') === false) continue;
+                                            list($name, $value) = explode('=', $line, 2);
+                                            $name = trim($name);
+                                            $value = trim($value);
+                                            if ($name === 'JWT_SECRET') $jwtSecret = $value;
+                                            if ($name === 'JWT_ISSUER') $jwtIssuer = $value;
+                                            if ($name === 'JWT_AUDIENCE') $jwtAudience = $value;
+                                        }
+                                    }
+                                    
+                                    $decoded = Firebase\JWT\JWT::decode($jwtToken, new Firebase\JWT\Key($jwtSecret, 'HS256'));
+                                    if (($decoded->aud ?? null) === $jwtAudience && ($decoded->iss ?? null) === $jwtIssuer) {
+                                        $roleId = (int) ($decoded->role_id ?? 0);
+                                        if ($roleId > 0) {
+                                            require_once __DIR__ . '/../../src/Config/db_connect.php';
+                                            if (isset($pdo) && $pdo instanceof PDO) {
+                                                $stmt = $pdo->prepare('SELECT r.name FROM campaign_department_roles r WHERE r.id = :role_id LIMIT 1');
+                                                $stmt->execute(['role_id' => $roleId]);
+                                                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                                                if ($result) {
+                                                    $roleName = strtolower(trim($result['name']));
+                                                    $roleMappings = [
+                                                        'partner' => 'viewer',
+                                                        'partner representative' => 'viewer',
+                                                        'partner_representative' => 'viewer',
+                                                        'viewer' => 'viewer',
+                                                        'staff' => 'staff',
+                                                        'secretary' => 'secretary',
+                                                        'kagawad' => 'kagawad',
+                                                        'captain' => 'captain',
+                                                        'admin' => 'admin',
+                                                        'barangay administrator' => 'admin',
+                                                        'barangay admin' => 'admin',
+                                                        'barangay staff' => 'staff',
+                                                        'system_admin' => 'admin',
+                                                        'barangay_admin' => 'admin',
+                                                    ];
+                                                    $currentUserRole = $roleMappings[$roleName] ?? $roleName;
+                                                    if (strpos($roleName, 'partner') !== false || (strpos($roleName, 'viewer') !== false && !isset($roleMappings[$roleName]))) {
+                                                        $currentUserRole = 'viewer';
+                                                    }
+                                                    error_log('RBAC SIDEBAR: Fallback JWT decode - role=' . $currentUserRole);
+                                                }
+                                            }
+                                        }
+                                    }
+                                } catch (Exception $e) {
+                                    error_log('RBAC SIDEBAR: JWT fallback error: ' . $e->getMessage());
+                                }
+                            }
+                        }
+                        
+                        // If role is still null/not detected, default to Viewer permissions (most restrictive)
                         if ($currentUserRole && isset($roleModulePermissions[$currentUserRole])) {
                             $allowedModules = $roleModulePermissions[$currentUserRole];
                         } else {
                             // If role cannot be determined, default to Viewer (safest for security)
-                            // JavaScript will override this once it sets the cookie and detects role
+                            // This is a server-side decision - no client-side override
+                            error_log('RBAC SIDEBAR WARNING: Role not detected, defaulting to viewer. Current role: ' . ($currentUserRole ?? 'NULL'));
                             $allowedModules = $roleModulePermissions['viewer'] ?? [];
                         }
                         
@@ -278,13 +462,13 @@
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <script>
-// RBAC FIX: Set role cookie from JWT for PHP server-side rendering
-// JWT is stored in localStorage, but PHP needs it in a cookie
+// RBAC FIX: Set role cookie via server-side endpoint for reliable PHP access
+// This ensures the cookie is set server-side and available immediately to PHP
 (function() {
     try {
         const token = localStorage.getItem('jwtToken');
         if (token) {
-            // Decode JWT payload (base64-encoded JSON, no verification needed for role_id extraction)
+            // Decode JWT payload to get role_id
             try {
                 const parts = token.split('.');
                 if (parts.length === 3) {
@@ -292,11 +476,34 @@
                     const roleId = payload.role_id || payload.rid;
                     
                     if (roleId && typeof roleId === 'number') {
-                        // Set cookie with role_id (expires in 24 hours)
-                        const expires = new Date();
-                        expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000));
-                        document.cookie = 'user_role_id=' + roleId + ';path=/;expires=' + expires.toUTCString() + ';SameSite=Lax';
-                        console.log('RBAC: Set user_role_id cookie =', roleId);
+                        // Call server-side endpoint to set cookie reliably
+                        // This ensures cookie is set before PHP tries to read it
+                        const apiBase = '<?php 
+                            if (!isset($basePath)) {
+                                require_once __DIR__ . "/../../header/includes/path_helper.php";
+                            }
+                            echo $basePath ?? "/public-safety-campaign-system"; 
+                        ?>';
+                        fetch(apiBase + '/api/set_role_cookie.php?role_id=' + roleId, {
+                            method: 'GET',
+                            credentials: 'include' // Important: include cookies in request
+                        }).then(res => res.json()).then(data => {
+                            if (data.success) {
+                                console.log('RBAC: Role cookie set via server:', roleId);
+                            } else {
+                                console.warn('RBAC: Failed to set cookie via server:', data.error);
+                                // Fallback: set cookie client-side as backup
+                                const expires = new Date();
+                                expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000));
+                                document.cookie = 'user_role_id=' + roleId + ';path=/;expires=' + expires.toUTCString() + ';SameSite=Lax';
+                            }
+                        }).catch(err => {
+                            console.error('RBAC: Error calling set_role_cookie endpoint:', err);
+                            // Fallback: set cookie client-side
+                            const expires = new Date();
+                            expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000));
+                            document.cookie = 'user_role_id=' + roleId + ';path=/;expires=' + expires.toUTCString() + ';SameSite=Lax';
+                        });
                     }
                 }
             } catch (e) {
@@ -574,100 +781,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Run on page load
     highlightActiveSubmenuItem();
     
-    // RBAC: Client-side module filtering based on user role from localStorage
-    // This provides fallback if PHP role detection fails
-    function filterSidebarByRole() {
-        try {
-            const currentUserStr = localStorage.getItem('currentUser');
-            if (!currentUserStr) {
-                console.warn('RBAC: No currentUser in localStorage, cannot filter sidebar');
-                return;
-            }
-            
-            const currentUser = JSON.parse(currentUserStr);
-            const userRole = currentUser.role ? currentUser.role.toLowerCase() : null;
-            const roleId = currentUser.role_id;
-            
-            if (!userRole && !roleId) {
-                console.warn('RBAC: No role or role_id found in currentUser');
-                return;
-            }
-            
-            // Map role_id to role name if role name not available
-            let effectiveRole = userRole;
-            if (!effectiveRole && roleId) {
-                const roleIdMap = {
-                    1: 'admin',
-                    2: 'staff',
-                    // Add other mappings if needed
-                };
-                effectiveRole = roleIdMap[roleId] || null;
-            }
-            
-            if (!effectiveRole) {
-                console.warn('RBAC: Could not determine effective role');
-                return;
-            }
-            
-            // Define which modules each role can access (same as PHP)
-            // OFFICIAL USER ROLES (FROM RESEARCH DEFENSE) - JavaScript fallback
-            const roleModulePermissions = {
-                'viewer': ['dashboard.php', 'campaigns.php', 'events.php', 'surveys.php', 'impact.php'],
-                'partner': ['dashboard.php', 'campaigns.php', 'events.php', 'surveys.php', 'impact.php'], // Legacy - maps to viewer
-                'staff': ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php'],
-                'secretary': ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php'],
-                'kagawad': ['dashboard.php', 'campaigns.php', 'events.php', 'impact.php', 'content.php'],
-                'captain': ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php', 'partners.php'],
-                'admin': ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php', 'partners.php'],
-                'barangay administrator': ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php', 'partners.php'],
-                'barangay staff': ['dashboard.php', 'campaigns.php', 'content.php', 'segments.php', 'events.php', 'surveys.php', 'impact.php'],
-            };
-            
-            const allowedModules = roleModulePermissions[effectiveRole] || [];
-            
-            if (allowedModules.length === 0) {
-                console.warn('RBAC: No allowed modules for role:', effectiveRole);
-                // If role not in map, hide all modules (fail-safe)
-                document.querySelectorAll('.sidebar-menu-item').forEach(item => {
-                    item.style.display = 'none';
-                });
-                return;
-            }
-            
-            // Hide modules not in allowed list
-            document.querySelectorAll('.sidebar-menu-item').forEach(item => {
-                const link = item.querySelector('a.sidebar-link, a.sidebar-module-toggle');
-                if (link) {
-                    const href = link.getAttribute('href') || link.getAttribute('data-href') || '';
-                    const moduleFile = href.split('/').pop() || href;
-                    
-                    // Check if this module is allowed
-                    const isAllowed = allowedModules.some(allowed => {
-                        return moduleFile === allowed || href.includes(allowed);
-                    });
-                    
-                    if (!isAllowed) {
-                        item.style.display = 'none';
-                    } else {
-                        item.style.display = '';
-                    }
-                }
-            });
-            
-            console.log('RBAC: Sidebar filtered for role:', effectiveRole, 'Allowed modules:', allowedModules);
-        } catch (e) {
-            console.error('RBAC: Error filtering sidebar by role:', e);
-        }
-    }
+    // RBAC: Sidebar visibility is handled server-side by PHP
+    // JavaScript should NOT filter the sidebar as it causes inconsistent behavior
+    // PHP already correctly filters modules based on user role from cookie/session
+    // This ensures consistent sidebar visibility across all pages for the same role
     
-    // Filter sidebar on page load
-    filterSidebarByRole();
-    
-    // Re-filter if user data is updated
-    window.addEventListener('storage', function(e) {
-        if (e.key === 'currentUser') {
-            filterSidebarByRole();
-        }
-    });
+    // Note: If PHP role detection fails, the sidebar will default to Viewer permissions
+    // (most restrictive) which is the safe fallback behavior
 });
 </script>

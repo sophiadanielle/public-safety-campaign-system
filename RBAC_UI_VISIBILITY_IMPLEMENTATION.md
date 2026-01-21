@@ -221,3 +221,4 @@ Backend enforcement (HTTP 403) already prevents unauthorized actions:
 - UI styling (only show/hide via `display: none`)
 - Controller logic (backend RBAC already enforced)
 
+

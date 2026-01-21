@@ -157,11 +157,14 @@ class CampaignController
         }
 
         // Use actual input values - no defaults
+        // FIX: Removed hardcoded category validation - category is VARCHAR(100) in database
+        // Categories should be flexible to support real-world barangay public safety operations
+        // Examples: "General", "Community Preparedness", "Training", "Orientation", etc.
         $category = isset($input['category']) && $input['category'] ? trim((string)$input['category']) : null;
-        $allowedCategories = ['fire', 'flood', 'earthquake', 'health', 'road safety'];
-        if ($category && !in_array(strtolower($category), $allowedCategories, true)) {
+        // Basic validation: ensure category doesn't exceed database column length (VARCHAR(100))
+        if ($category && strlen($category) > 100) {
             http_response_code(422);
-            return ['error' => 'Invalid category. Must be one of: ' . implode(', ', $allowedCategories)];
+            return ['error' => 'Category must not exceed 100 characters'];
         }
         $geographicScope = isset($input['geographic_scope']) && $input['geographic_scope'] ? trim((string)$input['geographic_scope']) : null;
         $objectives = isset($input['objectives']) && $input['objectives'] ? trim((string)$input['objectives']) : null;
@@ -183,6 +186,47 @@ class CampaignController
         // Ignore draft_schedule_datetime if provided during creation to enforce proper flow
         $draftSchedule = null;
 
+        // FIX: Auto-apply migration 032 if start_time and end_time columns don't exist
+        // This ensures the schema matches the backend logic
+        try {
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_campaigns' 
+                AND COLUMN_NAME = 'start_time'");
+            $hasStartTime = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+        } catch (\Exception $e) {
+            $hasStartTime = false;
+        }
+        
+        try {
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_campaigns' 
+                AND COLUMN_NAME = 'end_time'");
+            $hasEndTime = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+        } catch (\Exception $e) {
+            $hasEndTime = false;
+        }
+        
+        // Auto-apply migration if columns don't exist
+        if (!$hasStartTime) {
+            try {
+                $this->pdo->exec("ALTER TABLE `campaign_department_campaigns` ADD COLUMN start_time TIME NULL AFTER start_date");
+                error_log('CampaignController: Auto-applied migration - added start_time column');
+            } catch (\Exception $e) {
+                error_log('CampaignController: Failed to add start_time column: ' . $e->getMessage());
+            }
+        }
+        
+        if (!$hasEndTime) {
+            try {
+                $this->pdo->exec("ALTER TABLE `campaign_department_campaigns` ADD COLUMN end_time TIME NULL AFTER end_date");
+                error_log('CampaignController: Auto-applied migration - added end_time column');
+            } catch (\Exception $e) {
+                error_log('CampaignController: Failed to add end_time column: ' . $e->getMessage());
+            }
+        }
+        
         $stmt = $this->pdo->prepare('
             INSERT INTO campaign_department_campaigns (
                 title, description, category, geographic_scope, status, 
@@ -280,6 +324,43 @@ class CampaignController
             return ['error' => 'Authentication required'];
         }
         
+        // FIX: Ensure start_time and end_time columns exist (same auto-migration as store method)
+        try {
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_campaigns' 
+                AND COLUMN_NAME = 'start_time'");
+            $hasStartTime = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+        } catch (\Exception $e) {
+            $hasStartTime = false;
+        }
+        
+        try {
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_campaigns' 
+                AND COLUMN_NAME = 'end_time'");
+            $hasEndTime = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+        } catch (\Exception $e) {
+            $hasEndTime = false;
+        }
+        
+        if (!$hasStartTime) {
+            try {
+                $this->pdo->exec("ALTER TABLE `campaign_department_campaigns` ADD COLUMN start_time TIME NULL AFTER start_date");
+            } catch (\Exception $e) {
+                // Column may already exist or migration failed
+            }
+        }
+        
+        if (!$hasEndTime) {
+            try {
+                $this->pdo->exec("ALTER TABLE `campaign_department_campaigns` ADD COLUMN end_time TIME NULL AFTER end_date");
+            } catch (\Exception $e) {
+                // Column may already exist or migration failed
+            }
+        }
+        
         try {
             $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
             $userRoleName = $userRole ? strtolower($userRole) : '';
@@ -350,24 +431,30 @@ class CampaignController
             $canChangeStatus = false;
             $errorMessage = '';
             
-            // Staff: CANNOT change status - can only edit draft content
+            // Staff: Can submit Draft → Pending (to Secretary), or edit draft content
             if ($isStaff) {
-                if ($normalizedCurrent === 'draft' && $normalizedNew === 'draft') {
+                if ($normalizedCurrent === 'draft' && $normalizedNew === 'pending') {
+                    $canChangeStatus = true; // Staff can submit to Secretary
+                } elseif ($normalizedCurrent === 'draft' && $normalizedNew === 'draft') {
                     $canChangeStatus = true; // Can update draft content, but status remains draft
                 } else {
                     $canChangeStatus = false;
-                    $errorMessage = 'Staff cannot change campaign status. Only Draft campaigns can be created/edited by Staff.';
+                    $errorMessage = 'Staff can only create/edit Draft campaigns or submit Draft → Pending to Secretary.';
                 }
             }
-            // Secretary: Can ONLY forward Draft → Pending, CANNOT approve
+            // Secretary: Can forward Draft → Pending, return Pending → Draft for revision, CANNOT approve
             elseif ($isSecretary) {
                 if ($normalizedCurrent === 'draft' && $normalizedNew === 'pending') {
                     $canChangeStatus = true; // Secretary forwards for approval
+                } elseif ($normalizedCurrent === 'pending' && $normalizedNew === 'draft') {
+                    $canChangeStatus = true; // Secretary can return for revision
                 } elseif ($normalizedCurrent === $normalizedNew && $normalizedCurrent === 'pending') {
                     $canChangeStatus = true; // Can update pending campaign content
+                } elseif ($normalizedCurrent === $normalizedNew && $normalizedCurrent === 'draft') {
+                    $canChangeStatus = true; // Can update draft campaign content
                 } else {
                     $canChangeStatus = false;
-                    $errorMessage = 'Secretary can only forward Draft campaigns to Pending status. Secretary cannot approve campaigns.';
+                    $errorMessage = 'Secretary can forward Draft → Pending, return Pending → Draft for revision, or update content. Secretary cannot approve campaigns.';
                 }
             }
             // Kagawad: CANNOT change status - can only review/recommend
@@ -487,11 +574,14 @@ class CampaignController
             $bindings['materials_json'] = json_encode($input['materials_json']);
         }
         if (isset($input['category'])) {
-            $allowedCategories = ['fire', 'flood', 'earthquake', 'health', 'road safety'];
+            // FIX: Removed hardcoded category validation - category is VARCHAR(100) in database
+            // Categories should be flexible to support real-world barangay public safety operations
+            // Examples: "General", "Community Preparedness", "Training", "Orientation", etc.
             $category = trim($input['category']);
-            if ($category && !in_array(strtolower($category), $allowedCategories, true)) {
+            // Basic validation: ensure category doesn't exceed database column length (VARCHAR(100))
+            if ($category && strlen($category) > 100) {
                 http_response_code(422);
-                return ['error' => 'Invalid category. Must be one of: ' . implode(', ', $allowedCategories)];
+                return ['error' => 'Category must not exceed 100 characters'];
             }
             $fields[] = 'category = :category';
             $bindings['category'] = $category ?: null;
@@ -984,21 +1074,33 @@ class CampaignController
         $startDate = $_GET['start'] ?? date('Y-m-01');
         $endDate = $_GET['end'] ?? date('Y-m-t');
 
+        // FIX: More inclusive query to show all campaigns with any date information
+        // Show campaigns that:
+        // 1. Have start_date or end_date in the range
+        // 2. Have any schedule datetime in the range
+        // 3. Have start_date/end_date that span the range
+        // 4. OR have no dates but exist (for debugging - will show as events without dates)
         $stmt = $this->pdo->prepare('
             SELECT 
                 id, title, description, status, category,
                 start_date, end_date, 
                 draft_schedule_datetime, ai_recommended_datetime, final_schedule_datetime,
-                location, geographic_scope
+                location, geographic_scope, budget
             FROM campaign_department_campaigns
-            WHERE (start_date BETWEEN :start AND :end)
-               OR (end_date BETWEEN :start AND :end)
-               OR (start_date <= :start AND end_date >= :end)
-               OR (final_schedule_datetime BETWEEN :start AND :end)
-            ORDER BY start_date ASC, final_schedule_datetime ASC
+            WHERE 
+                (start_date IS NOT NULL AND start_date BETWEEN :start AND :end)
+                OR (end_date IS NOT NULL AND end_date BETWEEN :start AND :end)
+                OR (start_date IS NOT NULL AND end_date IS NOT NULL AND start_date <= :start AND end_date >= :end)
+                OR (draft_schedule_datetime IS NOT NULL AND DATE(draft_schedule_datetime) BETWEEN :start AND :end)
+                OR (ai_recommended_datetime IS NOT NULL AND DATE(ai_recommended_datetime) BETWEEN :start AND :end)
+                OR (final_schedule_datetime IS NOT NULL AND DATE(final_schedule_datetime) BETWEEN :start AND :end)
+                OR (start_date IS NOT NULL AND start_date <= :end AND (end_date IS NULL OR end_date >= :start))
+            ORDER BY COALESCE(final_schedule_datetime, ai_recommended_datetime, draft_schedule_datetime, start_date) ASC
         ');
         $stmt->execute(['start' => $startDate, 'end' => $endDate]);
-        $campaigns = $stmt->fetchAll();
+        $campaigns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        error_log('CampaignController::calendar - Date range: ' . $startDate . ' to ' . $endDate . ', Found campaigns: ' . count($campaigns));
 
         return ['data' => $campaigns];
     }

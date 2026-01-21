@@ -62,6 +62,11 @@ class AuthController
 
             $token = $this->generateToken($demoUser['id'], $demoUser['email'], $demoUser['role_id'], $demoUser['name']);
 
+            // RBAC FIX: Set role cookie server-side so PHP can read it immediately
+            $this->setRoleCookie($demoUser['role_id']);
+            // Also set JWT token as cookie for fallback role detection
+            $this->setJWTCookie($token);
+
             return [
                 'token' => $token,
                 'expires_in' => $this->jwtExpirySeconds,
@@ -94,6 +99,11 @@ class AuthController
 
             $token = $this->generateToken((int) $user['id'], $user['email'], (int) $user['role_id'], $user['name'] ?? null);
 
+            // RBAC FIX: Set role cookie server-side so PHP can read it immediately
+            $this->setRoleCookie((int) $user['role_id']);
+            // Also set JWT token as cookie for fallback role detection
+            $this->setJWTCookie($token);
+
             return [
                 'token' => $token,
                 'expires_in' => $this->jwtExpirySeconds,
@@ -111,6 +121,12 @@ class AuthController
                     'barangay_id' => 1,
                 ];
                 $token = $this->generateToken($demoUser['id'], $demoUser['email'], $demoUser['role_id'], $demoUser['name']);
+                
+                // RBAC FIX: Set role cookie server-side so PHP can read it immediately
+                $this->setRoleCookie($demoUser['role_id']);
+                // Also set JWT token as cookie for fallback role detection
+                $this->setJWTCookie($token);
+                
                 return [
                     'token' => $token,
                     'expires_in' => $this->jwtExpirySeconds,
@@ -202,6 +218,11 @@ class AuthController
 
         $token = $this->generateToken($userId, $email, $roleId, $name);
 
+        // RBAC FIX: Set role cookie server-side so PHP can read it immediately
+        $this->setRoleCookie($roleId);
+        // Also set JWT token as cookie for fallback role detection
+        $this->setJWTCookie($token);
+
         return [
             'token' => $token,
             'expires_in' => $this->jwtExpirySeconds,
@@ -238,6 +259,11 @@ class AuthController
             }
 
             $newToken = $this->generateToken((int) $user['id'], $user['email'], (int) $user['role_id'], $user['name'] ?? null);
+
+            // RBAC FIX: Set role cookie server-side so PHP can read it immediately
+            $this->setRoleCookie((int) $user['role_id']);
+            // Also set JWT token as cookie for fallback role detection
+            $this->setJWTCookie($newToken);
 
             return [
                 'token' => $newToken,
@@ -351,6 +377,50 @@ class AuthController
             return trim(substr($header, 7));
         }
         return null;
+    }
+
+    /**
+     * Set role cookie server-side so PHP can read it immediately on all pages
+     * This ensures consistent sidebar visibility across all pages
+     */
+    private function setRoleCookie(int $roleId): void
+    {
+        // Set cookie with 30 day expiration, available on all paths
+        // SameSite=Lax for security, HttpOnly=false so JavaScript can also read it if needed
+        $expires = time() + (30 * 24 * 60 * 60); // 30 days (longer expiration for persistence)
+        setcookie('user_role_id', (string)$roleId, [
+            'expires' => $expires,
+            'path' => '/',
+            'domain' => '',
+            'secure' => false, // Set to true in production with HTTPS
+            'httponly' => false, // Allow JavaScript to read (needed for client-side role checks)
+            'samesite' => 'Lax'
+        ]);
+        
+        // Also set in $_COOKIE superglobal for immediate use in same request
+        $_COOKIE['user_role_id'] = (string)$roleId;
+        
+        error_log('RBAC: Set role cookie server-side - role_id=' . $roleId . ', expires=' . date('Y-m-d H:i:s', $expires));
+    }
+
+    /**
+     * Set JWT token as cookie for fallback role detection
+     * If role cookie is missing, PHP can decode JWT to get role_id
+     */
+    private function setJWTCookie(string $token): void
+    {
+        $expires = time() + (30 * 24 * 60 * 60); // 30 days
+        setcookie('jwt_token', $token, [
+            'expires' => $expires,
+            'path' => '/',
+            'domain' => '',
+            'secure' => false, // Set to true in production with HTTPS
+            'httponly' => false, // Allow JavaScript to read
+            'samesite' => 'Lax'
+        ]);
+        
+        // Also set in $_COOKIE superglobal for immediate use
+        $_COOKIE['jwt_token'] = $token;
     }
 
     private function publicUser(array $user): array
@@ -817,6 +887,11 @@ class AuthController
 
         // Generate JWT token
         $token = $this->generateToken((int) $user['id'], $user['email'], (int) $user['role_id'], $user['name'] ?? null);
+
+        // RBAC FIX: Set role cookie server-side so PHP can read it immediately
+        $this->setRoleCookie((int) $user['role_id']);
+        // Also set JWT token as cookie for fallback role detection
+        $this->setJWTCookie($token);
 
         // Redirect to dashboard with token in URL (will be stored in localStorage by JavaScript)
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';

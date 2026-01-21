@@ -260,3 +260,4 @@ The system supports multiple role naming schemes. The enforcement checks for:
 - No business logic in modules changed
 - Only authentication/authorization logic touched
 
+
