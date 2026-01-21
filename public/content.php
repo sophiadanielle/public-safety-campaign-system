@@ -1335,19 +1335,13 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     
-    // Handle intended_audience as array
+    // Handle intended_audience as array - use Array.from(select.selectedOptions).map(o => o.value)
     const audienceSelect = document.getElementById('intendedAudience');
     if (audienceSelect) {
         formData.delete('intended_audience_segment[]');
         formData.delete('intended_audience[]');
-        let audienceValues = [];
-        if (typeof audienceSelect.getSelectedValues === 'function') {
-            audienceValues = audienceSelect.getSelectedValues();
-        } else {
-            audienceValues = Array.from(audienceSelect.selectedOptions).map(opt => opt.value).filter(v => v);
-        }
+        const audienceValues = Array.from(audienceSelect.selectedOptions).map(o => o.value).filter(v => v);
         if (audienceValues.length > 0) {
-            // Send as array
             audienceValues.forEach(value => {
                 formData.append('intended_audience[]', value);
                 formData.append('intended_audience_segment[]', value); // Backward compatibility
@@ -1355,16 +1349,11 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         }
     }
     
-    // Handle source as array
+    // Handle source as array - use Array.from(select.selectedOptions).map(o => o.value)
     const sourceSelect = document.getElementById('sourceSelect');
     if (sourceSelect) {
         formData.delete('source[]');
-        let sourceValues = [];
-        if (typeof sourceSelect.getSelectedValues === 'function') {
-            sourceValues = sourceSelect.getSelectedValues();
-        } else {
-            sourceValues = Array.from(sourceSelect.selectedOptions).map(opt => opt.value).filter(v => v);
-        }
+        const sourceValues = Array.from(sourceSelect.selectedOptions).map(o => o.value).filter(v => v);
         if (sourceValues.length > 0) {
             sourceValues.forEach(value => {
                 formData.append('source[]', value);
@@ -1372,19 +1361,13 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         }
     }
     
-    // Handle visibility as array
+    // Handle visibility as array - use Array.from(select.selectedOptions).map(o => o.value)
     const visibilitySelect = document.getElementById('visibilitySelect');
     if (visibilitySelect) {
         formData.delete('visibility[]');
         formData.delete('visibility');
-        let visibilityValues = [];
-        if (typeof visibilitySelect.getSelectedValues === 'function') {
-            visibilityValues = visibilitySelect.getSelectedValues();
-        } else {
-            visibilityValues = Array.from(visibilitySelect.selectedOptions).map(opt => opt.value).filter(v => v);
-        }
+        const visibilityValues = Array.from(visibilitySelect.selectedOptions).map(o => o.value).filter(v => v);
         if (visibilityValues.length > 0) {
-            // Send as array
             visibilityValues.forEach(value => {
                 formData.append('visibility[]', value);
             });
@@ -1457,14 +1440,17 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
                 newItem.linked_campaign_title = campaignTitle;
             }
             
-            // Append to contents array (single source of truth)
+            // Save to localStorage and append to contents array
             if (newItem.id) {
-                // Remove sample data if we now have real data
-                if (contents.length > 0 && contents[0].id >= 1000) {
-                    contents = [];
-                }
+                // Load existing uploaded content from localStorage
+                const uploaded = JSON.parse(localStorage.getItem("content_repository_uploaded") || "[]");
+                // Add new item
+                uploaded.push(newItem);
+                // Save back to localStorage
+                localStorage.setItem("content_repository_uploaded", JSON.stringify(uploaded));
+                // Append to contents array
                 contents.push(newItem);
-                console.log('✓ Added new content to contents array, total:', contents.length);
+                console.log('✓ Saved to localStorage and added to contents array, total:', contents.length);
             }
             
             // Reset form
@@ -1595,6 +1581,55 @@ async function updateApproval(contentId, status, notes = '') {
             loadMediaGallery();
         } else {
             alert('Error: ' + (data.error || 'Failed to update approval status'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Approve content - minimal endpoint
+async function approveContent(contentId) {
+    if (!confirm('Are you sure you want to approve this content? It will appear in Templates and Media Gallery.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/approve_content.php', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: contentId })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+            // Update item in contents array
+            const itemIndex = contents.findIndex(item => item.id === contentId);
+            if (itemIndex !== -1) {
+                contents[itemIndex].approval_status = 'APPROVED';
+                
+                // Update in localStorage if it exists there
+                const uploaded = JSON.parse(localStorage.getItem("content_repository_uploaded") || "[]");
+                const uploadedIndex = uploaded.findIndex(item => item.id === contentId);
+                if (uploadedIndex !== -1) {
+                    uploaded[uploadedIndex].approval_status = 'APPROVED';
+                    localStorage.setItem("content_repository_uploaded", JSON.stringify(uploaded));
+                }
+            }
+            
+            // Re-render all views
+            currentPage = 1;
+            currentTemplatesPage = 1;
+            currentMediaGalleryPage = 1;
+            loadContent();
+            loadTemplates();
+            loadMediaGallery();
+            
+            alert('Content approved successfully!');
+        } else {
+            alert('Error: ' + (data.error || 'Failed to approve content'));
         }
     } catch (err) {
         alert('Network error: ' + err.message);
@@ -2109,7 +2144,7 @@ function getSampleContentData() {
             intended_audience_segment: 'Households', // Keep for backward compatibility
             source: ['Barangay-created'],
             visibility: ['For Official Use'],
-            approval_status: 'approved',
+            approval_status: 'APPROVED',
             file_type: 'image/png',
             linked_campaign_id: 12,
             linked_campaign_title: 'Barangay Fire Prevention Week',
@@ -2128,7 +2163,7 @@ function getSampleContentData() {
             intended_audience_segment: 'Parents, Youth',
             source: ['Barangay-created'],
             visibility: ['For Official Use'],
-            approval_status: 'approved',
+            approval_status: 'APPROVED',
             file_type: 'image/png',
             linked_campaign_id: null,
             linked_campaign_title: null,
@@ -2166,7 +2201,7 @@ function getSampleContentData() {
             intended_audience_segment: 'Schools',
             source: ['Training-based'],
             visibility: ['For Official Use'],
-            approval_status: 'approved',
+            approval_status: 'APPROVED',
             file_type: 'application/pdf',
             linked_campaign_id: null,
             linked_campaign_title: null,
@@ -2196,8 +2231,13 @@ function getSampleContentData() {
     ];
 }
 
-// Load all content from API and populate single source of truth
+// Load all content from API and merge with sample data and localStorage
 async function loadAllContent() {
+    const sampleSeedData = getSampleContentData();
+    
+    // Load uploaded content from localStorage
+    const uploaded = JSON.parse(localStorage.getItem("content_repository_uploaded") || "[]");
+    
     try {
         // Fetch ALL content (no filters) to populate contents array
         const res = await fetch(apiBase + '/api/v1/content?per_page=1000', {
@@ -2210,37 +2250,29 @@ async function loadAllContent() {
             cache: 'no-store'
         });
         
-        if (!res.ok) {
-            console.warn('Failed to load content from API, using sample data');
-            // If API fails, use sample data
-            contents = getSampleContentData();
-            return;
+        let apiData = [];
+        if (res.ok) {
+            const data = await res.json();
+            
+            // Extract content array from response
+            if (Array.isArray(data)) {
+                apiData = data;
+            } else if (data.data && Array.isArray(data.data)) {
+                apiData = data.data;
+            } else if (data.content && Array.isArray(data.content)) {
+                apiData = data.content;
+            }
         }
         
-        const data = await res.json();
-        
-        // Extract content array from response
-        let apiData = null;
-        if (Array.isArray(data)) {
-            apiData = data;
-        } else if (data.data && Array.isArray(data.data)) {
-            apiData = data.data;
-        } else if (data.content && Array.isArray(data.content)) {
-            apiData = data.content;
-        }
-        
-        // Single source of truth: If API returns empty, use sample. If API has data, use API data. Never merge.
-        if (apiData && apiData.length > 0) {
-            contents = apiData;
-            console.log('✓ Loaded', contents.length, 'items from API');
-        } else {
-            contents = getSampleContentData();
-            console.log('⚠ API returned empty, using', contents.length, 'sample items');
-        }
+        // Merge sample data with uploaded data and API data
+        const combined = [...sampleSeedData, ...uploaded, ...apiData];
+        contents = combined;
+        console.log('✓ Loaded', sampleSeedData.length, 'sample +', uploaded.length, 'uploaded +', apiData.length, 'API =', contents.length, 'total');
     } catch (err) {
         console.error('Error loading content:', err);
-        // On error, use sample data
-        contents = getSampleContentData();
+        // On error, merge sample data with uploaded data
+        const combined = [...sampleSeedData, ...uploaded];
+        contents = combined;
     }
 }
 
@@ -2303,7 +2335,7 @@ async function loadContent() {
         
         const onlyApproved = document.getElementById('filterOnlyApproved').checked;
         if (onlyApproved) {
-            filtered = filtered.filter(item => item.approval_status === 'approved');
+            filtered = filtered.filter(item => (item.approval_status || '').toUpperCase() === 'APPROVED');
         }
         
         container.innerHTML = '';
@@ -2455,22 +2487,35 @@ function renderContentGrid(container, items, isTemplate = false) {
                 ` : ''}
             `;
         } else {
-            if (item.approval_status === 'pending_review' || item.approval_status === 'pending') {
+            // Normalize approval status for comparison (case-insensitive)
+            const approvalStatus = (item.approval_status || '').toLowerCase().replace(/\s+/g, '_');
+            
+            // Show Approve button for draft, under_review, pending_review, or pending
+            if (approvalStatus === 'draft' || approvalStatus === 'under_review' || approvalStatus === 'pending_review' || approvalStatus === 'pending') {
                 actionButtons = `
-                    <button class="btn btn-primary" onclick="updateApproval(${item.id}, 'approved')" style="background: #059669; color: white;">
-                        <i class="fas fa-check-circle"></i> <span>Approve Material</span>
-                    </button>
-                    <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'rejected')" style="background: #dc2626; color: white;">
-                        <i class="fas fa-times-circle"></i> <span>Reject</span>
+                    <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white;">
+                        <i class="fas fa-check-circle"></i> <span>Approve</span>
                     </button>
                 `;
-            } else if (item.approval_status === 'draft') {
-                actionButtons = `
-                    <button class="btn btn-primary" onclick="updateApproval(${item.id}, 'pending_review')">
-                        <i class="fas fa-paper-plane"></i> <span>Submit for Review</span>
-                    </button>
-                `;
-            } else if (item.approval_status === 'approved') {
+                
+                // Add Submit for Review button only for draft status
+                if (approvalStatus === 'draft') {
+                    actionButtons += `
+                        <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'pending_review')">
+                            <i class="fas fa-paper-plane"></i> <span>Submit for Review</span>
+                        </button>
+                    `;
+                }
+                
+                // Add Reject button for pending_review or pending status
+                if (approvalStatus === 'pending_review' || approvalStatus === 'pending') {
+                    actionButtons += `
+                        <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'rejected')" style="background: #dc2626; color: white;">
+                            <i class="fas fa-times-circle"></i> <span>Reject</span>
+                        </button>
+                    `;
+                }
+            } else if (item.approval_status === 'approved' || approvalStatus === 'approved') {
                 actionButtons = `
                     <button class="btn btn-secondary" onclick="showContentDetails(${item.id})">
                         <i class="fas fa-info-circle"></i> <span>View Details</span>
@@ -2507,13 +2552,17 @@ function renderContentGrid(container, items, isTemplate = false) {
                 `;
             }
             
-            // For sample data (IDs >= 1000), show limited actions
+            // For sample data (IDs >= 1000), show limited actions but still allow approval
             if (item.id >= 1000) {
-                actionButtons = `
-                    <button class="btn btn-secondary" onclick="alert('This is sample data for demonstration. Upload your own materials to enable full functionality.');" style="opacity: 0.8;">
-                        <i class="fas fa-info-circle"></i> <span>View Details</span>
-                    </button>
-                `;
+                // Keep the Approve button if it's draft or under_review, but limit other actions
+                const approvalStatus = (item.approval_status || '').toLowerCase().replace(/\s+/g, '_');
+                if (approvalStatus !== 'draft' && approvalStatus !== 'under_review' && approvalStatus !== 'pending_review' && approvalStatus !== 'pending') {
+                    actionButtons = `
+                        <button class="btn btn-secondary" onclick="alert('This is sample data for demonstration. Upload your own materials to enable full functionality.');" style="opacity: 0.8;">
+                            <i class="fas fa-info-circle"></i> <span>View Details</span>
+                        </button>
+                    `;
+                }
             }
         }
         
@@ -2583,20 +2632,10 @@ async function loadTemplates() {
             await loadAllContent();
         }
         
-        // Filter from contents array: approval_status === "approved" AND visibility includes "For Official Use"
+        // Filter from combined data: approval_status === "APPROVED"
         const templateItems = contents.filter(item => {
-            const isApproved = item.approval_status === 'approved';
-            if (!isApproved) return false;
-            
-            const visibility = item.visibility || '';
-            const visibilityArray = Array.isArray(visibility) ? visibility : 
-                (typeof visibility === 'string' ? visibility.split(',').map(v => v.trim()) : []);
-            const hasOfficialUse = visibilityArray.includes('For Official Use') || 
-                visibilityArray.includes('public') || 
-                visibility === 'public' ||
-                visibility === 'For Official Use';
-            
-            return hasOfficialUse;
+            const approvalStatus = (item.approval_status || '').toUpperCase();
+            return approvalStatus === 'APPROVED';
         });
         
         const gridEl = container.querySelector('.library-grid');
@@ -2673,10 +2712,10 @@ async function loadMediaGallery() {
         
         const mediaType = document.getElementById('mediaTypeFilter').value;
         
-        // Filter from contents array: approval_status === "approved" AND (file_type startsWith("image/") OR startsWith("video/"))
+        // Filter from combined data: approval_status === "APPROVED" AND file_type is image or video
         let mediaItems = contents.filter(item => {
-            const isApproved = item.approval_status === 'approved';
-            if (!isApproved) return false;
+            const approvalStatus = (item.approval_status || '').toUpperCase();
+            if (approvalStatus !== 'APPROVED') return false;
             
             const fileType = item.file_type || item.mime_type || '';
             const isImage = fileType.startsWith('image/');
