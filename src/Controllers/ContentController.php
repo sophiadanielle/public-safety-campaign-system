@@ -90,11 +90,13 @@ class ContentController
                            ci.approval_status, ci.version_number, ci.approved_by, ci.approval_notes,
                            ci.date_uploaded, ci.file_reference, ci.last_updated,
                            a.file_path, a.mime_type, ci.campaign_id,
+                           camp.title as campaign_title,
                            u1.name as uploaded_by_name, u2.name as approved_by_name
                     FROM campaign_department_content_items ci
                     LEFT JOIN campaign_department_attachments a ON a.content_item_id = ci.id
                     LEFT JOIN campaign_department_users u1 ON ci.{$userColumn} = u1.id
-                    LEFT JOIN campaign_department_users u2 ON ci.approved_by = u2.id";
+                    LEFT JOIN campaign_department_users u2 ON ci.approved_by = u2.id
+                    LEFT JOIN campaign_department_campaigns camp ON ci.campaign_id = camp.id";
             $where = [];
             $bind = [];
 
@@ -320,10 +322,19 @@ class ContentController
         $body = trim($_POST['description'] ?? '');
         $contentType = $_POST['content_type'] ?? $this->mapMimeToType($mime);
         $campaignId = isset($_POST['campaign_id']) ? (int) $_POST['campaign_id'] : null;
-        $visibility = $_POST['visibility'] ?? 'public';
+        
+        // Handle visibility as array (multi-select) or single value - take first selected
+        $visibilityInput = $_POST['visibility'] ?? 'public';
+        if (is_array($visibilityInput)) {
+            $visibility = !empty($visibilityInput) ? trim($visibilityInput[0]) : 'public';
+        } else {
+            $visibility = trim($visibilityInput) ?: 'public';
+        }
+        
         $tagsInput = $_POST['tags'] ?? '';
         // Content Repository fields
         $hazardCategory = trim($_POST['hazard_category'] ?? '');
+        
         // Handle intended_audience_segment as array (multi-select) or string
         // FormData with name[] sends as array in $_POST
         $intendedAudienceInput = $_POST['intended_audience_segment'] ?? '';
@@ -334,7 +345,16 @@ class ContentController
             // Single value or empty string
             $intendedAudience = trim($intendedAudienceInput);
         }
-        $source = trim($_POST['source'] ?? '');
+        
+        // Handle source as array (multi-select) or string
+        $sourceInput = $_POST['source'] ?? '';
+        if (is_array($sourceInput)) {
+            // Multiple selections received as array
+            $source = implode(', ', array_filter(array_map('trim', $sourceInput)));
+        } else {
+            // Single value or empty string
+            $source = trim($sourceInput);
+        }
 
         if (!$title) {
             http_response_code(422);
@@ -664,7 +684,17 @@ class ContentController
         } else {
             $intendedAudience = trim($intendedAudienceInput);
         }
-        $source = trim($input['source'] ?? $current['source'] ?? '');
+        
+        // Handle source as array (multi-select) or string
+        $sourceInput = $input['source'] ?? $current['source'] ?? '';
+        if (is_array($sourceInput)) {
+            $source = implode(', ', array_filter(array_map('trim', $sourceInput)));
+        } else {
+            $source = trim($sourceInput);
+        }
+        
+        // Handle campaign_id
+        $campaignId = isset($input['campaign_id']) ? (int) $input['campaign_id'] : ($current['campaign_id'] ?? null);
 
         if (!$title) {
             http_response_code(422);
@@ -699,6 +729,12 @@ class ContentController
             }
 
             // Update content - if approved, revert to pending_review
+            // Check if campaign_id column exists
+            $colCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'campaign_id'")->fetchAll(PDO::FETCH_COLUMN);
+            $hasCampaignId = !empty($colCheck);
+            
+            $campaignIdSql = $hasCampaignId ? ', campaign_id = :campaign_id' : '';
+            
             $updateStmt = $this->pdo->prepare("
                 UPDATE campaign_department_content_items SET
                     title = :title,
@@ -706,7 +742,8 @@ class ContentController
                     hazard_category = :hazard_category,
                     {$audienceColumn} = :intended_audience,
                     source = :source,
-                    version_number = :version_number,
+                    version_number = :version_number
+                    {$campaignIdSql},
                     approval_status = CASE 
                         WHEN approval_status = 'approved' THEN 'pending_review'
                         ELSE approval_status
@@ -714,7 +751,8 @@ class ContentController
                     last_updated = NOW()
                 WHERE id = :id
             ");
-            $updateStmt->execute([
+            
+            $params = [
                 'title' => $title,
                 'body' => $body ?: null,
                 'hazard_category' => $hazardCategory ?: null,
@@ -722,7 +760,13 @@ class ContentController
                 'source' => $source ?: null,
                 'version_number' => $newVersion,
                 'id' => $contentId,
-            ]);
+            ];
+            
+            if ($hasCampaignId) {
+                $params['campaign_id'] = $campaignId;
+            }
+            
+            $updateStmt->execute($params);
 
             $this->pdo->commit();
         } catch (\Throwable $e) {
