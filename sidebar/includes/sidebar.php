@@ -482,7 +482,7 @@
                             if (!isset($basePath)) {
                                 require_once __DIR__ . "/../../header/includes/path_helper.php";
                             }
-                            echo $basePath ?? "/public-safety-campaign-system"; 
+                            echo $basePath ?? ""; 
                         ?>';
                         fetch(apiBase + '/api/set_role_cookie.php?role_id=' + roleId, {
                             method: 'GET',
