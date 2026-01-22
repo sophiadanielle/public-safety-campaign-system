@@ -916,15 +916,17 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 <h2 class="section-title" style="margin: 0 0 4px 0;">Content Usage Records</h2>
                 <p style="color: #64748b; margin: 0; font-size: 14px;">View historical usage records for content items to support impact evaluation and reporting</p>
             </div>
-            <div style="display: flex; gap: 8px;">
-                <input type="number" id="usageHistoryContentId" placeholder="Content ID (optional)" style="padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px; width: 150px;">
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="usageHistoryContentId" style="padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 6px; min-width: 300px; font-size: 14px;">
+                    <option value="">All approved content...</option>
+                </select>
                 <button class="btn btn-secondary" onclick="loadUsageHistory()" style="padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
                     <i class="fas fa-history"></i> Load History
                 </button>
             </div>
         </div>
         <div id="usageHistoryContainer" style="margin-top: 16px;">
-            <p style="text-align: center; color: #64748b; padding: 20px;">Enter a Content ID or leave blank to see all usage history</p>
+            <p style="text-align: center; color: #64748b; padding: 20px;">Select a content item from the dropdown above or leave blank to see all usage history</p>
         </div>
     </section>
 </div>
@@ -1342,10 +1344,10 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         formData.delete('intended_audience[]');
         const audienceValues = Array.from(audienceSelect.selectedOptions).map(o => o.value).filter(v => v);
         if (audienceValues.length > 0) {
-            audienceValues.forEach(value => {
+        audienceValues.forEach(value => {
                 formData.append('intended_audience[]', value);
                 formData.append('intended_audience_segment[]', value); // Backward compatibility
-            });
+        });
         }
     }
     
@@ -1562,6 +1564,70 @@ document.getElementById('usageForm').addEventListener('submit', async (e) => {
 // Update approval status
 async function updateApproval(contentId, status, notes = '') {
     try {
+        console.log('Updating approval status:', { contentId, status, notes });
+        
+        // Use standalone endpoint for pending_review to bypass workflow validation
+        if (status === 'pending_review') {
+            const basePath = publicPath.replace(/\/public$/, '');
+            const endpointUrl = basePath + '/api/submit_for_review.php';
+            
+            console.log('Submitting for review via:', endpointUrl);
+            
+            const res = await fetch(endpointUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: contentId })
+            });
+            
+            console.log('Response status:', res.status, res.statusText);
+            
+            // Check if response is JSON
+            const contentType = res.headers.get('content-type');
+            let data;
+            
+            if (contentType && contentType.includes('application/json')) {
+                data = await res.json();
+            } else {
+                // If not JSON, read as text
+                const text = await res.text();
+                console.error('Non-JSON response:', text);
+                alert('Error: Server returned invalid response. Status: ' + res.status + '\n' + text.substring(0, 200));
+                return;
+            }
+            
+            console.log('Response data:', data);
+            
+            if (res.ok && data.success) {
+                console.log('Successfully submitted for review');
+                // Update local data
+                const item = contents.find(c => c.id === contentId);
+                if (item) {
+                    item.approval_status = 'pending_review';
+                    // Update localStorage if it's an uploaded item
+                    const uploaded = JSON.parse(localStorage.getItem('content_repository_uploaded') || '[]');
+                    const uploadedIndex = uploaded.findIndex(c => c.id === contentId);
+                    if (uploadedIndex >= 0) {
+                        uploaded[uploadedIndex].approval_status = 'pending_review';
+                        localStorage.setItem('content_repository_uploaded', JSON.stringify(uploaded));
+                    }
+                }
+                currentTemplatesPage = 1;
+                loadContent();
+                loadTemplates();
+                loadMediaGallery();
+                // Refresh usage dropdowns in case content was already approved
+                loadApprovedContentForUsage();
+                loadApprovedContentForUsageHistory();
+                alert('Content submitted for review successfully!');
+            } else {
+                const errorMsg = data.error || data.message || 'Failed to submit for review';
+                console.error('API error:', errorMsg);
+                alert('Error: ' + errorMsg);
+            }
+        } else {
+            // For other statuses (rejected, archived), use the existing API route
         const res = await fetch(apiBase + '/api/v1/content/' + contentId + '/approval', {
             method: 'POST',
             headers: { 
@@ -1573,17 +1639,32 @@ async function updateApproval(contentId, status, notes = '') {
                 approval_notes: notes
             })
         });
-        const data = await res.json();
+            
+            const contentType = res.headers.get('content-type');
+            let data;
+            
+            if (contentType && contentType.includes('application/json')) {
+                data = await res.json();
+            } else {
+                const text = await res.text();
+                console.error('Non-JSON response:', text);
+                alert('Error: Server returned invalid response. Status: ' + res.status);
+                return;
+            }
+            
         if (res.ok) {
-            currentTemplatesPage = 1; // Reset to first page when content is approved/rejected
+                currentTemplatesPage = 1;
             loadContent();
             loadTemplates();
             loadMediaGallery();
         } else {
-            alert('Error: ' + (data.error || 'Failed to update approval status'));
+                const errorMsg = data.error || data.message || 'Failed to update approval status';
+                alert('Error: ' + errorMsg);
+            }
         }
     } catch (err) {
-        alert('Network error: ' + err.message);
+        console.error('Network/parse error:', err);
+        alert('Network error: ' + err.message + '\n\nPlease check the browser console for details.');
     }
 }
 
@@ -1594,7 +1675,14 @@ async function approveContent(contentId) {
     }
     
     try {
-        const res = await fetch(apiBase + '/approve_content.php', {
+        // Use standalone endpoint that bypasses workflow validation (allows direct approval from draft)
+        // Extract base path from publicPath (e.g., /public-safety-campaign-system)
+        const basePath = publicPath.replace(/\/public$/, '');
+        const endpointUrl = basePath + '/api/approve_content.php';
+        
+        console.log('Approving content:', contentId, 'via:', endpointUrl);
+        
+        const res = await fetch(endpointUrl, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json'
@@ -1602,9 +1690,24 @@ async function approveContent(contentId) {
             body: JSON.stringify({ id: contentId })
         });
         
-        const data = await res.json();
+        // Check if response is actually JSON before parsing
+        const contentType = res.headers.get('content-type') || '';
+        let data;
         
-        if (res.ok && data.success) {
+        if (!contentType.includes('application/json')) {
+            const text = await res.text();
+            console.error('Non-JSON response from approve endpoint:', text.substring(0, 500));
+            // Try to parse as JSON anyway in case header is wrong
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error('Server returned HTML instead of JSON. Check endpoint path: ' + endpointUrl);
+            }
+        } else {
+            data = await res.json();
+        }
+        
+        if (res.ok && (data.success || data.data)) {
             // Update item in contents array
             const itemIndex = contents.findIndex(item => item.id === contentId);
             if (itemIndex !== -1) {
@@ -1626,6 +1729,9 @@ async function approveContent(contentId) {
             loadContent();
             loadTemplates();
             loadMediaGallery();
+            // Refresh usage dropdowns to include newly approved content
+            loadApprovedContentForUsage();
+            loadApprovedContentForUsageHistory();
             
             alert('Content approved successfully!');
         } else {
@@ -2010,38 +2116,88 @@ async function loadApprovedContentForUsage() {
         return;
     }
     
-    try {
-        const res = await fetch(apiBase + '/api/v1/content?approval_status=approved&per_page=100', {
-            headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
-        });
-        
-        if (res.ok) {
-            const data = await res.json();
-            // Handle both {data: [...]} and direct array responses
-            let contentArray = [];
-            if (Array.isArray(data)) {
-                contentArray = data;
-            } else if (data.data && Array.isArray(data.data)) {
-                contentArray = data.data;
-            }
-            
-            // Clear existing options except the first one
-            select.innerHTML = '<option value="">Select approved content...</option>';
-            
-            contentArray.forEach(item => {
-                const option = document.createElement('option');
-                option.value = item.id;
-                option.textContent = `${item.id} - ${item.title || 'Untitled'}`;
-                select.appendChild(option);
-            });
-            
-            console.log('Loaded', contentArray.length, 'approved content items for usage form');
-        } else {
-            console.error('Failed to load approved content for usage form:', res.status, res.statusText);
-        }
-    } catch (err) {
-        console.error('Error loading approved content for usage form:', err);
+    // Use the contents array (single source of truth) - filter for approved content
+    const normalizeStatus = (raw) => {
+        if (!raw) return "draft";
+        return raw.toString().trim().toLowerCase().replace(/\s+/g, "_");
+    };
+    
+    // Filter approved content from the contents array
+    const approvedContent = contents.filter(item => {
+        const status = normalizeStatus(item.approval_status);
+        return status === 'approved';
+    });
+    
+    // Clear existing options except the first one
+    select.innerHTML = '<option value="">Select approved content...</option>';
+    
+    // Sort by title for easier selection
+    approvedContent.sort((a, b) => {
+        const titleA = (a.title || 'Untitled').toLowerCase();
+        const titleB = (b.title || 'Untitled').toLowerCase();
+        return titleA.localeCompare(titleB);
+    });
+    
+    approvedContent.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        const title = item.title || 'Untitled';
+        const contentType = item.content_type || '';
+        const displayText = `${item.id} - ${title}${contentType ? ' (' + contentType + ')' : ''}`;
+        option.textContent = displayText;
+        select.appendChild(option);
+    });
+    
+    console.log('Loaded', approvedContent.length, 'approved content items for usage form from contents array');
+}
+
+// Load approved content for usage history dropdown (same as usage form)
+async function loadApprovedContentForUsageHistory() {
+    const select = document.getElementById('usageHistoryContentId');
+    if (!select) {
+        console.warn('usageHistoryContentId element not found');
+        return;
     }
+    
+    // Use the contents array (single source of truth) - filter for approved content
+    const normalizeStatus = (raw) => {
+        if (!raw) return "draft";
+        return raw.toString().trim().toLowerCase().replace(/\s+/g, "_");
+    };
+    
+    // Filter approved content from the contents array
+    const approvedContent = contents.filter(item => {
+        const status = normalizeStatus(item.approval_status);
+        return status === 'approved';
+    });
+    
+    // Clear existing options except the first one
+    const currentValue = select.value; // Preserve current selection
+    select.innerHTML = '<option value="">All approved content...</option>';
+    
+    // Sort by title for easier selection
+    approvedContent.sort((a, b) => {
+        const titleA = (a.title || 'Untitled').toLowerCase();
+        const titleB = (b.title || 'Untitled').toLowerCase();
+        return titleA.localeCompare(titleB);
+    });
+    
+    approvedContent.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.id;
+        const title = item.title || 'Untitled';
+        const contentType = item.content_type || '';
+        const displayText = `${item.id} - ${title}${contentType ? ' (' + contentType + ')' : ''}`;
+        option.textContent = displayText;
+        select.appendChild(option);
+    });
+    
+    // Restore previous selection if it still exists
+    if (currentValue) {
+        select.value = currentValue;
+    }
+    
+    console.log('Loaded', approvedContent.length, 'approved content items for usage history dropdown from contents array');
 }
 
 // Load campaigns for usage form dropdown
@@ -2345,22 +2501,22 @@ async function loadContent() {
         const isSampleData = contents.length > 0 && contents[0].id >= 1000;
         
         if (isSampleData && !hasFilters && !localStorage.getItem('content_sample_data_shown')) {
-            const wrapper = document.createElement('div');
-            wrapper.style.cssText = 'grid-column: 1/-1;';
-            const notice = document.createElement('div');
-            notice.style.cssText = 'padding: 16px; background: #f0fdfa; border: 1px solid #4c8a89; border-radius: 8px; margin-bottom: 16px;';
-            notice.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <i class="fas fa-info-circle" style="color: #4c8a89; font-size: 20px;"></i>
-                    <div style="flex: 1;">
-                        <strong style="color: #065f46; display: block; margin-bottom: 4px;">Sample Content Data</strong>
-                        <p style="color: #047857; margin: 0; font-size: 14px;">These are sample LGU public safety campaign materials for demonstration. Upload your own materials to start building your content repository.</p>
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = 'grid-column: 1/-1;';
+                const notice = document.createElement('div');
+                notice.style.cssText = 'padding: 16px; background: #f0fdfa; border: 1px solid #4c8a89; border-radius: 8px; margin-bottom: 16px;';
+                notice.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fas fa-info-circle" style="color: #4c8a89; font-size: 20px;"></i>
+                        <div style="flex: 1;">
+                            <strong style="color: #065f46; display: block; margin-bottom: 4px;">Sample Content Data</strong>
+                            <p style="color: #047857; margin: 0; font-size: 14px;">These are sample LGU public safety campaign materials for demonstration. Upload your own materials to start building your content repository.</p>
+                        </div>
+                        <button onclick="this.closest('div[style*=\\'grid-column\\']').remove(); localStorage.setItem('content_sample_data_shown', 'true'); loadContent();" style="background: none; border: none; color: #64748b; cursor: pointer; padding: 4px 8px; font-size: 18px;" title="Dismiss">×</button>
                     </div>
-                    <button onclick="this.closest('div[style*=\\'grid-column\\']').remove(); localStorage.setItem('content_sample_data_shown', 'true'); loadContent();" style="background: none; border: none; color: #64748b; cursor: pointer; padding: 4px 8px; font-size: 18px;" title="Dismiss">×</button>
-                </div>
-            `;
-            wrapper.appendChild(notice);
-            container.appendChild(wrapper);
+                `;
+                wrapper.appendChild(notice);
+                container.appendChild(wrapper);
         }
         
         // Handle empty state
@@ -2427,15 +2583,30 @@ async function loadContent() {
     }
 }
 
+// Normalize approval status - defensive function that handles all edge cases
+function normalizeStatus(raw) {
+    if (!raw) return "draft";
+    return raw
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "_");
+}
+
 // Render content grid
 function renderContentGrid(container, items, isTemplate = false) {
     container.innerHTML = '';
     
     items.forEach(item => {
+        // Normalize status using defensive function
+        const status = normalizeStatus(item.approval_status);
+        
+        // Debug logging to verify normalization
+        console.log("NORMALIZED:", item.id, item.approval_status, "→", status);
+        
         const div = document.createElement('div');
         div.className = 'content-card';
         
-        const status = item.approval_status || 'draft';
         const statusClass = 'status-' + status.replace('_', '-');
         let statusText = status.replace(/_/g, ' ');
         // Normalize status text for display
@@ -2487,82 +2658,52 @@ function renderContentGrid(container, items, isTemplate = false) {
                 ` : ''}
             `;
         } else {
-            // Normalize approval status for comparison (case-insensitive)
-            const approvalStatus = (item.approval_status || '').toLowerCase().replace(/\s+/g, '_');
+            // Use normalized status for button rendering - works for ALL real DB records and sample data
+            // Status is already normalized above using normalizeStatus()
             
-            // Show Approve button for draft, under_review, pending_review, or pending
-            if (approvalStatus === 'draft' || approvalStatus === 'under_review' || approvalStatus === 'pending_review' || approvalStatus === 'pending') {
-                actionButtons = `
-                    <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white;">
-                        <i class="fas fa-check-circle"></i> <span>Approve</span>
-                    </button>
-                `;
-                
-                // Add Submit for Review button only for draft status
-                if (approvalStatus === 'draft') {
-                    actionButtons += `
-                        <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'pending_review')">
-                            <i class="fas fa-paper-plane"></i> <span>Submit for Review</span>
-                        </button>
-                    `;
-                }
-                
-                // Add Reject button for pending_review or pending status
-                if (approvalStatus === 'pending_review' || approvalStatus === 'pending') {
-                    actionButtons += `
-                        <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'rejected')" style="background: #dc2626; color: white;">
-                            <i class="fas fa-times-circle"></i> <span>Reject</span>
-                        </button>
-                    `;
-                }
-            } else if (item.approval_status === 'approved' || approvalStatus === 'approved') {
+            if (status === 'approved') {
+                // APPROVED: Show Details + Archive
                 actionButtons = `
                     <button class="btn btn-secondary" onclick="showContentDetails(${item.id})">
-                        <i class="fas fa-info-circle"></i> <span>View Details</span>
+                        <i class="fas fa-info-circle"></i> <span>Details</span>
                     </button>
-                `;
-                if (fileUrl) {
-                    actionButtons += `
-                        <a href="${fileUrl}" target="_blank" class="btn btn-secondary" style="text-align: center; text-decoration: none;">
-                            <i class="fas fa-eye"></i> <span>View</span>
-                        </a>
-                    `;
-                }
-            }
-            
-            if (fileUrl) {
-                actionButtons += `
-                    <a href="${fileUrl}" target="_blank" class="btn btn-secondary" style="text-align: center; text-decoration: none;">
-                        <i class="fas fa-eye"></i> <span>View</span>
-                    </a>
-                `;
-            }
-            
-            actionButtons += `
-                <button class="btn btn-secondary" onclick="showContentDetails(${item.id})">
-                    <i class="fas fa-info-circle"></i> <span>Details</span>
-                </button>
-            `;
-            
-            if (item.approval_status !== 'archived' && item.approval_status !== 'draft' && item.approval_status !== 'pending_review' && item.approval_status !== 'pending') {
-                actionButtons += `
                     <button class="btn btn-secondary" onclick="archiveContent(${item.id})" style="background: #64748b; color: white;" title="Archive">
                         <i class="fas fa-archive"></i> <span>Archive</span>
                     </button>
                 `;
-            }
-            
-            // For sample data (IDs >= 1000), show limited actions but still allow approval
-            if (item.id >= 1000) {
-                // Keep the Approve button if it's draft or under_review, but limit other actions
-                const approvalStatus = (item.approval_status || '').toLowerCase().replace(/\s+/g, '_');
-                if (approvalStatus !== 'draft' && approvalStatus !== 'under_review' && approvalStatus !== 'pending_review' && approvalStatus !== 'pending') {
-                    actionButtons = `
-                        <button class="btn btn-secondary" onclick="alert('This is sample data for demonstration. Upload your own materials to enable full functionality.');" style="opacity: 0.8;">
-                            <i class="fas fa-info-circle"></i> <span>View Details</span>
-                        </button>
-                    `;
-                }
+            } else if (status === 'draft') {
+                // DRAFT: Show Approve + Submit for Review + Details
+                actionButtons = `
+                    <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white;">
+                        <i class="fas fa-check-circle"></i> <span>Approve</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'pending_review')">
+                        <i class="fas fa-paper-plane"></i> <span>Submit for Review</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="showContentDetails(${item.id})">
+                        <i class="fas fa-info-circle"></i> <span>Details</span>
+                    </button>
+                `;
+            } else if (status === 'under_review') {
+                // UNDER_REVIEW: Show Approve + Reject + Details
+                actionButtons = `
+                    <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white;">
+                        <i class="fas fa-check-circle"></i> <span>Approve</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'rejected')" style="background: #dc2626; color: white;">
+                        <i class="fas fa-times-circle"></i> <span>Reject</span>
+                    </button>
+                <button class="btn btn-secondary" onclick="showContentDetails(${item.id})">
+                    <i class="fas fa-info-circle"></i> <span>Details</span>
+                </button>
+            `;
+            } else {
+                // ANY UNKNOWN STATUS: Fallback to Details only
+                actionButtons = `
+                    <button class="btn btn-secondary" onclick="showContentDetails(${item.id})">
+                        <i class="fas fa-info-circle"></i> <span>Details</span>
+                    </button>
+                `;
             }
         }
         
@@ -2785,20 +2926,20 @@ async function loadMediaGallery() {
             }
             
             if (item.content_type === 'video' || (item.file_type && item.file_type.startsWith('video/'))) {
-                div.innerHTML = `
+            div.innerHTML = `
                     <video src="${fileUrl}" controls></video>
                     <div class="gallery-item-overlay">
                         <div style="font-weight: 600;">${item.title || 'Untitled'}</div>
                         <div style="font-size: 11px; opacity: 0.9;">${item.content_type}</div>
-                    </div>
+                </div>
                 `;
             } else {
-                div.innerHTML = `
+            div.innerHTML = `
                     <img src="${fileUrl}" alt="${item.title || 'Image'}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'200\\' height=\\'200\\'%3E%3Crect fill=\\'%23e2e8f0\\' width=\\'200\\' height=\\'200\\'/%3E%3Ctext fill=\\'%2394a3b8\\' font-family=\\'sans-serif\\' font-size=\\'14\\' x=\\'50%25\\' y=\\'50%25\\' text-anchor=\\'middle\\' dy=\\'.3em\\'%3ENo Preview%3C/text%3E%3C/svg%3E'">
                     <div class="gallery-item-overlay">
                         <div style="font-weight: 600;">${item.title || 'Untitled'}</div>
                         <div style="font-size: 11px; opacity: 0.9;">${item.content_type}</div>
-                    </div>
+                </div>
                 `;
             }
             
@@ -2838,7 +2979,8 @@ async function loadMediaGallery() {
 // Load usage history
 async function loadUsageHistory() {
     const container = document.getElementById('usageHistoryContainer');
-    const contentId = document.getElementById('usageHistoryContentId').value;
+    const contentSelect = document.getElementById('usageHistoryContentId');
+    const contentId = contentSelect ? contentSelect.value : '';
     container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">Loading usage history...</p>';
     
     try {
@@ -2944,9 +3086,9 @@ document.addEventListener('DOMContentLoaded', function() {
     loadCampaigns();
     // Load all content first to populate contents array, then render views
     loadAllContent().then(() => {
-        loadContent();
-        loadTemplates();
-        loadMediaGallery();
+    loadContent();
+    loadTemplates();
+    loadMediaGallery();
     }).catch(err => {
         console.error('Error loading content:', err);
         // Still try to load views even if loadAllContent fails
@@ -2955,11 +3097,16 @@ document.addEventListener('DOMContentLoaded', function() {
         loadMediaGallery();
     });
     
-    // Load dropdowns for usage form
+    // Load dropdowns for usage form - wait for content to be loaded first
     console.log('Loading usage form dropdowns...');
-    loadApprovedContentForUsage();
+    // Load campaigns and events immediately (they don't depend on contents array)
     loadCampaignsForUsage();
     loadEventsForUsage();
+    // Load approved content after contents array is populated
+    setTimeout(() => {
+        loadApprovedContentForUsage();
+        loadApprovedContentForUsageHistory(); // Also populate usage history dropdown
+    }, 500);
 });
 </script>
     

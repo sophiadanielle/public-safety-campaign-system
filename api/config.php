@@ -74,11 +74,16 @@ if (!empty($_ENV['PROD_DB_PORT'])) {
     $db_port = 3306;
 }
 
-$mysqli = new mysqli($db_host, $db_user, $db_pass, $db_name, $db_port);
+// Initialize mysqli connection
+$mysqli = @new mysqli($db_host, $db_user, $db_pass, $db_name, $db_port);
 
 if ($mysqli->connect_error) {
     error_log('MySQLi Connection Error: ' . $mysqli->connect_error);
-    exit('Database connection failed.');
+    // Don't exit here - let the calling script handle the error
+    // This allows endpoints to return JSON errors instead of HTML
 }
 
-$mysqli->set_charset("utf8mb4");
+// Only set charset if connection succeeded
+if (!$mysqli->connect_error) {
+    $mysqli->set_charset("utf8mb4");
+}

@@ -877,15 +877,29 @@ class ContentController
         $columns = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'approved_by'")->fetchAll(PDO::FETCH_COLUMN);
         $hasApprovedBy = !empty($columns);
 
+        // Check if last_updated column exists
+        $lastUpdatedCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'last_updated'")->fetch();
+        $hasLastUpdated = !empty($lastUpdatedCheck);
+        
         if ($hasApprovedBy) {
-            $updateStmt = $this->pdo->prepare('
-                UPDATE campaign_department_content_items SET
-                    approval_status = :approval_status,
-                    approved_by = :approved_by,
-                    approval_notes = :approval_notes,
-                    last_updated = NOW()
-                WHERE id = :id
-            ');
+            if ($hasLastUpdated) {
+                $updateStmt = $this->pdo->prepare('
+                    UPDATE campaign_department_content_items SET
+                        approval_status = :approval_status,
+                        approved_by = :approved_by,
+                        approval_notes = :approval_notes,
+                        last_updated = NOW()
+                    WHERE id = :id
+                ');
+            } else {
+                $updateStmt = $this->pdo->prepare('
+                    UPDATE campaign_department_content_items SET
+                        approval_status = :approval_status,
+                        approved_by = :approved_by,
+                        approval_notes = :approval_notes
+                    WHERE id = :id
+                ');
+            }
             $updateStmt->execute([
                 'approval_status' => $status,
                 'approved_by' => in_array($status, ['approved', 'rejected', 'archived'], true) ? ($user['id'] ?? null) : null,
@@ -893,11 +907,20 @@ class ContentController
                 'id' => $contentId,
             ]);
         } else {
-            $updateStmt = $this->pdo->prepare('
-                UPDATE campaign_department_content_items SET
-                    approval_status = :approval_status
-                WHERE id = :id
-            ');
+            if ($hasLastUpdated) {
+                $updateStmt = $this->pdo->prepare('
+                    UPDATE campaign_department_content_items SET
+                        approval_status = :approval_status,
+                        last_updated = NOW()
+                    WHERE id = :id
+                ');
+            } else {
+                $updateStmt = $this->pdo->prepare('
+                    UPDATE campaign_department_content_items SET
+                        approval_status = :approval_status
+                    WHERE id = :id
+                ');
+            }
             $updateStmt->execute([
                 'approval_status' => $status,
                 'id' => $contentId,
@@ -1050,15 +1073,42 @@ class ContentController
             $tagId = $this->ensureTags([$tag])[0];
         }
 
-        $stmt = $this->pdo->prepare('INSERT INTO content_usage (content_item_id, tag_id, campaign_id, event_id, survey_id, usage_context) VALUES (:cid, :tid, :campaign_id, :event_id, :survey_id, :usage_context)');
-        $stmt->execute([
+        // Check which columns exist in the table
+        $columns = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_usage")->fetchAll(PDO::FETCH_COLUMN);
+        $hasCampaignId = in_array('campaign_id', $columns);
+        $hasEventId = in_array('event_id', $columns);
+        $hasSurveyId = in_array('survey_id', $columns);
+
+        // Build INSERT query dynamically based on available columns
+        $insertColumns = ['content_item_id', 'tag_id', 'usage_context'];
+        $insertValues = [':cid', ':tid', ':usage_context'];
+        $bindParams = [
             'cid' => $contentId,
             'tid' => $tagId,
-            'campaign_id' => $campaignId ?: null,
-            'event_id' => $eventId ?: null,
-            'survey_id' => $surveyId ?: null,
             'usage_context' => $usageContext,
-        ]);
+        ];
+
+        if ($hasCampaignId) {
+            $insertColumns[] = 'campaign_id';
+            $insertValues[] = ':campaign_id';
+            $bindParams['campaign_id'] = $campaignId ?: null;
+        }
+
+        if ($hasEventId) {
+            $insertColumns[] = 'event_id';
+            $insertValues[] = ':event_id';
+            $bindParams['event_id'] = $eventId ?: null;
+        }
+
+        if ($hasSurveyId) {
+            $insertColumns[] = 'survey_id';
+            $insertValues[] = ':survey_id';
+            $bindParams['survey_id'] = $surveyId ?: null;
+        }
+
+        $sql = 'INSERT INTO campaign_department_content_usage (' . implode(', ', $insertColumns) . ') VALUES (' . implode(', ', $insertValues) . ')';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($bindParams);
 
         return ['message' => 'Content usage recorded', 'id' => (int) $this->pdo->lastInsertId()];
     }
@@ -1069,15 +1119,46 @@ class ContentController
             $contentId = isset($_GET['content_id']) ? (int) $_GET['content_id'] : null;
             $campaignId = isset($_GET['campaign_id']) ? (int) $_GET['campaign_id'] : null;
             
-            $sql = "SELECT cu.id, cu.content_item_id, cu.campaign_id, cu.event_id, cu.survey_id, 
-                           cu.usage_context, cu.created_at,
-                           ci.title as content_title, ci.content_type,
-                           c.title as campaign_title,
-                           t.name as tag_name
-                    FROM content_usage cu
-                    INNER JOIN campaign_department_content_items ci ON cu.content_item_id = ci.id
-                    LEFT JOIN campaign_department_campaigns c ON cu.campaign_id = c.id
-                    LEFT JOIN campaign_department_tags t ON cu.tag_id = t.id
+            // Check which columns exist in the table
+            $columns = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_usage")->fetchAll(PDO::FETCH_COLUMN);
+            $hasCampaignId = in_array('campaign_id', $columns);
+            $hasEventId = in_array('event_id', $columns);
+            $hasSurveyId = in_array('survey_id', $columns);
+            
+            // Build SELECT query dynamically based on available columns
+            $selectFields = ['cu.id', 'cu.content_item_id', 'cu.usage_context', 'cu.created_at',
+                           'ci.title as content_title', 'ci.content_type',
+                           't.name as tag_name'];
+            
+            if ($hasCampaignId) {
+                $selectFields[] = 'cu.campaign_id';
+                $selectFields[] = 'c.title as campaign_title';
+            } else {
+                $selectFields[] = 'NULL as campaign_id';
+                $selectFields[] = 'NULL as campaign_title';
+            }
+            
+            if ($hasEventId) {
+                $selectFields[] = 'cu.event_id';
+            } else {
+                $selectFields[] = 'NULL as event_id';
+            }
+            
+            if ($hasSurveyId) {
+                $selectFields[] = 'cu.survey_id';
+            } else {
+                $selectFields[] = 'NULL as survey_id';
+            }
+            
+            $sql = "SELECT " . implode(', ', $selectFields) . "
+                    FROM campaign_department_content_usage cu
+                    INNER JOIN campaign_department_content_items ci ON cu.content_item_id = ci.id";
+            
+            if ($hasCampaignId) {
+                $sql .= " LEFT JOIN campaign_department_campaigns c ON cu.campaign_id = c.id";
+            }
+            
+            $sql .= " LEFT JOIN campaign_department_tags t ON cu.tag_id = t.id
                     WHERE 1=1";
             $bind = [];
             
@@ -1086,7 +1167,7 @@ class ContentController
                 $bind['content_id'] = $contentId;
             }
             
-            if ($campaignId) {
+            if ($campaignId && $hasCampaignId) {
                 $sql .= ' AND cu.campaign_id = :campaign_id';
                 $bind['campaign_id'] = $campaignId;
             }

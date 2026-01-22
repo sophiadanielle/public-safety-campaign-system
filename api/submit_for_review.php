@@ -1,8 +1,7 @@
 <?php
 /**
- * Minimal endpoint to approve content materials
+ * Minimal endpoint to submit content for review
  * Only updates approval_status field - no other changes
- * Uses PDO like other working endpoints
  */
 
 // Set headers first to ensure JSON response
@@ -15,14 +14,14 @@ header('Access-Control-Allow-Headers: Content-Type');
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
-// Load PDO connection using same method as working endpoints
+// Load PDO connection (same as main application)
 try {
     require_once __DIR__ . '/../src/Config/db_connect.php';
     
-    // Check if PDO connection was successful
+    // Check if database connection was successful
     if (!isset($pdo) || !$pdo) {
         http_response_code(500);
-        echo json_encode(['error' => 'Database connection failed: PDO not initialized']);
+        echo json_encode(['error' => 'Database connection failed']);
         exit;
     }
 } catch (Exception $e) {
@@ -52,18 +51,18 @@ if (!$contentId) {
 }
 
 try {
-    // Check if last_updated column exists before using it
-    $columnCheck = $pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'last_updated'")->fetch();
-    $hasLastUpdated = !empty($columnCheck);
+    // Check if last_updated column exists
+    $lastUpdatedCheck = $pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'last_updated'")->fetch();
+    $hasLastUpdated = !empty($lastUpdatedCheck);
     
-    // Only update approval_status to 'approved' (minimal update, no other fields)
+    // Only update approval_status to 'pending_review'
     if ($hasLastUpdated) {
-        $stmt = $pdo->prepare("UPDATE campaign_department_content_items SET approval_status = 'approved', last_updated = NOW() WHERE id = :id");
+        $stmt = $pdo->prepare("UPDATE campaign_department_content_items SET approval_status = 'pending_review', last_updated = NOW() WHERE id = ?");
     } else {
-        $stmt = $pdo->prepare("UPDATE campaign_department_content_items SET approval_status = 'approved' WHERE id = :id");
+        $stmt = $pdo->prepare("UPDATE campaign_department_content_items SET approval_status = 'pending_review' WHERE id = ?");
     }
     
-    $stmt->execute(['id' => $contentId]);
+    $stmt->execute([$contentId]);
     
     if ($stmt->rowCount() === 0) {
         http_response_code(404);
@@ -73,14 +72,14 @@ try {
     
     echo json_encode([
         'success' => true,
-        'message' => 'Content approved successfully',
+        'message' => 'Content submitted for review successfully',
         'id' => $contentId
     ]);
     
-} catch (PDOException $e) {
+} catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
-} catch (Exception $e) {
+} catch (PDOException $e) {
     http_response_code(500);
     echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
 }
