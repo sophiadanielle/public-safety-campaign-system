@@ -390,7 +390,7 @@
                                     'dashboard.php' => ['kpi-overview', 'engagement-impact'], // Limited dashboard features
                                     'campaigns.php' => ['list-section'], // Only "All Campaigns", not "Plan New Campaign" or AI tools
                                     'events.php' => ['events-list'], // Only "All Events", not create
-                                    'surveys.php' => [], // Surveys for responding only (no management features)
+                                    'surveys.php' => ['responses'], // Surveys: Only "Submit Response" section, no create/edit/analytics
                                     'impact.php' => ['impact-dashboard', 'evaluation-reports', 'metrics-overview'], // Read-only reports
                                 ];
                                 

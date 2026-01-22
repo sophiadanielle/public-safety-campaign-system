@@ -87,6 +87,8 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css" rel="stylesheet">
+    <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
+    <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
     <script>
         // Force light theme
         document.documentElement.setAttribute('data-theme', 'light');
@@ -1194,6 +1196,12 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         exit;
     }
     
+    // RBAC: For Viewer, ensure we're on list section (read-only view)
+    if ($isViewer && !isset($_GET['section'])) {
+        // Auto-scroll to list section on page load
+        echo '<script>window.location.hash = "list-section";</script>';
+    }
+    
     // Viewers can view approved campaigns in the list section (read-only)
     // Forms are hidden via PHP conditionals below
     ?>
@@ -2007,7 +2015,28 @@ function refreshRoleDetection() {
 
 // RBAC Helper Functions (LGU Governance Workflow)
 function isViewer() {
-    return currentUserRole === 'viewer' || currentUserRole === 'partner';
+    if (!currentUserRole) {
+        // Fallback: Check localStorage for currentUser
+        try {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const userRole = (currentUser.role || '').toLowerCase();
+            return userRole === 'viewer' || 
+                   userRole === 'partner' || 
+                   userRole === 'partner representative' ||
+                   userRole === 'partner_representative' ||
+                   userRole.includes('partner') ||
+                   userRole.includes('viewer');
+        } catch (e) {
+            return false;
+        }
+    }
+    const role = currentUserRole.toLowerCase();
+    return role === 'viewer' || 
+           role === 'partner' || 
+           role === 'partner representative' ||
+           role === 'partner_representative' ||
+           role.includes('partner') ||
+           role.includes('viewer');
 }
 
 function isStaff() {
@@ -4301,7 +4330,11 @@ async function loadResources() {
     refreshRoleDetection();
     
     const tbody = document.getElementById('campaignTable');
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px;">Loading...</td></tr>';
+    if (!tbody) {
+        console.error('loadCampaigns() - Campaign table not found');
+        return;
+    }
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:24px; color: #64748b;">Loading campaigns...</td></tr>';
     
     // Check token before making API call
     const token = getToken();
@@ -4365,46 +4398,29 @@ async function loadResources() {
         allCampaigns = data.data || [];
         console.log('loadCampaigns() - Campaigns count:', allCampaigns.length);
         
-        // RBAC: Show sample data for Viewer if no real data exists (read-only view)
-        if (!allCampaigns.length) {
-            // Check if user is Viewer - show sample data for demonstration
-            const isViewerCheck = currentUserRole === 'viewer';
-            if (isViewerCheck) {
-                // Sample data for Viewer to see results view
-                allCampaigns = [
-                    {
-                        id: 1,
-                        title: 'Fire Safety Awareness Campaign',
-                        category: 'Fire',
-                        status: 'ongoing',
-                        start_date: '2024-01-15',
-                        end_date: '2024-02-28',
-                        draft_schedule_datetime: '2024-01-20 09:00:00',
-                        ai_recommended_datetime: '2024-01-22 10:00:00',
-                        final_schedule_datetime: '2024-01-22 10:00:00',
-                        location: 'Barangay Hall',
-                        budget: '50000.00'
-                    },
-                    {
-                        id: 2,
-                        title: 'Earthquake Preparedness Orientation',
-                        category: 'Earthquake',
-                        status: 'scheduled',
-                        start_date: '2024-02-01',
-                        end_date: '2024-02-28',
-                        draft_schedule_datetime: '2024-02-05 14:00:00',
-                        ai_recommended_datetime: '2024-02-06 14:00:00',
-                        final_schedule_datetime: null,
-                        location: 'Covered Court',
-                        budget: '35000.00'
-                    }
-                ];
-                // Continue to render sample data below
-            } else {
-                tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:24px;">No campaigns yet. Create a campaign to get started.</td></tr>';
-                return;
-            }
+        // RBAC: For Viewer, filter to show only approved/ongoing campaigns (read-only)
+        const isViewerCheck = isViewer();
+        if (isViewerCheck) {
+            // Viewer can only see approved, ongoing, or scheduled campaigns (not drafts)
+            allCampaigns = allCampaigns.filter(c => {
+                const status = (c.status || '').toLowerCase();
+                return status === 'approved' || status === 'ongoing' || status === 'scheduled' || status === 'active';
+            });
+            console.log('loadCampaigns() - Filtered campaigns for Viewer:', allCampaigns.length, 'approved/ongoing campaigns');
         }
+        
+        // If no campaigns after filtering, show message
+        if (!allCampaigns.length) {
+            if (isViewerCheck) {
+                tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:24px; color: #64748b;">No approved campaigns available for viewing.</td></tr>';
+            } else {
+                tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:24px; color: #64748b;">No campaigns yet. Create a campaign to get started.</td></tr>';
+            }
+            return;
+        }
+        
+        // Ensure campaigns are displayed (for Viewer to see the table structure)
+        console.log('loadCampaigns() - Rendering', allCampaigns.length, 'campaigns');
         
         tbody.innerHTML = '';
         const select = document.getElementById('active_campaign');

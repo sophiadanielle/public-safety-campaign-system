@@ -200,7 +200,7 @@ class SurveyController
 
         $questionId = (int) $this->pdo->lastInsertId();
         $userId = (int) ($user['id'] ?? 0);
-        $this->logAudit($surveyId, $userId, 'question_added', 'question_id', null, $questionId);
+        $this->logAudit($surveyId, $userId, 'question_added', 'question_id', null, (string) $questionId);
 
         return ['id' => $questionId, 'message' => 'Question added'];
     }
@@ -316,7 +316,7 @@ class SurveyController
 
         // Log audit
         $userId = $user ? (int) ($user['id'] ?? 0) : null;
-        $this->logAudit($surveyId, $userId, 'response_submitted', 'response_id', null, $responseId);
+        $this->logAudit($surveyId, $userId, 'response_submitted', 'response_id', null, (string) $responseId);
 
         return ['message' => 'Response submitted', 'id' => $responseId];
     }

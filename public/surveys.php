@@ -1,6 +1,16 @@
 <?php
 $pageTitle = 'Surveys & Feedback';
 require_once __DIR__ . '/../header/includes/path_helper.php';
+
+// RBAC: Get user role to conditionally show/hide sections
+require_once __DIR__ . '/../sidebar/includes/get_user_role.php';
+$currentUserRole = getCurrentUserRole();
+$isViewer = false;
+if ($currentUserRole) {
+    $roleLower = strtolower(trim($currentUserRole));
+    $isViewer = ($roleLower === 'viewer' || $roleLower === 'partner' || 
+                strpos($roleLower, 'partner') !== false || strpos($roleLower, 'viewer') !== false);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,6 +27,8 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/sidebar.css'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/admin-header.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
+    <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
     <script>
         document.documentElement.setAttribute('data-theme', 'light');
         localStorage.setItem('theme', 'light');
@@ -144,6 +156,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <p>Create surveys and collect feedback from campaign participants</p>
     </div>
 
+    <?php if (!$isViewer): // RBAC: Hide create survey section for Viewer ?>
     <section class="card" id="create-survey" style="margin-bottom:24px;">
         <h2 class="section-title">Create Survey</h2>
         <form id="createForm" class="form-grid">
@@ -153,7 +166,9 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             </div>
             <div class="form-field">
                 <label>Link to Campaign ID</label>
-                <input id="campaign_id" type="number" placeholder="1">
+                <select id="campaign_id">
+                    <option value="">-- Select a campaign --</option>
+                </select>
             </div>
             <div class="form-field">
                 <label>OR Link to Event ID</label>
@@ -206,6 +221,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             <div id="questionsList" style="margin-top:24px;"></div>
         </div>
     </section>
+    <?php endif; // End RBAC: Hide create survey section for Viewer ?>
 
     <!-- Survey Dashboard -->
     <section class="card" id="surveys-list" style="margin-bottom:24px;">
@@ -236,10 +252,12 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     </section>
 
     <!-- Survey Results View -->
+    <?php if (!$isViewer): // RBAC: Hide analytics section for Viewer ?>
     <section class="card" id="survey-analytics" style="display:none; margin-bottom:24px;">
         <h2 class="section-title">Survey Results</h2>
         <div id="resultsContent"></div>
     </section>
+    <?php endif; // End RBAC: Hide analytics section for Viewer ?>
 
     <section class="card" id="responses">
         <h2 class="section-title">Submit Response (Public)</h2>
@@ -268,6 +286,52 @@ const token = localStorage.getItem('jwtToken') || '';
 const apiBase = '<?php echo $apiPath; ?>';
 let currentSurveyId = null;
 
+// Load campaigns and populate dropdown
+async function loadCampaigns() {
+    const campaignSelect = document.getElementById('campaign_id');
+    if (!campaignSelect) return;
+    
+    if (!token) {
+        campaignSelect.innerHTML = '<option value="">-- Login required --</option>';
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.status === 401) {
+            campaignSelect.innerHTML = '<option value="">-- Authentication required --</option>';
+            return;
+        }
+        
+        const data = await res.json();
+        
+        if (res.ok && data.data && Array.isArray(data.data)) {
+            const campaigns = data.data;
+            campaignSelect.innerHTML = '<option value="">-- Select a campaign --</option>';
+            
+            campaigns.forEach(campaign => {
+                const option = document.createElement('option');
+                option.value = campaign.id;
+                option.textContent = `ID ${campaign.id} - ${campaign.title || 'Untitled Campaign'}`;
+                campaignSelect.appendChild(option);
+            });
+        } else {
+            campaignSelect.innerHTML = '<option value="">-- No campaigns available --</option>';
+        }
+    } catch (err) {
+        console.error('Error loading campaigns:', err);
+        campaignSelect.innerHTML = '<option value="">-- Error loading campaigns --</option>';
+    }
+}
+
+// Load campaigns on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadCampaigns();
+});
+
 async function createSurvey() {
     const statusEl = document.getElementById('createStatus');
     statusEl.textContent = 'Creating...';
@@ -276,7 +340,7 @@ async function createSurvey() {
     const payload = {
         title: document.getElementById('title').value.trim(),
         description: document.getElementById('description').value.trim() || null,
-        campaign_id: parseInt(document.getElementById('campaign_id').value, 10) || null,
+        campaign_id: document.getElementById('campaign_id').value ? parseInt(document.getElementById('campaign_id').value, 10) : null,
         event_id: parseInt(document.getElementById('event_id').value, 10) || null
     };
     
@@ -382,7 +446,14 @@ async function loadSurveys() {
         });
         const data = await res.json();
         if (res.ok && data.data) {
-            renderSurveysList(data.data);
+            // RBAC: For Viewer, filter to show only published surveys
+            let surveysToShow = data.data;
+            const isViewerCheck = checkIfViewer();
+            if (isViewerCheck) {
+                surveysToShow = data.data.filter(s => (s.status || '').toLowerCase() === 'published');
+                console.log('loadSurveys() - Filtered surveys for Viewer:', surveysToShow.length, 'published surveys');
+            }
+            renderSurveysList(surveysToShow);
         }
     } catch (err) {
         console.error('Error loading surveys:', err);
@@ -396,7 +467,14 @@ function renderSurveysList(surveys) {
         return;
     }
     
-    let html = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;"><th style="padding:12px; text-align:left;">ID</th><th style="padding:12px; text-align:left;">Title</th><th style="padding:12px; text-align:left;">Status</th><th style="padding:12px; text-align:left;">Questions</th><th style="padding:12px; text-align:left;">Responses</th><th style="padding:12px; text-align:left;">Actions</th></tr></thead><tbody>';
+    // RBAC: Check if user is Viewer
+    const isViewer = checkIfViewer();
+    
+    let html = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;"><th style="padding:12px; text-align:left;">ID</th><th style="padding:12px; text-align:left;">Title</th><th style="padding:12px; text-align:left;">Status</th><th style="padding:12px; text-align:left;">Questions</th><th style="padding:12px; text-align:left;">Responses</th>';
+    if (!isViewer) {
+        html += '<th style="padding:12px; text-align:left;">Actions</th>';
+    }
+    html += '</tr></thead><tbody>';
     
     surveys.forEach(survey => {
         const statusColor = survey.status === 'published' ? '#166534' : survey.status === 'closed' ? '#dc2626' : '#64748b';
@@ -405,17 +483,54 @@ function renderSurveysList(surveys) {
             <td style="padding:12px;">${survey.title || ''}</td>
             <td style="padding:12px;"><span style="color:${statusColor}; font-weight:600;">${survey.status || 'draft'}</span></td>
             <td style="padding:12px;">${survey.question_count || 0}</td>
-            <td style="padding:12px;">${survey.total_responses || 0}</td>
-            <td style="padding:12px;">
+            <td style="padding:12px;">${survey.total_responses || 0}</td>`;
+        
+        if (!isViewer) {
+            html += `<td style="padding:12px;">
                 <button class="btn btn-secondary" onclick="viewResults(${survey.id})" style="padding:4px 8px; font-size:12px; margin-right:4px;">Results</button>
                 <button class="btn btn-secondary" onclick="exportResponses(${survey.id})" style="padding:4px 8px; font-size:12px; margin-right:4px;">Export</button>
                 ${survey.status === 'published' ? `<button class="btn btn-secondary" onclick="closeSurvey(${survey.id})" style="padding:4px 8px; font-size:12px;">Close</button>` : ''}
-            </td>
-        </tr>`;
+            </td>`;
+        } else {
+            // Viewer: Show only "Respond" button for published surveys
+            if (survey.status === 'published') {
+                html += `<td style="padding:12px;">
+                    <button class="btn btn-primary" onclick="loadSurveyForResponseById(${survey.id})" style="padding:4px 8px; font-size:12px;">Respond</button>
+                </td>`;
+            } else {
+                html += '<td style="padding:12px; color:#9ca3af;">Not available</td>';
+            }
+        }
+        
+        html += '</tr>';
     });
     
     html += '</tbody></table>';
     container.innerHTML = html;
+}
+
+// Helper function to check if user is Viewer
+function checkIfViewer() {
+    try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const userRole = (currentUser.role || '').toLowerCase();
+        return userRole === 'viewer' || 
+               userRole === 'partner' || 
+               userRole === 'partner representative' ||
+               userRole === 'partner_representative' ||
+               userRole.includes('partner') ||
+               userRole.includes('viewer');
+    } catch (e) {
+        return false;
+    }
+}
+
+// Helper function to load survey for response by ID
+async function loadSurveyForResponseById(surveyId) {
+    document.getElementById('resp_sid').value = surveyId;
+    await loadSurveyForResponse();
+    // Scroll to response form
+    document.getElementById('responses').scrollIntoView({ behavior: 'smooth' });
 }
 
 async function viewResults(surveyId) {

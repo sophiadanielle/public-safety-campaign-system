@@ -13,3 +13,4 @@ SET @sql = IF(@col_exists = 0, 'ALTER TABLE `campaign_department_campaigns` ADD 
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 
+

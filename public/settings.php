@@ -9,7 +9,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?> - Public Safety Campaign</title>
     <script>
-        // Auth guard
+        // Auth guard + Viewer role restriction
         (function () {
             const basePath = '<?php echo $basePath; ?>';
             const urlParams = new URLSearchParams(window.location.search);
@@ -26,6 +26,34 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                             const cleanUrl = window.location.pathname;
                             window.history.replaceState({}, '', cleanUrl);
                         }
+                        
+                        // RBAC: Check if Viewer role - redirect to dashboard
+                        try {
+                            const parts = token.split('.');
+                            if (parts.length === 3) {
+                                const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                                const roleId = payload.role_id || payload.rid;
+                                
+                                // Check if role is Viewer/Partner (typically role_id 3, 4, or 6)
+                                // Viewer role should not access Settings
+                                const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                                const userRole = (currentUser.role || '').toLowerCase();
+                                const isViewerRole = userRole === 'viewer' || 
+                                                    userRole === 'partner' || 
+                                                    userRole === 'partner representative' ||
+                                                    userRole.includes('partner') ||
+                                                    userRole.includes('viewer');
+                                
+                                if (isViewerRole) {
+                                    console.warn('Viewer role cannot access Settings page');
+                                    window.location.replace(basePath + '/public/dashboard.php');
+                                    return;
+                                }
+                            }
+                        } catch (e) {
+                            console.error('Error checking role:', e);
+                        }
+                        
                         return;
                     }
                     
@@ -498,6 +526,7 @@ loadSettings();
     </main>
 </body>
 </html>
+
 
 
 

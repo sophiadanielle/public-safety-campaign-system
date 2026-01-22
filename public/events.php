@@ -21,6 +21,8 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/module-sidebar.css'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/admin-header.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
+    <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
     <script>
         document.documentElement.setAttribute('data-theme', 'light');
         localStorage.setItem('theme', 'light');
@@ -677,6 +679,22 @@ async function createEvent() {
     }
 }
 
+// Helper function to check if user is Viewer
+function checkIfViewer() {
+    try {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const userRole = (currentUser.role || '').toLowerCase();
+        return userRole === 'viewer' || 
+               userRole === 'partner' || 
+               userRole === 'partner representative' ||
+               userRole === 'partner_representative' ||
+               userRole.includes('partner') ||
+               userRole.includes('viewer');
+    } catch (e) {
+        return false;
+    }
+}
+
 async function loadEvents() {
     const tbody = document.getElementById('eventTable');
     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">Loading...</td></tr>';
@@ -687,11 +705,32 @@ async function loadEvents() {
         tbody.innerHTML = '';
         
         if (!data.data || data.data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">No events found. Create your first event!</td></tr>';
+            // Check if Viewer - show different message
+            const isViewerCheck = checkIfViewer();
+            if (isViewerCheck) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">No events available for viewing.</td></tr>';
+            } else {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">No events found. Create your first event!</td></tr>';
+            }
             return;
         }
         
-        data.data.forEach(e => {
+        // RBAC: For Viewer, filter to show only confirmed/scheduled/completed events (not drafts)
+        let eventsToShow = data.data;
+        const isViewerCheck = checkIfViewer();
+        if (isViewerCheck) {
+            eventsToShow = data.data.filter(e => {
+                const status = (e.event_status || e.status || '').toLowerCase();
+                return status === 'confirmed' || status === 'scheduled' || status === 'completed';
+            });
+            console.log('loadEvents() - Filtered events for Viewer:', eventsToShow.length, 'confirmed/scheduled/completed events');
+            if (eventsToShow.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">No confirmed events available for viewing.</td></tr>';
+                return;
+            }
+        }
+        
+        eventsToShow.forEach(e => {
             const tr = document.createElement('tr');
             const eventTitle = e.event_title || e.event_name || e.name || 'Untitled';
             const date = e.date || (e.starts_at ? e.starts_at.split(' ')[0] : '-');
@@ -1547,4 +1586,5 @@ loadEvents();
     
     <?php include __DIR__ . '/../header/includes/footer.php'; ?>
     </main>
+
 

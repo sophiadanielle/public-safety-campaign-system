@@ -274,3 +274,4 @@ $roleId = (int) $role['id'];
 - Role names are case-insensitive (normalized to lowercase for comparison)
 
 
+

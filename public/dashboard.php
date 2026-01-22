@@ -76,6 +76,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/admin-header.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
     <script>
         document.documentElement.setAttribute('data-theme', 'light');
         localStorage.setItem('theme', 'light');
@@ -633,8 +634,8 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             <input type="text" id="globalSearch" placeholder="Search campaigns, events, content..." autocomplete="off">
             <div id="searchResults" class="search-results"></div>
         </div>
+        <?php if (!$isViewer): // RBAC: Hide action buttons container entirely for Viewer (read-only) ?>
         <div class="quick-actions" id="dashboard-quick-actions">
-        <?php if (!$isViewer): // RBAC: Hide action buttons for Viewer (read-only) ?>
             <a href="<?php echo $publicPath; ?>/campaigns.php#planning-section" class="quick-action-btn primary">
                 <i class="fas fa-plus"></i> Create Campaign
             </a>
@@ -648,6 +649,8 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                 <i class="fas fa-calendar-alt"></i> View Calendar
             </a>
         </div>
+        <?php else: ?>
+        <!-- Viewer: No action buttons - read-only access -->
         <?php endif; ?>
     </div>
 
@@ -1348,6 +1351,80 @@ document.getElementById('globalSearch').addEventListener('input', function(e) {
         }
     }, 300);
 });
+
+// RBAC: Aggressively hide action buttons for Viewer after page load
+(function() {
+    function enforceViewerRestrictions() {
+        try {
+            let userRole = null;
+            let roleId = null;
+            const token = localStorage.getItem('jwtToken');
+            if (token) {
+                try {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                        roleId = payload.role_id || payload.rid;
+                        userRole = payload.role ? payload.role.toLowerCase() : null;
+                    }
+                } catch (e) {}
+            }
+            if (!userRole) {
+                const currentUserStr = localStorage.getItem('currentUser');
+                if (currentUserStr) {
+                    try {
+                        const currentUser = JSON.parse(currentUserStr);
+                        userRole = currentUser.role ? currentUser.role.toLowerCase() : null;
+                        if (!roleId) roleId = currentUser.role_id;
+                    } catch (e) {}
+                }
+            }
+            const isViewer = userRole === 'viewer' || userRole === 'partner' || 
+                            userRole === 'partner representative' || roleId === 6 ||
+                            (userRole && (userRole.includes('partner') || userRole.includes('viewer')));
+            
+            if (isViewer) {
+                console.log('RBAC DASHBOARD: Viewer detected - hiding all action buttons');
+                
+                // Hide quick actions container
+                const quickActions = document.getElementById('dashboard-quick-actions');
+                if (quickActions) {
+                    quickActions.style.display = 'none';
+                    quickActions.remove();
+                }
+                
+                // Hide any remaining action buttons
+                document.querySelectorAll('.quick-action-btn, .quick-actions').forEach(btn => {
+                    btn.style.display = 'none';
+                    btn.remove();
+                });
+                
+                // Hide create/edit/delete buttons anywhere on page
+                document.querySelectorAll('a[href*="create"], a[href*="Create"], button[onclick*="create"], button[onclick*="Create"]').forEach(btn => {
+                    const text = btn.textContent || btn.innerText || '';
+                    if (text.toLowerCase().includes('create') || text.toLowerCase().includes('add') || 
+                        text.toLowerCase().includes('edit') || text.toLowerCase().includes('delete')) {
+                        btn.style.display = 'none';
+                        btn.remove();
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('RBAC DASHBOARD: Error enforcing restrictions:', e);
+        }
+    }
+    
+    // Run immediately and after DOM is ready
+    enforceViewerRestrictions();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', enforceViewerRestrictions);
+    } else {
+        setTimeout(enforceViewerRestrictions, 100);
+    }
+    
+    // Also run after a short delay to catch dynamically loaded content
+    setTimeout(enforceViewerRestrictions, 500);
+})();
 
 // Close search results when clicking outside
 document.addEventListener('click', function(e) {

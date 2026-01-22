@@ -257,3 +257,4 @@ VALUES (1, 1, 1, 'Admin User', 'admin@barangay1.qc.gov.ph', '<?php echo $passwor
 
 
 
+

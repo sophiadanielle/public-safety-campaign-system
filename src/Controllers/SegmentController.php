@@ -459,7 +459,10 @@ class SegmentController
 
         // Map headers to lowercase for case-insensitive matching
         $headerMap = array_map('strtolower', $header);
-        $idxName = array_search('name', $headerMap, true) ?? array_search('full_name', $headerMap, true);
+        $idxName = array_search('name', $headerMap, true);
+        if ($idxName === false) {
+            $idxName = array_search('full_name', $headerMap, true);
+        }
         $idxSector = array_search('sector', $headerMap, true);
         $idxBarangay = array_search('barangay', $headerMap, true);
         $idxZone = array_search('zone', $headerMap, true);

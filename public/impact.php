@@ -18,6 +18,8 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/admin-header.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
+    <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
     <script>
         document.documentElement.setAttribute('data-theme', 'light');
         localStorage.setItem('theme', 'light');
@@ -262,8 +264,10 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
             <div class="form-field">
                 <label>Select Campaign <span style="color:#dc2626;">*</span></label>
-                <input id="campaign_id" type="number" value="1" placeholder="Enter the campaign number you want to review" min="1" style="font-size:15px; padding:12px 16px;">
-                <div class="helper-text">💡 <strong>Need help?</strong> Don't know the campaign number? Go to the "Campaigns" page in the sidebar to see all campaigns and their numbers, or ask your administrator for assistance.</div>
+                <select id="campaign_id" required style="font-size:15px; padding:12px 16px;">
+                    <option value="">-- Select a campaign --</option>
+                </select>
+                <div class="helper-text">💡 <strong>Need help?</strong> Select a campaign from the dropdown above. All campaigns from the Campaigns module are listed here.</div>
             </div>
             <div class="form-field" style="margin-top:8px;">
                 <button class="btn btn-primary" onclick="loadImpact()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
@@ -275,7 +279,16 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <div class="empty-state" id="dashboardEmptyState" style="display:none;">
             <div class="empty-state-icon"><i class="fas fa-chart-bar"></i></div>
             <p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">No data loaded yet</p>
-            <p style="margin:0; font-size:14px; line-height:1.6;">Enter a campaign number above and click <strong>"View Campaign Performance"</strong> to see results. If you see this message after clicking, the campaign may be new or hasn't collected any data yet.</p>
+            <p style="margin:0; font-size:14px; line-height:1.6;">Select a campaign above and click <strong>"View Campaign Performance"</strong> to see results. If you see this message after clicking, the campaign may be new or hasn't collected any data yet.</p>
+            <div style="margin-top:16px; padding:12px; background:#f1f5f9; border-radius:6px; border-left:3px solid #4c8a89;">
+                <p style="margin:0 0 8px 0; font-size:13px; font-weight:600; color:#0f172a;">💡 To generate impact data:</p>
+                <ul style="margin:0; padding-left:20px; font-size:12px; color:#475569; line-height:1.8;">
+                    <li><strong>Reach:</strong> Send notifications via Campaign Schedules</li>
+                    <li><strong>Attendance:</strong> Create events linked to this campaign and record attendance</li>
+                    <li><strong>Survey Responses:</strong> Create surveys linked to this campaign and collect responses</li>
+                </ul>
+                <p style="margin:8px 0 0 0; font-size:11px; color:#64748b; font-style:italic;">See <code>HOW_TO_GENERATE_CAMPAIGN_IMPACT_DATA.md</code> for detailed instructions.</p>
+            </div>
         </div>
         
         <div class="metrics-grid" id="metricsCards" style="display:none;"></div>
@@ -300,8 +313,10 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
             <div class="form-field">
                 <label>Select Campaign <span style="color:#dc2626;">*</span></label>
-                <input id="report_campaign_id" type="number" value="1" placeholder="Enter the campaign number you want to create a report for" min="1" style="font-size:15px; padding:12px 16px;">
-                <div class="helper-text">💡 <strong>Tip:</strong> Select the campaign you want to review. You can find campaign numbers on the "Campaigns" page in the sidebar.</div>
+                <select id="report_campaign_id" required style="font-size:15px; padding:12px 16px;">
+                    <option value="">-- Select a campaign --</option>
+                </select>
+                <div class="helper-text">💡 <strong>Tip:</strong> Select the campaign you want to review from the dropdown above.</div>
             </div>
             <div class="form-field" style="margin-top:8px;">
                 <button class="btn btn-primary" onclick="generateReport()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
@@ -322,8 +337,10 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
             <div class="form-field">
                 <label>Select Campaign <span style="color:#dc2626;">*</span></label>
-                <input id="metrics_campaign_id" type="number" value="1" placeholder="Enter the campaign number to view all performance metrics" min="1" style="font-size:15px; padding:12px 16px;">
-                <div class="helper-text">💡 <strong>Tip:</strong> Enter the campaign number you want to review. All key performance metrics will be displayed below.</div>
+                <select id="metrics_campaign_id" required style="font-size:15px; padding:12px 16px;">
+                    <option value="">-- Select a campaign --</option>
+                </select>
+                <div class="helper-text">💡 <strong>Tip:</strong> Select the campaign you want to review. All key performance metrics will be displayed below.</div>
             </div>
             <div class="form-field" style="margin-top:8px;">
                 <button class="btn btn-primary" onclick="loadMetricsOverview()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
@@ -349,7 +366,9 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
             <div class="form-field">
                 <label>Select Campaign <span style="color:#dc2626;">*</span></label>
-                <input id="analysis_campaign_id" type="number" value="1" placeholder="Enter the campaign number you want to analyze" min="1" style="font-size:15px; padding:12px 16px;">
+                <select id="analysis_campaign_id" required style="font-size:15px; padding:12px 16px;">
+                    <option value="">-- Select a campaign --</option>
+                </select>
                 <div class="helper-text">💡 <strong>Tip:</strong> Select the campaign you want to analyze. You'll see a detailed breakdown of performance with charts and summaries.</div>
             </div>
             <div class="form-field" style="margin-top:8px;">
@@ -383,7 +402,9 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
             <div class="form-field">
                 <label>Select Campaign <span style="color:#dc2626;">*</span></label>
-                <input id="export_campaign_id" type="number" value="1" placeholder="Enter the campaign number you want to export data for" min="1" style="font-size:15px; padding:12px 16px;">
+                <select id="export_campaign_id" required style="font-size:15px; padding:12px 16px;">
+                    <option value="">-- Select a campaign --</option>
+                </select>
                 <div class="helper-text">💡 <strong>Tip:</strong> Select the campaign you want to export. The data will be downloaded as a CSV file that you can open in Excel or Google Sheets.</div>
             </div>
             <div class="form-field" style="margin-top:8px;">
@@ -400,6 +421,91 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
 const token = localStorage.getItem('jwtToken') || '';
 const apiBase = '<?php echo $apiPath; ?>';
 let chart;
+
+// Load all campaigns and populate all dropdowns in Impact module
+async function loadAllCampaigns() {
+    try {
+        if (!token || token.trim() === '') {
+            console.warn('No token available for loading campaigns');
+            return;
+        }
+        
+        const res = await fetch(apiBase + '/api/v1/campaigns', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (!res.ok) {
+            console.error('Failed to load campaigns:', res.status);
+            if (res.status === 401) {
+                console.error('Authentication failed - token may be expired');
+            }
+            return;
+        }
+        
+        const data = await res.json();
+        const campaigns = data.data || [];
+        
+        console.log('Impact Module: Loaded', campaigns.length, 'campaigns from API');
+        
+        // Get all campaign dropdown elements in Impact module
+        const dropdownIds = [
+            'campaign_id',           // Impact Dashboard
+            'report_campaign_id',     // Evaluation Reports
+            'metrics_campaign_id',   // Metrics Overview
+            'analysis_campaign_id',   // Performance Analysis
+            'export_campaign_id'      // Export Data
+        ];
+        
+        // Populate each dropdown with all campaigns
+        dropdownIds.forEach(dropdownId => {
+            const dropdown = document.getElementById(dropdownId);
+            if (!dropdown) {
+                console.warn('Impact Module: Dropdown not found:', dropdownId);
+                return;
+            }
+            
+            // Clear existing options
+            dropdown.innerHTML = '<option value="">-- Select a campaign --</option>';
+            
+            // Add all campaigns to dropdown
+            if (campaigns.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = '-- No campaigns available --';
+                option.disabled = true;
+                dropdown.appendChild(option);
+            } else {
+                campaigns.forEach(campaign => {
+                    const option = document.createElement('option');
+                    option.value = campaign.id;
+                    const title = campaign.title || 'Untitled Campaign';
+                    option.textContent = `ID ${campaign.id} - ${title}`;
+                    dropdown.appendChild(option);
+                });
+            }
+            
+            console.log(`Impact Module: Populated ${dropdownId} with ${campaigns.length} campaigns`);
+        });
+        
+    } catch (err) {
+        console.error('Impact Module: Error loading campaigns:', err);
+    }
+}
+
+// Load campaigns when page loads - ensure it runs after DOM is ready
+(function() {
+    function initCampaignDropdowns() {
+        // Wait a bit to ensure token is available
+        setTimeout(loadAllCampaigns, 300);
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCampaignDropdowns);
+    } else {
+        // DOM already loaded
+        initCampaignDropdowns();
+    }
+})();
 
 async function loadImpact() {
     const cid = document.getElementById('campaign_id').value;
@@ -440,6 +546,14 @@ async function loadImpact() {
         
         if (!hasData) {
             emptyState.style.display = 'block';
+            // Update the empty state message with helpful instructions
+            const emptyStateMsg = emptyState.querySelector('p:last-child');
+            if (emptyStateMsg) {
+                emptyStateMsg.innerHTML = 'Campaign found, but no engagement data available yet. <strong>To generate impact data:</strong><br>' +
+                    '• <strong>Reach:</strong> Send notifications via Campaign Schedules in the Campaigns module<br>' +
+                    '• <strong>Attendance:</strong> Create events linked to this campaign (set Linked Campaign) and record attendance<br>' +
+                    '• <strong>Survey Responses:</strong> Create surveys linked to this campaign and collect responses';
+            }
             statusEl.textContent = 'ℹ️ Campaign found, but no engagement data available yet. Data will appear once notifications are sent, events are attended, or surveys are completed.';
             statusEl.style.color = '#64748b';
             return;
@@ -523,8 +637,8 @@ function renderChart(m) {
     });
 }
 
-// Load on page load
-loadImpact();
+// Note: loadImpact() is called when user clicks "View Campaign Performance" button
+// Don't auto-load on page load - wait for user to select a campaign
 
 // Evaluation Reports
 async function generateReport() {
