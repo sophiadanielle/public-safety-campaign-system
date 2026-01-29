@@ -12,9 +12,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($pageTitle); ?> - Public Safety Campaign</title>
-    <?php
-    require_once __DIR__ . '/../header/includes/path_helper.php';
-    ?>
     <script>
         // Auth guard - MUST be first script executed
         (function () {

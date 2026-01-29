@@ -4,24 +4,59 @@
  * Handles API routing and serves login page for non-API requests
  */
 
+// CRITICAL: Force production basePath at the VERY START (before any includes)
+// This runs first and sets a global flag that path_helper.php will respect
+if (isset($_SERVER['HTTP_HOST'])) {
+    $earlyHost = strtolower($_SERVER['HTTP_HOST']);
+    $isEarlyProduction = (
+        strpos($earlyHost, 'alertaraqc.com') !== false ||
+        strpos($earlyHost, 'campaign.') !== false ||
+        ($earlyHost !== '' && 
+         strpos($earlyHost, 'localhost') === false && 
+         $earlyHost !== '127.0.0.1' &&
+         strpos($earlyHost, '.local') === false)
+    );
+    
+    if ($isEarlyProduction) {
+        // Set global flag for path_helper.php to use
+        $GLOBALS['FORCE_PRODUCTION_BASEPATH'] = true;
+        // Also set it directly here as backup
+        $basePath = '';
+        $apiPath = '/index.php';
+        $cssPath = '/header/css';
+        $imgPath = '/header/images';
+        $publicPath = '/public';
+        error_log("EARLY PRODUCTION DETECTION: Forced empty basePath at index.php start");
+    }
+}
+
 // Parse request URI
 $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
 $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
 $scriptDir = dirname($scriptName);
 
 // Normalize URI (remove script directory and index.php from path)
+// CRITICAL: Handle both root deployment and subdirectory deployment
 if ($scriptDir !== '/' && $scriptDir !== '.') {
     if (strpos($requestUri, $scriptDir) === 0) {
         $requestUri = substr($requestUri, strlen($scriptDir));
     }
 }
 
+// Remove /index.php from start of path (root deployment: /index.php/api/...)
 if (strpos($requestUri, '/index.php') === 0) {
     $requestUri = substr($requestUri, strlen('/index.php'));
-} elseif (strpos($requestUri, 'index.php/') !== false) {
+} 
+// Remove index.php/ from anywhere in path (subdirectory: /public-safety-campaign-system/index.php/api/...)
+elseif (strpos($requestUri, 'index.php/') !== false) {
     $requestUri = substr($requestUri, strpos($requestUri, 'index.php/') + strlen('index.php'));
 }
+// Also handle /index.php at end (shouldn't happen for API but handle it)
+elseif (strpos($requestUri, '/index.php') !== false && strpos($requestUri, '/index.php') === (strlen($requestUri) - strlen('/index.php'))) {
+    $requestUri = substr($requestUri, 0, strpos($requestUri, '/index.php'));
+}
 
+// Ensure URI starts with /
 if ($requestUri === '' || ($requestUri[0] !== '/' && $requestUri !== '')) {
     $requestUri = '/' . $requestUri;
 }
@@ -371,6 +406,43 @@ $hideNav   = true;
 // Check for error from Google OAuth
 $error = isset($_GET['error']) ? $_GET['error'] : '';
 
+// CRITICAL: Include path_helper.php FIRST before header.php to ensure basePath is set correctly
+// This must run before header.php which uses $cssPath, $imgPath, etc.
+require_once __DIR__ . '/header/includes/path_helper.php';
+
+// BACKUP FIX: Force empty basePath for production domain (in case path_helper.php didn't work)
+// CRITICAL: This MUST run and override any incorrect value from path_helper.php
+if (isset($_SERVER['HTTP_HOST'])) {
+    $host = strtolower($_SERVER['HTTP_HOST']);
+    $serverName = strtolower($_SERVER['SERVER_NAME'] ?? '');
+    
+    // Aggressive production detection - check multiple sources
+    $isProduction = (
+        strpos($host, 'alertaraqc.com') !== false ||
+        strpos($serverName, 'alertaraqc.com') !== false ||
+        strpos($host, 'campaign.') !== false ||
+        // If not localhost and not empty, assume production
+        (strpos($host, 'localhost') === false && 
+         $host !== '127.0.0.1' && 
+         $host !== '' &&
+         strpos($host, '.local') === false)
+    );
+    
+    if ($isProduction) {
+        // FORCE override - unset first to ensure clean state
+        unset($basePath, $apiPath, $cssPath, $imgPath, $publicPath);
+        
+        $basePath = '';
+        $apiPath = '/index.php';
+        $cssPath = '/header/css';
+        $imgPath = '/header/images';
+        $publicPath = '/public';
+        
+        error_log("INDEX.PHP BACKUP FIX: Forced empty basePath for production domain");
+        error_log("INDEX.PHP HOST: $host, SERVER_NAME: $serverName");
+    }
+}
+
 include __DIR__ . '/header/includes/header.php';
 ?>
 <!-- Material Icons Outlined -->
@@ -697,11 +769,57 @@ include __DIR__ . '/header/includes/header.php';
 <script>
 // Get base path for API calls
 <?php
-require_once __DIR__ . '/header/includes/path_helper.php';
+// NUCLEAR OPTION: Force production if NOT explicitly localhost
+// This is the absolute last check before JavaScript output
+$finalHost = strtolower($_SERVER['HTTP_HOST'] ?? '');
+$isDefinitelyLocalhost = (
+    strpos($finalHost, 'localhost') !== false ||
+    $finalHost === '127.0.0.1' ||
+    strpos($finalHost, '.local') !== false ||
+    strpos($finalHost, 'xampp') !== false ||
+    strpos($finalHost, 'wamp') !== false
+);
+
+// If NOT localhost, FORCE production (empty basePath)
+if (!$isDefinitelyLocalhost && $finalHost !== '') {
+    $basePath = '';
+    $apiPath = '/index.php';
+    $cssPath = '/header/css';
+    $imgPath = '/header/images';
+    $publicPath = '/public';
+    error_log("NUCLEAR OPTION: Forced production basePath (not localhost)");
+    error_log("Final host check: '$finalHost' - isLocalhost: " . ($isDefinitelyLocalhost ? 'YES' : 'NO'));
+}
+
+// Double-check: If basePath still has /public-safety-campaign-system, force empty
+if (isset($basePath) && $basePath === '/public-safety-campaign-system' && !$isDefinitelyLocalhost) {
+    $basePath = '';
+    $apiPath = '/index.php';
+    error_log("EMERGENCY OVERRIDE: Removed /public-safety-campaign-system from basePath");
+}
 ?>
-const basePath = '<?php echo $basePath; ?>';
-const apiBase = '<?php echo $apiPath; ?>';
+<?php
+// ABSOLUTE FINAL CHECK: Before outputting to JavaScript
+// If we're on campaign.alertaraqc.com, basePath MUST be empty
+$currentHost = strtolower($_SERVER['HTTP_HOST'] ?? '');
+if (strpos($currentHost, 'alertaraqc.com') !== false || 
+    strpos($currentHost, 'campaign.') !== false ||
+    ($currentHost !== '' && strpos($currentHost, 'localhost') === false && $currentHost !== '127.0.0.1')) {
+    $basePath = '';
+    $apiPath = '/index.php';
+}
+// Emergency: If basePath is still wrong, force it
+if (isset($basePath) && $basePath === '/public-safety-campaign-system') {
+    $basePath = '';
+    $apiPath = '/index.php';
+}
+?>
+const basePath = '<?php echo isset($basePath) && $basePath !== '/public-safety-campaign-system' ? $basePath : ''; ?>';
+const apiBase = '<?php echo isset($apiPath) && $apiPath !== '/public-safety-campaign-system/index.php' ? $apiPath : '/index.php'; ?>';
 console.log('BASE PATH:', basePath);
+console.log('API BASE:', apiBase);
+console.log('HOST:', '<?php echo htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'NOT SET', ENT_QUOTES); ?>');
+console.log('IS_LOCALHOST:', <?php echo isset($isDefinitelyLocalhost) && $isDefinitelyLocalhost ? 'true' : 'false'; ?>);
 
 // Password visibility toggle function
 function togglePasswordVisibility(inputId) {
