@@ -1806,8 +1806,8 @@ let currentUserRoleId = null;
         const currentUserStr = localStorage.getItem('currentUser');
         if (currentUserStr) {
             const currentUser = JSON.parse(currentUserStr);
-            currentUserRole = currentUser.role ? currentUser.role.toLowerCase() : null;
-            currentUserRoleId = currentUser.role_id || null;
+            currentUserRole = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : null;
+            currentUserRoleId = (currentUser && currentUser.role_id) ? currentUser.role_id : null;
             
             // If role not in user object, try to decode from JWT
             if (!currentUserRole) {
@@ -1977,7 +1977,7 @@ function isViewer() {
         // Fallback: Check localStorage for currentUser
         try {
             const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            const userRole = (currentUser.role || '').toLowerCase();
+            const userRole = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : '';
             return userRole === 'viewer' || 
                    userRole === 'partner' || 
                    userRole === 'partner representative' ||
@@ -2097,7 +2097,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentUserStr) {
             const currentUser = JSON.parse(currentUserStr);
             // Try to get role from user object or decode from JWT
-            let userRole = currentUser.role ? currentUser.role.toLowerCase() : null;
+            let userRole = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : null;
             
             // If role not in user object, try to decode from JWT
             if (!userRole) {
@@ -2132,6 +2132,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (!roleId && currentUser && currentUser.role_id) {
                 roleId = currentUser.role_id;
+            } else if (!roleId) {
+                console.warn('Role ID not found in user object or JWT');
             }
             
             // Check if Viewer/Partner (multiple checks for robustness)
