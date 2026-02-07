@@ -4,6 +4,8 @@
  * Handles API routing and serves login page for non-API requests
  */
 
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
 // CRITICAL: Check for API request FIRST - before any other processing
 // This must be the absolute first check to ensure API requests are handled correctly
 $rawUri = $_SERVER['REQUEST_URI'] ?? '';
@@ -20,6 +22,10 @@ if (strpos($rawUri, '/api/') !== false) {
     }
 }
 
+=======
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
 // CRITICAL: Force production basePath at the VERY START (before any includes)
 // This runs first and sets a global flag that path_helper.php will respect
 if (isset($_SERVER['HTTP_HOST'])) {
@@ -83,6 +89,8 @@ if ($scriptDir !== '/' && $scriptDir !== '.') {
     }
 }
 
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
 // Check for API path in normalized URI
 $hasApiPath = strpos($requestUri, '/api/') !== false || strpos($requestUri, 'api/') !== false;
 
@@ -107,6 +115,28 @@ elseif (strpos($requestUri, '/index.php/api/') !== false) {
 elseif (strpos($requestUri, '/index.php') !== false && strpos($requestUri, '/index.php') === (strlen($requestUri) - strlen('/index.php'))) {
     $requestUri = substr($requestUri, 0, strpos($requestUri, '/index.php'));
     error_log("ROUTING DEBUG: After removing /index.php from end: " . $requestUri);
+=======
+// Remove /index.php from start of path (root deployment: /index.php/api/...)
+if (strpos($requestUri, '/index.php') === 0) {
+    $requestUri = substr($requestUri, strlen('/index.php'));
+=======
+// Remove /index.php from start of path (root deployment: /index.php/api/...)
+if (strpos($requestUri, '/index.php') === 0) {
+    $requestUri = substr($requestUri, strlen('/index.php'));
+>>>>>>> Stashed changes
+} 
+// Remove index.php/ from anywhere in path (subdirectory: /public-safety-campaign-system/index.php/api/...)
+elseif (strpos($requestUri, 'index.php/') !== false) {
+    $requestUri = substr($requestUri, strpos($requestUri, 'index.php/') + strlen('index.php'));
+>>>>>>> Stashed changes
+}
+// Also handle /index.php at end (shouldn't happen for API but handle it)
+elseif (strpos($requestUri, '/index.php') !== false && strpos($requestUri, '/index.php') === (strlen($requestUri) - strlen('/index.php'))) {
+    $requestUri = substr($requestUri, 0, strpos($requestUri, '/index.php'));
+}
+// Also handle /index.php at end (shouldn't happen for API but handle it)
+elseif (strpos($requestUri, '/index.php') !== false && strpos($requestUri, '/index.php') === (strlen($requestUri) - strlen('/index.php'))) {
+    $requestUri = substr($requestUri, 0, strpos($requestUri, '/index.php'));
 }
 
 // Ensure URI starts with /
@@ -922,6 +952,8 @@ if (strpos($currentHost, 'alertaraqc.com') !== false ||
     $basePath = '';
     $apiPath = '/index.php';
 }
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
 // REMOVED: Emergency check that was breaking localhost paths
 // The path_helper.php should have already set the correct paths
 ?>
@@ -937,6 +969,30 @@ const apiBase = '<?php
 console.log('BASE PATH:', basePath);
 console.log('API BASE:', apiBase);
 console.log('Full login URL will be:', apiBase + '/api/v1/auth/login');
+=======
+// Emergency: If basePath is still wrong, force it
+if (isset($basePath) && $basePath === '/public-safety-campaign-system') {
+    $basePath = '';
+    $apiPath = '/index.php';
+}
+?>
+const basePath = '<?php echo isset($basePath) && $basePath !== '/public-safety-campaign-system' ? $basePath : ''; ?>';
+const apiBase = '<?php echo isset($apiPath) && $apiPath !== '/public-safety-campaign-system/index.php' ? $apiPath : '/index.php'; ?>';
+console.log('BASE PATH:', basePath);
+console.log('API BASE:', apiBase);
+>>>>>>> Stashed changes
+=======
+// Emergency: If basePath is still wrong, force it
+if (isset($basePath) && $basePath === '/public-safety-campaign-system') {
+    $basePath = '';
+    $apiPath = '/index.php';
+}
+?>
+const basePath = '<?php echo isset($basePath) && $basePath !== '/public-safety-campaign-system' ? $basePath : ''; ?>';
+const apiBase = '<?php echo isset($apiPath) && $apiPath !== '/public-safety-campaign-system/index.php' ? $apiPath : '/index.php'; ?>';
+console.log('BASE PATH:', basePath);
+console.log('API BASE:', apiBase);
+>>>>>>> Stashed changes
 console.log('HOST:', '<?php echo htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'NOT SET', ENT_QUOTES); ?>');
 console.log('IS_LOCALHOST:', <?php echo isset($isDefinitelyLocalhost) && $isDefinitelyLocalhost ? 'true' : 'false'; ?>);
 
