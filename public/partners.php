@@ -268,6 +268,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Date Added</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="partnersTableBody">
@@ -483,6 +484,11 @@ async function loadAllPartners() {
                     <td>${partner.contact_email || '-'}</td>
                     <td>${partner.contact_phone || '-'}</td>
                     <td>${date}</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="viewPartner(${partner.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">👁️ View</button>
+                        <button class="btn btn-secondary" onclick="editPartner(${partner.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">✏️ Edit</button>
+                        <button class="btn btn-danger" onclick="deletePartner(${partner.id})" style="padding:4px 8px; font-size:12px; background: #ef4444; color: white; margin: 2px;">🗑️ Delete</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -506,9 +512,9 @@ async function loadAllPartners() {
 
 async function addPartner(e) {
     e.preventDefault();
+    const form = document.getElementById('partnerForm');
+    const partnerId = form ? form.dataset.partnerId : null;
     const statusEl = document.getElementById('partnerStatus');
-    statusEl.textContent = 'Saving...';
-    statusEl.style.color = '#64748b';
     
     const payload = {
         name: document.getElementById('p_name').value.trim(),
@@ -517,6 +523,50 @@ async function addPartner(e) {
         contact_email: document.getElementById('p_email').value.trim() || null,
         contact_phone: document.getElementById('p_phone').value.trim() || null
     };
+    
+    if (!payload.name) {
+        statusEl.textContent = '⚠️ Error: Organization Name is required';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+    
+    // Check if this is an update
+    if (partnerId) {
+        statusEl.textContent = 'Updating...';
+        statusEl.style.color = '#64748b';
+        
+        try {
+            const res = await fetch(apiBase + '/api/v1/partners/' + partnerId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok) {
+                statusEl.textContent = '✓ Partner updated successfully!';
+                statusEl.style.color = '#166534';
+                document.getElementById('partnerForm').reset();
+                if (form) delete form.dataset.partnerId;
+                const submitBtn = document.querySelector('#add-partner button.btn-primary');
+                if (submitBtn) submitBtn.textContent = 'Save Partner Organization';
+                // Refresh partners list if it was loaded
+                if (document.getElementById('partnersTable').style.display === 'table') {
+                    setTimeout(() => loadAllPartners(), 500);
+                }
+            } else {
+                statusEl.textContent = '⚠️ ' + (data.error || 'Failed to update partner');
+                statusEl.style.color = '#dc2626';
+            }
+        } catch (err) {
+            statusEl.textContent = '✗ Network error: ' + err.message;
+            statusEl.style.color = '#dc2626';
+        }
+        return;
+    }
+    
+    // Create new partner
+    statusEl.textContent = 'Saving...';
+    statusEl.style.color = '#64748b';
     
     try {
         const res = await fetch(apiBase + '/api/v1/partners', {

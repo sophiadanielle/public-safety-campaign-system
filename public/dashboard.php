@@ -1046,15 +1046,24 @@ async function loadDashboard() {
         }
         
         const res = await fetch(apiBase + '/api/v1/dashboard/summary', {
-            headers: { 'Authorization': 'Bearer ' + authToken }
+            headers: { 'Authorization': 'Bearer ' + authToken.trim() }
         });
         
         if (!res.ok) {
             if (res.status === 401) {
-                // Token exists but API says unauthorized - don't redirect, just show error
-                // User is authenticated (has token) so they should stay on dashboard
-                console.error('Dashboard API returned 401, but user has token - staying on page');
-                return;
+                // Token expired or invalid - try to refresh or redirect to login
+                // Check if token exists but might be expired
+                const tokenExists = localStorage.getItem('jwtToken');
+                if (tokenExists && tokenExists.trim() !== '') {
+                    // Token exists but invalid - might be expired
+                    // Silently fail to avoid console spam, but don't redirect immediately
+                    // Let the user continue using the page if they're already logged in
+                    return;
+                } else {
+                    // No token - redirect to login
+                    window.location.href = basePath + '/index.php';
+                    return;
+                }
             }
             
             // Read response as text first (can only read once)
@@ -1330,7 +1339,7 @@ document.getElementById('globalSearch').addEventListener('input', function(e) {
     searchTimeout = setTimeout(async () => {
         try {
             const res = await fetch(apiBase + '/api/v1/dashboard/search?q=' + encodeURIComponent(query), {
-                headers: { 'Authorization': 'Bearer ' + token }
+                headers: { 'Authorization': 'Bearer ' + (token || '').trim() }
             });
             const data = await res.json();
             

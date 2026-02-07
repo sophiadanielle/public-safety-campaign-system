@@ -598,8 +598,8 @@ async function checkConflicts() {
 
 async function createEvent() {
     const statusEl = document.getElementById('createStatus');
-    statusEl.textContent = 'Creating...';
-    statusEl.style.color = '#64748b';
+    const form = document.getElementById('createForm');
+    const eventId = form ? form.dataset.eventId : null;
     
     // Parse facilitator IDs
     const facilitatorIds = [];
@@ -641,6 +641,42 @@ async function createEvent() {
         statusEl.style.color = '#dc2626';
         return;
     }
+    
+    // Check if this is an update
+    if (eventId) {
+        statusEl.textContent = 'Updating...';
+        statusEl.style.color = '#64748b';
+        
+        try {
+            const res = await fetch(apiBase + '/api/v1/events/' + eventId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (res.ok) {
+                statusEl.textContent = '✓ Event updated successfully!';
+                statusEl.style.color = '#166534';
+                document.getElementById('createForm').reset();
+                if (form) delete form.dataset.eventId;
+                const submitBtn = document.querySelector('#create-event button.btn-primary');
+                if (submitBtn) submitBtn.textContent = 'Create Event';
+                document.getElementById('conflictWarning').style.display = 'none';
+                loadEvents();
+            } else {
+                statusEl.textContent = '✗ Error: ' + (data.error || 'Failed to update');
+                statusEl.style.color = '#dc2626';
+            }
+        } catch (err) {
+            statusEl.textContent = '✗ Network error: ' + err.message;
+            statusEl.style.color = '#dc2626';
+        }
+        return;
+    }
+    
+    // Create new event
+    statusEl.textContent = 'Creating...';
+    statusEl.style.color = '#64748b';
     
     try {
         const res = await fetch(apiBase + '/api/v1/events', {
@@ -754,7 +790,20 @@ async function loadEvents() {
                 <td>${e.linked_campaign_id || e.campaign_id || '-'}</td>
                 <td><span style="background:${statusStyle.bg}; color:${statusStyle.color}; padding:2px 8px; border-radius:4px; font-size:11px;">${status}</span></td>
                 <td>
-                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="viewEventDetails(${e.event_id || e.id})">View</button>
+                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin: 2px;" onclick="viewEventDetails(${e.event_id || e.id})">👁️ View</button>
+                    ${(() => {
+                        const isViewerCheck = checkIfViewer();
+                        if (isViewerCheck) return '';
+                        return `<button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin: 2px;" onclick="editEvent(${e.event_id || e.id})">✏️ Edit</button>`;
+                    })()}
+                    ${(() => {
+                        const isViewerCheck = checkIfViewer();
+                        if (isViewerCheck) return '';
+                        if (e.event_status === 'draft' || e.event_status === 'cancelled') {
+                            return `<button class="btn btn-danger" style="padding:4px 8px; font-size:11px; background: #ef4444; color: white; margin: 2px;" onclick="deleteEvent(${e.event_id || e.id})">🗑️ Delete</button>`;
+                        }
+                        return '';
+                    })()}
                 </td>
             `;
             tbody.appendChild(tr);

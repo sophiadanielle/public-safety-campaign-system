@@ -1400,6 +1400,74 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     }
     
     const statusEl = document.getElementById('uploadStatus');
+    const form = e.target;
+    const contentId = form.dataset.contentId;
+    
+    // Check if this is an update
+    if (contentId) {
+        // Update existing content
+        statusEl.textContent = 'Updating...';
+        statusEl.style.color = '#64748b';
+        
+        try {
+            // For updates, we need to send JSON (not FormData) since we're not uploading a new file
+            const updateData = {
+                title: formData.get('title'),
+                body: formData.get('description'),
+                content_type: formData.get('content_type'),
+                hazard_category: formData.get('hazard_category'),
+                intended_audience_segment: formData.get('intended_audience_segment'),
+                source: formData.get('source'),
+                visibility: formData.get('visibility')
+            };
+            
+            const res = await fetch(apiBase + '/api/v1/content/' + contentId, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token 
+                },
+                body: JSON.stringify(updateData)
+            });
+            
+            const data = await res.json();
+            if (res.ok) {
+                statusEl.textContent = '✓ Content updated successfully!';
+                statusEl.style.color = '#059669';
+                
+                // Clear form and reset
+                form.reset();
+                delete form.dataset.contentId;
+                const submitBtn = document.querySelector('#contentForm button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.textContent = 'Upload Campaign Material';
+                }
+                
+                // Clear multi-select tags
+                const audienceTags = document.getElementById('intended_audience_tags');
+                const sourceTags = document.getElementById('source_tags');
+                const visibilityTags = document.getElementById('visibility_tags');
+                if (audienceTags) audienceTags.innerHTML = '';
+                if (sourceTags) sourceTags.innerHTML = '';
+                if (visibilityTags) visibilityTags.innerHTML = '';
+                
+                // Refresh content list
+                currentPage = 1;
+                loadContent();
+                loadTemplates();
+                loadMediaGallery();
+            } else {
+                statusEl.textContent = '✗ Error: ' + (data.error || 'Update failed');
+                statusEl.style.color = '#dc2626';
+            }
+        } catch (err) {
+            statusEl.textContent = '✗ Network error: ' + err.message;
+            statusEl.style.color = '#dc2626';
+        }
+        return;
+    }
+    
+    // Create new content
     statusEl.textContent = 'Uploading...';
     statusEl.style.color = '#64748b';
     
@@ -1767,6 +1835,130 @@ async function archiveContent(contentId) {
         }
     } catch (err) {
         alert('Network error: ' + err.message);
+    }
+}
+
+// View content (alias for showContentDetails for consistency)
+async function viewContent(contentId) {
+    await showContentDetails(contentId);
+}
+
+// Edit content
+async function editContent(contentId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/' + contentId, {
+            headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+        });
+        
+        if (!res.ok) {
+            const error = await res.json();
+            alert('Error: ' + (error.error || 'Failed to load content'));
+            return;
+        }
+        
+        const data = await res.json();
+        const item = data.data;
+        
+        // Check if content can be edited (only draft or pending_review)
+        const status = (item.approval_status || '').toLowerCase();
+        if (!['draft', 'pending_review', 'under_review'].includes(status)) {
+            alert('Only draft or pending review content can be edited.');
+            return;
+        }
+        
+        // Populate form with content data
+        document.getElementById('contentTitle').value = item.title || '';
+        document.getElementById('contentDescription').value = item.body || '';
+        document.getElementById('contentType').value = item.content_type || 'text';
+        document.getElementById('hazardCategory').value = item.hazard_category || '';
+        
+        // Handle multi-select fields
+        if (item.intended_audience_segment) {
+            const audienceEl = document.getElementById('intendedAudience');
+            if (audienceEl && typeof audienceEl.setSelectedValues === 'function') {
+                const audience = typeof item.intended_audience_segment === 'string' 
+                    ? item.intended_audience_segment.split(',').map(s => s.trim())
+                    : item.intended_audience_segment;
+                audienceEl.setSelectedValues(audience);
+            }
+        }
+        
+        if (item.source) {
+            const sourceEl = document.getElementById('sourceSelect');
+            if (sourceEl && typeof sourceEl.setSelectedValues === 'function') {
+                const source = typeof item.source === 'string' 
+                    ? item.source.split(',').map(s => s.trim())
+                    : item.source;
+                sourceEl.setSelectedValues(source);
+            }
+        }
+        
+        if (item.visibility) {
+            const visibilityEl = document.getElementById('visibilitySelect');
+            if (visibilityEl && typeof visibilityEl.setSelectedValues === 'function') {
+                const visibility = typeof item.visibility === 'string' 
+                    ? [item.visibility]
+                    : item.visibility;
+                visibilityEl.setSelectedValues(visibility);
+            }
+        }
+        
+        // Store content ID for update
+        document.getElementById('contentForm').dataset.contentId = contentId;
+        
+        // Change submit button text
+        const submitBtn = document.querySelector('#contentForm button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.textContent = 'Update Content';
+        }
+        
+        // Scroll to form
+        document.getElementById('create-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+    } catch (err) {
+        alert('Failed to load content: ' + err.message);
+    }
+}
+
+// Delete content
+async function deleteContent(contentId) {
+    if (!confirm('Are you sure you want to delete this content? This action cannot be undone and will permanently remove the content and its file.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/' + contentId, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to delete content'));
+            return;
+        }
+        
+        alert('Content deleted successfully!');
+        
+        // Remove from contents array
+        contents = contents.filter(c => c.id !== contentId);
+        
+        // Remove from localStorage if it exists there
+        const uploaded = JSON.parse(localStorage.getItem('content_repository_uploaded') || '[]');
+        const filtered = uploaded.filter(c => c.id !== contentId);
+        localStorage.setItem('content_repository_uploaded', JSON.stringify(filtered));
+        
+        // Refresh views
+        currentPage = 1;
+        currentTemplatesPage = 1;
+        currentMediaGalleryPage = 1;
+        loadContent();
+        loadTemplates();
+        loadMediaGallery();
+    } catch (err) {
+        alert('Failed to delete content: ' + err.message);
     }
 }
 
@@ -2661,49 +2853,67 @@ function renderContentGrid(container, items, isTemplate = false) {
             // Use normalized status for button rendering - works for ALL real DB records and sample data
             // Status is already normalized above using normalizeStatus()
             
+            // Always show View button
+            const viewButton = `<button class="btn btn-secondary" onclick="viewContent(${item.id})" style="margin: 2px;">
+                <i class="fas fa-eye"></i> <span>View</span>
+            </button>`;
+            
+            // Edit button (only for draft or pending_review)
+            const editButton = (status === 'draft' || status === 'pending_review' || status === 'under_review') 
+                ? `<button class="btn btn-secondary" onclick="editContent(${item.id})" style="margin: 2px;">
+                    <i class="fas fa-edit"></i> <span>Edit</span>
+                </button>` 
+                : '';
+            
+            // Delete button (only for draft or rejected)
+            const deleteButton = (status === 'draft' || status === 'rejected') 
+                ? `<button class="btn btn-danger" onclick="deleteContent(${item.id})" style="background: #ef4444; color: white; margin: 2px;">
+                    <i class="fas fa-trash"></i> <span>Delete</span>
+                </button>` 
+                : '';
+            
             if (status === 'approved') {
-                // APPROVED: Show Details + Archive
+                // APPROVED: Show View + Archive
                 actionButtons = `
-                    <button class="btn btn-secondary" onclick="showContentDetails(${item.id})">
-                        <i class="fas fa-info-circle"></i> <span>Details</span>
-                    </button>
-                    <button class="btn btn-secondary" onclick="archiveContent(${item.id})" style="background: #64748b; color: white;" title="Archive">
+                    ${viewButton}
+                    <button class="btn btn-secondary" onclick="archiveContent(${item.id})" style="background: #64748b; color: white; margin: 2px;" title="Archive">
                         <i class="fas fa-archive"></i> <span>Archive</span>
                     </button>
                 `;
             } else if (status === 'draft') {
-                // DRAFT: Show Approve + Submit for Review + Details
+                // DRAFT: Show View + Edit + Approve + Submit for Review + Delete
                 actionButtons = `
-                    <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white;">
+                    ${viewButton}
+                    ${editButton}
+                    <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white; margin: 2px;">
                         <i class="fas fa-check-circle"></i> <span>Approve</span>
                     </button>
-                    <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'pending_review')">
+                    <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'pending_review')" style="margin: 2px;">
                         <i class="fas fa-paper-plane"></i> <span>Submit for Review</span>
                     </button>
-                    <button class="btn btn-secondary" onclick="showContentDetails(${item.id})">
-                        <i class="fas fa-info-circle"></i> <span>Details</span>
-                    </button>
+                    ${deleteButton}
                 `;
-            } else if (status === 'under_review') {
-                // UNDER_REVIEW: Show Approve + Reject + Details
+            } else if (status === 'under_review' || status === 'pending_review') {
+                // UNDER_REVIEW: Show View + Edit + Approve + Reject
                 actionButtons = `
-                    <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white;">
+                    ${viewButton}
+                    ${editButton}
+                    <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white; margin: 2px;">
                         <i class="fas fa-check-circle"></i> <span>Approve</span>
                     </button>
-                    <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'rejected')" style="background: #dc2626; color: white;">
+                    <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'rejected')" style="background: #dc2626; color: white; margin: 2px;">
                         <i class="fas fa-times-circle"></i> <span>Reject</span>
                     </button>
-                <button class="btn btn-secondary" onclick="showContentDetails(${item.id})">
-                    <i class="fas fa-info-circle"></i> <span>Details</span>
-                </button>
-            `;
-            } else {
-                // ANY UNKNOWN STATUS: Fallback to Details only
-                actionButtons = `
-                    <button class="btn btn-secondary" onclick="showContentDetails(${item.id})">
-                        <i class="fas fa-info-circle"></i> <span>Details</span>
-                    </button>
                 `;
+            } else if (status === 'rejected') {
+                // REJECTED: Show View + Delete
+                actionButtons = `
+                    ${viewButton}
+                    ${deleteButton}
+                `;
+            } else {
+                // ANY UNKNOWN STATUS: Fallback to View only
+                actionButtons = viewButton;
             }
         }
         

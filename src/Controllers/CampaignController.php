@@ -1375,6 +1375,81 @@ class CampaignController
             }
         }
     }
+
+    /**
+     * Delete a campaign
+     */
+    public function destroy(?array $user, array $params = []): array
+    {
+        // RBAC: Only authorized LGU roles can delete campaigns (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only - cannot delete anything
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot delete campaigns.'];
+            }
+            
+            // Only admin and captain can delete campaigns
+            $allowedRoles = ['admin', 'captain', 'barangay administrator', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only administrators and captains can delete campaigns.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $campaign = $this->findCampaign($id);
+        
+        // Check if campaign can be deleted (not completed or archived)
+        $status = strtolower($campaign['status'] ?? '');
+        if (in_array($status, ['completed', 'archived'], true)) {
+            http_response_code(422);
+            return ['error' => 'Cannot delete completed or archived campaigns. Please archive them instead.'];
+        }
+        
+        // Delete related records first (foreign key constraints)
+        $this->pdo->beginTransaction();
+        try {
+            // Delete campaign schedules
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_campaign_schedules` WHERE campaign_id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete campaign audience segments
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_campaign_audience` WHERE campaign_id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete campaign content links (set campaign_id to NULL instead of deleting content)
+            $stmt = $this->pdo->prepare('UPDATE `campaign_department_content_items` SET campaign_id = NULL WHERE campaign_id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete the campaign
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_campaigns` WHERE id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            $this->pdo->commit();
+            
+            // Log audit entry
+            $this->logAudit($user['id'] ?? null, 'campaign', 'delete', $id, ['title' => $campaign['title'] ?? '']);
+            
+            return ['message' => 'Campaign deleted successfully'];
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            error_log('CampaignController::destroy - Error: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to delete campaign: ' . $e->getMessage()];
+        }
+    }
 }
 
 

@@ -148,15 +148,38 @@
     setTimeout(hideViewerActionButtons, 1000);
     setTimeout(hideViewerActionButtons, 2000);
     
-    // Watch for dynamically added content
-    const observer = new MutationObserver(function(mutations) {
-        hideViewerActionButtons();
-    });
+    // Watch for dynamically added content (only if document.body exists and is a valid Node)
+    function setupObserver() {
+        try {
+            if (document.body && document.body instanceof Node) {
+                const observer = new MutationObserver(function(mutations) {
+                    hideViewerActionButtons();
+                });
+                
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+                return true;
+            }
+        } catch (e) {
+            console.warn('viewer-restrictions: Failed to setup MutationObserver:', e);
+        }
+        return false;
+    }
     
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
+    // Try to setup observer immediately
+    if (!setupObserver()) {
+        // Wait for body to be available
+        let checkCount = 0;
+        const maxChecks = 100; // 10 seconds max (100 * 100ms)
+        const checkBody = setInterval(function() {
+            checkCount++;
+            if (setupObserver() || checkCount >= maxChecks) {
+                clearInterval(checkBody);
+            }
+        }, 100);
+    }
     
     // Make function globally available
     window.hideViewerActionButtons = hideViewerActionButtons;

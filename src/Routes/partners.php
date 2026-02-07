@@ -31,6 +31,24 @@ return [
         'handler' => [PartnerController::class, 'assignments'],
         // public so partner portal can fetch without JWT; adjust as needed
     ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/partners/{id}',
+        'handler' => [PartnerController::class, 'show'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'PUT',
+        'path' => '/api/v1/partners/{id}',
+        'handler' => [PartnerController::class, 'update'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'DELETE',
+        'path' => '/api/v1/partners/{id}',
+        'handler' => [PartnerController::class, 'destroy'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
 ];
 
 

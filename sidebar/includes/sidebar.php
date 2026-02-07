@@ -20,7 +20,9 @@
                 <?php
                 require_once __DIR__ . '/../../header/includes/path_helper.php';
                 ?>
-                <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="" class="logo-img">
+                <a href="<?php echo htmlspecialchars($publicPath . '/dashboard.php'); ?>" class="logo-link" style="display: block; text-decoration: none;">
+                    <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Logo" class="logo-img">
+                </a>
             </div>
         </div>
     </div>

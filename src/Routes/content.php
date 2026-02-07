@@ -73,6 +73,12 @@ return [
         'handler' => [ContentController::class, 'getApproved'],
         'middleware' => JWTMiddleware::class,
     ],
+    [
+        'method' => 'DELETE',
+        'path' => '/api/v1/content/{id}',
+        'handler' => [ContentController::class, 'destroy'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
 ];
 
 

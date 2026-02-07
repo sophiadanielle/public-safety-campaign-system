@@ -549,6 +549,67 @@ class SegmentController
         return $result;
     }
 
+    /**
+     * Delete a segment
+     */
+    public function destroy(?array $user, array $params = []): array
+    {
+        // RBAC: Only authorized LGU roles can delete segments (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only - cannot delete anything
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot delete segments.'];
+            }
+            
+            // Only admin and captain can delete segments
+            $allowedRoles = ['admin', 'captain', 'barangay administrator', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only administrators and captains can delete segments.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $segment = $this->findSegment($id);
+        
+        // Delete related records first (foreign key constraints)
+        $this->pdo->beginTransaction();
+        try {
+            // Delete segment members
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_audience_segment_members` WHERE segment_id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete campaign-segment associations
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_campaign_audience` WHERE segment_id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete the segment
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_audience_segments` WHERE id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            $this->pdo->commit();
+            
+            return ['message' => 'Segment deleted successfully'];
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            error_log('SegmentController::destroy - Error: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to delete segment: ' . $e->getMessage()];
+        }
+    }
+
     private function findSegment(int $id): array
     {
         $stmt = $this->pdo->prepare('

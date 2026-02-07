@@ -78,6 +78,18 @@ return [
         'handler' => [SurveyController::class, 'exportAggregatedCsv'],
         'middleware' => JWTMiddleware::class,
     ],
+    [
+        'method' => 'PUT',
+        'path' => '/api/v1/surveys/{id}',
+        'handler' => [SurveyController::class, 'update'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'DELETE',
+        'path' => '/api/v1/surveys/{id}',
+        'handler' => [SurveyController::class, 'destroy'],
+        'middleware' => JWTMiddleware::class,
+    ],
 ];
 
 

@@ -36,7 +36,7 @@
 <body>
     <header class="header">
         <div class="header-container">
-            <a href="<?php echo htmlspecialchars($publicPath . '/index.php'); ?>" class="logo">
+            <a href="<?php echo htmlspecialchars($publicPath . '/dashboard.php'); ?>" class="logo">
                 <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Logo" class="logo-img">
             </a>
             
@@ -77,7 +77,7 @@
             <!-- Mobile Navigation -->
             <div class="mobile-nav">
                 <div class="mobile-nav-header">
-                    <a href="<?php echo htmlspecialchars($publicPath . '/index.php'); ?>" class="logo">
+                    <a href="<?php echo htmlspecialchars($publicPath . '/dashboard.php'); ?>" class="logo">
                         <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="" class="logo-img">
                     </a>
                     <button class="mobile-nav-close" aria-label="Close mobile menu">

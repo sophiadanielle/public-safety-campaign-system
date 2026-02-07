@@ -686,7 +686,9 @@ async function loadSegments() {
                     <td>${seg.risk_level ? `<span class="badge ${riskClass}">${seg.risk_level}</span>` : '—'}</td>
                     <td>${seg.basis_of_segmentation || '—'}</td>
                     <td>
-                        <button onclick="viewSegmentMembersById(${seg.segment_id})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;">View Segment Details</button>
+                        <button onclick="viewSegment(${seg.segment_id})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; margin: 2px;">👁️ View</button>
+                        <button onclick="editSegment(${seg.segment_id})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; margin: 2px;">✏️ Edit</button>
+                        <button onclick="deleteSegment(${seg.segment_id})" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; background: #ef4444; color: white; margin: 2px;">🗑️ Delete</button>
                     </td>
                 </tr>
             `;
@@ -720,7 +722,21 @@ function updateFormDependencies() {
 
 // Reset form
 function resetForm() {
-    document.getElementById('createForm').reset();
+    const form = document.getElementById('createForm');
+    if (form) {
+        form.reset();
+        // Clear segment ID from form dataset (for edit mode)
+        if (form.dataset.segmentId) {
+            delete form.dataset.segmentId;
+        }
+    }
+    
+    // Reset submit button text
+    const submitBtn = document.getElementById('createSegmentBtn');
+    if (submitBtn) {
+        submitBtn.textContent = 'Create Segment';
+    }
+    
     document.getElementById('createStatus').textContent = '';
     document.getElementById('createStatus').style.color = '';
 }
@@ -809,6 +825,58 @@ async function createSegment() {
     const currentToken = getToken();
     if (!currentToken) return;
     
+    const form = document.getElementById('createForm');
+    const segmentId = form ? form.dataset.segmentId : null;
+    
+    // Check if this is an update
+    if (segmentId) {
+        statusEl.textContent = 'Updating...';
+        statusEl.style.color = '#64748b';
+        
+        const payload = {
+            segment_name: segmentName,
+            geographic_scope: geographicScope || null,
+            location_reference: locationRef || null,
+            sector_type: document.getElementById('sector_type').value || null,
+            risk_level: riskLevel,
+            basis_of_segmentation: document.getElementById('basis_of_segmentation').value || null
+        };
+        
+        try {
+            const res = await fetch(apiBase + '/api/v1/segments/' + segmentId, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
+                body: JSON.stringify(payload)
+            });
+            
+            if (res.status === 401) {
+                handleTokenExpiration();
+                return;
+            }
+            
+            const data = await res.json();
+            if (res.ok) {
+                statusEl.textContent = 'Segment updated successfully!';
+                statusEl.style.color = '#166534';
+                resetForm();
+                loadSegments();
+            } else {
+                const errorMsg = data.error || '';
+                if (errorMsg.toLowerCase().includes('expired') || errorMsg.toLowerCase().includes('token')) {
+                    handleTokenExpiration();
+                    return;
+                }
+                statusEl.textContent = 'Error: ' + (data.error || 'Failed to update segment');
+                statusEl.style.color = '#dc2626';
+            }
+        } catch (err) {
+            statusEl.textContent = 'Network error: ' + err.message;
+            statusEl.style.color = '#dc2626';
+        }
+        return;
+    }
+    
+    // Create new segment
     statusEl.textContent = 'Creating...';
     statusEl.style.color = '#64748b';
     
@@ -887,9 +955,126 @@ async function createSegment() {
 
 
 // Edit segment (placeholder - would open edit modal)
-function editSegment(segmentId) {
-    alert('Edit functionality: Load segment ' + segmentId + ' data into form for editing');
-    // TODO: Implement edit modal or form population
+// View segment details
+async function viewSegment(segmentId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/segments/' + segmentId, {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+        
+        const seg = data.data;
+        
+        // Create modal with segment details
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 12px; padding: 24px; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #0f172a; font-size: 24px;">Segment Details</h2>
+                    <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+                </div>
+                <div style="display: grid; gap: 16px;">
+                    <div><strong>ID:</strong> ${seg.segment_id}</div>
+                    <div><strong>Segment Name:</strong> ${seg.segment_name || 'N/A'}</div>
+                    <div><strong>Geographic Scope:</strong> ${seg.geographic_scope || 'N/A'}</div>
+                    <div><strong>Location Reference:</strong> ${seg.location_reference || 'N/A'}</div>
+                    <div><strong>Sector Type:</strong> ${seg.sector_type || 'N/A'}</div>
+                    <div><strong>Risk Level:</strong> ${seg.risk_level ? `<span class="badge ${seg.risk_level.toLowerCase()}">${seg.risk_level}</span>` : 'N/A'}</div>
+                    <div><strong>Basis of Segmentation:</strong> ${seg.basis_of_segmentation || 'N/A'}</div>
+                    <div><strong>Created At:</strong> ${seg.created_at ? new Date(seg.created_at).toLocaleString() : 'N/A'}</div>
+                    <div><strong>Updated At:</strong> ${seg.updated_at ? new Date(seg.updated_at).toLocaleString() : 'N/A'}</div>
+                </div>
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Close</button>
+                    <button onclick="editSegment(${seg.segment_id}); this.closest('div[style*=\"position: fixed\"]').remove();" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer;">Edit</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    } catch (err) {
+        alert('Failed to load segment: ' + err.message);
+    }
+}
+
+// Edit segment
+async function editSegment(segmentId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/segments/' + segmentId, {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+        
+        const seg = data.data;
+        
+        // Populate form with segment data
+        document.getElementById('segment_name').value = seg.segment_name || '';
+        document.getElementById('geographic_scope').value = seg.geographic_scope || '';
+        document.getElementById('location_reference').value = seg.location_reference || '';
+        document.getElementById('sector_type').value = seg.sector_type || '';
+        document.getElementById('risk_level').value = seg.risk_level || '';
+        document.getElementById('basis_of_segmentation').value = seg.basis_of_segmentation || '';
+        
+        // Store segment ID for update
+        const form = document.getElementById('createForm');
+        if (form) {
+            form.dataset.segmentId = segmentId;
+        }
+        
+        // Change submit button text
+        const submitBtn = document.getElementById('createSegmentBtn');
+        if (submitBtn) {
+            submitBtn.textContent = 'Update Segment';
+        }
+        
+        // Scroll to form
+        document.getElementById('create-segment').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+    } catch (err) {
+        alert('Failed to load segment: ' + err.message);
+    }
+}
+
+// Delete segment
+async function deleteSegment(segmentId) {
+    if (!confirm('Are you sure you want to delete this segment? This action cannot be undone and will remove all member associations.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/segments/' + segmentId, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + getToken()
+            }
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to delete segment'));
+            return;
+        }
+        
+        alert('Segment deleted successfully!');
+        loadSegments();
+    } catch (err) {
+        alert('Failed to delete segment: ' + err.message);
+    }
 }
 
 // View segment members by ID (used from segments list)

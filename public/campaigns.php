@@ -83,7 +83,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.css" rel="stylesheet">
     <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
     <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
     <script>
@@ -385,22 +384,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         to { opacity: 1; transform: translateY(0); }
     }
     
-    #gantt-container {
-        margin-top: 24px;
-        overflow-x: auto;
-        padding: 20px;
-        background: #f8fafc;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        min-height: 400px;
-    }
-    .gantt-container svg {
-        font-family: var(--font-family);
-    }
-    .gantt-container .bar {
-        rx: 6;
-        ry: 6;
-    }
     #calendar {
         margin-top: 24px;
         padding: 20px;
@@ -1511,39 +1494,18 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     </section>
     <?php endif; // End RBAC: Hide AutoML section for Viewer ?>
 
-    <!-- Timeline & Calendar Tabs -->
+    <!-- Calendar View (Replaced Gantt Chart) -->
     <section class="card" id="timeline-section">
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('gantt')">
-                <i class="fas fa-chart-gantt"></i> Project Timeline
-            </button>
-            <button class="tab" onclick="switchTab('calendar')">
-                <i class="fas fa-calendar-alt"></i> Scheduling Calendar
+        <div class="section-header" style="margin-bottom: 16px;">
+            <h3 class="section-title analytics-accent">Campaign Calendar</h3>
+            <button class="btn btn-secondary" onclick="if(calendar) calendar.refetchEvents();" style="display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-sync-alt"></i> Refresh
             </button>
         </div>
-        
-        <div id="gantt-tab" class="tab-content active">
-            <div class="section-header" style="margin-bottom: 16px;">
-                <h3 class="section-title analytics-accent">Gantt Chart</h3>
-                <button class="btn btn-secondary" onclick="refreshGantt()" style="display: flex; align-items: center; gap: 6px;">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
-            </div>
-            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
-                Visual timeline of all campaigns. Schedule conflicts are checked against the <strong>Events module</strong> to prevent overlapping activities.
-            </p>
-            <div id="gantt-container"></div>
-        </div>
-        
-        <div id="calendar-tab" class="tab-content">
-            <div class="section-header" style="margin-bottom: 16px;">
-                <h3 class="section-title analytics-accent">Calendar View</h3>
-            </div>
-            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
-                Calendar view of campaign schedules. Events from the <strong>Events module</strong> are integrated to show potential conflicts.
-            </p>
-            <div id="calendar"></div>
-        </div>
+        <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+            Calendar view of campaign schedules. Click on any campaign event to view details. Events from the <strong>Events module</strong> are integrated to show potential conflicts.
+        </p>
+        <div id="calendar"></div>
     </section>
 
     <!-- Resource Allocation -->
@@ -1802,7 +1764,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         </div> <!-- /.campaign-page -->
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js" onload="console.log('FullCalendar script loaded successfully'); if (typeof FullCalendar === 'undefined') { console.warn('FullCalendar global not found after load'); } else { console.log('FullCalendar global found:', typeof FullCalendar); }" onerror="console.error('FullCalendar script failed to load - check network/CDN');"></script>
-<script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.6.1/dist/frappe-gantt.min.js"></script>
 <script>
 // Get base path for API calls (path_helper already included in head)
 const basePath = '<?php echo $basePath; ?>';
@@ -1833,7 +1794,7 @@ function getToken() {
 }
 
 
-let calendar, gantt;
+let calendar;
 let activeCampaignId = null;
 let allCampaigns = [];
 
@@ -2830,6 +2791,40 @@ function clearForm() {
     
     // Clear form fields
     document.getElementById('planningForm').reset();
+    
+    // FIX: Clear Assigned Staff multi-select
+    const assignedStaffEl = document.getElementById('assigned_staff');
+    if (assignedStaffEl) {
+        if (typeof assignedStaffEl.setSelectedValues === 'function') {
+            assignedStaffEl.setSelectedValues([]);
+        } else {
+            // Fallback: clear all selected options
+            Array.from(assignedStaffEl.options).forEach(opt => opt.selected = false);
+        }
+        // Clear tags display
+        const assignedStaffTags = document.getElementById('assigned_staff_tags');
+        if (assignedStaffTags) {
+            assignedStaffTags.innerHTML = '';
+        }
+    }
+    
+    // FIX: Clear Materials multi-select
+    const materialsEl = document.getElementById('materials_json');
+    if (materialsEl) {
+        if (typeof materialsEl.setSelectedValues === 'function') {
+            materialsEl.setSelectedValues([]);
+        } else {
+            // Fallback: clear all selected options
+            Array.from(materialsEl.options).forEach(opt => opt.selected = false);
+        }
+        // Clear tags display
+        const materialsTags = document.getElementById('materials_json_tags');
+        if (materialsTags) {
+            materialsTags.innerHTML = '';
+        }
+    }
+    
+    // Clear status display
     document.getElementById('createStatus').style.display = 'none';
 }
 
@@ -3819,138 +3814,14 @@ async function overrideSchedule() {
     }
 }
 
-// Tabs
-function switchTab(tab) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    event.target.classList.add('active');
-    if (tab === 'gantt') {
-        document.getElementById('gantt-tab').classList.add('active');
-        setTimeout(refreshGantt, 100);
-    } else {
-        console.log('=== switchTab("calendar") called ===');
-        const calendarTab = document.getElementById('calendar-tab');
-        if (calendarTab) {
-            calendarTab.classList.add('active');
-            console.log('✓ Calendar tab activated');
-        } else {
-            console.error('CRITICAL: calendar-tab element not found!');
-        }
-        
-        // Initialize calendar if not already initialized
-        // FIX: Ensure allCampaigns is loaded before initializing calendar
-        if (!calendar) {
-            console.log('Calendar not initialized, checking allCampaigns...');
-            if (allCampaigns && allCampaigns.length > 0) {
-                console.log('allCampaigns already loaded, initializing calendar...');
-                initCalendar();
-            } else {
-                console.log('allCampaigns not loaded yet, waiting for loadCampaigns()...');
-                // Wait for campaigns to load, then initialize calendar
-                const checkCampaigns = setInterval(() => {
-                    if (allCampaigns && allCampaigns.length > 0) {
-                        clearInterval(checkCampaigns);
-                        console.log('allCampaigns loaded, initializing calendar...');
-                        initCalendar();
-                    }
-                }, 100);
-                // Timeout after 5 seconds
-                setTimeout(() => {
-                    clearInterval(checkCampaigns);
-                    if (!calendar) {
-                        console.log('Initializing calendar anyway (timeout)...');
-                        initCalendar();
-                    }
-                }, 5000);
-            }
-        } else {
-            console.log('Calendar already initialized, updating size and refetching events...');
-            // Update calendar size when tab becomes visible and refresh events
-            setTimeout(() => {
-                if (calendar) {
-                    calendar.updateSize();
-                    calendar.refetchEvents(); // Refresh events from allCampaigns
-                    console.log('✓ Calendar size updated and events refetched');
-                }
-            }, 100);
-        }
-    }
-}
+// Calendar initialization (Gantt chart removed - using Calendar view only)
 
 // CENTRALIZED: Refresh all campaign views after data changes
-// This ensures Gantt Chart and Calendar stay synchronized
+// This ensures Calendar stays synchronized
 function refreshAllCampaignViews() {
     console.log('refreshAllCampaignViews() - Refreshing all campaign views...');
     // Reload campaigns from API (updates allCampaigns array)
-    loadCampaigns(); // This will call refreshGantt() and calendar.refetchEvents() internally
-}
-
-// Gantt Chart
-function refreshGantt() {
-    const container = document.getElementById('gantt-container');
-    container.innerHTML = '';
-    
-    if (!allCampaigns.length) {
-        container.innerHTML = '<div style="text-align:center; padding:60px; color:#64748b;"><p style="font-size:16px; margin-bottom:8px;">📊 No campaigns to display</p><p style="font-size:14px;">Create a campaign first to see the timeline</p></div>';
-        return;
-    }
-    
-    const tasks = allCampaigns
-        .filter(c => c.start_date && c.end_date)
-        .map(c => {
-            let progress = 0;
-            if (c.status === 'completed') progress = 100;
-            else if (c.status === 'ongoing') progress = 50;
-            else if (c.status === 'approved') progress = 25;
-            else if (c.status === 'pending') progress = 10;
-            
-            return {
-                id: String(c.id),
-                name: (c.title || 'Untitled') + ' [' + (c.status || 'draft').toUpperCase() + ']',
-                start: c.start_date,
-                end: c.end_date,
-                progress: progress,
-                custom_class: 'status-' + (c.status || 'draft'),
-            };
-        });
-    
-    if (!tasks.length) {
-        container.innerHTML = '<div style="text-align:center; padding:60px; color:#64748b;"><p style="font-size:16px; margin-bottom:8px;">📅 No campaigns with dates</p><p style="font-size:14px;">Add start and end dates to campaigns to view them on the timeline</p></div>';
-        return;
-    }
-    
-    try {
-        gantt = new Gantt('#gantt-container', tasks, {
-            view_mode: 'Month',
-            language: 'en',
-            header_height: 50,
-            column_width: 30,
-            step: 24,
-            bar_height: 30,
-            bar_corner_radius: 6,
-            arrow_curve: 5,
-            padding: 18,
-            date_format: 'YYYY-MM-DD',
-            on_click: function (task) {
-                const campaign = allCampaigns.find(c => String(c.id) === task.id);
-                if (campaign) {
-                    alert(`Campaign: ${campaign.title}\nStatus: ${campaign.status}\nStart: ${campaign.start_date}\nEnd: ${campaign.end_date}`);
-                }
-            },
-            on_date_change: function(task, start, end) {
-                console.log('Date changed:', task, start, end);
-            },
-            on_progress_change: function(task, progress) {
-                console.log('Progress changed:', task, progress);
-            },
-            on_view_change: function(mode) {
-                console.log('View changed:', mode);
-            }
-        });
-    } catch (err) {
-        console.error('Gantt chart error:', err);
-        container.innerHTML = '<div style="text-align:center; padding:40px; color:#dc2626;"><p>Error loading Gantt chart. Please refresh the page.</p></div>';
-    }
+    loadCampaigns(); // This will call calendar.refetchEvents() internally
 }
 
 // Calendar
@@ -4527,22 +4398,26 @@ async function loadResources() {
                     
                     <!-- Admin Actions (Technical only, can override) - Always show if admin -->
                     ${isAdmin() && !isViewer() ? `
-                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px;">✏️ Edit</button>
-                        ${c.status === 'draft' ? `<button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 4px 8px; font-size: 12px;">📤 Forward</button>` : ''}
-                        ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; background: #10b981; color: white; border: none;">✅ Approve</button>` : ''}
-                        ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 12px;">📅 Finalize</button>` : ''}
-                        ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; background: #3b82f6; color: white; border: none;">🔒 Close</button>` : ''}
-                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px;">📦 Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px; display: block; width: 100%; margin-top: 4px;">Archived</span>' : ''}
+                        <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">👁️ View</button>
+                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">✏️ Edit</button>
+                        ${c.status === 'draft' ? `<button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">📤 Forward</button>` : ''}
+                        ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; background: #10b981; color: white; border: none; margin: 2px;">✅ Approve</button>` : ''}
+                        ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">📅 Finalize</button>` : ''}
+                        ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; background: #3b82f6; color: white; border: none; margin: 2px;">🔒 Close</button>` : ''}
+                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">📦 Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px; display: block; width: 100%; margin-top: 4px;">Archived</span>' : ''}
+                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-danger" onclick="deleteCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; background: #ef4444; color: white; border: none; margin: 2px;">🗑️ Delete</button>` : ''}
                     ` : ''}
                     
                     <!-- Fallback: If no role detected after refresh, show admin actions as default -->
                     ${!currentUserRole && !isViewer() ? `
                         <span style="color: #f59e0b; font-size: 11px; display: block; width: 100%; margin-bottom: 4px;">⚠️ Role detection issue - showing admin actions</span>
-                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">✏️ Edit</button>
-                        ${c.status === 'draft' ? `<button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">📤 Forward</button>` : ''}
-                        ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0; background: #10b981; color: white; border: none;">✅ Approve</button>` : ''}
-                        ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">📅 Finalize</button>` : ''}
-                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">📦 Archive</button>` : ''}
+                        <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">👁️ View</button>
+                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">✏️ Edit</button>
+                        ${c.status === 'draft' ? `<button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">📤 Forward</button>` : ''}
+                        ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px; background: #10b981; color: white; border: none;">✅ Approve</button>` : ''}
+                        ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">📅 Finalize</button>` : ''}
+                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">📦 Archive</button>` : ''}
+                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-danger" onclick="deleteCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; background: #ef4444; color: white; border: none; margin: 2px;">🗑️ Delete</button>` : ''}
                     ` : ''}
                 </td>
             `;
@@ -4642,7 +4517,7 @@ async function loadResources() {
             select.value = activeCampaignId;
         }
         
-        refreshGantt();
+        // Calendar will auto-refresh via refetchEvents() in loadCampaigns()
         // FIX: Refresh calendar events when campaigns are reloaded
         if (calendar) {
             calendar.refetchEvents();
@@ -5096,6 +4971,123 @@ async function editCampaign(campaignId) {
     }
 }
 
+// View Campaign Details
+async function viewCampaign(campaignId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        if (data.error) {
+            alert('Error: ' + data.error);
+            return;
+        }
+        
+        const c = data.data;
+        
+        // Format dates
+        const formatDate = (dateStr) => {
+            if (!dateStr) return 'Not set';
+            try {
+                return new Date(dateStr).toLocaleString('en-US', {dateStyle: 'long', timeStyle: 'short'});
+            } catch (e) {
+                return dateStr;
+            }
+        };
+        
+        // Format JSON fields
+        const formatJSON = (jsonStr) => {
+            if (!jsonStr) return 'None';
+            try {
+                const parsed = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+                if (Array.isArray(parsed)) {
+                    return parsed.join(', ') || 'None';
+                } else if (typeof parsed === 'object') {
+                    return Object.keys(parsed).join(', ') || 'None';
+                }
+                return String(parsed);
+            } catch (e) {
+                return String(jsonStr);
+            }
+        };
+        
+        // Create modal with campaign details
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 12px; padding: 24px; max-width: 800px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #0f172a; font-size: 24px;">Campaign Details</h2>
+                    <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+                </div>
+                <div style="display: grid; gap: 16px;">
+                    <div><strong>ID:</strong> ${c.id}</div>
+                    <div><strong>Title:</strong> ${c.title || 'N/A'}</div>
+                    <div><strong>Description:</strong> ${c.description || 'N/A'}</div>
+                    <div><strong>Category:</strong> ${c.category || 'N/A'}</div>
+                    <div><strong>Status:</strong> <span class="badge ${c.status || 'draft'}">${(c.status || 'draft').charAt(0).toUpperCase() + (c.status || 'draft').slice(1)}</span></div>
+                    <div><strong>Geographic Scope:</strong> ${c.geographic_scope || 'N/A'}</div>
+                    <div><strong>Start Date:</strong> ${formatDate(c.start_date)}</div>
+                    <div><strong>End Date:</strong> ${formatDate(c.end_date)}</div>
+                    <div><strong>Draft Schedule:</strong> ${formatDate(c.draft_schedule_datetime)}</div>
+                    <div><strong>AI Recommended:</strong> ${formatDate(c.ai_recommended_datetime)}</div>
+                    <div><strong>Final Schedule:</strong> ${formatDate(c.final_schedule_datetime)}</div>
+                    <div><strong>Location:</strong> ${c.location || 'N/A'}</div>
+                    <div><strong>Objectives:</strong> ${c.objectives || 'N/A'}</div>
+                    <div><strong>Budget:</strong> ${c.budget ? '₱' + parseFloat(c.budget).toLocaleString('en-US', {minimumFractionDigits: 2}) : 'N/A'}</div>
+                    <div><strong>Staff Count:</strong> ${c.staff_count || 'N/A'}</div>
+                    <div><strong>Assigned Staff:</strong> ${formatJSON(c.assigned_staff)}</div>
+                    <div><strong>Barangay Target Zones:</strong> ${formatJSON(c.barangay_target_zones)}</div>
+                    <div><strong>Materials:</strong> ${formatJSON(c.materials_json)}</div>
+                    <div><strong>Created At:</strong> ${formatDate(c.created_at)}</div>
+                    <div><strong>Updated At:</strong> ${formatDate(c.updated_at)}</div>
+                </div>
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Close</button>
+                    ${!isViewer() && canEditCampaign(c.status) ? `<button onclick="editCampaign(${c.id}); this.closest('div[style*=\"position: fixed\"]').remove();" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer;">Edit</button>` : ''}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    } catch (err) {
+        alert('Failed to load campaign: ' + err.message);
+    }
+}
+
+// Delete Campaign
+async function deleteCampaign(campaignId) {
+    if (!confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + getToken()
+            }
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to delete campaign'));
+            return;
+        }
+        
+        alert('Campaign deleted successfully!');
+        refreshAllCampaignViews();
+    } catch (err) {
+        alert('Failed to delete campaign: ' + err.message);
+    }
+}
+
 // Update Campaign
 async function updateCampaign(campaignId) {
     const createStatusEl = document.getElementById('createStatus');
@@ -5232,7 +5224,7 @@ async function updateCampaign(campaignId) {
         clearForm();
         // FIX: Use centralized refresh to ensure all views update
         refreshAllCampaignViews();
-        refreshGantt();
+        // Calendar will auto-refresh via refetchEvents() in loadCampaigns()
         if (calendar) calendar.refetchEvents();
         
     } catch (err) {
@@ -5669,6 +5661,12 @@ async function initializeCampaigns() {
         await loadCampaigns();
         console.log('initializeCampaigns() - Campaigns loaded. Count:', allCampaigns.length);
         
+        // Initialize calendar if not already initialized
+        if (!calendar) {
+            console.log('initializeCampaigns() - Initializing calendar...');
+            initCalendar();
+        }
+        
         loadResources();
         
         // Populate AutoML dropdown immediately after campaigns are loaded
@@ -5764,11 +5762,7 @@ async function initializeCampaigns() {
             }
         }, 200);
         
-        setTimeout(() => {
-            if (document.getElementById('gantt-tab') && document.getElementById('gantt-tab').classList.contains('active')) {
-                refreshGantt();
-            }
-        }, 500);
+        // Calendar will auto-refresh via refetchEvents() in loadCampaigns()
     } catch (err) {
         console.error('initializeCampaigns() - Error:', err);
         console.error('initializeCampaigns() - Stack:', err.stack);
@@ -5803,8 +5797,7 @@ function showCampaignHowItWorks() {
                     <ul style="margin: 0; padding-left: 20px;">
                         <li><strong>Plan New Campaign</strong> - Create campaigns with all details (title, category, dates, location, budget, staff, materials)</li>
                         <li><strong>AI-Powered Deployment Optimization</strong> - Provides decision support for optimal posting times through AI-powered analysis (designed to support Google AutoML integration or heuristic-based algorithms)</li>
-                        <li><strong>Project Timeline (Gantt Chart)</strong> - Visual timeline of all campaigns and their schedules</li>
-                        <li><strong>Scheduling Calendar</strong> - Calendar view to see campaign schedules by month/week</li>
+                        <li><strong>Campaign Calendar</strong> - Calendar view to see campaign schedules by month/week. Click on any campaign event to view details.</li>
                         <li><strong>Resource Allocation</strong> - Overview of total budget, staff, and active campaigns</li>
                         <li><strong>All Campaigns</strong> - Table view of all campaigns with actions (edit, delete, view details)</li>
                         <li><strong>Schedule Management</strong> - Manage and update campaign schedules</li>

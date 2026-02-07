@@ -296,23 +296,109 @@ class AutoMLController
             }
 
             // Get optimized upcoming events
-            $stmt = $this->pdo->query('
-                SELECT e.id, e.event_name, e.date, e.start_time, e.linked_campaign_id, c.title as campaign_title
-                FROM `campaign_department_events` e LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
-                WHERE e.date >= CURDATE() AND e.event_status = "planned"
-                ORDER BY e.date ASC, e.start_time ASC LIMIT 10
-            ');
+            // Check which column exists first using SHOW COLUMNS (more reliable than INFORMATION_SCHEMA)
+            $campaignColumn = null;
+            try {
+                // First verify table exists
+                $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_events'");
+                if ($tableCheck && $tableCheck->rowCount() > 0) {
+                    // Get all columns and check for exact matches
+                    $columnsCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_events");
+                    if ($columnsCheck) {
+                        $columns = $columnsCheck->fetchAll(PDO::FETCH_ASSOC);
+                        foreach ($columns as $column) {
+                            $colName = $column['Field'] ?? $column['field'] ?? '';
+                            if ($colName === 'linked_campaign_id') {
+                                $campaignColumn = 'linked_campaign_id';
+                                break;
+                            }
+                            if ($colName === 'campaign_id') {
+                                $campaignColumn = 'campaign_id';
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (\PDOException $e) {
+                error_log('AutoMLController::getInsights - Error checking column: ' . $e->getMessage());
+            }
+            
+            if ($campaignColumn) {
+                try {
+                    $stmt = $this->pdo->query("
+                        SELECT e.id, e.event_name, e.date, e.start_time, e.{$campaignColumn}, c.title as campaign_title
+                        FROM `campaign_department_events` e LEFT JOIN `campaign_department_campaigns` c ON c.id = e.{$campaignColumn}
+                        WHERE e.date >= CURDATE() AND e.event_status = 'planned'
+                        ORDER BY e.date ASC, e.start_time ASC LIMIT 10
+                    ");
+                } catch (\PDOException $e) {
+                    $errorCode = $e->getCode();
+                    $errorMessage = $e->getMessage();
+                    if ($errorCode == '42S22' || strpos($errorMessage, 'Unknown column') !== false) {
+                        error_log('AutoMLController::getInsights - Column not found error, falling back to events without join. Error: ' . $errorMessage);
+                        $campaignColumn = null; // Reset to prevent further errors
+                        $stmt = $this->pdo->query("
+                            SELECT e.id, e.event_name, e.date, e.start_time, NULL as campaign_title
+                            FROM `campaign_department_events` e
+                            WHERE e.date >= CURDATE() AND e.event_status = 'planned'
+                            ORDER BY e.date ASC, e.start_time ASC LIMIT 10
+                        ");
+                    } else {
+                        throw $e; // Re-throw if it's a different error
+                    }
+                }
+            } else {
+                // No campaign column exists, get events without join
+                $stmt = $this->pdo->query("
+                    SELECT e.id, e.event_name, e.date, e.start_time, NULL as campaign_title
+                    FROM `campaign_department_events` e
+                    WHERE e.date >= CURDATE() AND e.event_status = 'planned'
+                    ORDER BY e.date ASC, e.start_time ASC LIMIT 10
+                ");
+            }
 
             // Get engagement trends
-            $stmt2 = $this->pdo->query('
-                SELECT DATE_FORMAT(c.start_date, "%Y-%m") as month,
-                       COUNT(DISTINCT c.id) as campaign_count,
-                       AVG((SELECT COUNT(*) FROM `campaign_department_attendance` a INNER JOIN `campaign_department_events` e ON e.id = a.event_id WHERE e.linked_campaign_id = c.id)) as avg_attendance
-                FROM `campaign_department_campaigns` c
-                WHERE c.start_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH) AND c.status IN ("completed", "ongoing")
-                GROUP BY DATE_FORMAT(c.start_date, "%Y-%m")
-                ORDER BY month DESC LIMIT 6
-            ');
+            if ($campaignColumn) {
+                try {
+                    $stmt2 = $this->pdo->query("
+                        SELECT DATE_FORMAT(c.start_date, '%Y-%m') as month,
+                               COUNT(DISTINCT c.id) as campaign_count,
+                               AVG((SELECT COUNT(*) FROM `campaign_department_attendance` a INNER JOIN `campaign_department_events` e ON e.id = a.event_id WHERE e.{$campaignColumn} = c.id)) as avg_attendance
+                        FROM `campaign_department_campaigns` c
+                        WHERE c.start_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH) AND c.status IN ('completed', 'ongoing')
+                        GROUP BY DATE_FORMAT(c.start_date, '%Y-%m')
+                        ORDER BY month DESC LIMIT 6
+                    ");
+                } catch (\PDOException $e) {
+                    $errorCode = $e->getCode();
+                    $errorMessage = $e->getMessage();
+                    if ($errorCode == '42S22' || strpos($errorMessage, 'Unknown column') !== false) {
+                        error_log('AutoMLController::getInsights - Column not found error in engagement trends, using fallback. Error: ' . $errorMessage);
+                        $stmt2 = $this->pdo->query("
+                            SELECT DATE_FORMAT(c.start_date, '%Y-%m') as month,
+                                   COUNT(DISTINCT c.id) as campaign_count,
+                                   0 as avg_attendance
+                            FROM `campaign_department_campaigns` c
+                            WHERE c.start_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH) AND c.status IN ('completed', 'ongoing')
+                            GROUP BY DATE_FORMAT(c.start_date, '%Y-%m')
+                            ORDER BY month DESC LIMIT 6
+                        ");
+                    } else {
+                        throw $e; // Re-throw if it's a different error
+                    }
+                }
+            } else {
+                // No campaign column, skip attendance calculation
+                $stmt2 = $this->pdo->query("
+                    SELECT DATE_FORMAT(c.start_date, '%Y-%m') as month,
+                           COUNT(DISTINCT c.id) as campaign_count,
+                           0 as avg_attendance
+                    FROM `campaign_department_campaigns` c
+                    WHERE c.start_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH) AND c.status IN ('completed', 'ongoing')
+                    GROUP BY DATE_FORMAT(c.start_date, '%Y-%m')
+                    ORDER BY month DESC LIMIT 6
+                ");
+            }
 
             return [
                 'high_risk_schedules' => $highRisk,

@@ -97,6 +97,12 @@ return [
         'handler' => [CampaignController::class, 'checkConflicts'],
         'middleware' => JWTMiddleware::class,
     ],
+    [
+        'method' => 'DELETE',
+        'path' => '/api/v1/campaigns/{id}',
+        'handler' => [CampaignController::class, 'destroy'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
 ];
 
 

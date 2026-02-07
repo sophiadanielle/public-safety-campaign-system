@@ -61,4 +61,10 @@ return [
         'handler' => [SegmentController::class, 'importMembers'],
         'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
+    [
+        'method' => 'DELETE',
+        'path' => '/api/v1/segments/{id}',
+        'handler' => [SegmentController::class, 'destroy'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
 ];

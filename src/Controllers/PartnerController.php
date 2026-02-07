@@ -27,7 +27,7 @@ class PartnerController
             return ['error' => 'Authentication required'];
         }
         
-        $stmt = $this->pdo->query('SELECT id, name, contact_person, contact_email, contact_phone, created_at FROM partners ORDER BY created_at DESC');
+        $stmt = $this->pdo->query('SELECT id, name, organization_type, contact_person, contact_email, contact_phone, created_at FROM `campaign_department_partners` ORDER BY created_at DESC');
         return ['data' => $stmt->fetchAll()];
     }
 
@@ -71,9 +71,12 @@ class PartnerController
             return ['error' => 'Name is required'];
         }
 
-        $stmt = $this->pdo->prepare('INSERT INTO partners (name, contact_person, contact_email, contact_phone) VALUES (:name, :cp, :ce, :cph)');
+        $organizationType = $input['organization_type'] ?? null;
+        
+        $stmt = $this->pdo->prepare('INSERT INTO `campaign_department_partners` (name, organization_type, contact_person, contact_email, contact_phone) VALUES (:name, :org_type, :cp, :ce, :cph)');
         $stmt->execute([
             'name' => $name,
+            'org_type' => $organizationType ?: null,
             'cp' => $contactPerson ?: null,
             'ce' => $contactEmail ?: null,
             'cph' => $contactPhone ?: null,
@@ -126,7 +129,7 @@ class PartnerController
             $this->assertEvent($eventId);
         }
 
-        $stmt = $this->pdo->prepare('INSERT INTO partner_engagements (partner_id, campaign_id, event_id, engagement_type, notes) VALUES (:pid, :cid, :eid, :etype, :notes)');
+        $stmt = $this->pdo->prepare('INSERT INTO `campaign_department_partner_engagements` (partner_id, campaign_id, event_id, engagement_type, notes) VALUES (:pid, :cid, :eid, :etype, :notes)');
         $stmt->execute([
             'pid' => $partnerId,
             'cid' => $campaignId,
@@ -164,12 +167,12 @@ class PartnerController
 
         $stmt = $this->pdo->prepare('
             SELECT pe.id as engagement_id, c.id as campaign_id, c.title as campaign_title, c.status,
-                   e.id as event_id, e.name as event_name, e.starts_at
-            FROM partner_engagements pe
+                   e.id as event_id, e.event_title as event_name, e.date as starts_at
+            FROM `campaign_department_partner_engagements` pe
             INNER JOIN `campaign_department_campaigns` c ON c.id = pe.campaign_id
             LEFT JOIN `campaign_department_events` e ON e.id = pe.event_id
             WHERE pe.partner_id = :pid
-            ORDER BY c.created_at DESC, e.starts_at ASC
+            ORDER BY c.created_at DESC, e.date ASC
         ');
         $stmt->execute(['pid' => $partnerId]);
         $rows = $stmt->fetchAll();
@@ -177,9 +180,143 @@ class PartnerController
         return ['data' => $rows];
     }
 
+    public function show(?array $user, array $params = []): array
+    {
+        // RBAC: All authenticated users can view partners (read access)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $partner = $this->findPartner($id);
+        
+        return ['data' => $partner];
+    }
+
+    public function update(?array $user, array $params = []): array
+    {
+        // RBAC: Only authorized LGU roles can update partners (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot update partners.'];
+            }
+            
+            // Allowed roles: admin, staff, secretary, kagawad, captain
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can update partners.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $partner = $this->findPartner($id);
+        
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $name = trim($input['name'] ?? $partner['name']);
+        $organizationType = $input['organization_type'] ?? $partner['organization_type'] ?? null;
+        $contactPerson = isset($input['contact_person']) ? trim($input['contact_person']) : $partner['contact_person'];
+        $contactEmail = isset($input['contact_email']) ? trim($input['contact_email']) : $partner['contact_email'];
+        $contactPhone = isset($input['contact_phone']) ? trim($input['contact_phone']) : $partner['contact_phone'];
+        
+        if (!$name) {
+            http_response_code(422);
+            return ['error' => 'Name is required'];
+        }
+        
+        $stmt = $this->pdo->prepare('
+            UPDATE `campaign_department_partners` SET
+                name = :name,
+                organization_type = :org_type,
+                contact_person = :cp,
+                contact_email = :ce,
+                contact_phone = :cph,
+                updated_at = NOW()
+            WHERE id = :id
+        ');
+        $stmt->execute([
+            'id' => $id,
+            'name' => $name,
+            'org_type' => $organizationType ?: null,
+            'cp' => $contactPerson ?: null,
+            'ce' => $contactEmail ?: null,
+            'cph' => $contactPhone ?: null,
+        ]);
+        
+        return ['id' => $id, 'message' => 'Partner updated'];
+    }
+
+    public function destroy(?array $user, array $params = []): array
+    {
+        // RBAC: Only authorized LGU roles can delete partners (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only - cannot delete anything
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot delete partners.'];
+            }
+            
+            // Only admin and captain can delete partners
+            $allowedRoles = ['admin', 'captain', 'barangay administrator', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only administrators and captains can delete partners.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $partner = $this->findPartner($id);
+        
+        // Delete related records first (foreign key constraints)
+        $this->pdo->beginTransaction();
+        try {
+            // Delete partner engagements
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_partner_engagements` WHERE partner_id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete the partner
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_partners` WHERE id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            $this->pdo->commit();
+            
+            return ['message' => 'Partner deleted successfully'];
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            error_log('PartnerController::destroy - Error: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to delete partner: ' . $e->getMessage()];
+        }
+    }
+
     private function findPartner(int $id): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, name FROM partners WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, name, organization_type, contact_person, contact_email, contact_phone, created_at FROM `campaign_department_partners` WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $id]);
         $partner = $stmt->fetch();
         if (!$partner) {

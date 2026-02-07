@@ -25,94 +25,126 @@ class EventController
      */
     public function index(?array $user, array $params = []): array
     {
-        $filters = [];
-        $where = [];
-        $queryParams = [];
+        try {
+            $filters = [];
+            $where = [];
+            $queryParams = [];
 
-        // Apply filters
-        if (isset($_GET['date'])) {
-            $where[] = 'e.date = :filter_date';
-            $queryParams['filter_date'] = $_GET['date'];
-        }
-        if (isset($_GET['campaign_id'])) {
-            $where[] = 'e.linked_campaign_id = :filter_campaign_id';
-            $queryParams['filter_campaign_id'] = (int) $_GET['campaign_id'];
-        }
-        if (isset($_GET['event_type'])) {
-            $where[] = 'e.event_type = :filter_event_type';
-            $queryParams['filter_event_type'] = $_GET['event_type'];
-        }
-        if (isset($_GET['event_status'])) {
-            $where[] = 'e.event_status = :filter_event_status';
-            $queryParams['filter_event_status'] = $_GET['event_status'];
-        }
-        if (isset($_GET['hazard_focus'])) {
-            $where[] = 'e.hazard_focus = :filter_hazard_focus';
-            $queryParams['filter_hazard_focus'] = $_GET['hazard_focus'];
-        }
-
-        // Role-based filtering: Viewers only see finalized events, LGU roles see all
-        $userRole = $user ? RoleMiddleware::getUserRole($user, $this->pdo) : null;
-        $userRoleName = $userRole ? strtolower($userRole) : '';
-        $isViewer = in_array($userRoleName, ['viewer', 'partner'], true);
-        $isLGUStaff = in_array($userRoleName, ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'], true);
-        
-        // Viewers can only see confirmed/completed events (read-only)
-        if ($isViewer && !$isLGUStaff) {
-            $where[] = "e.event_status IN ('confirmed', 'completed')";
-        }
-
-        $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
-
-        $sql = "
-            SELECT 
-                e.id as event_id,
-                e.event_title,
-                e.event_name,
-                e.event_type,
-                e.event_description,
-                e.hazard_focus,
-                e.target_audience_profile_id,
-                e.linked_campaign_id,
-                e.date,
-                e.start_time,
-                e.end_time,
-                e.venue,
-                e.location,
-                e.event_status,
-                e.attendance_count,
-                e.created_by,
-                e.created_at,
-                e.updated_at,
-                c.title as campaign_title,
-                a.name as audience_segment_name,
-                a.risk_level as audience_risk_level
-            FROM `campaign_department_events` e
-            LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
-            LEFT JOIN `campaign_department_audience_segments` a ON a.id = e.target_audience_profile_id
-            {$whereClause}
-            ORDER BY e.date DESC, e.start_time DESC
-            LIMIT 100
-        ";
-
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($queryParams);
-        $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Format dates and times
-        foreach ($events as &$event) {
-            if ($event['date']) {
-                $event['date_formatted'] = date('Y-m-d', strtotime($event['date']));
+            // Check if table exists first
+            try {
+                $checkTable = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_events'");
+                if ($checkTable->rowCount() === 0) {
+                    error_log('EventController::index - Table campaign_department_events does not exist');
+                    return ['data' => []];
+                }
+            } catch (\PDOException $e) {
+                error_log('EventController::index - Error checking table existence: ' . $e->getMessage());
+                return ['data' => []];
             }
-            if ($event['start_time']) {
-                $event['start_time_formatted'] = date('H:i', strtotime($event['start_time']));
-            }
-            if ($event['end_time']) {
-                $event['end_time_formatted'] = date('H:i', strtotime($event['end_time']));
-            }
-        }
 
-        return ['data' => $events];
+            // Apply filters
+            if (isset($_GET['date'])) {
+                $where[] = 'e.date = :filter_date';
+                $queryParams['filter_date'] = $_GET['date'];
+            }
+            if (isset($_GET['campaign_id'])) {
+                $where[] = 'e.linked_campaign_id = :filter_campaign_id';
+                $queryParams['filter_campaign_id'] = (int) $_GET['campaign_id'];
+            }
+            if (isset($_GET['event_type'])) {
+                $where[] = 'e.event_type = :filter_event_type';
+                $queryParams['filter_event_type'] = $_GET['event_type'];
+            }
+            if (isset($_GET['event_status'])) {
+                $where[] = 'e.event_status = :filter_event_status';
+                $queryParams['filter_event_status'] = $_GET['event_status'];
+            }
+            if (isset($_GET['hazard_focus'])) {
+                $where[] = 'e.hazard_focus = :filter_hazard_focus';
+                $queryParams['filter_hazard_focus'] = $_GET['hazard_focus'];
+            }
+
+            // Role-based filtering: Viewers only see finalized events, LGU roles see all
+            $userRole = null;
+            try {
+                $userRole = $user ? RoleMiddleware::getUserRole($user, $this->pdo) : null;
+            } catch (\Throwable $e) {
+                error_log('EventController::index - Error getting user role: ' . $e->getMessage());
+            }
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            $isViewer = in_array($userRoleName, ['viewer', 'partner'], true);
+            $isLGUStaff = in_array($userRoleName, ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'], true);
+            
+            // Viewers can only see confirmed/completed events (read-only)
+            if ($isViewer && !$isLGUStaff) {
+                $where[] = "e.event_status IN ('confirmed', 'completed')";
+            }
+
+            $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
+
+            $sql = "
+                SELECT 
+                    e.id as event_id,
+                    e.event_title,
+                    e.event_name,
+                    e.event_type,
+                    e.event_description,
+                    e.hazard_focus,
+                    e.target_audience_profile_id,
+                    e.linked_campaign_id,
+                    e.date,
+                    e.start_time,
+                    e.end_time,
+                    e.venue,
+                    e.location,
+                    e.event_status,
+                    e.attendance_count,
+                    e.created_by,
+                    e.created_at,
+                    e.updated_at,
+                    c.title as campaign_title,
+                    a.name as audience_segment_name,
+                    a.risk_level as audience_risk_level
+                FROM `campaign_department_events` e
+                LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
+                LEFT JOIN `campaign_department_audience_segments` a ON a.id = e.target_audience_profile_id
+                {$whereClause}
+                ORDER BY e.date DESC, e.start_time DESC
+                LIMIT 100
+            ";
+
+            try {
+                $stmt = $this->pdo->prepare($sql);
+                if ($stmt === false) {
+                    throw new \RuntimeException('Failed to prepare SQL statement');
+                }
+                $stmt->execute($queryParams);
+                $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                // Format dates and times
+                foreach ($events as &$event) {
+                    if ($event['date']) {
+                        $event['date_formatted'] = date('Y-m-d', strtotime($event['date']));
+                    }
+                    if ($event['start_time']) {
+                        $event['start_time_formatted'] = date('H:i', strtotime($event['start_time']));
+                    }
+                    if ($event['end_time']) {
+                        $event['end_time_formatted'] = date('H:i', strtotime($event['end_time']));
+                    }
+                }
+
+                return ['data' => $events ?: []];
+            } catch (\PDOException $e) {
+                error_log('EventController::index PDO error: ' . $e->getMessage());
+                error_log('EventController::index SQL: ' . $sql);
+                return ['data' => []];
+            }
+        } catch (\Throwable $e) {
+            error_log('EventController::index error: ' . $e->getMessage());
+            error_log('EventController::index stack: ' . $e->getTraceAsString());
+            return ['data' => []];
+        }
     }
 
     /**
@@ -1071,6 +1103,98 @@ class EventController
         } catch (\RuntimeException $e) {
             http_response_code(500);
             return ['error' => 'Sync failed: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Delete an event
+     */
+    public function destroy(?array $user, array $params = []): array
+    {
+        // RBAC: Only authorized LGU roles can delete events (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only - cannot delete anything
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot delete events.'];
+            }
+            
+            // Only admin and captain can delete events
+            $allowedRoles = ['admin', 'captain', 'barangay administrator', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only administrators and captains can delete events.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        
+        // Check if event exists
+        try {
+            $checkTable = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_events'");
+            if ($checkTable->rowCount() === 0) {
+                http_response_code(404);
+                return ['error' => 'Events table does not exist'];
+            }
+        } catch (\PDOException $e) {
+            http_response_code(500);
+            return ['error' => 'Database error'];
+        }
+        
+        $stmt = $this->pdo->prepare('SELECT id, event_title, event_status FROM campaign_department_events WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        $event = $stmt->fetch(\PDO::FETCH_ASSOC);
+        
+        if (!$event) {
+            http_response_code(404);
+            return ['error' => 'Event not found'];
+        }
+        
+        // Only allow deletion of draft or cancelled events
+        $status = strtolower($event['event_status'] ?? '');
+        if (!in_array($status, ['draft', 'cancelled'], true)) {
+            http_response_code(422);
+            return ['error' => 'Cannot delete events that are not in draft or cancelled status.'];
+        }
+        
+        // Delete related records first (foreign key constraints)
+        $this->pdo->beginTransaction();
+        try {
+            // Delete attendance records
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_event_attendance` WHERE event_id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete agency coordination
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_event_agency_coordination` WHERE event_id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete facilitators
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_event_facilitators` WHERE event_id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete the event
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_events` WHERE id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            $this->pdo->commit();
+            
+            return ['message' => 'Event deleted successfully'];
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            error_log('EventController::destroy - Error: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to delete event: ' . $e->getMessage()];
         }
     }
 

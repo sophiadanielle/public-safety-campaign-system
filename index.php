@@ -4,6 +4,22 @@
  * Handles API routing and serves login page for non-API requests
  */
 
+// CRITICAL: Check for API request FIRST - before any other processing
+// This must be the absolute first check to ensure API requests are handled correctly
+$rawUri = $_SERVER['REQUEST_URI'] ?? '';
+if (strpos($rawUri, '/api/') !== false) {
+    // This is definitely an API request - extract the API path immediately
+    $pathPart = parse_url($rawUri, PHP_URL_PATH);
+    if ($pathPart && strpos($pathPart, '/api/') !== false) {
+        $apiPos = strpos($pathPart, '/api/');
+        $apiPath = substr($pathPart, $apiPos);
+        // Set a flag to skip HTML rendering
+        $GLOBALS['IS_API_REQUEST'] = true;
+        $GLOBALS['API_PATH'] = $apiPath;
+        error_log("EARLY API DETECTION: Found /api/ in URI, extracted path: " . $apiPath);
+    }
+}
+
 // CRITICAL: Force production basePath at the VERY START (before any includes)
 // This runs first and sets a global flag that path_helper.php will respect
 if (isset($_SERVER['HTTP_HOST'])) {
@@ -35,25 +51,62 @@ $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
 $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
 $scriptDir = dirname($scriptName);
 
+// CRITICAL: Check for API path FIRST before any manipulation
+// This must be the very first check
+$rawRequestUri = $_SERVER['REQUEST_URI'] ?? '';
+$isApiRequestEarly = strpos($rawRequestUri, '/api/') !== false;
+
+// If we detected API early at the top, use that path
+if (isset($GLOBALS['IS_API_REQUEST']) && $GLOBALS['IS_API_REQUEST'] && isset($GLOBALS['API_PATH'])) {
+    $requestUri = $GLOBALS['API_PATH'];
+    $isApiRequestEarly = true;
+    error_log("ROUTING DEBUG: Using early-detected API path: " . $requestUri);
+    // Skip all the normalization - we already have the correct path
+    // Jump directly to API check
+    $isApiRequest = true;
+    goto skip_to_api_check;
+}
+
+// Debug logging
+error_log("ROUTING DEBUG: REQUEST_URI = " . $rawRequestUri);
+error_log("ROUTING DEBUG: SCRIPT_NAME = " . $scriptName);
+error_log("ROUTING DEBUG: SCRIPT_DIR = " . $scriptDir);
+error_log("ROUTING DEBUG: Initial requestUri = " . $requestUri);
+error_log("ROUTING DEBUG: isApiRequestEarly = " . ($isApiRequestEarly ? 'YES' : 'NO'));
+
 // Normalize URI (remove script directory and index.php from path)
 // CRITICAL: Handle both root deployment and subdirectory deployment
 if ($scriptDir !== '/' && $scriptDir !== '.') {
     if (strpos($requestUri, $scriptDir) === 0) {
         $requestUri = substr($requestUri, strlen($scriptDir));
+        error_log("ROUTING DEBUG: After removing scriptDir: " . $requestUri);
     }
 }
+
+// Check for API path in normalized URI
+$hasApiPath = strpos($requestUri, '/api/') !== false || strpos($requestUri, 'api/') !== false;
 
 // Remove /index.php from start of path (root deployment: /index.php/api/...)
 if (strpos($requestUri, '/index.php') === 0) {
     $requestUri = substr($requestUri, strlen('/index.php'));
+    error_log("ROUTING DEBUG: After removing /index.php from start: " . $requestUri);
 } 
 // Remove index.php/ from anywhere in path (subdirectory: /public-safety-campaign-system/index.php/api/...)
+// This handles: /public-safety-campaign-system/index.php/api/v1/auth/login
 elseif (strpos($requestUri, 'index.php/') !== false) {
-    $requestUri = substr($requestUri, strpos($requestUri, 'index.php/') + strlen('index.php'));
+    $pos = strpos($requestUri, 'index.php/');
+    $requestUri = substr($requestUri, $pos + strlen('index.php/'));
+    error_log("ROUTING DEBUG: After removing index.php/: " . $requestUri);
+}
+// Also handle /index.php/api/ pattern (another subdirectory format)
+elseif (strpos($requestUri, '/index.php/api/') !== false) {
+    $requestUri = substr($requestUri, strpos($requestUri, '/index.php/api/') + strlen('/index.php'));
+    error_log("ROUTING DEBUG: After removing /index.php/api/: " . $requestUri);
 }
 // Also handle /index.php at end (shouldn't happen for API but handle it)
 elseif (strpos($requestUri, '/index.php') !== false && strpos($requestUri, '/index.php') === (strlen($requestUri) - strlen('/index.php'))) {
     $requestUri = substr($requestUri, 0, strpos($requestUri, '/index.php'));
+    error_log("ROUTING DEBUG: After removing /index.php from end: " . $requestUri);
 }
 
 // Ensure URI starts with /
@@ -61,8 +114,69 @@ if ($requestUri === '' || ($requestUri[0] !== '/' && $requestUri !== '')) {
     $requestUri = '/' . $requestUri;
 }
 
-// Check if this is an API request
-$isApiRequest = strpos($requestUri, '/api/') === 0;
+skip_to_api_check:
+
+// Check if this is an API request - prioritize early detection
+// If early detection found it, trust that
+$isApiRequest = $isApiRequestEarly;
+
+// If not detected early, check normalized URI
+if (!$isApiRequest) {
+    $isApiRequest = (
+        strpos($requestUri, '/api/') === 0 || 
+        $hasApiPath ||
+        (isset($_SERVER['PATH_INFO']) && strpos($_SERVER['PATH_INFO'], '/api/') !== false)
+    );
+}
+
+// ABSOLUTE FINAL CHECK: If REQUEST_URI contains /api/, it MUST be an API request
+// This is a safety net to catch any edge cases
+if (!$isApiRequest && isset($_SERVER['REQUEST_URI'])) {
+    $rawCheck = $_SERVER['REQUEST_URI'];
+    if (strpos($rawCheck, '/api/') !== false) {
+        $isApiRequest = true;
+        // Extract the API path from the raw URI
+        $pathPart = parse_url($rawCheck, PHP_URL_PATH);
+        if ($pathPart && strpos($pathPart, '/api/') !== false) {
+            $apiPos = strpos($pathPart, '/api/');
+            $requestUri = substr($pathPart, $apiPos);
+            error_log("ROUTING DEBUG: ABSOLUTE FINAL CHECK - forced API, path: " . $requestUri);
+        }
+    }
+}
+
+error_log("ROUTING DEBUG: Final requestUri = " . $requestUri);
+error_log("ROUTING DEBUG: REQUEST_URI contains /api/: " . (strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false ? 'YES' : 'NO'));
+error_log("ROUTING DEBUG: isApiRequestEarly = " . ($isApiRequestEarly ? 'YES' : 'NO'));
+error_log("ROUTING DEBUG: isApiRequest = " . ($isApiRequest ? 'YES' : 'NO'));
+
+// FINAL FALLBACK: If still not detected but REQUEST_URI has /api/, force extract the API path
+if (!$isApiRequest && isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/api/') !== false) {
+    // Extract API path from REQUEST_URI directly
+    $fullUri = $_SERVER['REQUEST_URI'];
+    $pathPart = parse_url($fullUri, PHP_URL_PATH);
+    if ($pathPart) {
+        $apiPosInPath = strpos($pathPart, '/api/');
+        if ($apiPosInPath !== false) {
+            $requestUri = substr($pathPart, $apiPosInPath);
+            $isApiRequest = true;
+            error_log("ROUTING DEBUG: FORCED API REQUEST - extracted path: " . $requestUri);
+        }
+    }
+}
+
+// ABSOLUTE FINAL CHECK: If REQUEST_URI contains /api/, it MUST be an API request
+if (!$isApiRequest && isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/api/') !== false) {
+    $isApiRequest = true;
+    // Try to extract path one more time
+    $fullUri = $_SERVER['REQUEST_URI'];
+    $pathPart = parse_url($fullUri, PHP_URL_PATH);
+    if ($pathPart && strpos($pathPart, '/api/') !== false) {
+        $apiPos = strpos($pathPart, '/api/');
+        $requestUri = substr($pathPart, $apiPos);
+        error_log("ROUTING DEBUG: ABSOLUTE FINAL - forced API, path: " . $requestUri);
+    }
+}
 
 if ($isApiRequest) {
     // Start output buffering early to catch any warnings/errors
@@ -808,16 +922,21 @@ if (strpos($currentHost, 'alertaraqc.com') !== false ||
     $basePath = '';
     $apiPath = '/index.php';
 }
-// Emergency: If basePath is still wrong, force it
-if (isset($basePath) && $basePath === '/public-safety-campaign-system') {
-    $basePath = '';
-    $apiPath = '/index.php';
-}
+// REMOVED: Emergency check that was breaking localhost paths
+// The path_helper.php should have already set the correct paths
 ?>
-const basePath = '<?php echo isset($basePath) && $basePath !== '/public-safety-campaign-system' ? $basePath : ''; ?>';
-const apiBase = '<?php echo isset($apiPath) && $apiPath !== '/public-safety-campaign-system/index.php' ? $apiPath : '/index.php'; ?>';
+const basePath = '<?php echo isset($basePath) ? $basePath : '/public-safety-campaign-system'; ?>';
+const apiBase = '<?php 
+    if (isset($apiPath)) {
+        echo $apiPath;
+    } else {
+        // Default for localhost - MUST include the full path
+        echo '/public-safety-campaign-system/index.php';
+    }
+?>';
 console.log('BASE PATH:', basePath);
 console.log('API BASE:', apiBase);
+console.log('Full login URL will be:', apiBase + '/api/v1/auth/login');
 console.log('HOST:', '<?php echo htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'NOT SET', ENT_QUOTES); ?>');
 console.log('IS_LOCALHOST:', <?php echo isset($isDefinitelyLocalhost) && $isDefinitelyLocalhost ? 'true' : 'false'; ?>);
 
@@ -897,7 +1016,25 @@ async function login() {
     statusEl.style.color = '#0f172a';
 
     try {
-        const res = await fetch(apiBase + '/api/v1/auth/login', {
+        // Ensure apiBase ends correctly and construct full URL
+        let loginUrl = apiBase.endsWith('/') 
+            ? apiBase + 'api/v1/auth/login' 
+            : apiBase + '/api/v1/auth/login';
+        
+        // CRITICAL: Make sure the URL is absolute (starts with /)
+        // If it doesn't start with /, the browser will treat it as relative
+        if (!loginUrl.startsWith('/')) {
+            loginUrl = '/' + loginUrl;
+        }
+        
+        // Remove any double slashes (except after http://)
+        loginUrl = loginUrl.replace(/([^:]\/)\/+/g, '$1');
+        
+        console.log('Login URL:', loginUrl);
+        console.log('API Base:', apiBase);
+        console.log('Full URL will be:', window.location.origin + loginUrl);
+        
+        const res = await fetch(loginUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })

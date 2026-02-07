@@ -696,7 +696,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             const token = localStorage.getItem('jwtToken') || '';
-            if (!token) {
+            if (!token || token.trim() === '') {
                 console.warn('No JWT token found, skipping notification load');
                 return;
             }
@@ -704,7 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const apiBase = '<?php echo $apiPath; ?>';
             
             const res = await fetch(apiBase + '/api/v1/notifications?limit=10', {
-                headers: { 'Authorization': 'Bearer ' + token }
+                headers: { 'Authorization': 'Bearer ' + token.trim() }
             });
             
             if (!res.ok) {
@@ -805,14 +805,20 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadNotificationCount() {
         try {
             const token = localStorage.getItem('jwtToken') || '';
-            if (!token) return;
+            if (!token || token.trim() === '') return;
             
             const apiBase = '<?php echo $apiPath; ?>';
             const res = await fetch(apiBase + '/api/v1/notifications?limit=1', {
-                headers: { 'Authorization': 'Bearer ' + token }
+                headers: { 'Authorization': 'Bearer ' + token.trim() }
             });
             
-            if (!res.ok) return;
+            if (!res.ok) {
+                if (res.status === 401) {
+                    // Token expired or invalid - silently fail to avoid console spam
+                    return;
+                }
+                return;
+            }
             
             const data = await res.json();
             const unreadCount = data.unread_count || 0;
@@ -835,11 +841,13 @@ document.addEventListener('DOMContentLoaded', function() {
     async function markNotificationRead(notifId) {
         try {
             const token = localStorage.getItem('jwtToken') || '';
+            if (!token || token.trim() === '') return;
+            
             const apiBase = '<?php echo $apiPath; ?>';
             
             await fetch(apiBase + '/api/v1/notifications/' + notifId + '/read', {
                 method: 'PUT',
-                headers: { 'Authorization': 'Bearer ' + token }
+                headers: { 'Authorization': 'Bearer ' + token.trim() }
             });
             
             // Update count
@@ -852,11 +860,13 @@ document.addEventListener('DOMContentLoaded', function() {
     async function markAllNotificationsRead() {
         try {
             const token = localStorage.getItem('jwtToken') || '';
+            if (!token || token.trim() === '') return;
+            
             const apiBase = '<?php echo $apiPath; ?>';
             
             await fetch(apiBase + '/api/v1/notifications/read-all', {
                 method: 'PUT',
-                headers: { 'Authorization': 'Bearer ' + token }
+                headers: { 'Authorization': 'Bearer ' + token.trim() }
             });
             
             // Reload notifications
@@ -918,7 +928,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             const token = localStorage.getItem('jwtToken') || '';
-            if (!token) {
+            if (!token || token.trim() === '') {
                 console.warn('No JWT token found, skipping message load');
                 return;
             }
@@ -926,7 +936,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const apiBase = '<?php echo $apiPath; ?>';
             
             const res = await fetch(apiBase + '/api/v1/messages/conversations?limit=10', {
-                headers: { 'Authorization': 'Bearer ' + token }
+                headers: { 'Authorization': 'Bearer ' + token.trim() }
             });
             
             if (!res.ok) {
@@ -1017,14 +1027,20 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadMessageCount() {
         try {
             const token = localStorage.getItem('jwtToken') || '';
-            if (!token) return;
+            if (!token || token.trim() === '') return;
             
             const apiBase = '<?php echo $apiPath; ?>';
             const res = await fetch(apiBase + '/api/v1/messages/conversations?limit=1', {
-                headers: { 'Authorization': 'Bearer ' + token }
+                headers: { 'Authorization': 'Bearer ' + token.trim() }
             });
             
-            if (!res.ok) return;
+            if (!res.ok) {
+                if (res.status === 401) {
+                    // Token expired or invalid - silently fail to avoid console spam
+                    return;
+                }
+                return;
+            }
             
             const data = await res.json();
             const unreadCount = data.unread_count || 0;
@@ -1069,10 +1085,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             const token = localStorage.getItem('jwtToken') || '';
+            if (!token || token.trim() === '') return;
+            
             const apiBase = '<?php echo $apiPath; ?>';
             
             const res = await fetch(apiBase + '/api/v1/messages/conversations/' + conversationId, {
-                headers: { 'Authorization': 'Bearer ' + token }
+                headers: { 'Authorization': 'Bearer ' + token.trim() }
             });
             
             if (!res.ok) {

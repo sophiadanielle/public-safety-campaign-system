@@ -126,4 +126,12 @@ return [
         'handler' => [EventController::class, 'syncLawEnforcementIncidents'],
         'middleware' => JWTMiddleware::class,
     ],
+    
+    // Delete event
+    [
+        'method' => 'DELETE',
+        'path' => '/api/v1/events/{id}',
+        'handler' => [EventController::class, 'destroy'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
 ];

@@ -674,6 +674,146 @@ class SurveyController
         $stmt->execute(['sid' => $surveyId]);
         return (int) $stmt->fetchColumn();
     }
+
+    /**
+     * Update a survey
+     */
+    public function update(?array $user, array $params = []): array
+    {
+        // RBAC: Only authorized LGU roles can update surveys (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot update surveys.'];
+            }
+            
+            // Allowed roles: admin, staff, secretary, kagawad, captain
+            $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only authorized LGU personnel can update surveys.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $survey = $this->findSurvey($id, allowDraft: true, allowPublic: false);
+        
+        // Only allow updating draft surveys
+        if ($survey['status'] !== 'draft') {
+            http_response_code(422);
+            return ['error' => 'Only draft surveys can be updated'];
+        }
+        
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        
+        $title = trim($input['title'] ?? $survey['title']);
+        $description = isset($input['description']) ? trim($input['description']) : $survey['description'];
+        $campaignId = isset($input['campaign_id']) ? ((int) $input['campaign_id'] ?: null) : $survey['campaign_id'];
+        $eventId = isset($input['event_id']) ? ((int) $input['event_id'] ?: null) : $survey['event_id'];
+        
+        if (!$title) {
+            http_response_code(422);
+            return ['error' => 'Title is required'];
+        }
+        
+        $stmt = $this->pdo->prepare('
+            UPDATE `campaign_department_surveys` SET
+                title = :title,
+                description = :description,
+                campaign_id = :campaign_id,
+                event_id = :event_id,
+                updated_at = NOW()
+            WHERE id = :id
+        ');
+        $stmt->execute([
+            'id' => $id,
+            'title' => $title,
+            'description' => $description ?: null,
+            'campaign_id' => $campaignId,
+            'event_id' => $eventId
+        ]);
+        
+        return ['id' => $id, 'message' => 'Survey updated'];
+    }
+
+    /**
+     * Delete a survey
+     */
+    public function destroy(?array $user, array $params = []): array
+    {
+        // RBAC: Only authorized LGU roles can delete surveys (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only - cannot delete anything
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot delete surveys.'];
+            }
+            
+            // Only admin and captain can delete surveys
+            $allowedRoles = ['admin', 'captain', 'barangay administrator', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only administrators and captains can delete surveys.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $survey = $this->findSurvey($id, allowDraft: true, allowPublic: false);
+        
+        // Only allow deletion of draft or closed surveys
+        if (!in_array($survey['status'], ['draft', 'closed'], true)) {
+            http_response_code(422);
+            return ['error' => 'Cannot delete surveys that are not in draft or closed status.'];
+        }
+        
+        // Delete related records first (foreign key constraints)
+        $this->pdo->beginTransaction();
+        try {
+            // Delete responses
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_survey_responses` WHERE survey_id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete questions
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_survey_questions` WHERE survey_id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete the survey
+            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_surveys` WHERE id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            $this->pdo->commit();
+            
+            return ['message' => 'Survey deleted successfully'];
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            error_log('SurveyController::destroy - Error: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to delete survey: ' . $e->getMessage()];
+        }
+    }
 }
 
 

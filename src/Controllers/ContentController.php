@@ -1224,6 +1224,103 @@ class ContentController
     }
     
     /**
+     * Delete content permanently
+     */
+    public function destroy(?array $user, array $params = []): array
+    {
+        // RBAC: Only authorized LGU roles can delete content (viewer cannot)
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only - cannot delete anything
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot delete content.'];
+            }
+            
+            // Only admin, captain, and content creators can delete content
+            $allowedRoles = ['admin', 'captain', 'barangay administrator', 'system_admin', 'barangay_admin', 'content_manager'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only administrators and captains can delete content.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        
+        // Get content details before deletion
+        $stmt = $this->pdo->prepare('SELECT id, title, approval_status, file_reference FROM campaign_department_content_items WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        $content = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$content) {
+            http_response_code(404);
+            return ['error' => 'Content not found'];
+        }
+        
+        // Only allow deletion of draft or rejected content
+        $status = strtolower($content['approval_status'] ?? '');
+        if (!in_array($status, ['draft', 'rejected'], true)) {
+            http_response_code(422);
+            return ['error' => 'Cannot delete content that is not in draft or rejected status. Please archive approved content instead.'];
+        }
+        
+        $this->pdo->beginTransaction();
+        try {
+            // Delete attachments
+            $stmt = $this->pdo->prepare('DELETE FROM campaign_department_attachments WHERE content_item_id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete content versions if table exists
+            try {
+                $tableExists = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_campaign_department_content_item_versions'")->rowCount() > 0;
+                if ($tableExists) {
+                    $stmt = $this->pdo->prepare('DELETE FROM campaign_department_campaign_department_content_item_versions WHERE content_id = :id');
+                    $stmt->execute(['id' => $id]);
+                }
+            } catch (\PDOException $e) {
+                // Version table might not exist, that's okay
+            }
+            
+            // Delete the content item
+            $stmt = $this->pdo->prepare('DELETE FROM campaign_department_content_items WHERE id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            // Delete physical file if it exists
+            if ($content['file_reference']) {
+                $filePath = $this->uploadDir . DIRECTORY_SEPARATOR . $content['file_reference'];
+                if (file_exists($filePath)) {
+                    @unlink($filePath);
+                }
+            }
+            
+            $this->pdo->commit();
+            
+            // Log audit entry
+            $this->logAudit($user['id'] ?? null, 'content', 'delete', $id, [
+                'title' => $content['title'],
+                'status' => $content['approval_status']
+            ]);
+            
+            return ['message' => 'Content deleted successfully'];
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            error_log('ContentController::destroy - Error: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to delete content: ' . $e->getMessage()];
+        }
+    }
+    
+    /**
      * Archive content (soft delete, audit-safe)
      */
     public function archive(?array $user, array $params = []): array

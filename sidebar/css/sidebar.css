@@ -69,11 +69,23 @@
     text-decoration: none;
 }
 
+.brand-logo .logo-link {
+    display: block;
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.brand-logo .logo-link:hover {
+    opacity: 0.8;
+}
+
 .logo-img {
     height: 60px;             /* Better size for visibility */
     width: auto;               /* Maintain proportions */
     object-fit: contain;       /* Prevent distortion */
     transition: transform 0.25s ease;
+    display: block;
 }
 
 /* Mobile adjustments */

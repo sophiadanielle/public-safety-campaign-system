@@ -487,9 +487,12 @@ function renderSurveysList(surveys) {
         
         if (!isViewer) {
             html += `<td style="padding:12px;">
-                <button class="btn btn-secondary" onclick="viewResults(${survey.id})" style="padding:4px 8px; font-size:12px; margin-right:4px;">Results</button>
-                <button class="btn btn-secondary" onclick="exportResponses(${survey.id})" style="padding:4px 8px; font-size:12px; margin-right:4px;">Export</button>
-                ${survey.status === 'published' ? `<button class="btn btn-secondary" onclick="closeSurvey(${survey.id})" style="padding:4px 8px; font-size:12px;">Close</button>` : ''}
+                <button class="btn btn-secondary" onclick="viewSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">👁️ View</button>
+                <button class="btn btn-secondary" onclick="editSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">✏️ Edit</button>
+                <button class="btn btn-secondary" onclick="viewResults(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">📊 Results</button>
+                <button class="btn btn-secondary" onclick="exportResponses(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">📥 Export</button>
+                ${survey.status === 'published' ? `<button class="btn btn-secondary" onclick="closeSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">🔒 Close</button>` : ''}
+                ${survey.status === 'draft' || survey.status === 'closed' ? `<button class="btn btn-danger" onclick="deleteSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; background: #ef4444; color: white; margin: 2px;">🗑️ Delete</button>` : ''}
             </td>`;
         } else {
             // Viewer: Show only "Respond" button for published surveys
@@ -531,6 +534,150 @@ async function loadSurveyForResponseById(surveyId) {
     await loadSurveyForResponse();
     // Scroll to response form
     document.getElementById('responses').scrollIntoView({ behavior: 'smooth' });
+}
+
+// View survey details
+async function viewSurvey(surveyId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (data.error || !data.data) {
+            alert('Error: ' + (data.error || 'Failed to load survey'));
+            return;
+        }
+        
+        const survey = data.data;
+        
+        // Create modal with survey details
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 12px; padding: 24px; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: #0f172a; font-size: 24px;">Survey Details</h2>
+                    <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+                </div>
+                <div style="display: grid; gap: 16px;">
+                    <div><strong>ID:</strong> ${survey.id}</div>
+                    <div><strong>Title:</strong> ${survey.title || 'N/A'}</div>
+                    <div><strong>Description:</strong> ${survey.description || 'N/A'}</div>
+                    <div><strong>Status:</strong> <span style="color: ${survey.status === 'published' ? '#166534' : survey.status === 'closed' ? '#dc2626' : '#64748b'}; font-weight:600;">${survey.status || 'draft'}</span></div>
+                    <div><strong>Campaign ID:</strong> ${survey.campaign_id || 'N/A'}</div>
+                    <div><strong>Event ID:</strong> ${survey.event_id || 'N/A'}</div>
+                    <div><strong>Questions:</strong> ${survey.questions ? survey.questions.length : 0}</div>
+                    <div><strong>Total Responses:</strong> ${survey.total_responses || 0}</div>
+                    <div><strong>Created At:</strong> ${survey.created_at ? new Date(survey.created_at).toLocaleString() : 'N/A'}</div>
+                    ${survey.published_at ? `<div><strong>Published At:</strong> ${new Date(survey.published_at).toLocaleString()}</div>` : ''}
+                    ${survey.closed_at ? `<div><strong>Closed At:</strong> ${new Date(survey.closed_at).toLocaleString()}</div>` : ''}
+                </div>
+                ${survey.questions && survey.questions.length > 0 ? `
+                    <div style="margin-top: 24px; padding-top: 24px; border-top: 2px solid #f1f5f9;">
+                        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">Questions</h3>
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            ${survey.questions.map((q, idx) => `
+                                <div style="padding: 12px; background: #f8fafc; border-radius: 8px;">
+                                    <div style="font-weight: 600; margin-bottom: 4px;">Q${idx + 1}: ${q.question_text || 'N/A'}</div>
+                                    <div style="font-size: 12px; color: #64748b;">Type: ${q.question_type || 'N/A'}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Close</button>
+                    ${survey.status === 'draft' ? `<button onclick="editSurvey(${survey.id}); this.closest('div[style*=\"position: fixed\"]').remove();" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer;">Edit</button>` : ''}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    } catch (err) {
+        alert('Failed to load survey: ' + err.message);
+    }
+}
+
+// Edit survey
+async function editSurvey(surveyId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (data.error || !data.data) {
+            alert('Error: ' + (data.error || 'Failed to load survey'));
+            return;
+        }
+        
+        const survey = data.data;
+        
+        // Check if survey can be edited (only draft)
+        if (survey.status !== 'draft') {
+            alert('Only draft surveys can be edited.');
+            return;
+        }
+        
+        // Populate form with survey data
+        document.getElementById('title').value = survey.title || '';
+        document.getElementById('description').value = survey.description || '';
+        document.getElementById('campaign_id').value = survey.campaign_id || '';
+        document.getElementById('event_id').value = survey.event_id || '';
+        
+        // Store survey ID for update
+        document.getElementById('createForm').dataset.surveyId = surveyId;
+        
+        // Set current survey ID for questions
+        currentSurveyId = surveyId;
+        
+        // Change submit button text
+        const submitBtn = document.querySelector('#create-survey button.btn-primary');
+        if (submitBtn) {
+            submitBtn.textContent = 'Update Survey';
+        }
+        
+        // Load questions
+        await loadQuestions();
+        
+        // Scroll to form
+        document.getElementById('create-survey').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+    } catch (err) {
+        alert('Failed to load survey: ' + err.message);
+    }
+}
+
+// Delete survey
+async function deleteSurvey(surveyId) {
+    if (!confirm('Are you sure you want to delete this survey? This action cannot be undone and will remove all questions and responses.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to delete survey'));
+            return;
+        }
+        
+        alert('Survey deleted successfully!');
+        loadSurveys();
+    } catch (err) {
+        alert('Failed to delete survey: ' + err.message);
+    }
 }
 
 async function viewResults(surveyId) {

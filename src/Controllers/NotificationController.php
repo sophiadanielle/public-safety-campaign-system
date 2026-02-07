@@ -33,6 +33,24 @@ class NotificationController
             $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 20;
             $unreadOnly = isset($_GET['unread_only']) && $_GET['unread_only'] === 'true';
 
+            // Check if table exists first
+            try {
+                $checkTable = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_notifications'");
+                if ($checkTable->rowCount() === 0) {
+                    error_log('NotificationController::index - Table campaign_department_notifications does not exist');
+                    return [
+                        'data' => [],
+                        'unread_count' => 0,
+                    ];
+                }
+            } catch (\PDOException $e) {
+                error_log('NotificationController::index - Error checking table existence: ' . $e->getMessage());
+                return [
+                    'data' => [],
+                    'unread_count' => 0,
+                ];
+            }
+
             $where = ['user_id = :user_id OR user_id IS NULL']; // NULL = system-wide notifications
             $params_array = ['user_id' => $userId];
 
@@ -59,27 +77,42 @@ class NotificationController
                 LIMIT :limit
             ";
 
-            $stmt = $this->pdo->prepare($sql);
-            foreach ($params_array as $key => $value) {
-                $stmt->bindValue(':' . $key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+            try {
+                $stmt = $this->pdo->prepare($sql);
+                if ($stmt === false) {
+                    throw new \RuntimeException('Failed to prepare SQL statement');
+                }
+                foreach ($params_array as $key => $value) {
+                    $stmt->bindValue(':' . $key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+                }
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+                $stmt->execute();
+                $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (\PDOException $e) {
+                error_log('NotificationController::index PDO error: ' . $e->getMessage());
+                error_log('NotificationController::index SQL: ' . $sql);
+                // Return empty data instead of crashing
+                $notifications = [];
             }
-            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-            $stmt->execute();
 
-            $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            // Get unread count
-            $unreadCount = $this->getUnreadCount($userId);
+            // Get unread count (wrap in try-catch in case table doesn't exist)
+            $unreadCount = 0;
+            try {
+                $unreadCount = $this->getUnreadCount($userId);
+            } catch (\Throwable $e) {
+                error_log('NotificationController::getUnreadCount error: ' . $e->getMessage());
+                // Continue with unreadCount = 0
+            }
 
             return [
-                'data' => $notifications,
+                'data' => $notifications ?: [],
                 'unread_count' => $unreadCount,
             ];
         } catch (\Throwable $e) {
             error_log('NotificationController::index error: ' . $e->getMessage());
             error_log('NotificationController::index stack: ' . $e->getTraceAsString());
-            http_response_code(500);
-            return ['error' => 'Failed to load notifications', 'data' => [], 'unread_count' => 0];
+            // Don't set 500 status - return valid JSON with empty data
+            return ['data' => [], 'unread_count' => 0];
         }
     }
 
@@ -134,9 +167,17 @@ class NotificationController
      */
     private function getUnreadCount(int $userId): int
     {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM campaign_department_notifications WHERE (user_id = :user_id OR user_id IS NULL) AND is_read = 0');
-        $stmt->execute(['user_id' => $userId]);
-        return (int) $stmt->fetchColumn();
+        try {
+            $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM campaign_department_notifications WHERE (user_id = :user_id OR user_id IS NULL) AND is_read = 0');
+            if ($stmt === false) {
+                return 0;
+            }
+            $stmt->execute(['user_id' => $userId]);
+            return (int) $stmt->fetchColumn();
+        } catch (\PDOException $e) {
+            error_log('NotificationController::getUnreadCount PDO error: ' . $e->getMessage());
+            return 0;
+        }
     }
 
     /**
