@@ -735,11 +735,53 @@ function renderResults(data) {
 }
 
 async function exportResponses(surveyId) {
-    window.location.href = apiBase + '/api/v1/surveys/' + surveyId + '/responses/export?token=' + encodeURIComponent(token);
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId + '/responses/export', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'survey_' + surveyId + '_responses.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } else {
+            const data = await res.json();
+            alert('Error: ' + (data.error || 'Failed to export responses'));
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
 }
 
 async function exportAggregatedResults(surveyId) {
-    window.location.href = apiBase + '/api/v1/surveys/' + surveyId + '/results/export?token=' + encodeURIComponent(token);
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId + '/results/export', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'survey_' + surveyId + '_aggregated_results.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } else {
+            const data = await res.json();
+            alert('Error: ' + (data.error || 'Failed to export aggregated results'));
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
 }
 
 async function closeSurvey(surveyId) {

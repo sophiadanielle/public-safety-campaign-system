@@ -116,6 +116,44 @@ class SurveyController
                     ADD COLUMN `closed_at` TIMESTAMP NULL AFTER `published_at`");
             }
             
+            // Check and create survey_audit_log table
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_audit_log'");
+            $hasAuditLog = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasAuditLog) {
+                error_log('SurveyController: Creating survey_audit_log table');
+                $this->pdo->exec("CREATE TABLE IF NOT EXISTS `campaign_department_survey_audit_log` (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    survey_id INT UNSIGNED NOT NULL,
+                    user_id INT UNSIGNED NULL,
+                    action_type ENUM('created', 'updated', 'published', 'closed', 'question_added', 'question_updated', 'question_deleted', 'response_submitted') NOT NULL,
+                    field_name VARCHAR(100) NULL,
+                    old_value TEXT NULL,
+                    new_value TEXT NULL,
+                    change_details TEXT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_survey_audit_survey (survey_id),
+                    INDEX idx_survey_audit_user (user_id),
+                    INDEX idx_survey_audit_action (action_type),
+                    INDEX idx_survey_audit_created (created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+            
+            // Check and add question_order column to survey_questions table
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_questions' 
+                AND COLUMN_NAME = 'question_order'");
+            $hasQuestionOrder = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasQuestionOrder) {
+                error_log('SurveyController: Adding question_order column to survey_questions');
+                $this->pdo->exec("ALTER TABLE `campaign_department_survey_questions` 
+                    ADD COLUMN `question_order` INT UNSIGNED NOT NULL DEFAULT 1 AFTER `survey_id`");
+            }
+            
             error_log('SurveyController: Auto-migration completed successfully');
         } catch (\Exception $e) {
             error_log('SurveyController: Failed to apply migrations: ' . $e->getMessage());
