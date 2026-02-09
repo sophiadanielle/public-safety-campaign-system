@@ -681,8 +681,8 @@ async function loadReportList(campaignId) {
             html += '<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#f1f5f9;"><th style="padding:12px; text-align:left; font-weight:600; color:#475569;">Date Generated</th><th style="padding:12px; text-align:left; font-weight:600; color:#475569;">Actions</th></tr></thead><tbody>';
             data.reports.forEach(report => {
                 const date = new Date(report.created_at || report.generated_at).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                // Access report files directly without going through index.php
-                const reportUrl = '/' + report.file_path;
+                // Use view-report.php to serve reports without authentication
+                const reportUrl = basePath + '/public/view-report.php?file=' + encodeURIComponent(report.file_path);
                 html += `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:12px; color:#1e293b;">${date}</td><td style="padding:12px;"><a href="${reportUrl}" target="_blank" class="btn btn-secondary" style="padding:6px 12px; font-size:14px;"><i class="fas fa-eye" style="margin-right:6px;"></i>View Report</a></td></tr>`;
             });
             html += '</tbody></table></div>';
