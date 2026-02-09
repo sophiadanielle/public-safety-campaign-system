@@ -154,6 +154,19 @@ class SurveyController
                     ADD COLUMN `question_order` INT UNSIGNED NOT NULL DEFAULT 1 AFTER `survey_id`");
             }
             
+            // Check and add required_flag column to survey_questions table
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_questions' 
+                AND COLUMN_NAME = 'required_flag'");
+            $hasRequiredFlag = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasRequiredFlag) {
+                error_log('SurveyController: Adding required_flag column to survey_questions');
+                $this->pdo->exec("ALTER TABLE `campaign_department_survey_questions` 
+                    ADD COLUMN `required_flag` TINYINT(1) NOT NULL DEFAULT 0 AFTER `options_json`");
+            }
+            
             error_log('SurveyController: Auto-migration completed successfully');
         } catch (\Exception $e) {
             error_log('SurveyController: Failed to apply migrations: ' . $e->getMessage());
