@@ -1156,7 +1156,75 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             font-size: 11px;
         }
     }
+    
+    /* Toast Notification Styles */
+    .toast-container {
+        position: fixed;
+        top: 90px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .toast {
+        background: #10b981;
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 300px;
+        max-width: 500px;
+        animation: slideIn 0.3s ease-out;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .toast.error {
+        background: #ef4444;
+    }
+    
+    .toast.warning {
+        background: #f59e0b;
+    }
+    
+    .toast.info {
+        background: #3b82f6;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+    
+    .toast.hiding {
+        animation: slideOut 0.3s ease-in forwards;
+    }
 </style>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
 
 <main class="campaign-page">
     <header>
@@ -1769,6 +1837,44 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 const basePath = '<?php echo $basePath; ?>';
 const apiBase = '<?php echo $apiPath; ?>';
 console.log('BASE PATH:', basePath);
+
+// Toast Notification Functions
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '⚠' : 'ℹ';
+    toast.innerHTML = `<span style="font-size: 18px;">${icon}</span><span>${message}</span>`;
+    
+    container.appendChild(toast);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        toast.classList.add('hiding');
+        setTimeout(() => {
+            container.removeChild(toast);
+        }, 300);
+    }, 4000);
+}
+
+function showSuccessToast(message) {
+    showToast(message, 'success');
+}
+
+function showErrorToast(message) {
+    showToast(message, 'error');
+}
+
+function showWarningToast(message) {
+    showToast(message, 'warning');
+}
+
+function showInfoToast(message) {
+    showToast(message, 'info');
+}
 
 // Function to get fresh token from localStorage
 function getToken() {
@@ -2647,6 +2753,16 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
             materials_json: Object.keys(materialsJson).length > 0 ? materialsJson : null,
         };
         
+        // Log individual field values for debugging
+        console.log('=== FORM FIELD VALUES DEBUG ===');
+        console.log('start_time element:', document.getElementById('start_time'));
+        console.log('start_time value:', startTimeValue);
+        console.log('end_time element:', document.getElementById('end_time'));
+        console.log('end_time value:', endTimeValue);
+        console.log('barangay_zones element:', document.getElementById('barangay_zones'));
+        console.log('barangay_zones value:', barangayZones);
+        console.log('=== END FIELD VALUES DEBUG ===');
+        
         // Log the actual payload to verify real data is being sent
         console.log('Campaign creation - Payload (actual form values):', JSON.stringify(payload, null, 2));
         
@@ -2756,6 +2872,19 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
         
         createStatusEl.textContent = 'Campaign created successfully!';
         createStatusEl.className = 'status-text success';
+        
+        // Show toast notification
+        showSuccessToast('Campaign created successfully!');
+        
+        // Log the created campaign data to verify what was saved
+        console.log('Campaign created - Response data:', data);
+        if (data.campaign) {
+            console.log('Saved campaign values:');
+            console.log('- start_time:', data.campaign.start_time);
+            console.log('- end_time:', data.campaign.end_time);
+            console.log('- barangay_target_zones:', data.campaign.barangay_target_zones);
+        }
+        
         clearForm();
         // FIX: Use centralized refresh to ensure all views update
         refreshAllCampaignViews();
@@ -5166,6 +5295,9 @@ async function updateCampaign(campaignId) {
         const budgetEl = document.getElementById('budget');
         const staffCountEl = document.getElementById('staff_count');
         
+        const startTimeEl = document.getElementById('start_time');
+        const endTimeEl = document.getElementById('end_time');
+        
         const payload = {
             title: title,
             description: descriptionEl ? descriptionEl.value.trim() : '',
@@ -5173,7 +5305,9 @@ async function updateCampaign(campaignId) {
             geographic_scope: geographicScope,
             status: status,
             start_date: startDateEl ? (startDateEl.value || null) : null,
+            start_time: startTimeEl ? (startTimeEl.value || null) : null,
             end_date: endDateEl ? (endDateEl.value || null) : null,
+            end_time: endTimeEl ? (endTimeEl.value || null) : null,
             draft_schedule_datetime: draftScheduleEl ? (draftScheduleEl.value || null) : null,
             objectives: objectivesEl ? (objectivesEl.value.trim() || null) : null,
             location: location,
@@ -5183,6 +5317,17 @@ async function updateCampaign(campaignId) {
             staff_count: staffCountEl ? (parseInt(staffCountEl.value) || null) : null,
             materials_json: materialsJson,
         };
+        
+        // Log individual field values for debugging
+        console.log('=== UPDATE FORM FIELD VALUES DEBUG ===');
+        console.log('start_time element:', startTimeEl);
+        console.log('start_time value:', startTimeEl ? startTimeEl.value : 'ELEMENT NOT FOUND');
+        console.log('end_time element:', endTimeEl);
+        console.log('end_time value:', endTimeEl ? endTimeEl.value : 'ELEMENT NOT FOUND');
+        console.log('barangay_zones element:', document.getElementById('barangay_zones'));
+        console.log('barangay_zones value:', barangayZones);
+        console.log('=== END UPDATE FIELD VALUES DEBUG ===');
+        console.log('Update payload:', JSON.stringify(payload, null, 2));
         
         if (!payload.title) {
             createStatusEl.textContent = 'Title is required.';
@@ -5231,6 +5376,19 @@ async function updateCampaign(campaignId) {
         
         createStatusEl.textContent = 'Campaign updated successfully!';
         createStatusEl.className = 'status-text success';
+        
+        // Show toast notification
+        showSuccessToast('Campaign updated successfully!');
+        
+        // Log the updated campaign data to verify what was saved
+        console.log('Campaign updated - Response data:', data);
+        if (data.campaign) {
+            console.log('Updated campaign values:');
+            console.log('- start_time:', data.campaign.start_time);
+            console.log('- end_time:', data.campaign.end_time);
+            console.log('- barangay_target_zones:', data.campaign.barangay_target_zones);
+        }
+        
         clearForm();
         // FIX: Use centralized refresh to ensure all views update
         refreshAllCampaignViews();
