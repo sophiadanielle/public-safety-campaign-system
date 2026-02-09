@@ -180,6 +180,19 @@ class SurveyController
                     ADD COLUMN `respondent_identifier` VARCHAR(255) NULL AFTER `survey_id`");
             }
             
+            // Check and add submission_timestamp column to survey_responses table
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_responses' 
+                AND COLUMN_NAME = 'submission_timestamp'");
+            $hasSubmissionTimestamp = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasSubmissionTimestamp) {
+                error_log('SurveyController: Adding submission_timestamp column to survey_responses');
+                $this->pdo->exec("ALTER TABLE `campaign_department_survey_responses` 
+                    ADD COLUMN `submission_timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER `respondent_identifier`");
+            }
+            
             // Check and create survey_response_details table
             $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.TABLES 
                 WHERE TABLE_SCHEMA = DATABASE() 
