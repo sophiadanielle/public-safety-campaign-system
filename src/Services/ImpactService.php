@@ -21,6 +21,9 @@ class ImpactService
         
         // Auto-migration: Add linked_campaign_id column if it doesn't exist
         $this->ensureLinkedCampaignIdColumn();
+        
+        // Auto-migration: Create survey_aggregated_results table if it doesn't exist
+        $this->ensureSurveyAggregatedResultsTable();
     }
     
     private function ensureLinkedCampaignIdColumn(): void
@@ -41,6 +44,35 @@ class ImpactService
             }
         } catch (\Exception $e) {
             error_log('ImpactService: Failed to add linked_campaign_id column: ' . $e->getMessage());
+        }
+    }
+    
+    private function ensureSurveyAggregatedResultsTable(): void
+    {
+        try {
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_aggregated_results'");
+            $hasTable = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasTable) {
+                error_log('ImpactService: Auto-applying migration - creating survey_aggregated_results table');
+                $this->pdo->exec("CREATE TABLE IF NOT EXISTS `campaign_department_survey_aggregated_results` (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    survey_id INT UNSIGNED NOT NULL,
+                    question_id INT UNSIGNED NOT NULL,
+                    average_rating DECIMAL(5,2) NULL COMMENT 'For rating questions',
+                    response_distribution JSON NULL COMMENT 'Distribution of responses',
+                    total_responses INT UNSIGNED NOT NULL DEFAULT 0,
+                    computed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY uk_aggregated_results (survey_id, question_id),
+                    INDEX idx_aggregated_results_survey (survey_id),
+                    INDEX idx_aggregated_results_question (question_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+                error_log('ImpactService: Successfully created survey_aggregated_results table');
+            }
+        } catch (\Exception $e) {
+            error_log('ImpactService: Failed to create survey_aggregated_results table: ' . $e->getMessage());
         }
     }
 
