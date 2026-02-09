@@ -20,8 +20,8 @@ $reportPath = str_replace('\\', '/', $reportPath);
 
 // Security: Only allow files from uploads/reports directory
 // Must start with uploads/reports/ and end with .html
-// Must contain report_campaign_ followed by numbers
-if (!preg_match('#^uploads/reports/report_campaign_\d+_\d+\.html$#', $reportPath)) {
+// Format: report_campaign_{id}_{date}_{time}.html
+if (!preg_match('#^uploads/reports/report_campaign_\d+_\d+_\d+\.html$#', $reportPath)) {
     http_response_code(403);
     error_log("Invalid report path attempted: " . $reportPath);
     die('Error: Invalid report path. Received: ' . htmlspecialchars($reportPath) . '. Expected format: uploads/reports/report_campaign_X_YYYYMMDD_HHMMSS.html');
