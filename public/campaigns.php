@@ -4966,6 +4966,14 @@ async function editCampaign(campaignId) {
         
         const c = data.data;
         
+        // Debug: Log the campaign data received from API
+        console.log('=== EDIT CAMPAIGN DEBUG ===');
+        console.log('Full campaign data:', c);
+        console.log('start_time from API:', c.start_time);
+        console.log('end_time from API:', c.end_time);
+        console.log('barangay_target_zones from API:', c.barangay_target_zones);
+        console.log('=== END EDIT CAMPAIGN DEBUG ===');
+        
         // Populate form with campaign data
         if (document.getElementById('title')) {
             document.getElementById('title').value = c.title || '';
@@ -5000,8 +5008,14 @@ async function editCampaign(campaignId) {
         if (document.getElementById('start_date')) {
             document.getElementById('start_date').value = c.start_date || '';
         }
+        if (document.getElementById('start_time')) {
+            document.getElementById('start_time').value = c.start_time || '';
+        }
         if (document.getElementById('end_date')) {
             document.getElementById('end_date').value = c.end_date || '';
+        }
+        if (document.getElementById('end_time')) {
+            document.getElementById('end_time').value = c.end_time || '';
         }
         // Handle final schedule display (read-only)
         const finalScheduleField = document.getElementById('final_schedule_field');
