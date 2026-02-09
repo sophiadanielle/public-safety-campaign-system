@@ -35,7 +35,7 @@ class ImpactService
             if (!$hasColumn) {
                 error_log('ImpactService: Auto-applying migration - adding linked_campaign_id column to events table');
                 $this->pdo->exec("ALTER TABLE `campaign_department_events` 
-                    ADD COLUMN `linked_campaign_id` INT(11) NULL AFTER `event_id`,
+                    ADD COLUMN `linked_campaign_id` INT UNSIGNED NULL AFTER `campaign_id`,
                     ADD KEY `idx_linked_campaign_id` (`linked_campaign_id`)");
                 error_log('ImpactService: Successfully added linked_campaign_id column');
             }

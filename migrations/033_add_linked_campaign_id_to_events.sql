@@ -2,7 +2,7 @@
 -- This column is used to link events to campaigns for impact tracking
 
 ALTER TABLE `campaign_department_events` 
-ADD COLUMN `linked_campaign_id` INT(11) NULL AFTER `event_id`,
+ADD COLUMN `linked_campaign_id` INT UNSIGNED NULL AFTER `campaign_id`,
 ADD KEY `idx_linked_campaign_id` (`linked_campaign_id`),
 ADD CONSTRAINT `fk_events_linked_campaign` 
     FOREIGN KEY (`linked_campaign_id`) 
