@@ -17,6 +17,28 @@ class SurveyController
         private string $jwtAudience,
         private int $jwtExpirySeconds
     ) {
+        // Auto-migration: Add status column if it doesn't exist
+        $this->ensureStatusColumn();
+    }
+    
+    private function ensureStatusColumn(): void
+    {
+        try {
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'status'");
+            $hasColumn = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasColumn) {
+                error_log('SurveyController: Auto-applying migration - adding status column to surveys table');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `status` ENUM('draft','published') NOT NULL DEFAULT 'draft' AFTER `description`");
+                error_log('SurveyController: Successfully added status column');
+            }
+        } catch (\Exception $e) {
+            error_log('SurveyController: Failed to add status column: ' . $e->getMessage());
+        }
     }
 
     public function index(?array $user, array $params = []): array
