@@ -18,6 +18,30 @@ class ImpactService
         $configuredPath = getenv('UPLOAD_PATH') ?: (__DIR__ . '/../../public/uploads');
         $base = realpath($configuredPath) ?: $configuredPath;
         $this->reportDir = rtrim($base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'reports';
+        
+        // Auto-migration: Add linked_campaign_id column if it doesn't exist
+        $this->ensureLinkedCampaignIdColumn();
+    }
+    
+    private function ensureLinkedCampaignIdColumn(): void
+    {
+        try {
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_events' 
+                AND COLUMN_NAME = 'linked_campaign_id'");
+            $hasColumn = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasColumn) {
+                error_log('ImpactService: Auto-applying migration - adding linked_campaign_id column to events table');
+                $this->pdo->exec("ALTER TABLE `campaign_department_events` 
+                    ADD COLUMN `linked_campaign_id` INT(11) NULL AFTER `event_id`,
+                    ADD KEY `idx_linked_campaign_id` (`linked_campaign_id`)");
+                error_log('ImpactService: Successfully added linked_campaign_id column');
+            }
+        } catch (\Exception $e) {
+            error_log('ImpactService: Failed to add linked_campaign_id column: ' . $e->getMessage());
+        }
     }
 
     public function computeCampaignMetrics(int $campaignId): array
