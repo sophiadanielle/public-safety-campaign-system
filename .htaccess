@@ -1,0 +1,30 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Set base directory (adjust if needed)
+    RewriteBase /
+    
+    # Route /api/* requests to index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^api/(.*)$ index.php/api/$1 [L,QSA]
+    
+    # Route all other non-file/non-directory requests to index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes
+
+# Set default charset
+AddDefaultCharset UTF-8
+
+# Enable PHP error logging (disable display for security)
+php_flag display_errors Off
+php_flag log_errors On
+
+# Set max upload size (adjust as needed)
+php_value upload_max_filesize 50M
+php_value post_max_size 50M

@@ -10,7 +10,7 @@ error_log("PATH_HELPER VERSION: 2025-01-XX-PRODUCTION-FIX-V2");
 // CHECK GLOBAL FLAG FIRST (set by index.php before this file is included)
 if (isset($GLOBALS['FORCE_PRODUCTION_BASEPATH']) && $GLOBALS['FORCE_PRODUCTION_BASEPATH'] === true) {
     $basePath = '';
-    $apiPath = '/index.php';
+    $apiPath = '/api/index.php'; // WORKAROUND: Use /api/index.php since nginx config can't be changed
     $cssPath = '/header/css';
     $imgPath = '/header/images';
     $publicPath = '/public';
@@ -57,16 +57,18 @@ if ($isProductionDomain) {
     unset($basePath, $apiPath, $cssPath, $imgPath, $publicPath);
     
     $basePath = '';
-    $apiPath = '/index.php';
+    $apiPath = '/api/index.php'; // WORKAROUND: Use /api/index.php since nginx config can't be changed
     $cssPath = '/header/css';
     $imgPath = '/header/images';
     $publicPath = '/public';
     
-    error_log("PRODUCTION DOMAIN DETECTED - FORCING EMPTY BASEPATH");
+    error_log("PRODUCTION DOMAIN DETECTED - FORCING EMPTY BASEPATH AND /api/index.php APIPATH");
     error_log("HOST: $host, SERVER_NAME: $serverName, REQUEST_URI: $requestUri");
     error_log("BASEPATH FINAL: $basePath");
+    error_log("APIPATH FINAL: $apiPath");
     
     echo "<!-- BASEPATH_COMPUTED: $basePath -->\n";
+    echo "<!-- APIPATH_COMPUTED: $apiPath -->\n";
     echo "<!-- HOST_DETECTED: " . htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'NOT SET') . " -->\n";
     echo "<!-- SERVER_NAME: " . htmlspecialchars($_SERVER['SERVER_NAME'] ?? 'NOT SET') . " -->\n";
     echo "<!-- FINAL_BASEPATH: $basePath -->\n";
@@ -113,11 +115,11 @@ if (isset($_SERVER['HTTP_HOST'])) {
     $finalCheckHost = strtolower($_SERVER['HTTP_HOST']);
     if (strpos($finalCheckHost, 'alertaraqc.com') !== false) {
         $basePath = '';
-        $apiPath = '/index.php';
+        $apiPath = '/api/index.php'; // WORKAROUND: Use /api/index.php since nginx config can't be changed
         $cssPath = '/header/css';
         $imgPath = '/header/images';
         $publicPath = '/public';
-        error_log("SAFETY NET: Production domain detected in final check - FORCED EMPTY BASEPATH");
+        error_log("SAFETY NET: Production domain detected in final check - FORCED /api/index.php APIPATH");
     }
 }
 
@@ -136,11 +138,11 @@ if (isset($_SERVER['HTTP_HOST'])) {
     if (strpos($absoluteFinalHost, 'alertaraqc.com') !== false || 
         strpos($absoluteFinalHost, 'campaign.') !== false) {
         $basePath = '';
-        $apiPath = '/index.php';
+        $apiPath = '/api/index.php'; // WORKAROUND: Use /api/index.php since nginx config can't be changed
         $cssPath = '/header/css';
         $imgPath = '/header/images';
         $publicPath = '/public';
-        error_log("ABSOLUTE FINAL OVERRIDE: Forced empty basePath");
+        error_log("ABSOLUTE FINAL OVERRIDE: Forced /api/index.php apiPath");
     }
 }
 
