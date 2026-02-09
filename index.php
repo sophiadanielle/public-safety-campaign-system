@@ -327,6 +327,9 @@ if ($isApiRequest) {
     // Find matching route
     $matchedRoute = null;
     $params = [];
+    
+    error_log("ROUTE MATCHING: Looking for route with method=$method and path=$requestUri");
+    error_log("ROUTE MATCHING: Total routes to check: " . count($allRoutes));
 
     foreach ($allRoutes as $route) {
         if ($route['method'] !== $method) {
@@ -336,9 +339,12 @@ if ($isApiRequest) {
         // Convert route path pattern to regex
         $pattern = preg_replace('#\{([\w]+)\}#', '(?P<$1>[^/]+)', $route['path']);
         $pattern = '#^' . $pattern . '$#';
+        
+        error_log("ROUTE MATCHING: Checking route: " . $route['path'] . " against pattern: " . $pattern);
 
         if (preg_match($pattern, $requestUri, $matches)) {
             $matchedRoute = $route;
+            error_log("ROUTE MATCHING: MATCH FOUND! Route: " . $route['path']);
             // Extract named parameters
             foreach ($matches as $key => $value) {
                 if (is_string($key)) {
@@ -350,12 +356,20 @@ if ($isApiRequest) {
     }
 
     if (!$matchedRoute) {
+        error_log("ROUTE MATCHING: NO MATCH FOUND for path=$requestUri with method=$method");
         if (ob_get_level() > 0) {
             ob_clean();
         }
         http_response_code(404);
         header('Content-Type: application/json');
-        echo json_encode(['error' => 'Route not found']);
+        echo json_encode([
+            'error' => 'Route not found',
+            'debug' => [
+                'requestUri' => $requestUri,
+                'method' => $method,
+                'rawRequestUri' => $_SERVER['REQUEST_URI'] ?? 'NOT SET'
+            ]
+        ]);
         if (ob_get_level() > 0) {
             ob_end_flush();
         }
