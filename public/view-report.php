@@ -12,8 +12,20 @@ if (empty($reportPath)) {
     die('Error: No report file specified');
 }
 
+// Normalize path separators
+$reportPath = str_replace('\\', '/', $reportPath);
+
 // Security: Only allow files from uploads/reports directory
+// Must start with uploads/reports/ and end with .html
+// Must contain report_campaign_ followed by numbers
 if (!preg_match('#^uploads/reports/report_campaign_\d+_\d+\.html$#', $reportPath)) {
+    http_response_code(403);
+    error_log("Invalid report path attempted: " . $reportPath);
+    die('Error: Invalid report path. Received: ' . htmlspecialchars($reportPath) . '. Expected format: uploads/reports/report_campaign_X_YYYYMMDD_HHMMSS.html');
+}
+
+// Prevent directory traversal
+if (strpos($reportPath, '..') !== false) {
     http_response_code(403);
     die('Error: Invalid report path');
 }
@@ -24,7 +36,15 @@ $fullPath = __DIR__ . '/../' . $reportPath;
 // Check if file exists
 if (!file_exists($fullPath)) {
     http_response_code(404);
-    die('Error: Report file not found');
+    error_log("Report file not found: " . $fullPath);
+    die('Error: Report file not found at: ' . htmlspecialchars($fullPath));
+}
+
+// Check if file is readable
+if (!is_readable($fullPath)) {
+    http_response_code(403);
+    error_log("Report file not readable: " . $fullPath);
+    die('Error: Report file exists but is not readable');
 }
 
 // Serve the HTML file
