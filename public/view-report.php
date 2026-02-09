@@ -12,6 +12,9 @@ if (empty($reportPath)) {
     die('Error: No report file specified');
 }
 
+// URL decode the path (handles %2F -> /)
+$reportPath = urldecode($reportPath);
+
 // Normalize path separators
 $reportPath = str_replace('\\', '/', $reportPath);
 
