@@ -34,7 +34,9 @@ if (strpos($reportPath, '..') !== false) {
 }
 
 // Construct full file path
-$fullPath = __DIR__ . '/../' . $reportPath;
+// view-report.php is in /public/, and reportPath is 'uploads/reports/filename.html'
+// So we need to go to /public/uploads/reports/filename.html
+$fullPath = __DIR__ . '/' . $reportPath;
 
 // Check if file exists
 if (!file_exists($fullPath)) {
