@@ -691,6 +691,90 @@ async function loadEngagementHistory() {
     }
 }
 
+// View Partner Details
+async function viewPartner(partnerId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/partners/' + partnerId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.data) {
+            const partner = data.data;
+            alert(`Partner Details:\n\nName: ${partner.name}\nType: ${partner.organization_type || '-'}\nContact Person: ${partner.contact_person || '-'}\nEmail: ${partner.contact_email || '-'}\nPhone: ${partner.contact_phone || '-'}\nCreated: ${partner.created_at ? new Date(partner.created_at).toLocaleDateString() : '-'}`);
+        } else {
+            alert('Error: Unable to load partner details');
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+// Edit Partner
+async function editPartner(partnerId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/partners/' + partnerId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.data) {
+            const partner = data.data;
+            // Populate form fields
+            document.getElementById('p_name').value = partner.name || '';
+            document.getElementById('p_type').value = partner.organization_type || 'school';
+            document.getElementById('p_person').value = partner.contact_person || '';
+            document.getElementById('p_email').value = partner.contact_email || '';
+            document.getElementById('p_phone').value = partner.contact_phone || '';
+            
+            // Set partner ID in form dataset for update
+            const form = document.getElementById('partnerForm');
+            if (form) form.dataset.partnerId = partnerId;
+            
+            // Change button text
+            const submitBtn = document.querySelector('#add-partner button.btn-primary');
+            if (submitBtn) submitBtn.textContent = 'Update Partner Organization';
+            
+            // Scroll to form
+            document.getElementById('add-partner').scrollIntoView({ behavior: 'smooth' });
+            
+            // Show status
+            const statusEl = document.getElementById('partnerStatus');
+            statusEl.textContent = '✏️ Editing partner: ' + partner.name;
+            statusEl.style.color = '#1e40af';
+        } else {
+            alert('Error: Unable to load partner details for editing');
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+// Delete Partner
+async function deletePartner(partnerId) {
+    if (!confirm('Are you sure you want to delete this partner? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/partners/' + partnerId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert('✓ Partner deleted successfully');
+            // Refresh partners list
+            loadAllPartners();
+        } else {
+            alert('Error: ' + (data.error || 'Unable to delete partner'));
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
 async function loadAssignments() {
     const pid = document.getElementById('a_pid').value;
     if (!pid || pid <= 0) {
