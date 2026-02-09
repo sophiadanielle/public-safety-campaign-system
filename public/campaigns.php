@@ -5158,21 +5158,29 @@ async function updateCampaign(campaignId) {
             ? statusEl.getSelectedValues()
             : (statusEl?.value.trim() || 'draft');
         
+        const descriptionEl = document.getElementById('description');
+        const startDateEl = document.getElementById('start_date');
+        const endDateEl = document.getElementById('end_date');
+        const draftScheduleEl = document.getElementById('draft_schedule_datetime');
+        const objectivesEl = document.getElementById('objectives');
+        const budgetEl = document.getElementById('budget');
+        const staffCountEl = document.getElementById('staff_count');
+        
         const payload = {
             title: title,
-            description: document.getElementById('description').value.trim(),
+            description: descriptionEl ? descriptionEl.value.trim() : '',
             category: category,
             geographic_scope: geographicScope,
             status: status,
-            start_date: document.getElementById('start_date').value || null,
-            end_date: document.getElementById('end_date').value || null,
-            draft_schedule_datetime: document.getElementById('draft_schedule_datetime').value || null,
-            objectives: document.getElementById('objectives').value.trim() || null,
+            start_date: startDateEl ? (startDateEl.value || null) : null,
+            end_date: endDateEl ? (endDateEl.value || null) : null,
+            draft_schedule_datetime: draftScheduleEl ? (draftScheduleEl.value || null) : null,
+            objectives: objectivesEl ? (objectivesEl.value.trim() || null) : null,
             location: location,
             assigned_staff: assignedStaff,
             barangay_target_zones: barangayZones,
-            budget: parseFloat(document.getElementById('budget').value) || null,
-            staff_count: parseInt(document.getElementById('staff_count').value) || null,
+            budget: budgetEl ? (parseFloat(budgetEl.value) || null) : null,
+            staff_count: staffCountEl ? (parseInt(staffCountEl.value) || null) : null,
             materials_json: materialsJson,
         };
         
