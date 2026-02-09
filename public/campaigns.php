@@ -5079,9 +5079,22 @@ async function editCampaign(campaignId) {
         }
         if (c.barangay_target_zones) {
             const zones = typeof c.barangay_target_zones === 'string' ? JSON.parse(c.barangay_target_zones) : c.barangay_target_zones;
-            if (Array.isArray(zones) && document.getElementById('barangay_zones')) {
-                if (typeof document.getElementById('barangay_zones').setSelectedValues === 'function') {
-                    document.getElementById('barangay_zones').setSelectedValues(zones);
+            console.log('Barangay zones to set:', zones);
+            console.log('Is array?', Array.isArray(zones));
+            
+            const barangayEl = document.getElementById('barangay_zones');
+            console.log('Barangay element:', barangayEl);
+            console.log('Has setSelectedValues?', barangayEl && typeof barangayEl.setSelectedValues === 'function');
+            
+            if (Array.isArray(zones) && barangayEl) {
+                if (typeof barangayEl.setSelectedValues === 'function') {
+                    console.log('Calling setSelectedValues with:', zones);
+                    barangayEl.setSelectedValues(zones);
+                    console.log('After setSelectedValues, element value:', barangayEl.value);
+                } else {
+                    console.warn('barangay_zones element does not have setSelectedValues function');
+                    // Fallback: try setting value directly
+                    barangayEl.value = zones.join(',');
                 }
             }
         }
