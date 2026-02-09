@@ -121,7 +121,10 @@ $hasApiPath = strpos($requestUri, '/api/') !== false || strpos($requestUri, 'api
 
 // Check if this is an API request - prioritize early detection
 // If early detection found it, trust that
-$isApiRequest = $isApiRequestEarly;
+// IMPORTANT: Don't overwrite $isApiRequest if it was already set by the proxy
+if (!isset($isApiRequest)) {
+    $isApiRequest = $isApiRequestEarly;
+}
 
 // If not detected early, check normalized URI
 if (!$isApiRequest) {
@@ -323,9 +326,28 @@ if ($isApiRequest) {
 
     $allRoutes = [];
     foreach ($routeFiles as $file) {
-        $routes = require __DIR__ . '/src/Routes/' . $file;
-        $allRoutes = array_merge($allRoutes, $routes);
+        $routePath = __DIR__ . '/src/Routes/' . $file;
+        error_log("ROUTE LOADING: Attempting to load $routePath");
+        
+        if (!file_exists($routePath)) {
+            error_log("ROUTE LOADING ERROR: File not found: $routePath");
+            continue;
+        }
+        
+        try {
+            $routes = require $routePath;
+            if (!is_array($routes)) {
+                error_log("ROUTE LOADING ERROR: $file did not return an array");
+                continue;
+            }
+            error_log("ROUTE LOADING: Loaded " . count($routes) . " routes from $file");
+            $allRoutes = array_merge($allRoutes, $routes);
+        } catch (Exception $e) {
+            error_log("ROUTE LOADING ERROR: Failed to load $file: " . $e->getMessage());
+        }
     }
+    
+    error_log("ROUTE LOADING: Total routes loaded: " . count($allRoutes));
 
     // Get HTTP method
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -363,6 +385,22 @@ if ($isApiRequest) {
 
     if (!$matchedRoute) {
         error_log("ROUTE MATCHING: NO MATCH FOUND for path=$requestUri with method=$method");
+        
+        // Collect sample routes for debugging
+        $sampleRoutes = [];
+        $postRoutes = [];
+        foreach ($allRoutes as $route) {
+            if ($route['method'] === 'POST') {
+                $postRoutes[] = $route['path'];
+            }
+            if (count($sampleRoutes) < 5) {
+                $sampleRoutes[] = [
+                    'method' => $route['method'],
+                    'path' => $route['path']
+                ];
+            }
+        }
+        
         if (ob_get_level() > 0) {
             ob_clean();
         }
@@ -373,7 +411,12 @@ if ($isApiRequest) {
             'debug' => [
                 'requestUri' => $requestUri,
                 'method' => $method,
-                'rawRequestUri' => $_SERVER['REQUEST_URI'] ?? 'NOT SET'
+                'rawRequestUri' => $_SERVER['REQUEST_URI'] ?? 'NOT SET',
+                'totalRoutesLoaded' => count($allRoutes),
+                'postRoutesAvailable' => $postRoutes,
+                'sampleRoutes' => $sampleRoutes,
+                'isApiRequest' => $isApiRequest,
+                'globalsSet' => isset($GLOBALS['IS_API_REQUEST']) && isset($GLOBALS['API_PATH'])
             ]
         ]);
         if (ob_get_level() > 0) {
