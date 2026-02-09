@@ -420,6 +420,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
 <?php require_once __DIR__ . '/../header/includes/path_helper.php'; ?>
 const token = localStorage.getItem('jwtToken') || '';
 const apiBase = '<?php echo $apiPath; ?>';
+const basePath = '<?php echo $basePath; ?>';
 let chart;
 
 // Load all campaigns and populate all dropdowns in Impact module
