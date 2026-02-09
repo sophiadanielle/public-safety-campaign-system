@@ -24,6 +24,9 @@ class ImpactService
         
         // Auto-migration: Create survey_aggregated_results table if it doesn't exist
         $this->ensureSurveyAggregatedResultsTable();
+        
+        // Auto-migration: Create evaluation_reports table if it doesn't exist
+        $this->ensureEvaluationReportsTable();
     }
     
     private function ensureLinkedCampaignIdColumn(): void
@@ -73,6 +76,31 @@ class ImpactService
             }
         } catch (\Exception $e) {
             error_log('ImpactService: Failed to create survey_aggregated_results table: ' . $e->getMessage());
+        }
+    }
+    
+    private function ensureEvaluationReportsTable(): void
+    {
+        try {
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_evaluation_reports'");
+            $hasTable = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasTable) {
+                error_log('ImpactService: Auto-applying migration - creating evaluation_reports table');
+                $this->pdo->exec("CREATE TABLE IF NOT EXISTS `campaign_department_evaluation_reports` (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    campaign_id INT UNSIGNED NOT NULL,
+                    file_path VARCHAR(255) NOT NULL,
+                    snapshot_json JSON NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_eval_reports_campaign (campaign_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+                error_log('ImpactService: Successfully created evaluation_reports table');
+            }
+        } catch (\Exception $e) {
+            error_log('ImpactService: Failed to create evaluation_reports table: ' . $e->getMessage());
         }
     }
 
