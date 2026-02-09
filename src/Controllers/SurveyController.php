@@ -24,20 +24,101 @@ class SurveyController
     private function ensureStatusColumn(): void
     {
         try {
+            // Check and add status column
             $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
                 WHERE TABLE_SCHEMA = DATABASE() 
                 AND TABLE_NAME = 'campaign_department_surveys' 
                 AND COLUMN_NAME = 'status'");
-            $hasColumn = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            $hasStatus = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
             
-            if (!$hasColumn) {
-                error_log('SurveyController: Auto-applying migration - adding status column to surveys table');
+            if (!$hasStatus) {
+                error_log('SurveyController: Adding status column');
                 $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
                     ADD COLUMN `status` ENUM('draft','published') NOT NULL DEFAULT 'draft' AFTER `description`");
-                error_log('SurveyController: Successfully added status column');
             }
+            
+            // Check and add event_id column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'event_id'");
+            $hasEventId = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasEventId) {
+                error_log('SurveyController: Adding event_id column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `event_id` INT UNSIGNED NULL AFTER `campaign_id`,
+                    ADD KEY `idx_surveys_event` (`event_id`)");
+            }
+            
+            // Check and add published_via column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'published_via'");
+            $hasPublishedVia = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasPublishedVia) {
+                error_log('SurveyController: Adding published_via column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `published_via` ENUM('link', 'qr_code', 'both') NULL AFTER `status`");
+            }
+            
+            // Check and add created_by column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'created_by'");
+            $hasCreatedBy = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasCreatedBy) {
+                error_log('SurveyController: Adding created_by column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `created_by` INT UNSIGNED NULL AFTER `published_via`");
+            }
+            
+            // Check and add published_by column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'published_by'");
+            $hasPublishedBy = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasPublishedBy) {
+                error_log('SurveyController: Adding published_by column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `published_by` INT UNSIGNED NULL AFTER `created_by`");
+            }
+            
+            // Check and add published_at column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'published_at'");
+            $hasPublishedAt = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasPublishedAt) {
+                error_log('SurveyController: Adding published_at column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `published_at` TIMESTAMP NULL AFTER `published_by`");
+            }
+            
+            // Check and add closed_at column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'closed_at'");
+            $hasClosedAt = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasClosedAt) {
+                error_log('SurveyController: Adding closed_at column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `closed_at` TIMESTAMP NULL AFTER `published_at`");
+            }
+            
+            error_log('SurveyController: Auto-migration completed successfully');
         } catch (\Exception $e) {
-            error_log('SurveyController: Failed to add status column: ' . $e->getMessage());
+            error_log('SurveyController: Failed to apply migrations: ' . $e->getMessage());
         }
     }
 
