@@ -990,12 +990,12 @@ if (isset($basePath) && $basePath === '/public-safety-campaign-system') {
 ?>
 const basePath = '<?php echo isset($basePath) && $basePath !== '/public-safety-campaign-system' ? $basePath : ''; ?>';
 const apiBase = '<?php 
-// WORKAROUND: Use /api/index.php since nginx config can't be changed
+// Use /index.php as API base
 // For localhost, use /public-safety-campaign-system/index.php
 if (isset($isDefinitelyLocalhost) && $isDefinitelyLocalhost) {
     echo isset($apiPath) ? $apiPath : '/public-safety-campaign-system/index.php';
 } else {
-    echo '/api/index.php'; // Use /api/index.php as entry point for production
+    echo '/index.php'; // Use /index.php for production
 }
 ?>';
 console.log('BASE PATH:', basePath);
@@ -1079,9 +1079,8 @@ async function login() {
     statusEl.style.color = '#0f172a';
 
     try {
-        // WORKAROUND: Use /api/index.php as entry point since nginx config can't be changed
-        // This routes through /api/index.php which nginx can serve as a regular PHP file
-        let loginUrl = '/api/index.php/v1/auth/login';
+        // Use /index.php/api/v1/auth/login - main entry point
+        let loginUrl = '/index.php/api/v1/auth/login';
         
         console.log('Login URL:', loginUrl);
         console.log('API Base:', apiBase);
@@ -1309,7 +1308,7 @@ async function signup() {
         return;
     }
 
-    const res = await fetch('/api/index.php/v1/auth/register', {
+    const res = await fetch('/index.php/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, role })
@@ -1450,6 +1449,6 @@ function googleLogin() {
     }
     
     // Redirect to Google OAuth endpoint
-    window.location.href = '/api/index.php/v1/auth/google';
+    window.location.href = '/index.php/api/v1/auth/google';
 }
 </script>

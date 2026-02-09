@@ -10,7 +10,7 @@ error_log("PATH_HELPER VERSION: 2025-01-XX-PRODUCTION-FIX-V2");
 // CHECK GLOBAL FLAG FIRST (set by index.php before this file is included)
 if (isset($GLOBALS['FORCE_PRODUCTION_BASEPATH']) && $GLOBALS['FORCE_PRODUCTION_BASEPATH'] === true) {
     $basePath = '';
-    $apiPath = '/api/index.php'; // WORKAROUND: Use /api/index.php since nginx config can't be changed
+    $apiPath = '/index.php'; // Use /index.php as API base
     $cssPath = '/header/css';
     $imgPath = '/header/images';
     $publicPath = '/public';
@@ -57,7 +57,7 @@ if ($isProductionDomain) {
     unset($basePath, $apiPath, $cssPath, $imgPath, $publicPath);
     
     $basePath = '';
-    $apiPath = '/api/index.php'; // WORKAROUND: Use /api/index.php since nginx config can't be changed
+    $apiPath = '/index.php'; // Use /index.php as API base
     $cssPath = '/header/css';
     $imgPath = '/header/images';
     $publicPath = '/public';
@@ -115,7 +115,7 @@ if (isset($_SERVER['HTTP_HOST'])) {
     $finalCheckHost = strtolower($_SERVER['HTTP_HOST']);
     if (strpos($finalCheckHost, 'alertaraqc.com') !== false) {
         $basePath = '';
-        $apiPath = '/api/index.php'; // WORKAROUND: Use /api/index.php since nginx config can't be changed
+        $apiPath = '/index.php'; // Use /index.php as API base
         $cssPath = '/header/css';
         $imgPath = '/header/images';
         $publicPath = '/public';
@@ -138,7 +138,7 @@ if (isset($_SERVER['HTTP_HOST'])) {
     if (strpos($absoluteFinalHost, 'alertaraqc.com') !== false || 
         strpos($absoluteFinalHost, 'campaign.') !== false) {
         $basePath = '';
-        $apiPath = '/api/index.php'; // WORKAROUND: Use /api/index.php since nginx config can't be changed
+        $apiPath = '/index.php'; // Use /index.php as API base
         $cssPath = '/header/css';
         $imgPath = '/header/images';
         $publicPath = '/public';
