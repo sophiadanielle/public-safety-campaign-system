@@ -61,7 +61,10 @@ if (isset($GLOBALS['IS_API_REQUEST']) && $GLOBALS['IS_API_REQUEST'] && isset($GL
     $requestUri = $GLOBALS['API_PATH'];
     $isApiRequestEarly = true;
     $isApiRequest = true;
-    error_log("ROUTING DEBUG: Using early-detected API path: " . $requestUri);
+    error_log("ROUTING DEBUG: Using proxy-detected API path: " . $requestUri);
+    error_log("ROUTING DEBUG: SKIPPING URI normalization - path already set by proxy");
+    // Skip all URI normalization - the proxy has already set the correct path
+    goto skip_uri_normalization;
 }
 
 // Debug logging
@@ -111,7 +114,10 @@ if ($requestUri === '' || ($requestUri[0] !== '/' && $requestUri !== '')) {
     $requestUri = '/' . $requestUri;
 }
 
+skip_uri_normalization:
 
+// Check for API path in the final URI (needed for detection logic below)
+$hasApiPath = strpos($requestUri, '/api/') !== false || strpos($requestUri, 'api/') !== false;
 
 // Check if this is an API request - prioritize early detection
 // If early detection found it, trust that
