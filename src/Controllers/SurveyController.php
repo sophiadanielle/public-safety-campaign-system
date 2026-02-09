@@ -167,6 +167,39 @@ class SurveyController
                     ADD COLUMN `required_flag` TINYINT(1) NOT NULL DEFAULT 0 AFTER `options_json`");
             }
             
+            // Check and add respondent_identifier column to survey_responses table
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_responses' 
+                AND COLUMN_NAME = 'respondent_identifier'");
+            $hasRespondentId = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasRespondentId) {
+                error_log('SurveyController: Adding respondent_identifier column to survey_responses');
+                $this->pdo->exec("ALTER TABLE `campaign_department_survey_responses` 
+                    ADD COLUMN `respondent_identifier` VARCHAR(255) NULL AFTER `survey_id`");
+            }
+            
+            // Check and create survey_response_details table
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_response_details'");
+            $hasResponseDetails = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasResponseDetails) {
+                error_log('SurveyController: Creating survey_response_details table');
+                $this->pdo->exec("CREATE TABLE IF NOT EXISTS `campaign_department_survey_response_details` (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    response_id INT UNSIGNED NOT NULL,
+                    question_id INT UNSIGNED NOT NULL,
+                    response_value TEXT NOT NULL COMMENT 'Stores the actual response (rating number, selected option, text, etc.)',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_response_details_response (response_id),
+                    INDEX idx_response_details_question (question_id),
+                    UNIQUE KEY uk_response_details (response_id, question_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+            
             error_log('SurveyController: Auto-migration completed successfully');
         } catch (\Exception $e) {
             error_log('SurveyController: Failed to apply migrations: ' . $e->getMessage());
