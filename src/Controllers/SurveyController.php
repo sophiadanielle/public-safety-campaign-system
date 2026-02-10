@@ -736,42 +736,51 @@ class SurveyController
     {
         if (!$user) {
             http_response_code(401);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Authentication required']);
             return;
         }
 
-        $surveyId = (int) ($params['id'] ?? 0);
-        $survey = $this->findSurvey($surveyId);
+        try {
+            $surveyId = (int) ($params['id'] ?? 0);
+            $survey = $this->findSurvey($surveyId);
 
-        $results = $this->aggregatedResults($user, $params);
-        if (isset($results['error'])) {
-            http_response_code(403);
+            $results = $this->aggregatedResults($user, $params);
+            if (isset($results['error'])) {
+                http_response_code(403);
+                header('Content-Type: application/json');
+                echo json_encode($results);
+                exit;
+            }
+
+            header('Content-Type: text/csv');
+            header('Content-Disposition: attachment; filename="survey_' . $surveyId . '_aggregated_results.csv"');
+
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Survey ID', 'Survey Title', 'Total Responses', 'Export Date']);
+            fputcsv($out, [$surveyId, $survey['title'], $results['total_responses'], date('Y-m-d H:i:s')]);
+            fputcsv($out, []); // Empty row
+            fputcsv($out, ['Question ID', 'Question Text', 'Question Type', 'Average Rating', 'Response Distribution', 'Total Responses']);
+
+            foreach ($results['results'] as $result) {
+                fputcsv($out, [
+                    $result['question_id'],
+                    $result['question_text'],
+                    $result['question_type'],
+                    $result['average_rating'] ?? '',
+                    $result['response_distribution'] ? json_encode($result['response_distribution']) : '',
+                    $result['total_responses']
+                ]);
+            }
+
+            fclose($out);
+            exit;
+        } catch (\Exception $e) {
+            http_response_code(500);
             header('Content-Type: application/json');
-            echo json_encode($results);
+            echo json_encode(['error' => 'Failed to export aggregated results: ' . $e->getMessage()]);
             exit;
         }
-
-        header('Content-Type: text/csv');
-        header('Content-Disposition: attachment; filename="survey_' . $surveyId . '_aggregated_results.csv"');
-
-        $out = fopen('php://output', 'w');
-        fputcsv($out, ['Survey ID', 'Survey Title', 'Total Responses', 'Export Date']);
-        fputcsv($out, [$surveyId, $survey['title'], $results['total_responses'], date('Y-m-d H:i:s')]);
-        fputcsv($out, []); // Empty row
-        fputcsv($out, ['Question ID', 'Question Text', 'Question Type', 'Average Rating', 'Response Distribution', 'Total Responses']);
-
-        foreach ($results['results'] as $result) {
-            fputcsv($out, [
-                $result['question_id'],
-                $result['question_text'],
-                $result['question_type'],
-                $result['average_rating'] ?? '',
-                $result['response_distribution'] ? json_encode($result['response_distribution']) : '',
-                $result['total_responses']
-            ]);
-        }
-
-        fclose($out);
-        exit;
     }
 
     private function findSurvey(int $id, bool $allowDraft = true, bool $allowPublic = false): array

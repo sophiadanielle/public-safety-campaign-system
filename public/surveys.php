@@ -512,7 +512,7 @@ function renderSurveysList(surveys) {
         if (!isViewer) {
             html += `<td style="padding:12px;">
                 <button class="btn btn-secondary" onclick="viewSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">👁️ View</button>
-                <button class="btn btn-secondary" onclick="editSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">✏️ Edit</button>
+                ${survey.status === 'draft' ? `<button class="btn btn-secondary" onclick="editSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">✏️ Edit</button>` : ''}
                 <button class="btn btn-secondary" onclick="viewResults(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">📊 Results</button>
                 <button class="btn btn-secondary" onclick="exportResponses(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">📥 Export</button>
                 ${survey.status === 'published' ? `<button class="btn btn-secondary" onclick="closeSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">🔒 Close</button>` : ''}
@@ -642,6 +642,12 @@ async function editSurvey(surveyId) {
         
         const survey = data.data;
         
+        // Check if survey is in draft status
+        if (survey.status !== 'draft') {
+            alert('Error: Only draft surveys can be edited. This survey is currently "' + survey.status + '".\n\nPublished or closed surveys cannot be modified to maintain data integrity.');
+            return;
+        }
+        
         // Populate form with survey data
         document.getElementById('title').value = survey.title || '';
         document.getElementById('description').value = survey.description || '';
@@ -659,6 +665,9 @@ async function editSurvey(surveyId) {
         if (submitBtn) {
             submitBtn.textContent = 'Update Survey';
         }
+        
+        // Show survey builder section
+        document.getElementById('survey-builder').style.display = 'block';
         
         // Load questions
         await loadQuestions();
@@ -798,16 +807,20 @@ async function exportAggregatedResults(surveyId) {
             const contentType = res.headers.get('content-type');
             if (contentType && contentType.includes('application/json')) {
                 const data = await res.json();
-                alert('Error: ' + (data.error || 'Failed to export aggregated results'));
+                const errorMsg = data.error || 'Failed to export aggregated results';
+                console.error('Export aggregated results error:', data);
+                alert('Export Failed\n\n' + errorMsg + '\n\nStatus: ' + res.status);
             } else {
                 const text = await res.text();
-                console.error('Export error response:', text);
-                alert('Server error: The server returned an error. Please check the console for details and ensure the SurveyController.php file has been uploaded to the server.');
+                console.error('Export error response (non-JSON):', text);
+                console.error('Response status:', res.status);
+                console.error('Response headers:', Array.from(res.headers.entries()));
+                alert('Server Error (Status ' + res.status + ')\n\nThe server returned an unexpected response. Please check:\n\n1. Browser console for detailed error logs\n2. Server error logs\n3. Database connection\n4. Survey has responses to aggregate\n\nIf the issue persists, contact your system administrator.');
             }
         }
     } catch (err) {
-        console.error('Export error:', err);
-        alert('Error: ' + err.message);
+        console.error('Export error (network/exception):', err);
+        alert('Network Error\n\nFailed to export aggregated results: ' + err.message + '\n\nPlease check your internet connection and try again.');
     }
 }
 
