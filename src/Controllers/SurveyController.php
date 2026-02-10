@@ -840,7 +840,10 @@ class SurveyController
 
     private function computeAggregatedResult(int $surveyId, int $questionId, string $questionType): array
     {
-        $stmt = $this->pdo->prepare('SELECT response_value FROM `campaign_department_survey_response_details` WHERE survey_id = :sid AND question_id = :qid');
+        $stmt = $this->pdo->prepare('SELECT rd.response_value 
+            FROM `campaign_department_survey_response_details` rd
+            INNER JOIN `campaign_department_survey_responses` r ON rd.response_id = r.id
+            WHERE r.survey_id = :sid AND rd.question_id = :qid');
         $stmt->execute(['sid' => $surveyId, 'qid' => $questionId]);
         $responses = $stmt->fetchAll(PDO::FETCH_COLUMN);
 

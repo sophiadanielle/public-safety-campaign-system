@@ -807,8 +807,10 @@ async function closeSurvey(surveyId) {
 }
 
 async function loadQuestions() {
+    console.log('loadQuestions called, currentSurveyId:', currentSurveyId);
+    
     if (!currentSurveyId) {
-        alert('Please create or select a survey first');
+        alert('Please create or select a survey first. Click "Create Survey" button above to create a new survey.');
         return;
     }
     
@@ -817,19 +819,30 @@ async function loadQuestions() {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
-        if (res.ok && data.data && data.data.questions) {
+        console.log('Survey data:', data);
+        
+        if (res.ok && data.data) {
             const container = document.getElementById('questionsList');
-            let html = '<h4 style="margin:0 0 12px 0;">Current Questions:</h4><ul style="list-style:none; padding:0; margin:0;">';
-            data.data.questions.forEach((q, idx) => {
-                html += `<li style="padding:8px; margin-bottom:8px; background:#f8fafc; border-radius:4px;">
-                    ${idx + 1}. ${q.question_text} <span style="color:#64748b; font-size:12px;">(${q.question_type}${q.required_flag ? ', Required' : ''})</span>
-                </li>`;
-            });
-            html += '</ul>';
-            container.innerHTML = html;
+            const questions = data.data.questions || [];
+            
+            if (questions.length === 0) {
+                container.innerHTML = '<p style="color:#64748b; padding:12px; background:#f8fafc; border-radius:4px;">No questions added yet. Use the form above to add questions to this survey.</p>';
+            } else {
+                let html = '<h4 style="margin:0 0 12px 0;">Current Questions:</h4><ul style="list-style:none; padding:0; margin:0;">';
+                questions.forEach((q, idx) => {
+                    html += `<li style="padding:8px; margin-bottom:8px; background:#f8fafc; border-radius:4px;">
+                        ${idx + 1}. ${q.question_text} <span style="color:#64748b; font-size:12px;">(${q.question_type}${q.required_flag ? ', Required' : ''})</span>
+                    </li>`;
+                });
+                html += '</ul>';
+                container.innerHTML = html;
+            }
+        } else {
+            alert('Error loading questions: ' + (data.error || 'Unknown error'));
         }
     } catch (err) {
         console.error('Error loading questions:', err);
+        alert('Failed to load questions: ' + err.message);
     }
 }
 
