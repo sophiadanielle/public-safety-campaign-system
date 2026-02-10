@@ -618,12 +618,6 @@ async function editSurvey(surveyId) {
         
         const survey = data.data;
         
-        // Check if survey can be edited (only draft)
-        if (survey.status !== 'draft') {
-            alert('Only draft surveys can be edited.');
-            return;
-        }
-        
         // Populate form with survey data
         document.getElementById('title').value = survey.title || '';
         document.getElementById('description').value = survey.description || '';
