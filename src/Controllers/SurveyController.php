@@ -929,8 +929,9 @@ class SurveyController
         
         // Only allow updating draft surveys
         if ($survey['status'] !== 'draft') {
+            error_log('SurveyController: Cannot update survey ID ' . $id . ' - status is "' . $survey['status'] . '" (expected "draft")');
             http_response_code(422);
-            return ['error' => 'Only draft surveys can be updated'];
+            return ['error' => 'Only draft surveys can be updated. Current status: ' . $survey['status']];
         }
         
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
