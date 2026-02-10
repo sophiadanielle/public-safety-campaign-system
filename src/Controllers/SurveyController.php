@@ -34,7 +34,19 @@ class SurveyController
             if (!$hasStatus) {
                 error_log('SurveyController: Adding status column');
                 $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
-                    ADD COLUMN `status` ENUM('draft','published') NOT NULL DEFAULT 'draft' AFTER `description`");
+                    ADD COLUMN `status` ENUM('draft','published','closed') NOT NULL DEFAULT 'draft' AFTER `description`");
+            } else {
+                // Check if status column has 'closed' value
+                $checkStmt = $this->pdo->query("SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_SCHEMA = DATABASE() 
+                    AND TABLE_NAME = 'campaign_department_surveys' 
+                    AND COLUMN_NAME = 'status'");
+                $columnType = $checkStmt->fetchColumn();
+                if ($columnType && strpos($columnType, 'closed') === false) {
+                    error_log('SurveyController: Updating status column to include closed');
+                    $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                        MODIFY COLUMN `status` ENUM('draft','published','closed') NOT NULL DEFAULT 'draft'");
+                }
             }
             
             // Check and add event_id column
@@ -263,7 +275,9 @@ class SurveyController
     public function show(?array $user, array $params = []): array
     {
         $id = (int) ($params['id'] ?? 0);
-        $survey = $this->findSurvey($id, allowDraft: false, allowPublic: true);
+        // Allow draft surveys for authenticated users (for editing), only published for public
+        $allowDraft = $user !== null;
+        $survey = $this->findSurvey($id, allowDraft: $allowDraft, allowPublic: true);
 
         $questions = $this->getQuestions($id);
         $survey['questions'] = $questions;
