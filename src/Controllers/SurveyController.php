@@ -7,6 +7,7 @@ namespace App\Controllers;
 use PDO;
 use RuntimeException;
 use App\Middleware\RoleMiddleware;
+use App\Middleware\JWTMiddleware;
 
 class SurveyController
 {
@@ -275,6 +276,20 @@ class SurveyController
     public function show(?array $user, array $params = []): array
     {
         $id = (int) ($params['id'] ?? 0);
+        
+        // Try to authenticate user from JWT if present (optional authentication)
+        if (!$user) {
+            try {
+                $jwtSecret = getenv('JWT_SECRET') ?: 'your-secret-key';
+                $expectedAudience = getenv('JWT_AUDIENCE') ?: 'public-safety-campaign';
+                $expectedIssuer = getenv('JWT_ISSUER') ?: 'public-safety-campaign-api';
+                $user = JWTMiddleware::authenticate($this->pdo, $jwtSecret, $expectedAudience, $expectedIssuer);
+            } catch (\Exception $e) {
+                // No valid JWT token - user remains null (public access)
+                error_log('SurveyController::show - Optional JWT auth failed (public access): ' . $e->getMessage());
+            }
+        }
+        
         // Allow draft surveys for authenticated users (for editing), only published for public
         $allowDraft = $user !== null;
         $survey = $this->findSurvey($id, allowDraft: $allowDraft, allowPublic: true);
@@ -687,49 +702,64 @@ class SurveyController
             return ['error' => 'Authentication required'];
         }
 
-        $surveyId = (int) ($params['id'] ?? 0);
-        $survey = $this->findSurvey($surveyId);
+        try {
+            $surveyId = (int) ($params['id'] ?? 0);
+            error_log("SurveyController::aggregatedResults - Survey ID: $surveyId");
+            
+            $survey = $this->findSurvey($surveyId);
+            error_log("SurveyController::aggregatedResults - Survey found: " . $survey['title']);
 
-        // Role-based access
-        $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
-        if (!in_array($userRole, ['Barangay Administrator', 'Barangay Staff', 'Campaign Manager'], true)) {
-            http_response_code(403);
-            return ['error' => 'Insufficient permissions to view aggregated results'];
-        }
-
-        $questions = $this->getQuestions($surveyId);
-        $results = [];
-
-        foreach ($questions as $question) {
-            $questionId = (int) $question['id'];
-            $questionType = $question['question_type'];
-
-            // Get aggregated result from cache or compute
-            $stmt = $this->pdo->prepare('SELECT average_rating, response_distribution, total_responses FROM `campaign_department_survey_aggregated_results` WHERE survey_id = :sid AND question_id = :qid');
-            $stmt->execute(['sid' => $surveyId, 'qid' => $questionId]);
-            $aggregated = $stmt->fetch();
-
-            if (!$aggregated) {
-                // Compute on the fly
-                $aggregated = $this->computeAggregatedResult($surveyId, $questionId, $questionType);
+            // Role-based access
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            error_log("SurveyController::aggregatedResults - User role: $userRole");
+            
+            if (!in_array($userRole, ['Barangay Administrator', 'Barangay Staff', 'Campaign Manager'], true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions to view aggregated results. Your role: ' . $userRole];
             }
 
-            $results[] = [
-                'question_id' => $questionId,
-                'question_text' => $question['question_text'],
-                'question_type' => $questionType,
-                'average_rating' => $aggregated['average_rating'] ?? null,
-                'response_distribution' => $aggregated['response_distribution'] ? json_decode($aggregated['response_distribution'], true) : null,
-                'total_responses' => (int) ($aggregated['total_responses'] ?? 0)
-            ];
-        }
+            $questions = $this->getQuestions($surveyId);
+            error_log("SurveyController::aggregatedResults - Questions count: " . count($questions));
+            
+            $results = [];
 
-        return [
-            'survey_id' => $surveyId,
-            'survey_title' => $survey['title'],
-            'total_responses' => $this->getTotalResponseCount($surveyId),
-            'results' => $results
-        ];
+            foreach ($questions as $question) {
+                $questionId = (int) $question['id'];
+                $questionType = $question['question_type'];
+
+                // Get aggregated result from cache or compute
+                $stmt = $this->pdo->prepare('SELECT average_rating, response_distribution, total_responses FROM `campaign_department_survey_aggregated_results` WHERE survey_id = :sid AND question_id = :qid');
+                $stmt->execute(['sid' => $surveyId, 'qid' => $questionId]);
+                $aggregated = $stmt->fetch();
+
+                if (!$aggregated) {
+                    // Compute on the fly
+                    error_log("SurveyController::aggregatedResults - Computing aggregated result for question $questionId");
+                    $aggregated = $this->computeAggregatedResult($surveyId, $questionId, $questionType);
+                }
+
+                $results[] = [
+                    'question_id' => $questionId,
+                    'question_text' => $question['question_text'],
+                    'question_type' => $questionType,
+                    'average_rating' => $aggregated['average_rating'] ?? null,
+                    'response_distribution' => $aggregated['response_distribution'] ? json_decode($aggregated['response_distribution'], true) : null,
+                    'total_responses' => (int) ($aggregated['total_responses'] ?? 0)
+                ];
+            }
+
+            return [
+                'survey_id' => $surveyId,
+                'survey_title' => $survey['title'],
+                'total_responses' => $this->getTotalResponseCount($surveyId),
+                'results' => $results
+            ];
+        } catch (\Exception $e) {
+            error_log("SurveyController::aggregatedResults - ERROR: " . $e->getMessage());
+            error_log("SurveyController::aggregatedResults - Stack trace: " . $e->getTraceAsString());
+            http_response_code(500);
+            return ['error' => 'Failed to get aggregated results: ' . $e->getMessage()];
+        }
     }
 
     public function exportAggregatedCsv(?array $user, array $params = []): void
