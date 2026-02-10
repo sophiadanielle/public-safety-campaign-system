@@ -28,3 +28,10 @@ php_flag log_errors On
 # Set max upload size (adjust as needed)
 php_value upload_max_filesize 50M
 php_value post_max_size 50M
+php_value max_execution_time 300
+php_value max_input_time 300
+php_value memory_limit 256M
+
+# Apache: Allow large request bodies (50MB = 52428800 bytes)
+# This fixes "413 Request Entity Too Large" error
+LimitRequestBody 52428800
