@@ -334,7 +334,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function createSurvey() {
     const statusEl = document.getElementById('createStatus');
-    statusEl.textContent = 'Creating...';
+    const form = document.getElementById('createForm');
+    const surveyId = form.dataset.surveyId;
+    const isUpdate = !!surveyId;
+    
+    statusEl.textContent = isUpdate ? 'Updating...' : 'Creating...';
     statusEl.style.color = '#64748b';
     
     const payload = {
@@ -345,17 +349,37 @@ async function createSurvey() {
     };
     
     try {
-        const res = await fetch(apiBase + '/api/v1/surveys', {
-            method: 'POST',
+        const url = isUpdate ? apiBase + '/api/v1/surveys/' + surveyId : apiBase + '/api/v1/surveys';
+        const method = isUpdate ? 'PUT' : 'POST';
+        
+        const res = await fetch(url, {
+            method: method,
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
             body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (res.ok && data.id) {
-            currentSurveyId = data.id;
-            statusEl.textContent = '✓ Survey created! ID: ' + data.id + ' - Now add questions below.';
-            statusEl.style.color = '#166534';
-            document.getElementById('survey-builder').style.display = 'block';
+        
+        if (res.ok) {
+            if (isUpdate) {
+                statusEl.textContent = '✓ Survey updated successfully!';
+                statusEl.style.color = '#166534';
+                // Reload surveys list
+                loadSurveys();
+                // Reset form
+                setTimeout(() => {
+                    form.reset();
+                    delete form.dataset.surveyId;
+                    currentSurveyId = null;
+                    document.querySelector('#create-survey button.btn-primary').textContent = 'Create Survey';
+                    document.getElementById('survey-builder').style.display = 'none';
+                    statusEl.textContent = '';
+                }, 2000);
+            } else {
+                currentSurveyId = data.id;
+                statusEl.textContent = '✓ Survey created! ID: ' + data.id + ' - Now add questions below.';
+                statusEl.style.color = '#166534';
+                document.getElementById('survey-builder').style.display = 'block';
+            }
         } else {
             statusEl.textContent = '✗ Error: ' + (data.error || 'Failed');
             statusEl.style.color = '#dc2626';
@@ -770,10 +794,19 @@ async function exportAggregatedResults(surveyId) {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } else {
-            const data = await res.json();
-            alert('Error: ' + (data.error || 'Failed to export aggregated results'));
+            // Try to parse as JSON first, if that fails, show text error
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const data = await res.json();
+                alert('Error: ' + (data.error || 'Failed to export aggregated results'));
+            } else {
+                const text = await res.text();
+                console.error('Export error response:', text);
+                alert('Server error: The server returned an error. Please check the console for details and ensure the SurveyController.php file has been uploaded to the server.');
+            }
         }
     } catch (err) {
+        console.error('Export error:', err);
         alert('Error: ' + err.message);
     }
 }
