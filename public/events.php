@@ -777,12 +777,24 @@ async function loadEvents() {
     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">Loading...</td></tr>';
     
     try {
+        console.log('Loading events from:', apiBase + '/api/v1/events');
         const res = await fetch(apiBase + '/api/v1/events', { headers: { 'Authorization': 'Bearer ' + token } });
+        
+        if (!res.ok) {
+            console.error('Failed to load events, status:', res.status);
+            const errorText = await res.text();
+            console.error('Error response:', errorText);
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#dc2626;">Error loading events (Status: ' + res.status + '). Please check console for details.</td></tr>';
+            return;
+        }
+        
         const data = await res.json();
+        console.log('Events API response:', data);
         tbody.innerHTML = '';
         
         // Handle both data.data and data.events response formats
         const events = data.data || data.events || [];
+        console.log('Events to display:', events.length);
         
         if (!events || events.length === 0) {
             // Check if Viewer - show different message
@@ -855,7 +867,9 @@ async function loadEvents() {
         
         // Update dropdowns for attendance and reports
         updateEventDropdowns(events);
+        console.log('Successfully loaded and displayed', eventsToShow.length, 'events');
     } catch (err) {
+        console.error('Error loading events:', err);
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#dc2626;">Error loading events: ' + err.message + '</td></tr>';
     }
 }
@@ -865,10 +879,25 @@ function updateEventDropdowns(events) {
     const reportSelect = document.getElementById('report_event_select');
     const agencySelect = document.getElementById('agency_event_select');
     
+    console.log('Updating event dropdowns with', events ? events.length : 0, 'events');
+    
     [attendanceSelect, reportSelect, agencySelect].forEach(select => {
-        if (!select) return;
+        if (!select) {
+            console.warn('Event dropdown select element not found');
+            return;
+        }
         const currentValue = select.value;
         select.innerHTML = '<option value="">-- Select Event --</option>';
+        
+        if (!events || events.length === 0) {
+            const noEventsOption = document.createElement('option');
+            noEventsOption.value = '';
+            noEventsOption.textContent = '-- No Events Available --';
+            noEventsOption.disabled = true;
+            select.appendChild(noEventsOption);
+            return;
+        }
+        
         events.forEach(e => {
             const option = document.createElement('option');
             option.value = e.event_id || e.id;
@@ -877,6 +906,8 @@ function updateEventDropdowns(events) {
         });
         if (currentValue) select.value = currentValue;
     });
+    
+    console.log('Event dropdowns updated successfully');
 }
 
 let currentEventId = null;
@@ -1756,10 +1787,26 @@ document.addEventListener('DOMContentLoaded', function() {
     setupRequirementAutocomplete('volunteer_requirements', 'volunteer_requirements');
 });
 
-// Initialize on page load
-loadCampaigns();
-loadAudienceSegments();
-loadEvents();
+// Initialize on page load - ensure DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded - initializing events page');
+        initializeEventsPage();
+    });
+} else {
+    console.log('DOM already loaded - initializing events page');
+    initializeEventsPage();
+}
+
+function initializeEventsPage() {
+    console.log('Initializing events page with API base:', apiBase);
+    console.log('JWT token present:', !!token);
+    
+    // Load data in sequence with error handling
+    loadCampaigns().catch(err => console.error('Failed to load campaigns:', err));
+    loadAudienceSegments().catch(err => console.error('Failed to load segments:', err));
+    loadEvents().catch(err => console.error('Failed to load events:', err));
+}
 </script>
     </div>
     
