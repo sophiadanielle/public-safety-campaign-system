@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Debug Tool</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #d4d4d4; }
+        .test { margin: 20px 0; padding: 15px; background: #2d2d2d; border-radius: 5px; }
+        .success { border-left: 4px solid #4ec9b0; }
+        .error { border-left: 4px solid #f48771; }
+        pre { background: #1e1e1e; padding: 10px; overflow-x: auto; }
+        button { background: #0e639c; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 3px; }
+        button:hover { background: #1177bb; }
+    </style>
+</head>
+<body>
+    <h1>API Debug Tool</h1>
+    <button onclick="runAllTests()">Run All Tests</button>
+    <div id="results"></div>
+
+    <script>
+        const token = localStorage.getItem('jwtToken') || '';
+        const apiBase = '/index.php';
+        
+        async function testEndpoint(name, url) {
+            const resultDiv = document.getElementById('results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test';
+            testDiv.innerHTML = `<h3>${name}</h3><p>Testing: ${url}</p><p>Loading...</p>`;
+            resultDiv.appendChild(testDiv);
+            
+            try {
+                const res = await fetch(url, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                
+                const data = await res.json();
+                
+                testDiv.className = 'test ' + (res.ok ? 'success' : 'error');
+                testDiv.innerHTML = `
+                    <h3>${name}</h3>
+                    <p><strong>URL:</strong> ${url}</p>
+                    <p><strong>Status:</strong> ${res.status} ${res.statusText}</p>
+                    <p><strong>Response:</strong></p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (err) {
+                testDiv.className = 'test error';
+                testDiv.innerHTML = `
+                    <h3>${name}</h3>
+                    <p><strong>URL:</strong> ${url}</p>
+                    <p><strong>Error:</strong> ${err.message}</p>
+                `;
+            }
+        }
+        
+        async function runAllTests() {
+            document.getElementById('results').innerHTML = '';
+            
+            console.log('Token:', token);
+            console.log('API Base:', apiBase);
+            
+            await testEndpoint('Segments API', apiBase + '/api/v1/segments');
+            await testEndpoint('Events API', apiBase + '/api/v1/events');
+            await testEndpoint('Campaigns API', apiBase + '/api/v1/campaigns');
+            await testEndpoint('User Info', apiBase + '/api/v1/users/me');
+        }
+        
+        // Auto-run on load
+        if (token) {
+            runAllTests();
+        } else {
+            document.getElementById('results').innerHTML = '<div class="test error"><h3>No JWT Token Found</h3><p>Please log in first.</p></div>';
+        }
+    </script>
+</body>
+</html>

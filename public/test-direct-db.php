@@ -1,11 +1,20 @@
 <?php
 // Direct database test - bypasses all routing
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 
 try {
+    // Check if config file exists
+    $configFile = __DIR__ . '/../config/database.php';
+    if (!file_exists($configFile)) {
+        throw new Exception("Database config file not found at: $configFile");
+    }
+    
     // Direct database config
-    $config = require __DIR__ . '/../config/database.php';
+    $config = require $configFile;
     $pdo = new PDO(
         "mysql:host={$config['host']};dbname={$config['database']};charset=utf8mb4",
         $config['username'],
