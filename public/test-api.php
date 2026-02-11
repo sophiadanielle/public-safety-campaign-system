@@ -1,8 +1,17 @@
 <?php
 // Simple API diagnostic script
 header('Content-Type: application/json');
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 require_once __DIR__ . '/../header/includes/path_helper.php';
+
+$results = [
+    'timestamp' => date('Y-m-d H:i:s'),
+    'server_name' => $_SERVER['SERVER_NAME'] ?? 'unknown',
+    'api_base_path' => $apiPath ?? 'NOT SET',
+    'base_path' => $basePath ?? 'NOT SET',
+];
 
 // Test database connection
 try {
@@ -13,10 +22,9 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
     
-    $results = [
-        'database_connection' => 'OK',
-        'database_name' => $config['database'],
-    ];
+    $results['database_connection'] = 'OK';
+    $results['database_name'] = $config['database'];
+    $results['database_host'] = $config['host'];
     
     // Test events table
     try {

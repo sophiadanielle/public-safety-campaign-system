@@ -1802,6 +1802,38 @@ function initializeEventsPage() {
     console.log('Initializing events page with API base:', apiBase);
     console.log('JWT token present:', !!token);
     
+    // Check if token is valid
+    if (!token || token === '') {
+        console.error('No JWT token found! User might not be logged in.');
+        const tbody = document.getElementById('eventTable');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#dc2626;">Authentication required. Please log in.</td></tr>';
+        }
+        return;
+    }
+    
+    // Try to decode token to check if it's valid
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+            console.error('Invalid JWT token format');
+            return;
+        }
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        console.log('JWT payload:', payload);
+        console.log('Token expires:', new Date(payload.exp * 1000));
+        
+        // Check if token is expired
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+            console.error('JWT token has expired!');
+            alert('Your session has expired. Please log in again.');
+            window.location.href = '/';
+            return;
+        }
+    } catch (e) {
+        console.error('Error decoding JWT token:', e);
+    }
+    
     // Load data in sequence with error handling
     loadCampaigns().catch(err => console.error('Failed to load campaigns:', err));
     loadAudienceSegments().catch(err => console.error('Failed to load segments:', err));
