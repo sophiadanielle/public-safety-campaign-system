@@ -306,7 +306,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 <input id="segment_ids" type="text" placeholder="e.g., 1, 2, 3 (comma-separated)">
             </div>
         </form>
-        <button class="btn btn-primary" style="margin-top:16px;" onclick="createEvent(event)">Create Event</button>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="createEvent()">Create Event</button>
         <div class="status" id="createStatus" style="margin-top:12px;"></div>
     </section>
     <?php endif; // End RBAC: Hide create form for Viewer ?>
@@ -510,30 +510,62 @@ async function loadCampaigns() {
 
 // Load audience segments for dropdown
 async function loadAudienceSegments() {
+    const select = document.getElementById('target_audience_profile_id');
+    if (!select) {
+        console.error('Target audience profile select element not found');
+        return;
+    }
+    
     try {
-        const res = await fetch(apiBase + '/api/v1/segments', { headers: { 'Authorization': 'Bearer ' + token } });
-        const data = await res.json();
-        const select = document.getElementById('target_audience_profile_id');
-        if (select && data.data) {
-            select.innerHTML = '<option value="">-- Select Audience Segment --</option>';
-            // Filter out duplicates and undefined entries
-            const uniqueSegments = [];
-            const seenIds = new Set();
-            data.data.forEach(s => {
-                if (s && s.id && s.name && !seenIds.has(s.id)) {
-                    seenIds.add(s.id);
-                    uniqueSegments.push(s);
-                }
-            });
-            uniqueSegments.forEach(s => {
-                const option = document.createElement('option');
-                option.value = s.id;
-                option.textContent = `${s.name} - ${s.risk_level || 'N/A'}`;
-                select.appendChild(option);
-            });
+        console.log('Loading audience segments from:', apiBase + '/api/v1/segments');
+        const res = await fetch(apiBase + '/api/v1/segments', { 
+            headers: { 'Authorization': 'Bearer ' + token } 
+        });
+        
+        if (!res.ok) {
+            console.error('Failed to load segments, status:', res.status);
+            const errorData = await res.text();
+            console.error('Error response:', errorData);
+            return;
         }
+        
+        const data = await res.json();
+        console.log('Segments API response:', data);
+        
+        // Handle both data.data and data.segments response formats
+        const segments = data.data || data.segments || [];
+        
+        if (!segments || segments.length === 0) {
+            console.warn('No segments found in API response');
+            select.innerHTML = '<option value="">-- No Segments Available --</option>';
+            return;
+        }
+        
+        select.innerHTML = '<option value="">-- Select Audience Segment --</option>';
+        
+        // Filter out duplicates and undefined entries
+        const uniqueSegments = [];
+        const seenIds = new Set();
+        segments.forEach(s => {
+            if (s && s.id && s.name && !seenIds.has(s.id)) {
+                seenIds.add(s.id);
+                uniqueSegments.push(s);
+            }
+        });
+        
+        console.log('Unique segments to display:', uniqueSegments.length);
+        
+        uniqueSegments.forEach(s => {
+            const option = document.createElement('option');
+            option.value = s.id;
+            option.textContent = `${s.name} - ${s.risk_level || 'N/A'}`;
+            select.appendChild(option);
+        });
+        
+        console.log('Successfully loaded', uniqueSegments.length, 'audience segments');
     } catch (err) {
         console.error('Error loading audience segments:', err);
+        select.innerHTML = '<option value="">-- Error Loading Segments --</option>';
     }
 }
 
@@ -605,8 +637,7 @@ async function checkConflicts() {
     }
 }
 
-async function createEvent(e) {
-    if (e) e.preventDefault();
+async function createEvent() {
     const statusEl = document.getElementById('createStatus');
     const form = document.getElementById('createForm');
     const eventId = form ? form.dataset.eventId : null;

@@ -60,8 +60,8 @@ class SegmentController
         
         $stmt = $this->pdo->query('
             SELECT 
-                id AS segment_id,
-                segment_name,
+                id,
+                segment_name AS name,
                 geographic_scope,
                 location_reference,
                 sector_type,
