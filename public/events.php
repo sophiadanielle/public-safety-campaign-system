@@ -306,7 +306,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 <input id="segment_ids" type="text" placeholder="e.g., 1, 2, 3 (comma-separated)">
             </div>
         </form>
-        <button class="btn btn-primary" style="margin-top:16px;" onclick="createEvent()">Create Event</button>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="createEvent(event)">Create Event</button>
         <div class="status" id="createStatus" style="margin-top:12px;"></div>
     </section>
     <?php endif; // End RBAC: Hide create form for Viewer ?>
@@ -516,10 +516,19 @@ async function loadAudienceSegments() {
         const select = document.getElementById('target_audience_profile_id');
         if (select && data.data) {
             select.innerHTML = '<option value="">-- Select Audience Segment --</option>';
+            // Filter out duplicates and undefined entries
+            const uniqueSegments = [];
+            const seenIds = new Set();
             data.data.forEach(s => {
+                if (s && s.id && s.name && !seenIds.has(s.id)) {
+                    seenIds.add(s.id);
+                    uniqueSegments.push(s);
+                }
+            });
+            uniqueSegments.forEach(s => {
                 const option = document.createElement('option');
                 option.value = s.id;
-                option.textContent = `${s.id} - ${s.name} (${s.risk_level || 'N/A'})`;
+                option.textContent = `${s.name} - ${s.risk_level || 'N/A'}`;
                 select.appendChild(option);
             });
         }
@@ -596,7 +605,8 @@ async function checkConflicts() {
     }
 }
 
-async function createEvent() {
+async function createEvent(e) {
+    if (e) e.preventDefault();
     const statusEl = document.getElementById('createStatus');
     const form = document.getElementById('createForm');
     const eventId = form ? form.dataset.eventId : null;
@@ -740,7 +750,10 @@ async function loadEvents() {
         const data = await res.json();
         tbody.innerHTML = '';
         
-        if (!data.data || data.data.length === 0) {
+        // Handle both data.data and data.events response formats
+        const events = data.data || data.events || [];
+        
+        if (!events || events.length === 0) {
             // Check if Viewer - show different message
             const isViewerCheck = checkIfViewer();
             if (isViewerCheck) {
@@ -752,10 +765,10 @@ async function loadEvents() {
         }
         
         // RBAC: For Viewer, filter to show only confirmed/scheduled/completed events (not drafts)
-        let eventsToShow = data.data;
+        let eventsToShow = events;
         const isViewerCheck = checkIfViewer();
         if (isViewerCheck) {
-            eventsToShow = data.data.filter(e => {
+            eventsToShow = events.filter(e => {
                 const status = (e.event_status || e.status || '').toLowerCase();
                 return status === 'confirmed' || status === 'scheduled' || status === 'completed';
             });
@@ -810,7 +823,7 @@ async function loadEvents() {
         });
         
         // Update dropdowns for attendance and reports
-        updateEventDropdowns(data.data);
+        updateEventDropdowns(events);
     } catch (err) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#dc2626;">Error loading events: ' + err.message + '</td></tr>';
     }
@@ -1373,6 +1386,92 @@ async function addAgencyCoordination() {
             loadAgencyCoordination();
         } else {
             alert('Error: ' + (data.error || 'Failed'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Edit event - populate form with event data
+async function editEvent(eventId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.event) {
+            const e = data.event;
+            
+            // Populate form fields
+            document.getElementById('event_title').value = e.event_title || e.event_name || '';
+            document.getElementById('event_type').value = e.event_type || 'seminar';
+            document.getElementById('event_status').value = e.event_status || 'draft';
+            document.getElementById('linked_campaign_id').value = e.linked_campaign_id || '';
+            document.getElementById('target_audience_profile_id').value = e.target_audience_profile_id || '';
+            document.getElementById('hazard_focus').value = e.hazard_focus || '';
+            document.getElementById('date').value = e.date || '';
+            document.getElementById('start_time').value = e.start_time || '';
+            document.getElementById('end_time').value = e.end_time || '';
+            document.getElementById('venue').value = e.venue || '';
+            document.getElementById('location').value = e.location || '';
+            document.getElementById('event_description').value = e.event_description || '';
+            document.getElementById('transport_requirements').value = e.transport_requirements || '';
+            document.getElementById('trainer_requirements').value = e.trainer_requirements || '';
+            document.getElementById('equipment_requirements').value = e.equipment_requirements || '';
+            document.getElementById('volunteer_requirements').value = e.volunteer_requirements || '';
+            
+            // Handle facilitator and segment IDs
+            if (data.facilitators && data.facilitators.length > 0) {
+                const facIds = data.facilitators.map(f => f.user_id || f.id).join(', ');
+                document.getElementById('facilitator_ids').value = facIds;
+            }
+            if (data.segments && data.segments.length > 0) {
+                const segIds = data.segments.map(s => s.segment_id || s.id).join(', ');
+                document.getElementById('segment_ids').value = segIds;
+            }
+            
+            // Set form to update mode
+            const form = document.getElementById('createForm');
+            if (form) form.dataset.eventId = eventId;
+            
+            // Change button text
+            const submitBtn = document.querySelector('#create-event button.btn-primary');
+            if (submitBtn) submitBtn.textContent = 'Update Event';
+            
+            // Scroll to form
+            document.getElementById('create-event').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Load audience profile preview if selected
+            if (e.target_audience_profile_id) {
+                loadAudienceProfilePreview();
+            }
+        } else {
+            alert('Error loading event: ' + (data.error || 'Not found'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Delete event
+async function deleteEvent(eventId) {
+    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert('Event deleted successfully');
+            loadEvents();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to delete event'));
         }
     } catch (err) {
         alert('Network error: ' + err.message);
