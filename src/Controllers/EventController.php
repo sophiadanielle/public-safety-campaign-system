@@ -802,7 +802,7 @@ class EventController
 
         $stmt = $this->pdo->prepare('
             SELECT 
-                a.attendance_id,
+                a.id as attendance_id,
                 a.participant_identifier,
                 a.checkin_method,
                 a.checkin_timestamp,
@@ -828,7 +828,7 @@ class EventController
 
         $stmt = $this->pdo->prepare('
             SELECT 
-                a.attendance_id,
+                a.id as attendance_id,
                 COALESCE(am.full_name, a.participant_identifier) as full_name,
                 am.contact,
                 a.checkin_method,

@@ -15,7 +15,7 @@ echo "<pre>";
 $gitDir = __DIR__ . '/..';
 chdir($gitDir);
 $currentCommit = trim(shell_exec('git rev-parse --short HEAD 2>&1'));
-$latestCommit = '922002a'; // Expected latest commit
+$latestCommit = '12759a2'; // Expected latest commit
 echo "Current commit: <strong>$currentCommit</strong>\n";
 echo "Expected commit: <strong>$latestCommit</strong>\n";
 if ($currentCommit === $latestCommit) {
