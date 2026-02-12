@@ -56,7 +56,7 @@ class EventController
                 $queryParams['filter_event_type'] = $_GET['event_type'];
             }
             if (isset($_GET['event_status'])) {
-                $where[] = 'e.event_status = :filter_event_status';
+                $where[] = 'e.status = :filter_event_status';
                 $queryParams['filter_event_status'] = $_GET['event_status'];
             }
             if (isset($_GET['hazard_focus'])) {
@@ -75,9 +75,9 @@ class EventController
             $isViewer = in_array($userRoleName, ['viewer', 'partner'], true);
             $isLGUStaff = in_array($userRoleName, ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'], true);
             
-            // Viewers can only see confirmed/completed events (read-only)
+            // Viewers can only see ongoing/completed events (read-only)
             if ($isViewer && !$isLGUStaff) {
-                $where[] = "e.event_status IN ('confirmed', 'completed')";
+                $where[] = "e.status IN ('ongoing', 'completed')";
             }
 
             $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
@@ -109,7 +109,7 @@ class EventController
                 LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
                 LEFT JOIN `campaign_department_audience_segments` a ON a.id = e.target_audience_profile_id
                 {$whereClause}
-                ORDER BY e.date DESC, e.start_time DESC
+                ORDER BY e.event_date DESC, e.event_time DESC
                 LIMIT 100
             ";
 
