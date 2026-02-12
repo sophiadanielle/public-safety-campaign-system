@@ -10,6 +10,10 @@ ini_set('display_errors', 1);
 // Load database configuration
 require_once __DIR__ . '/../../src/Config/db_connect.php';
 
+// Enable buffered queries to avoid the error
+$pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+$pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
+
 echo "<h1>Event Management System - Database Migration</h1>";
 echo "<style>body{font-family:monospace;padding:20px;background:#1e1e1e;color:#d4d4d4;}pre{background:#2d2d2d;padding:10px;overflow-x:auto;}.success{color:#4ec9b0;}.error{color:#f48771;}.warning{color:#dcdcaa;}</style>";
 
@@ -27,13 +31,15 @@ try {
     echo "<h2>Executing migration...</h2>";
     echo "<pre>";
     
+    // Remove comments and split into statements
+    $sql = preg_replace('/--.*$/m', '', $sql); // Remove single-line comments
+    $sql = preg_replace('/\/\*.*?\*\//s', '', $sql); // Remove multi-line comments
+    
     // Split SQL into individual statements
     $statements = array_filter(
         array_map('trim', explode(';', $sql)),
         function($stmt) {
-            return !empty($stmt) && 
-                   !preg_match('/^--/', $stmt) && 
-                   !preg_match('/^\/\*/', $stmt);
+            return !empty($stmt) && strlen($stmt) > 5;
         }
     );
     
@@ -41,12 +47,13 @@ try {
     $errorCount = 0;
     $errors = [];
     
-    // Execute each statement
+    // Execute each statement individually
     foreach ($statements as $index => $statement) {
         if (empty(trim($statement))) continue;
         
         try {
-            $pdo->exec($statement);
+            // Use exec for DDL statements
+            $result = $pdo->exec($statement . ';');
             $successCount++;
             
             // Extract action from statement for logging
