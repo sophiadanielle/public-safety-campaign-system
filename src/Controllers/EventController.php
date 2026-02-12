@@ -328,20 +328,19 @@ class EventController
             // Insert event
             $stmt = $this->pdo->prepare('
                 INSERT INTO `campaign_department_events` (
-                    event_title, event_name, event_type, event_description, hazard_focus,
+                    event_name, event_type, event_description, hazard_focus,
                     target_audience_profile_id, linked_campaign_id, date, start_time, end_time,
                     venue, location, event_status, transport_requirements, trainer_requirements,
                     equipment_requirements, volunteer_requirements, created_by, starts_at, ends_at
                 ) VALUES (
-                    :event_title, :event_name, :event_type, :event_description, :hazard_focus,
+                    :event_name, :event_type, :event_description, :hazard_focus,
                     :target_audience_profile_id, :linked_campaign_id, :date, :start_time, :end_time,
                     :venue, :location, :event_status, :transport_requirements, :trainer_requirements,
                     :equipment_requirements, :volunteer_requirements, :created_by, :starts_at, :ends_at
                 )
             ');
             $stmt->execute([
-                'event_title' => $eventTitle,
-                'event_name' => $eventTitle, // Keep both for compatibility
+                'event_name' => $eventTitle,
                 'event_type' => $eventType,
                 'event_description' => $eventDescription,
                 'hazard_focus' => $hazardFocus,
