@@ -7,6 +7,7 @@ namespace App\Controllers;
 use PDO;
 use RuntimeException;
 use App\Middleware\RoleMiddleware;
+use App\Middleware\JWTMiddleware;
 
 class SurveyController
 {
@@ -17,6 +18,218 @@ class SurveyController
         private string $jwtAudience,
         private int $jwtExpirySeconds
     ) {
+        // Auto-migration: Add status column if it doesn't exist
+        $this->ensureStatusColumn();
+    }
+    
+    private function ensureStatusColumn(): void
+    {
+        try {
+            // Check and add status column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'status'");
+            $hasStatus = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasStatus) {
+                error_log('SurveyController: Adding status column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `status` ENUM('draft','published','closed') NOT NULL DEFAULT 'draft' AFTER `description`");
+            } else {
+                // Check if status column has 'closed' value
+                $checkStmt = $this->pdo->query("SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_SCHEMA = DATABASE() 
+                    AND TABLE_NAME = 'campaign_department_surveys' 
+                    AND COLUMN_NAME = 'status'");
+                $columnType = $checkStmt->fetchColumn();
+                if ($columnType && strpos($columnType, 'closed') === false) {
+                    error_log('SurveyController: Updating status column to include closed');
+                    $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                        MODIFY COLUMN `status` ENUM('draft','published','closed') NOT NULL DEFAULT 'draft'");
+                }
+            }
+            
+            // Check and add event_id column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'event_id'");
+            $hasEventId = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasEventId) {
+                error_log('SurveyController: Adding event_id column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `event_id` INT UNSIGNED NULL AFTER `campaign_id`,
+                    ADD KEY `idx_surveys_event` (`event_id`)");
+            }
+            
+            // Check and add published_via column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'published_via'");
+            $hasPublishedVia = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasPublishedVia) {
+                error_log('SurveyController: Adding published_via column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `published_via` ENUM('link', 'qr_code', 'both') NULL AFTER `status`");
+            }
+            
+            // Check and add created_by column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'created_by'");
+            $hasCreatedBy = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasCreatedBy) {
+                error_log('SurveyController: Adding created_by column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `created_by` INT UNSIGNED NULL AFTER `published_via`");
+            }
+            
+            // Check and add published_by column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'published_by'");
+            $hasPublishedBy = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasPublishedBy) {
+                error_log('SurveyController: Adding published_by column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `published_by` INT UNSIGNED NULL AFTER `created_by`");
+            }
+            
+            // Check and add published_at column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'published_at'");
+            $hasPublishedAt = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasPublishedAt) {
+                error_log('SurveyController: Adding published_at column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `published_at` TIMESTAMP NULL AFTER `published_by`");
+            }
+            
+            // Check and add closed_at column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'closed_at'");
+            $hasClosedAt = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasClosedAt) {
+                error_log('SurveyController: Adding closed_at column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `closed_at` TIMESTAMP NULL AFTER `published_at`");
+            }
+            
+            // Check and create survey_audit_log table
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_audit_log'");
+            $hasAuditLog = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasAuditLog) {
+                error_log('SurveyController: Creating survey_audit_log table');
+                $this->pdo->exec("CREATE TABLE IF NOT EXISTS `campaign_department_survey_audit_log` (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    survey_id INT UNSIGNED NOT NULL,
+                    user_id INT UNSIGNED NULL,
+                    action_type ENUM('created', 'updated', 'published', 'closed', 'question_added', 'question_updated', 'question_deleted', 'response_submitted') NOT NULL,
+                    field_name VARCHAR(100) NULL,
+                    old_value TEXT NULL,
+                    new_value TEXT NULL,
+                    change_details TEXT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_survey_audit_survey (survey_id),
+                    INDEX idx_survey_audit_user (user_id),
+                    INDEX idx_survey_audit_action (action_type),
+                    INDEX idx_survey_audit_created (created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+            
+            // Check and add question_order column to survey_questions table
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_questions' 
+                AND COLUMN_NAME = 'question_order'");
+            $hasQuestionOrder = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasQuestionOrder) {
+                error_log('SurveyController: Adding question_order column to survey_questions');
+                $this->pdo->exec("ALTER TABLE `campaign_department_survey_questions` 
+                    ADD COLUMN `question_order` INT UNSIGNED NOT NULL DEFAULT 1 AFTER `survey_id`");
+            }
+            
+            // Check and add required_flag column to survey_questions table
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_questions' 
+                AND COLUMN_NAME = 'required_flag'");
+            $hasRequiredFlag = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasRequiredFlag) {
+                error_log('SurveyController: Adding required_flag column to survey_questions');
+                $this->pdo->exec("ALTER TABLE `campaign_department_survey_questions` 
+                    ADD COLUMN `required_flag` TINYINT(1) NOT NULL DEFAULT 0 AFTER `options_json`");
+            }
+            
+            // Check and add respondent_identifier column to survey_responses table
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_responses' 
+                AND COLUMN_NAME = 'respondent_identifier'");
+            $hasRespondentId = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasRespondentId) {
+                error_log('SurveyController: Adding respondent_identifier column to survey_responses');
+                $this->pdo->exec("ALTER TABLE `campaign_department_survey_responses` 
+                    ADD COLUMN `respondent_identifier` VARCHAR(255) NULL AFTER `survey_id`");
+            }
+            
+            // Check and add submission_timestamp column to survey_responses table
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_responses' 
+                AND COLUMN_NAME = 'submission_timestamp'");
+            $hasSubmissionTimestamp = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasSubmissionTimestamp) {
+                error_log('SurveyController: Adding submission_timestamp column to survey_responses');
+                $this->pdo->exec("ALTER TABLE `campaign_department_survey_responses` 
+                    ADD COLUMN `submission_timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER `respondent_identifier`");
+            }
+            
+            // Check and create survey_response_details table
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_response_details'");
+            $hasResponseDetails = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasResponseDetails) {
+                error_log('SurveyController: Creating survey_response_details table');
+                $this->pdo->exec("CREATE TABLE IF NOT EXISTS `campaign_department_survey_response_details` (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    response_id INT UNSIGNED NOT NULL,
+                    question_id INT UNSIGNED NOT NULL,
+                    response_value TEXT NOT NULL COMMENT 'Stores the actual response (rating number, selected option, text, etc.)',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_response_details_response (response_id),
+                    INDEX idx_response_details_question (question_id),
+                    UNIQUE KEY uk_response_details (response_id, question_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+            }
+            
+            error_log('SurveyController: Auto-migration completed successfully');
+        } catch (\Exception $e) {
+            error_log('SurveyController: Failed to apply migrations: ' . $e->getMessage());
+        }
     }
 
     public function index(?array $user, array $params = []): array
@@ -63,7 +276,23 @@ class SurveyController
     public function show(?array $user, array $params = []): array
     {
         $id = (int) ($params['id'] ?? 0);
-        $survey = $this->findSurvey($id, allowDraft: false, allowPublic: true);
+        
+        // Try to authenticate user from JWT if present (optional authentication)
+        if (!$user) {
+            try {
+                $jwtSecret = getenv('JWT_SECRET') ?: 'your-secret-key';
+                $expectedAudience = getenv('JWT_AUDIENCE') ?: 'public-safety-campaign';
+                $expectedIssuer = getenv('JWT_ISSUER') ?: 'public-safety-campaign-api';
+                $user = JWTMiddleware::authenticate($this->pdo, $jwtSecret, $expectedAudience, $expectedIssuer);
+            } catch (\Exception $e) {
+                // No valid JWT token - user remains null (public access)
+                error_log('SurveyController::show - Optional JWT auth failed (public access): ' . $e->getMessage());
+            }
+        }
+        
+        // Allow draft surveys for authenticated users (for editing), only published for public
+        $allowDraft = $user !== null;
+        $survey = $this->findSurvey($id, allowDraft: $allowDraft, allowPublic: true);
 
         $questions = $this->getQuestions($id);
         $survey['questions'] = $questions;
@@ -473,91 +702,115 @@ class SurveyController
             return ['error' => 'Authentication required'];
         }
 
-        $surveyId = (int) ($params['id'] ?? 0);
-        $survey = $this->findSurvey($surveyId);
+        try {
+            $surveyId = (int) ($params['id'] ?? 0);
+            error_log("SurveyController::aggregatedResults - Survey ID: $surveyId");
+            
+            $survey = $this->findSurvey($surveyId);
+            error_log("SurveyController::aggregatedResults - Survey found: " . $survey['title']);
 
-        // Role-based access
-        $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
-        if (!in_array($userRole, ['Barangay Administrator', 'Barangay Staff', 'Campaign Manager'], true)) {
-            http_response_code(403);
-            return ['error' => 'Insufficient permissions to view aggregated results'];
-        }
-
-        $questions = $this->getQuestions($surveyId);
-        $results = [];
-
-        foreach ($questions as $question) {
-            $questionId = (int) $question['id'];
-            $questionType = $question['question_type'];
-
-            // Get aggregated result from cache or compute
-            $stmt = $this->pdo->prepare('SELECT average_rating, response_distribution, total_responses FROM `campaign_department_survey_aggregated_results` WHERE survey_id = :sid AND question_id = :qid');
-            $stmt->execute(['sid' => $surveyId, 'qid' => $questionId]);
-            $aggregated = $stmt->fetch();
-
-            if (!$aggregated) {
-                // Compute on the fly
-                $aggregated = $this->computeAggregatedResult($surveyId, $questionId, $questionType);
+            // Role-based access
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            error_log("SurveyController::aggregatedResults - User role: $userRole");
+            
+            if (!in_array($userRole, ['Barangay Administrator', 'Barangay Staff', 'Campaign Manager'], true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions to view aggregated results. Your role: ' . $userRole];
             }
 
-            $results[] = [
-                'question_id' => $questionId,
-                'question_text' => $question['question_text'],
-                'question_type' => $questionType,
-                'average_rating' => $aggregated['average_rating'] ?? null,
-                'response_distribution' => $aggregated['response_distribution'] ? json_decode($aggregated['response_distribution'], true) : null,
-                'total_responses' => (int) ($aggregated['total_responses'] ?? 0)
-            ];
-        }
+            $questions = $this->getQuestions($surveyId);
+            error_log("SurveyController::aggregatedResults - Questions count: " . count($questions));
+            
+            $results = [];
 
-        return [
-            'survey_id' => $surveyId,
-            'survey_title' => $survey['title'],
-            'total_responses' => $this->getTotalResponseCount($surveyId),
-            'results' => $results
-        ];
+            foreach ($questions as $question) {
+                $questionId = (int) $question['id'];
+                $questionType = $question['question_type'];
+
+                // Get aggregated result from cache or compute
+                $stmt = $this->pdo->prepare('SELECT average_rating, response_distribution, total_responses FROM `campaign_department_survey_aggregated_results` WHERE survey_id = :sid AND question_id = :qid');
+                $stmt->execute(['sid' => $surveyId, 'qid' => $questionId]);
+                $aggregated = $stmt->fetch();
+
+                if (!$aggregated) {
+                    // Compute on the fly
+                    error_log("SurveyController::aggregatedResults - Computing aggregated result for question $questionId");
+                    $aggregated = $this->computeAggregatedResult($surveyId, $questionId, $questionType);
+                }
+
+                $results[] = [
+                    'question_id' => $questionId,
+                    'question_text' => $question['question_text'],
+                    'question_type' => $questionType,
+                    'average_rating' => $aggregated['average_rating'] ?? null,
+                    'response_distribution' => $aggregated['response_distribution'] ? json_decode($aggregated['response_distribution'], true) : null,
+                    'total_responses' => (int) ($aggregated['total_responses'] ?? 0)
+                ];
+            }
+
+            return [
+                'survey_id' => $surveyId,
+                'survey_title' => $survey['title'],
+                'total_responses' => $this->getTotalResponseCount($surveyId),
+                'results' => $results
+            ];
+        } catch (\Exception $e) {
+            error_log("SurveyController::aggregatedResults - ERROR: " . $e->getMessage());
+            error_log("SurveyController::aggregatedResults - Stack trace: " . $e->getTraceAsString());
+            http_response_code(500);
+            return ['error' => 'Failed to get aggregated results: ' . $e->getMessage()];
+        }
     }
 
     public function exportAggregatedCsv(?array $user, array $params = []): void
     {
         if (!$user) {
             http_response_code(401);
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Authentication required']);
             return;
         }
 
-        $surveyId = (int) ($params['id'] ?? 0);
-        $survey = $this->findSurvey($surveyId);
+        try {
+            $surveyId = (int) ($params['id'] ?? 0);
+            $survey = $this->findSurvey($surveyId);
 
-        $results = $this->aggregatedResults($user, $params);
-        if (isset($results['error'])) {
-            http_response_code(403);
+            $results = $this->aggregatedResults($user, $params);
+            if (isset($results['error'])) {
+                http_response_code(403);
+                header('Content-Type: application/json');
+                echo json_encode($results);
+                exit;
+            }
+
+            header('Content-Type: text/csv');
+            header('Content-Disposition: attachment; filename="survey_' . $surveyId . '_aggregated_results.csv"');
+
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Survey ID', 'Survey Title', 'Total Responses', 'Export Date']);
+            fputcsv($out, [$surveyId, $survey['title'], $results['total_responses'], date('Y-m-d H:i:s')]);
+            fputcsv($out, []); // Empty row
+            fputcsv($out, ['Question ID', 'Question Text', 'Question Type', 'Average Rating', 'Response Distribution', 'Total Responses']);
+
+            foreach ($results['results'] as $result) {
+                fputcsv($out, [
+                    $result['question_id'],
+                    $result['question_text'],
+                    $result['question_type'],
+                    $result['average_rating'] ?? '',
+                    $result['response_distribution'] ? json_encode($result['response_distribution']) : '',
+                    $result['total_responses']
+                ]);
+            }
+
+            fclose($out);
+            exit;
+        } catch (\Exception $e) {
+            http_response_code(500);
             header('Content-Type: application/json');
-            echo json_encode($results);
+            echo json_encode(['error' => 'Failed to export aggregated results: ' . $e->getMessage()]);
             exit;
         }
-
-        header('Content-Type: text/csv');
-        header('Content-Disposition: attachment; filename="survey_' . $surveyId . '_aggregated_results.csv"');
-
-        $out = fopen('php://output', 'w');
-        fputcsv($out, ['Survey ID', 'Survey Title', 'Total Responses', 'Export Date']);
-        fputcsv($out, [$surveyId, $survey['title'], $results['total_responses'], date('Y-m-d H:i:s')]);
-        fputcsv($out, []); // Empty row
-        fputcsv($out, ['Question ID', 'Question Text', 'Question Type', 'Average Rating', 'Response Distribution', 'Total Responses']);
-
-        foreach ($results['results'] as $result) {
-            fputcsv($out, [
-                $result['question_id'],
-                $result['question_text'],
-                $result['question_type'],
-                $result['average_rating'] ?? '',
-                $result['response_distribution'] ? json_encode($result['response_distribution']) : '',
-                $result['total_responses']
-            ]);
-        }
-
-        fclose($out);
-        exit;
     }
 
     private function findSurvey(int $id, bool $allowDraft = true, bool $allowPublic = false): array
@@ -640,7 +893,10 @@ class SurveyController
 
     private function computeAggregatedResult(int $surveyId, int $questionId, string $questionType): array
     {
-        $stmt = $this->pdo->prepare('SELECT response_value FROM `campaign_department_survey_response_details` WHERE survey_id = :sid AND question_id = :qid');
+        $stmt = $this->pdo->prepare('SELECT rd.response_value 
+            FROM `campaign_department_survey_response_details` rd
+            INNER JOIN `campaign_department_survey_responses` r ON rd.response_id = r.id
+            WHERE r.survey_id = :sid AND rd.question_id = :qid');
         $stmt->execute(['sid' => $surveyId, 'qid' => $questionId]);
         $responses = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
@@ -712,8 +968,9 @@ class SurveyController
         
         // Only allow updating draft surveys
         if ($survey['status'] !== 'draft') {
+            error_log('SurveyController: Cannot update survey ID ' . $id . ' - status is "' . $survey['status'] . '" (expected "draft")');
             http_response_code(422);
-            return ['error' => 'Only draft surveys can be updated'];
+            return ['error' => 'Only draft surveys can be updated. Current status: ' . $survey['status']];
         }
         
         $input = json_decode(file_get_contents('php://input'), true) ?? [];

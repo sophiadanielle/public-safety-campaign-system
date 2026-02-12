@@ -60,11 +60,11 @@ $isApiRequestEarly = strpos($rawRequestUri, '/api/') !== false;
 if (isset($GLOBALS['IS_API_REQUEST']) && $GLOBALS['IS_API_REQUEST'] && isset($GLOBALS['API_PATH'])) {
     $requestUri = $GLOBALS['API_PATH'];
     $isApiRequestEarly = true;
-    error_log("ROUTING DEBUG: Using early-detected API path: " . $requestUri);
-    // Skip all the normalization - we already have the correct path
-    // Jump directly to API check
     $isApiRequest = true;
-    goto skip_to_api_check;
+    error_log("ROUTING DEBUG: Using proxy-detected API path: " . $requestUri);
+    error_log("ROUTING DEBUG: SKIPPING URI normalization - path already set by proxy");
+    // Skip all URI normalization - the proxy has already set the correct path
+    goto skip_uri_normalization;
 }
 
 // Debug logging
@@ -114,11 +114,17 @@ if ($requestUri === '' || ($requestUri[0] !== '/' && $requestUri !== '')) {
     $requestUri = '/' . $requestUri;
 }
 
-skip_to_api_check:
+skip_uri_normalization:
+
+// Check for API path in the final URI (needed for detection logic below)
+$hasApiPath = strpos($requestUri, '/api/') !== false || strpos($requestUri, 'api/') !== false;
 
 // Check if this is an API request - prioritize early detection
 // If early detection found it, trust that
-$isApiRequest = $isApiRequestEarly;
+// IMPORTANT: Don't overwrite $isApiRequest if it was already set by the proxy
+if (!isset($isApiRequest)) {
+    $isApiRequest = $isApiRequestEarly;
+}
 
 // If not detected early, check normalized URI
 if (!$isApiRequest) {
@@ -320,9 +326,28 @@ if ($isApiRequest) {
 
     $allRoutes = [];
     foreach ($routeFiles as $file) {
-        $routes = require __DIR__ . '/src/Routes/' . $file;
-        $allRoutes = array_merge($allRoutes, $routes);
+        $routePath = __DIR__ . '/src/Routes/' . $file;
+        error_log("ROUTE LOADING: Attempting to load $routePath");
+        
+        if (!file_exists($routePath)) {
+            error_log("ROUTE LOADING ERROR: File not found: $routePath");
+            continue;
+        }
+        
+        try {
+            $routes = require $routePath;
+            if (!is_array($routes)) {
+                error_log("ROUTE LOADING ERROR: $file did not return an array");
+                continue;
+            }
+            error_log("ROUTE LOADING: Loaded " . count($routes) . " routes from $file");
+            $allRoutes = array_merge($allRoutes, $routes);
+        } catch (Exception $e) {
+            error_log("ROUTE LOADING ERROR: Failed to load $file: " . $e->getMessage());
+        }
     }
+    
+    error_log("ROUTE LOADING: Total routes loaded: " . count($allRoutes));
 
     // Get HTTP method
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -330,6 +355,9 @@ if ($isApiRequest) {
     // Find matching route
     $matchedRoute = null;
     $params = [];
+    
+    error_log("ROUTE MATCHING: Looking for route with method=$method and path=$requestUri");
+    error_log("ROUTE MATCHING: Total routes to check: " . count($allRoutes));
 
     foreach ($allRoutes as $route) {
         if ($route['method'] !== $method) {
@@ -339,9 +367,12 @@ if ($isApiRequest) {
         // Convert route path pattern to regex
         $pattern = preg_replace('#\{([\w]+)\}#', '(?P<$1>[^/]+)', $route['path']);
         $pattern = '#^' . $pattern . '$#';
+        
+        error_log("ROUTE MATCHING: Checking route: " . $route['path'] . " against pattern: " . $pattern);
 
         if (preg_match($pattern, $requestUri, $matches)) {
             $matchedRoute = $route;
+            error_log("ROUTE MATCHING: MATCH FOUND! Route: " . $route['path']);
             // Extract named parameters
             foreach ($matches as $key => $value) {
                 if (is_string($key)) {
@@ -353,12 +384,41 @@ if ($isApiRequest) {
     }
 
     if (!$matchedRoute) {
+        error_log("ROUTE MATCHING: NO MATCH FOUND for path=$requestUri with method=$method");
+        
+        // Collect sample routes for debugging
+        $sampleRoutes = [];
+        $postRoutes = [];
+        foreach ($allRoutes as $route) {
+            if ($route['method'] === 'POST') {
+                $postRoutes[] = $route['path'];
+            }
+            if (count($sampleRoutes) < 5) {
+                $sampleRoutes[] = [
+                    'method' => $route['method'],
+                    'path' => $route['path']
+                ];
+            }
+        }
+        
         if (ob_get_level() > 0) {
             ob_clean();
         }
         http_response_code(404);
         header('Content-Type: application/json');
-        echo json_encode(['error' => 'Route not found']);
+        echo json_encode([
+            'error' => 'Route not found',
+            'debug' => [
+                'requestUri' => $requestUri,
+                'method' => $method,
+                'rawRequestUri' => $_SERVER['REQUEST_URI'] ?? 'NOT SET',
+                'totalRoutesLoaded' => count($allRoutes),
+                'postRoutesAvailable' => $postRoutes,
+                'sampleRoutes' => $sampleRoutes,
+                'isApiRequest' => $isApiRequest,
+                'globalsSet' => isset($GLOBALS['IS_API_REQUEST']) && isset($GLOBALS['API_PATH'])
+            ]
+        ]);
         if (ob_get_level() > 0) {
             ob_end_flush();
         }
@@ -922,21 +982,24 @@ if (strpos($currentHost, 'alertaraqc.com') !== false ||
     $basePath = '';
     $apiPath = '/index.php';
 }
-// REMOVED: Emergency check that was breaking localhost paths
-// The path_helper.php should have already set the correct paths
+// Emergency: If basePath is still wrong, force it
+if (isset($basePath) && $basePath === '/public-safety-campaign-system') {
+    $basePath = '';
+    $apiPath = '/index.php';
+}
 ?>
-const basePath = '<?php echo isset($basePath) ? $basePath : '/public-safety-campaign-system'; ?>';
+const basePath = '<?php echo isset($basePath) && $basePath !== '/public-safety-campaign-system' ? $basePath : ''; ?>';
 const apiBase = '<?php 
-    if (isset($apiPath)) {
-        echo $apiPath;
-    } else {
-        // Default for localhost - MUST include the full path
-        echo '/public-safety-campaign-system/index.php';
-    }
+// Use /index.php as API base
+// For localhost, use /public-safety-campaign-system/index.php
+if (isset($isDefinitelyLocalhost) && $isDefinitelyLocalhost) {
+    echo isset($apiPath) ? $apiPath : '/public-safety-campaign-system/index.php';
+} else {
+    echo '/index.php'; // Use /index.php for production
+}
 ?>';
 console.log('BASE PATH:', basePath);
 console.log('API BASE:', apiBase);
-console.log('Full login URL will be:', apiBase + '/api/v1/auth/login');
 console.log('HOST:', '<?php echo htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'NOT SET', ENT_QUOTES); ?>');
 console.log('IS_LOCALHOST:', <?php echo isset($isDefinitelyLocalhost) && $isDefinitelyLocalhost ? 'true' : 'false'; ?>);
 
@@ -1016,19 +1079,8 @@ async function login() {
     statusEl.style.color = '#0f172a';
 
     try {
-        // Ensure apiBase ends correctly and construct full URL
-        let loginUrl = apiBase.endsWith('/') 
-            ? apiBase + 'api/v1/auth/login' 
-            : apiBase + '/api/v1/auth/login';
-        
-        // CRITICAL: Make sure the URL is absolute (starts with /)
-        // If it doesn't start with /, the browser will treat it as relative
-        if (!loginUrl.startsWith('/')) {
-            loginUrl = '/' + loginUrl;
-        }
-        
-        // Remove any double slashes (except after http://)
-        loginUrl = loginUrl.replace(/([^:]\/)\/+/g, '$1');
+        // Use /index.php/api/v1/auth/login - main entry point
+        let loginUrl = '/index.php/api/v1/auth/login';
         
         console.log('Login URL:', loginUrl);
         console.log('API Base:', apiBase);
@@ -1256,7 +1308,7 @@ async function signup() {
         return;
     }
 
-    const res = await fetch(apiBase + '/api/v1/auth/register', {
+    const res = await fetch('/index.php/api/v1/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, role })
@@ -1397,6 +1449,6 @@ function googleLogin() {
     }
     
     // Redirect to Google OAuth endpoint
-    window.location.href = apiBase + '/api/v1/auth/google';
+    window.location.href = '/index.php/api/v1/auth/google';
 }
 </script>

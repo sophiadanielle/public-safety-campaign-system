@@ -1430,7 +1430,21 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
                 body: JSON.stringify(updateData)
             });
             
-            const data = await res.json();
+            // Check if response is JSON before parsing
+            const contentType = res.headers.get('content-type');
+            let data;
+            
+            if (contentType && contentType.includes('application/json')) {
+                data = await res.json();
+            } else {
+                // Server returned HTML or other non-JSON response (likely an error)
+                const text = await res.text();
+                console.error('Server returned non-JSON response:', text);
+                statusEl.innerHTML = '✗ Server Error: The server returned an unexpected response.<br><small>Check browser console for details. This usually means a PHP error occurred.</small>';
+                statusEl.style.color = '#dc2626';
+                return;
+            }
+            
             if (res.ok) {
                 statusEl.textContent = '✓ Content updated successfully!';
                 statusEl.style.color = '#059669';
@@ -1477,7 +1491,22 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             headers: { 'Authorization': 'Bearer ' + token },
             body: formData
         });
-        const data = await res.json();
+        
+        // Check if response is JSON before parsing
+        const contentType = res.headers.get('content-type');
+        let data;
+        
+        if (contentType && contentType.includes('application/json')) {
+            data = await res.json();
+        } else {
+            // Server returned HTML or other non-JSON response (likely an error)
+            const text = await res.text();
+            console.error('Server returned non-JSON response:', text);
+            statusEl.innerHTML = '✗ Server Error: The server returned an unexpected response.<br><small>Check browser console for details. This usually means a PHP error occurred.</small>';
+            statusEl.style.color = '#dc2626';
+            return;
+        }
+        
         if (res.ok) {
             statusEl.textContent = '✓ Campaign material uploaded successfully!';
             statusEl.style.color = '#059669';

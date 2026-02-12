@@ -1167,7 +1167,7 @@ class CampaignController
     {
         $stmt = $this->pdo->prepare('
             SELECT id, title, description, category, geographic_scope, status, 
-                   start_date, end_date, draft_schedule_datetime, 
+                   start_date, start_time, end_date, end_time, draft_schedule_datetime, 
                    ai_recommended_datetime, final_schedule_datetime, 
                    owner_id, objectives, location, assigned_staff, 
                    barangay_target_zones, budget, staff_count, materials_json 

@@ -222,9 +222,8 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             <div class="form-field">
                 <label>Event Status</label>
                 <select id="event_status">
-                    <option value="draft">Draft</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="confirmed">Confirmed</option>
+                    <option value="scheduled" selected>Scheduled</option>
+                    <option value="ongoing">Ongoing</option>
                     <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
                 </select>
@@ -306,7 +305,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 <input id="segment_ids" type="text" placeholder="e.g., 1, 2, 3 (comma-separated)">
             </div>
         </form>
-        <button class="btn btn-primary" style="margin-top:16px;" onclick="createEvent()">Create Event</button>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="submitEventForm()">Create Event</button>
         <div class="status" id="createStatus" style="margin-top:12px;"></div>
     </section>
     <?php endif; // End RBAC: Hide create form for Viewer ?>
@@ -329,10 +328,9 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     <select id="agency_type" required>
                         <option value="">-- Select --</option>
                         <option value="police">Police</option>
-                        <option value="fire_rescue">Fire & Rescue</option>
-                        <option value="traffic">Traffic & Transport</option>
-                        <option value="emergency_response">Emergency Response</option>
-                        <option value="community_policing">Community Policing</option>
+                        <option value="fire">Fire</option>
+                        <option value="medical">Medical</option>
+                        <option value="rescue">Rescue</option>
                         <option value="other">Other</option>
                     </select>
                 </div>
@@ -510,21 +508,62 @@ async function loadCampaigns() {
 
 // Load audience segments for dropdown
 async function loadAudienceSegments() {
+    const select = document.getElementById('target_audience_profile_id');
+    if (!select) {
+        console.error('Target audience profile select element not found');
+        return;
+    }
+    
     try {
-        const res = await fetch(apiBase + '/api/v1/segments', { headers: { 'Authorization': 'Bearer ' + token } });
-        const data = await res.json();
-        const select = document.getElementById('target_audience_profile_id');
-        if (select && data.data) {
-            select.innerHTML = '<option value="">-- Select Audience Segment --</option>';
-            data.data.forEach(s => {
-                const option = document.createElement('option');
-                option.value = s.id;
-                option.textContent = `${s.id} - ${s.name} (${s.risk_level || 'N/A'})`;
-                select.appendChild(option);
-            });
+        console.log('Loading audience segments from:', apiBase + '/api/v1/segments');
+        const res = await fetch(apiBase + '/api/v1/segments', { 
+            headers: { 'Authorization': 'Bearer ' + token } 
+        });
+        
+        if (!res.ok) {
+            console.error('Failed to load segments, status:', res.status);
+            const errorData = await res.text();
+            console.error('Error response:', errorData);
+            return;
         }
+        
+        const data = await res.json();
+        console.log('Segments API response:', data);
+        
+        // Handle both data.data and data.segments response formats
+        const segments = data.data || data.segments || [];
+        
+        if (!segments || segments.length === 0) {
+            console.warn('No segments found in API response');
+            select.innerHTML = '<option value="">-- No Segments Available --</option>';
+            return;
+        }
+        
+        select.innerHTML = '<option value="">-- Select Audience Segment --</option>';
+        
+        // Filter out duplicates and undefined entries
+        const uniqueSegments = [];
+        const seenIds = new Set();
+        segments.forEach(s => {
+            if (s && s.id && s.name && !seenIds.has(s.id)) {
+                seenIds.add(s.id);
+                uniqueSegments.push(s);
+            }
+        });
+        
+        console.log('Unique segments to display:', uniqueSegments.length);
+        
+        uniqueSegments.forEach(s => {
+            const option = document.createElement('option');
+            option.value = s.id;
+            option.textContent = `${s.name} - ${s.risk_level || 'N/A'}`;
+            select.appendChild(option);
+        });
+        
+        console.log('Successfully loaded', uniqueSegments.length, 'audience segments');
     } catch (err) {
         console.error('Error loading audience segments:', err);
+        select.innerHTML = '<option value="">-- Error Loading Segments --</option>';
     }
 }
 
@@ -596,7 +635,7 @@ async function checkConflicts() {
     }
 }
 
-async function createEvent() {
+async function submitEventForm() {
     const statusEl = document.getElementById('createStatus');
     const form = document.getElementById('createForm');
     const eventId = form ? form.dataset.eventId : null;
@@ -736,11 +775,32 @@ async function loadEvents() {
     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">Loading...</td></tr>';
     
     try {
-        const res = await fetch(apiBase + '/api/v1/events', { headers: { 'Authorization': 'Bearer ' + token } });
+        // Use direct endpoint to bypass routing issues causing 502 errors
+        const eventsUrl = '/public/test-events-direct.php';
+        console.log('Loading events from:', eventsUrl);
+        const res = await fetch(eventsUrl, { headers: { 'Authorization': 'Bearer ' + token } });
+        
+        if (!res.ok) {
+            console.error('Failed to load events, status:', res.status);
+            const errorText = await res.text();
+            console.error('Error response:', errorText);
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#dc2626;">Error loading events (Status: ' + res.status + '). Please check console for details.</td></tr>';
+            return;
+        }
+        
         const data = await res.json();
+        console.log('Events API response:', data);
+        console.log('Response keys:', Object.keys(data));
+        console.log('data.data:', data.data);
+        console.log('data.events:', data.events);
         tbody.innerHTML = '';
         
-        if (!data.data || data.data.length === 0) {
+        // Handle both data.data and data.events response formats
+        const events = data.data || data.events || [];
+        console.log('Events array:', events);
+        console.log('Events to display:', events.length);
+        
+        if (!events || events.length === 0) {
             // Check if Viewer - show different message
             const isViewerCheck = checkIfViewer();
             if (isViewerCheck) {
@@ -752,10 +812,10 @@ async function loadEvents() {
         }
         
         // RBAC: For Viewer, filter to show only confirmed/scheduled/completed events (not drafts)
-        let eventsToShow = data.data;
+        let eventsToShow = events;
         const isViewerCheck = checkIfViewer();
         if (isViewerCheck) {
-            eventsToShow = data.data.filter(e => {
+            eventsToShow = events.filter(e => {
                 const status = (e.event_status || e.status || '').toLowerCase();
                 return status === 'confirmed' || status === 'scheduled' || status === 'completed';
             });
@@ -810,8 +870,10 @@ async function loadEvents() {
         });
         
         // Update dropdowns for attendance and reports
-        updateEventDropdowns(data.data);
+        updateEventDropdowns(events);
+        console.log('Successfully loaded and displayed', eventsToShow.length, 'events');
     } catch (err) {
+        console.error('Error loading events:', err);
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#dc2626;">Error loading events: ' + err.message + '</td></tr>';
     }
 }
@@ -821,10 +883,25 @@ function updateEventDropdowns(events) {
     const reportSelect = document.getElementById('report_event_select');
     const agencySelect = document.getElementById('agency_event_select');
     
+    console.log('Updating event dropdowns with', events ? events.length : 0, 'events');
+    
     [attendanceSelect, reportSelect, agencySelect].forEach(select => {
-        if (!select) return;
+        if (!select) {
+            console.warn('Event dropdown select element not found');
+            return;
+        }
         const currentValue = select.value;
         select.innerHTML = '<option value="">-- Select Event --</option>';
+        
+        if (!events || events.length === 0) {
+            const noEventsOption = document.createElement('option');
+            noEventsOption.value = '';
+            noEventsOption.textContent = '-- No Events Available --';
+            noEventsOption.disabled = true;
+            select.appendChild(noEventsOption);
+            return;
+        }
+        
         events.forEach(e => {
             const option = document.createElement('option');
             option.value = e.event_id || e.id;
@@ -833,6 +910,8 @@ function updateEventDropdowns(events) {
         });
         if (currentValue) select.value = currentValue;
     });
+    
+    console.log('Event dropdowns updated successfully');
 }
 
 let currentEventId = null;
@@ -1273,13 +1352,37 @@ async function loadEventReport() {
     }
 }
 
-function exportEventReport() {
+async function exportEventReport() {
     const eventId = document.getElementById('report_event_select').value;
     if (!eventId) {
         alert('Please select an event first');
         return;
     }
-    window.location.href = apiBase + '/api/v1/events/' + eventId + '/attendance/export?token=' + encodeURIComponent(token);
+    
+    try {
+        const response = await fetch(apiBase + '/api/v1/events/' + eventId + '/attendance/export', {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Export failed');
+        }
+        
+        // Download the file
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'event_' + eventId + '_attendance_report.csv';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    } catch (error) {
+        alert('Failed to export report: ' + error.message);
+    }
 }
 
 // Agency coordination functions
@@ -1379,10 +1482,100 @@ async function addAgencyCoordination() {
     }
 }
 
+// Edit event - populate form with event data
+async function editEvent(eventId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.event) {
+            const e = data.event;
+            
+            // Populate form fields
+            document.getElementById('event_title').value = e.event_title || e.event_name || '';
+            document.getElementById('event_type').value = e.event_type || 'seminar';
+            document.getElementById('event_status').value = e.event_status || 'draft';
+            document.getElementById('linked_campaign_id').value = e.linked_campaign_id || '';
+            document.getElementById('target_audience_profile_id').value = e.target_audience_profile_id || '';
+            document.getElementById('hazard_focus').value = e.hazard_focus || '';
+            document.getElementById('date').value = e.date || '';
+            document.getElementById('start_time').value = e.start_time || '';
+            document.getElementById('end_time').value = e.end_time || '';
+            document.getElementById('venue').value = e.venue || '';
+            document.getElementById('location').value = e.location || '';
+            document.getElementById('event_description').value = e.event_description || '';
+            document.getElementById('transport_requirements').value = e.transport_requirements || '';
+            document.getElementById('trainer_requirements').value = e.trainer_requirements || '';
+            document.getElementById('equipment_requirements').value = e.equipment_requirements || '';
+            document.getElementById('volunteer_requirements').value = e.volunteer_requirements || '';
+            
+            // Handle facilitator and segment IDs
+            if (data.facilitators && data.facilitators.length > 0) {
+                const facIds = data.facilitators.map(f => f.user_id || f.id).join(', ');
+                document.getElementById('facilitator_ids').value = facIds;
+            }
+            if (data.segments && data.segments.length > 0) {
+                const segIds = data.segments.map(s => s.segment_id || s.id).join(', ');
+                document.getElementById('segment_ids').value = segIds;
+            }
+            
+            // Set form to update mode
+            const form = document.getElementById('createForm');
+            if (form) form.dataset.eventId = eventId;
+            
+            // Change button text
+            const submitBtn = document.querySelector('#create-event button.btn-primary');
+            if (submitBtn) submitBtn.textContent = 'Update Event';
+            
+            // Scroll to form
+            document.getElementById('create-event').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Load audience profile preview if selected
+            if (e.target_audience_profile_id) {
+                loadAudienceProfilePreview();
+            }
+        } else {
+            alert('Error loading event: ' + (data.error || 'Not found'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Delete event
+async function deleteEvent(eventId) {
+    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert('Event deleted successfully');
+            loadEvents();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to delete event'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
 // Autocomplete functions
 let autocompleteTimeouts = {};
 
 function setupAutocomplete(inputId, endpoint, datalistId) {
+    // Temporarily disabled - autocomplete endpoints not yet implemented
+    // This prevents 500 errors in console
+    return;
+    
     const input = document.getElementById(inputId);
     const datalist = document.getElementById(datalistId);
     if (!input || !datalist) return;
@@ -1427,6 +1620,9 @@ function setupAutocomplete(inputId, endpoint, datalistId) {
 // Setup autocomplete for requirement fields (from existing events)
 // Note: Datalist doesn't work with textarea, so we'll show suggestions in a tooltip/helper text
 function setupRequirementAutocomplete(textareaId, fieldName) {
+    // Temporarily disabled - autocomplete endpoints not yet implemented
+    return;
+    
     const textarea = document.getElementById(textareaId);
     if (!textarea) return;
     
@@ -1626,10 +1822,58 @@ document.addEventListener('DOMContentLoaded', function() {
     setupRequirementAutocomplete('volunteer_requirements', 'volunteer_requirements');
 });
 
-// Initialize on page load
-loadCampaigns();
-loadAudienceSegments();
-loadEvents();
+// Initialize on page load - ensure DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded - initializing events page');
+        initializeEventsPage();
+    });
+} else {
+    console.log('DOM already loaded - initializing events page');
+    initializeEventsPage();
+}
+
+function initializeEventsPage() {
+    console.log('Initializing events page with API base:', apiBase);
+    console.log('JWT token present:', !!token);
+    
+    // Check if token is valid
+    if (!token || token === '') {
+        console.error('No JWT token found! User might not be logged in.');
+        const tbody = document.getElementById('eventTable');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#dc2626;">Authentication required. Please log in.</td></tr>';
+        }
+        return;
+    }
+    
+    // Try to decode token to check if it's valid
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+            console.error('Invalid JWT token format');
+            return;
+        }
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        console.log('JWT payload:', payload);
+        console.log('Token expires:', new Date(payload.exp * 1000));
+        
+        // Check if token is expired
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+            console.error('JWT token has expired!');
+            alert('Your session has expired. Please log in again.');
+            window.location.href = '/';
+            return;
+        }
+    } catch (e) {
+        console.error('Error decoding JWT token:', e);
+    }
+    
+    // Load data in sequence with error handling
+    loadCampaigns().catch(err => console.error('Failed to load campaigns:', err));
+    loadAudienceSegments().catch(err => console.error('Failed to load segments:', err));
+    loadEvents().catch(err => console.error('Failed to load events:', err));
+}
 </script>
     </div>
     

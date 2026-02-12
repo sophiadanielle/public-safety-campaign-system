@@ -1156,7 +1156,75 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             font-size: 11px;
         }
     }
+    
+    /* Toast Notification Styles */
+    .toast-container {
+        position: fixed;
+        top: 90px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .toast {
+        background: #10b981;
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 300px;
+        max-width: 500px;
+        animation: slideIn 0.3s ease-out;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    .toast.error {
+        background: #ef4444;
+    }
+    
+    .toast.warning {
+        background: #f59e0b;
+    }
+    
+    .toast.info {
+        background: #3b82f6;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+    
+    .toast.hiding {
+        animation: slideOut 0.3s ease-in forwards;
+    }
 </style>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
 
 <main class="campaign-page">
     <header>
@@ -1770,6 +1838,44 @@ const basePath = '<?php echo $basePath; ?>';
 const apiBase = '<?php echo $apiPath; ?>';
 console.log('BASE PATH:', basePath);
 
+// Toast Notification Functions
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : type === 'warning' ? '⚠' : 'ℹ';
+    toast.innerHTML = `<span style="font-size: 18px;">${icon}</span><span>${message}</span>`;
+    
+    container.appendChild(toast);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        toast.classList.add('hiding');
+        setTimeout(() => {
+            container.removeChild(toast);
+        }, 300);
+    }, 4000);
+}
+
+function showSuccessToast(message) {
+    showToast(message, 'success');
+}
+
+function showErrorToast(message) {
+    showToast(message, 'error');
+}
+
+function showWarningToast(message) {
+    showToast(message, 'warning');
+}
+
+function showInfoToast(message) {
+    showToast(message, 'info');
+}
+
 // Function to get fresh token from localStorage
 function getToken() {
     try {
@@ -1806,8 +1912,8 @@ let currentUserRoleId = null;
         const currentUserStr = localStorage.getItem('currentUser');
         if (currentUserStr) {
             const currentUser = JSON.parse(currentUserStr);
-            currentUserRole = currentUser.role ? currentUser.role.toLowerCase() : null;
-            currentUserRoleId = currentUser.role_id || null;
+            currentUserRole = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : null;
+            currentUserRoleId = (currentUser && currentUser.role_id) ? currentUser.role_id : null;
             
             // If role not in user object, try to decode from JWT
             if (!currentUserRole) {
@@ -1977,7 +2083,7 @@ function isViewer() {
         // Fallback: Check localStorage for currentUser
         try {
             const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            const userRole = (currentUser.role || '').toLowerCase();
+            const userRole = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : '';
             return userRole === 'viewer' || 
                    userRole === 'partner' || 
                    userRole === 'partner representative' ||
@@ -2097,7 +2203,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentUserStr) {
             const currentUser = JSON.parse(currentUserStr);
             // Try to get role from user object or decode from JWT
-            let userRole = currentUser.role ? currentUser.role.toLowerCase() : null;
+            let userRole = (currentUser && currentUser.role) ? currentUser.role.toLowerCase() : null;
             
             // If role not in user object, try to decode from JWT
             if (!userRole) {
@@ -2132,6 +2238,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (!roleId && currentUser && currentUser.role_id) {
                 roleId = currentUser.role_id;
+            } else if (!roleId) {
+                console.warn('Role ID not found in user object or JWT');
             }
             
             // Check if Viewer/Partner (multiple checks for robustness)
@@ -2645,6 +2753,16 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
             materials_json: Object.keys(materialsJson).length > 0 ? materialsJson : null,
         };
         
+        // Log individual field values for debugging
+        console.log('=== FORM FIELD VALUES DEBUG ===');
+        console.log('start_time element:', document.getElementById('start_time'));
+        console.log('start_time value:', startTimeValue);
+        console.log('end_time element:', document.getElementById('end_time'));
+        console.log('end_time value:', endTimeValue);
+        console.log('barangay_zones element:', document.getElementById('barangay_zones'));
+        console.log('barangay_zones value:', barangayZones);
+        console.log('=== END FIELD VALUES DEBUG ===');
+        
         // Log the actual payload to verify real data is being sent
         console.log('Campaign creation - Payload (actual form values):', JSON.stringify(payload, null, 2));
         
@@ -2754,6 +2872,19 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
         
         createStatusEl.textContent = 'Campaign created successfully!';
         createStatusEl.className = 'status-text success';
+        
+        // Show toast notification
+        showSuccessToast('Campaign created successfully!');
+        
+        // Log the created campaign data to verify what was saved
+        console.log('Campaign created - Response data:', data);
+        if (data.campaign) {
+            console.log('Saved campaign values:');
+            console.log('- start_time:', data.campaign.start_time);
+            console.log('- end_time:', data.campaign.end_time);
+            console.log('- barangay_target_zones:', data.campaign.barangay_target_zones);
+        }
+        
         clearForm();
         // FIX: Use centralized refresh to ensure all views update
         refreshAllCampaignViews();
@@ -4835,6 +4966,14 @@ async function editCampaign(campaignId) {
         
         const c = data.data;
         
+        // Debug: Log the campaign data received from API
+        console.log('=== EDIT CAMPAIGN DEBUG ===');
+        console.log('Full campaign data:', c);
+        console.log('start_time from API:', c.start_time);
+        console.log('end_time from API:', c.end_time);
+        console.log('barangay_target_zones from API:', c.barangay_target_zones);
+        console.log('=== END EDIT CAMPAIGN DEBUG ===');
+        
         // Populate form with campaign data
         if (document.getElementById('title')) {
             document.getElementById('title').value = c.title || '';
@@ -4869,8 +5008,14 @@ async function editCampaign(campaignId) {
         if (document.getElementById('start_date')) {
             document.getElementById('start_date').value = c.start_date || '';
         }
+        if (document.getElementById('start_time')) {
+            document.getElementById('start_time').value = c.start_time || '';
+        }
         if (document.getElementById('end_date')) {
             document.getElementById('end_date').value = c.end_date || '';
+        }
+        if (document.getElementById('end_time')) {
+            document.getElementById('end_time').value = c.end_time || '';
         }
         // Handle final schedule display (read-only)
         const finalScheduleField = document.getElementById('final_schedule_field');
@@ -4934,9 +5079,22 @@ async function editCampaign(campaignId) {
         }
         if (c.barangay_target_zones) {
             const zones = typeof c.barangay_target_zones === 'string' ? JSON.parse(c.barangay_target_zones) : c.barangay_target_zones;
-            if (Array.isArray(zones) && document.getElementById('barangay_zones')) {
-                if (typeof document.getElementById('barangay_zones').setSelectedValues === 'function') {
-                    document.getElementById('barangay_zones').setSelectedValues(zones);
+            console.log('Barangay zones to set:', zones);
+            console.log('Is array?', Array.isArray(zones));
+            
+            const barangayEl = document.getElementById('barangay_zones');
+            console.log('Barangay element:', barangayEl);
+            console.log('Has setSelectedValues?', barangayEl && typeof barangayEl.setSelectedValues === 'function');
+            
+            if (Array.isArray(zones) && barangayEl) {
+                if (typeof barangayEl.setSelectedValues === 'function') {
+                    console.log('Calling setSelectedValues with:', zones);
+                    barangayEl.setSelectedValues(zones);
+                    console.log('After setSelectedValues, element value:', barangayEl.value);
+                } else {
+                    console.warn('barangay_zones element does not have setSelectedValues function');
+                    // Fallback: try setting value directly
+                    barangayEl.value = zones.join(',');
                 }
             }
         }
@@ -5156,23 +5314,47 @@ async function updateCampaign(campaignId) {
             ? statusEl.getSelectedValues()
             : (statusEl?.value.trim() || 'draft');
         
+        const descriptionEl = document.getElementById('description');
+        const startDateEl = document.getElementById('start_date');
+        const endDateEl = document.getElementById('end_date');
+        const draftScheduleEl = document.getElementById('draft_schedule_datetime');
+        const objectivesEl = document.getElementById('objectives');
+        const budgetEl = document.getElementById('budget');
+        const staffCountEl = document.getElementById('staff_count');
+        
+        const startTimeEl = document.getElementById('start_time');
+        const endTimeEl = document.getElementById('end_time');
+        
         const payload = {
             title: title,
-            description: document.getElementById('description').value.trim(),
+            description: descriptionEl ? descriptionEl.value.trim() : '',
             category: category,
             geographic_scope: geographicScope,
             status: status,
-            start_date: document.getElementById('start_date').value || null,
-            end_date: document.getElementById('end_date').value || null,
-            draft_schedule_datetime: document.getElementById('draft_schedule_datetime').value || null,
-            objectives: document.getElementById('objectives').value.trim() || null,
+            start_date: startDateEl ? (startDateEl.value || null) : null,
+            start_time: startTimeEl ? (startTimeEl.value || null) : null,
+            end_date: endDateEl ? (endDateEl.value || null) : null,
+            end_time: endTimeEl ? (endTimeEl.value || null) : null,
+            draft_schedule_datetime: draftScheduleEl ? (draftScheduleEl.value || null) : null,
+            objectives: objectivesEl ? (objectivesEl.value.trim() || null) : null,
             location: location,
             assigned_staff: assignedStaff,
             barangay_target_zones: barangayZones,
-            budget: parseFloat(document.getElementById('budget').value) || null,
-            staff_count: parseInt(document.getElementById('staff_count').value) || null,
+            budget: budgetEl ? (parseFloat(budgetEl.value) || null) : null,
+            staff_count: staffCountEl ? (parseInt(staffCountEl.value) || null) : null,
             materials_json: materialsJson,
         };
+        
+        // Log individual field values for debugging
+        console.log('=== UPDATE FORM FIELD VALUES DEBUG ===');
+        console.log('start_time element:', startTimeEl);
+        console.log('start_time value:', startTimeEl ? startTimeEl.value : 'ELEMENT NOT FOUND');
+        console.log('end_time element:', endTimeEl);
+        console.log('end_time value:', endTimeEl ? endTimeEl.value : 'ELEMENT NOT FOUND');
+        console.log('barangay_zones element:', document.getElementById('barangay_zones'));
+        console.log('barangay_zones value:', barangayZones);
+        console.log('=== END UPDATE FIELD VALUES DEBUG ===');
+        console.log('Update payload:', JSON.stringify(payload, null, 2));
         
         if (!payload.title) {
             createStatusEl.textContent = 'Title is required.';
@@ -5221,6 +5403,19 @@ async function updateCampaign(campaignId) {
         
         createStatusEl.textContent = 'Campaign updated successfully!';
         createStatusEl.className = 'status-text success';
+        
+        // Show toast notification
+        showSuccessToast('Campaign updated successfully!');
+        
+        // Log the updated campaign data to verify what was saved
+        console.log('Campaign updated - Response data:', data);
+        if (data.campaign) {
+            console.log('Updated campaign values:');
+            console.log('- start_time:', data.campaign.start_time);
+            console.log('- end_time:', data.campaign.end_time);
+            console.log('- barangay_target_zones:', data.campaign.barangay_target_zones);
+        }
+        
         clearForm();
         // FIX: Use centralized refresh to ensure all views update
         refreshAllCampaignViews();

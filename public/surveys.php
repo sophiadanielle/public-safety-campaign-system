@@ -334,7 +334,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function createSurvey() {
     const statusEl = document.getElementById('createStatus');
-    statusEl.textContent = 'Creating...';
+    const form = document.getElementById('createForm');
+    const surveyId = form.dataset.surveyId;
+    const isUpdate = !!surveyId;
+    
+    statusEl.textContent = isUpdate ? 'Updating...' : 'Creating...';
     statusEl.style.color = '#64748b';
     
     const payload = {
@@ -345,17 +349,37 @@ async function createSurvey() {
     };
     
     try {
-        const res = await fetch(apiBase + '/api/v1/surveys', {
-            method: 'POST',
+        const url = isUpdate ? apiBase + '/api/v1/surveys/' + surveyId : apiBase + '/api/v1/surveys';
+        const method = isUpdate ? 'PUT' : 'POST';
+        
+        const res = await fetch(url, {
+            method: method,
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
             body: JSON.stringify(payload)
         });
         const data = await res.json();
-        if (res.ok && data.id) {
-            currentSurveyId = data.id;
-            statusEl.textContent = '✓ Survey created! ID: ' + data.id + ' - Now add questions below.';
-            statusEl.style.color = '#166534';
-            document.getElementById('survey-builder').style.display = 'block';
+        
+        if (res.ok) {
+            if (isUpdate) {
+                statusEl.textContent = '✓ Survey updated successfully!';
+                statusEl.style.color = '#166534';
+                // Reload surveys list
+                loadSurveys();
+                // Reset form
+                setTimeout(() => {
+                    form.reset();
+                    delete form.dataset.surveyId;
+                    currentSurveyId = null;
+                    document.querySelector('#create-survey button.btn-primary').textContent = 'Create Survey';
+                    document.getElementById('survey-builder').style.display = 'none';
+                    statusEl.textContent = '';
+                }, 2000);
+            } else {
+                currentSurveyId = data.id;
+                statusEl.textContent = '✓ Survey created! ID: ' + data.id + ' - Now add questions below.';
+                statusEl.style.color = '#166534';
+                document.getElementById('survey-builder').style.display = 'block';
+            }
         } else {
             statusEl.textContent = '✗ Error: ' + (data.error || 'Failed');
             statusEl.style.color = '#dc2626';
@@ -488,7 +512,7 @@ function renderSurveysList(surveys) {
         if (!isViewer) {
             html += `<td style="padding:12px;">
                 <button class="btn btn-secondary" onclick="viewSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">👁️ View</button>
-                <button class="btn btn-secondary" onclick="editSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">✏️ Edit</button>
+                ${survey.status === 'draft' ? `<button class="btn btn-secondary" onclick="editSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">✏️ Edit</button>` : ''}
                 <button class="btn btn-secondary" onclick="viewResults(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">📊 Results</button>
                 <button class="btn btn-secondary" onclick="exportResponses(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">📥 Export</button>
                 ${survey.status === 'published' ? `<button class="btn btn-secondary" onclick="closeSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">🔒 Close</button>` : ''}
@@ -618,9 +642,9 @@ async function editSurvey(surveyId) {
         
         const survey = data.data;
         
-        // Check if survey can be edited (only draft)
+        // Check if survey is in draft status
         if (survey.status !== 'draft') {
-            alert('Only draft surveys can be edited.');
+            alert('Error: Only draft surveys can be edited. This survey is currently "' + survey.status + '".\n\nPublished or closed surveys cannot be modified to maintain data integrity.');
             return;
         }
         
@@ -641,6 +665,9 @@ async function editSurvey(surveyId) {
         if (submitBtn) {
             submitBtn.textContent = 'Update Survey';
         }
+        
+        // Show survey builder section
+        document.getElementById('survey-builder').style.display = 'block';
         
         // Load questions
         await loadQuestions();
@@ -735,11 +762,66 @@ function renderResults(data) {
 }
 
 async function exportResponses(surveyId) {
-    window.location.href = apiBase + '/api/v1/surveys/' + surveyId + '/responses/export?token=' + encodeURIComponent(token);
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId + '/responses/export', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'survey_' + surveyId + '_responses.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } else {
+            const data = await res.json();
+            alert('Error: ' + (data.error || 'Failed to export responses'));
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
 }
 
 async function exportAggregatedResults(surveyId) {
-    window.location.href = apiBase + '/api/v1/surveys/' + surveyId + '/results/export?token=' + encodeURIComponent(token);
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId + '/results/export', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'survey_' + surveyId + '_aggregated_results.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } else {
+            // Try to parse as JSON first, if that fails, show text error
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const data = await res.json();
+                const errorMsg = data.error || 'Failed to export aggregated results';
+                console.error('Export aggregated results error:', data);
+                alert('Export Failed\n\n' + errorMsg + '\n\nStatus: ' + res.status);
+            } else {
+                const text = await res.text();
+                console.error('Export error response (non-JSON):', text);
+                console.error('Response status:', res.status);
+                console.error('Response headers:', Array.from(res.headers.entries()));
+                alert('Server Error (Status ' + res.status + ')\n\nThe server returned an unexpected response. Please check:\n\n1. Browser console for detailed error logs\n2. Server error logs\n3. Database connection\n4. Survey has responses to aggregate\n\nIf the issue persists, contact your system administrator.');
+            }
+        }
+    } catch (err) {
+        console.error('Export error (network/exception):', err);
+        alert('Network Error\n\nFailed to export aggregated results: ' + err.message + '\n\nPlease check your internet connection and try again.');
+    }
 }
 
 async function closeSurvey(surveyId) {
@@ -765,8 +847,10 @@ async function closeSurvey(surveyId) {
 }
 
 async function loadQuestions() {
+    console.log('loadQuestions called, currentSurveyId:', currentSurveyId);
+    
     if (!currentSurveyId) {
-        alert('Please create or select a survey first');
+        alert('Please create or select a survey first. Click "Create Survey" button above to create a new survey.');
         return;
     }
     
@@ -775,19 +859,30 @@ async function loadQuestions() {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
-        if (res.ok && data.data && data.data.questions) {
+        console.log('Survey data:', data);
+        
+        if (res.ok && data.data) {
             const container = document.getElementById('questionsList');
-            let html = '<h4 style="margin:0 0 12px 0;">Current Questions:</h4><ul style="list-style:none; padding:0; margin:0;">';
-            data.data.questions.forEach((q, idx) => {
-                html += `<li style="padding:8px; margin-bottom:8px; background:#f8fafc; border-radius:4px;">
-                    ${idx + 1}. ${q.question_text} <span style="color:#64748b; font-size:12px;">(${q.question_type}${q.required_flag ? ', Required' : ''})</span>
-                </li>`;
-            });
-            html += '</ul>';
-            container.innerHTML = html;
+            const questions = data.data.questions || [];
+            
+            if (questions.length === 0) {
+                container.innerHTML = '<p style="color:#64748b; padding:12px; background:#f8fafc; border-radius:4px;">No questions added yet. Use the form above to add questions to this survey.</p>';
+            } else {
+                let html = '<h4 style="margin:0 0 12px 0;">Current Questions:</h4><ul style="list-style:none; padding:0; margin:0;">';
+                questions.forEach((q, idx) => {
+                    html += `<li style="padding:8px; margin-bottom:8px; background:#f8fafc; border-radius:4px;">
+                        ${idx + 1}. ${q.question_text} <span style="color:#64748b; font-size:12px;">(${q.question_type}${q.required_flag ? ', Required' : ''})</span>
+                    </li>`;
+                });
+                html += '</ul>';
+                container.innerHTML = html;
+            }
+        } else {
+            alert('Error loading questions: ' + (data.error || 'Unknown error'));
         }
     } catch (err) {
         console.error('Error loading questions:', err);
+        alert('Failed to load questions: ' + err.message);
     }
 }
 

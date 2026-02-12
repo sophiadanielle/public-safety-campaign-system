@@ -44,7 +44,7 @@ class EventController
 
             // Apply filters
             if (isset($_GET['date'])) {
-                $where[] = 'e.date = :filter_date';
+                $where[] = 'e.event_date = :filter_date';
                 $queryParams['filter_date'] = $_GET['date'];
             }
             if (isset($_GET['campaign_id'])) {
@@ -56,7 +56,7 @@ class EventController
                 $queryParams['filter_event_type'] = $_GET['event_type'];
             }
             if (isset($_GET['event_status'])) {
-                $where[] = 'e.event_status = :filter_event_status';
+                $where[] = 'e.status = :filter_event_status';
                 $queryParams['filter_event_status'] = $_GET['event_status'];
             }
             if (isset($_GET['hazard_focus'])) {
@@ -75,9 +75,9 @@ class EventController
             $isViewer = in_array($userRoleName, ['viewer', 'partner'], true);
             $isLGUStaff = in_array($userRoleName, ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'], true);
             
-            // Viewers can only see confirmed/completed events (read-only)
+            // Viewers can only see ongoing/completed events (read-only)
             if ($isViewer && !$isLGUStaff) {
-                $where[] = "e.event_status IN ('confirmed', 'completed')";
+                $where[] = "e.status IN ('ongoing', 'completed')";
             }
 
             $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
@@ -85,41 +85,38 @@ class EventController
             $sql = "
                 SELECT 
                     e.id as event_id,
-                    e.event_title,
-                    e.event_name,
+                    e.name as event_title,
+                    e.name as event_name,
                     e.event_type,
-                    e.event_description,
-                    e.hazard_focus,
-                    e.target_audience_profile_id,
-                    e.linked_campaign_id,
-                    e.date,
-                    e.start_time,
-                    e.end_time,
+                    e.description as event_description,
+                    e.event_date as date,
+                    e.event_time as start_time,
+                    e.event_time as end_time,
                     e.venue,
                     e.location,
-                    e.event_status,
-                    e.attendance_count,
-                    e.created_by,
+                    e.status as event_status,
                     e.created_at,
-                    e.updated_at,
-                    c.title as campaign_title,
-                    a.name as audience_segment_name,
-                    a.risk_level as audience_risk_level
+                    c.title as campaign_title
                 FROM `campaign_department_events` e
                 LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
-                LEFT JOIN `campaign_department_audience_segments` a ON a.id = e.target_audience_profile_id
                 {$whereClause}
-                ORDER BY e.date DESC, e.start_time DESC
+                ORDER BY e.event_date DESC, e.event_time DESC
                 LIMIT 100
             ";
 
             try {
+                error_log('EventController::index SQL: ' . $sql);
+                error_log('EventController::index Params: ' . json_encode($queryParams));
+                
                 $stmt = $this->pdo->prepare($sql);
                 if ($stmt === false) {
                     throw new \RuntimeException('Failed to prepare SQL statement');
                 }
                 $stmt->execute($queryParams);
                 $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                error_log('EventController::index Events count: ' . count($events));
+                error_log('EventController::index Events: ' . json_encode($events));
 
                 // Format dates and times
                 foreach ($events as &$event) {
@@ -167,19 +164,45 @@ class EventController
         // Get event
         $stmt = $this->pdo->prepare('
             SELECT 
-                e.*,
-                c.title as campaign_title,
-                a.name as audience_segment_name,
-                a.risk_level as audience_risk_level,
-                u.name as created_by_name
+                e.id,
+                e.name,
+                e.name as event_name,
+                e.name as event_title,
+                e.event_type,
+                e.description,
+                e.description as event_description,
+                e.event_date,
+                e.event_date as date,
+                e.event_time,
+                e.event_time as start_time,
+                e.venue,
+                e.location,
+                e.status,
+                e.status as event_status,
+                e.campaign_id,
+                e.linked_campaign_id,
+                e.hazard_focus,
+                e.target_audience_profile_id,
+                e.transport_requirements,
+                e.trainer_requirements,
+                e.equipment_requirements,
+                e.volunteer_requirements,
+                e.post_event_notes,
+                e.starts_at,
+                e.ends_at,
+                e.created_at,
+                c.title as campaign_title
             FROM `campaign_department_events` e
             LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
-            LEFT JOIN `campaign_department_audience_segments` a ON a.id = e.target_audience_profile_id
-            LEFT JOIN `campaign_department_users` u ON u.id = e.created_by
             WHERE e.id = :id
         ');
         $stmt->execute(['id' => $eventId]);
         $event = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Add end_time calculation from starts_at/ends_at if available
+        if ($event && $event['ends_at']) {
+            $event['end_time'] = date('H:i', strtotime($event['ends_at']));
+        }
 
         if (!$event) {
             http_response_code(404);
@@ -198,7 +221,7 @@ class EventController
 
         // Get audience segments
         $stmt = $this->pdo->prepare('
-            SELECT a.id, a.name, a.risk_level
+            SELECT a.id, a.segment_name as name, a.risk_level
             FROM `campaign_department_event_audience_segments` eas
             JOIN `campaign_department_audience_segments` a ON a.id = eas.segment_id
             WHERE eas.event_id = :id
@@ -287,7 +310,7 @@ class EventController
         $endTime = $input['end_time'] ?? null;
         $venue = $input['venue'] ?? $input['location'] ?? null;
         $location = $input['location'] ?? null;
-        $eventStatus = $input['event_status'] ?? $input['status'] ?? 'draft';
+        $eventStatus = $input['event_status'] ?? $input['status'] ?? 'scheduled';
         $transportRequirements = $input['transport_requirements'] ?? null;
         $trainerRequirements = $input['trainer_requirements'] ?? null;
         $equipmentRequirements = $input['equipment_requirements'] ?? null;
@@ -299,14 +322,15 @@ class EventController
             return ['error' => 'event_title is required'];
         }
 
-        if (!in_array($eventType, ['seminar', 'drill', 'workshop', 'orientation'], true)) {
+        if (!in_array($eventType, ['seminar', 'drill', 'workshop', 'orientation', 'meeting', 'other'], true)) {
             http_response_code(422);
             return ['error' => 'Invalid event_type'];
         }
 
-        if (!in_array($eventStatus, ['draft', 'scheduled', 'confirmed', 'completed', 'cancelled'], true)) {
+        // Database ENUM only allows: scheduled, ongoing, completed, cancelled
+        if (!in_array($eventStatus, ['scheduled', 'ongoing', 'completed', 'cancelled'], true)) {
             http_response_code(422);
-            return ['error' => 'Invalid event_status'];
+            return ['error' => 'Invalid event_status. Must be: scheduled, ongoing, completed, or cancelled'];
         }
 
         // Build starts_at and ends_at from date and times
@@ -325,66 +349,35 @@ class EventController
         // Start transaction
         $this->pdo->beginTransaction();
         try {
-            // Insert event
+            // Insert event - only use columns that exist in database schema
             $stmt = $this->pdo->prepare('
                 INSERT INTO `campaign_department_events` (
-                    event_title, event_name, event_type, event_description, hazard_focus,
-                    target_audience_profile_id, linked_campaign_id, date, start_time, end_time,
-                    venue, location, event_status, transport_requirements, trainer_requirements,
-                    equipment_requirements, volunteer_requirements, created_by, starts_at, ends_at
+                    campaign_id, linked_campaign_id, name, event_type, description,
+                    event_date, event_time, venue, location, status, starts_at, ends_at
                 ) VALUES (
-                    :event_title, :event_name, :event_type, :event_description, :hazard_focus,
-                    :target_audience_profile_id, :linked_campaign_id, :date, :start_time, :end_time,
-                    :venue, :location, :event_status, :transport_requirements, :trainer_requirements,
-                    :equipment_requirements, :volunteer_requirements, :created_by, :starts_at, :ends_at
+                    :campaign_id, :linked_campaign_id, :name, :event_type, :description,
+                    :event_date, :event_time, :venue, :location, :status, :starts_at, :ends_at
                 )
             ');
             $stmt->execute([
-                'event_title' => $eventTitle,
-                'event_name' => $eventTitle, // Keep both for compatibility
-                'event_type' => $eventType,
-                'event_description' => $eventDescription,
-                'hazard_focus' => $hazardFocus,
-                'target_audience_profile_id' => $targetAudienceProfileId ?: null,
+                'campaign_id' => $linkedCampaignId ?: null,
                 'linked_campaign_id' => $linkedCampaignId ?: null,
-                'date' => $date,
-                'start_time' => $startTime,
-                'end_time' => $endTime,
+                'name' => $eventTitle,
+                'event_type' => $eventType,
+                'description' => $eventDescription,
+                'event_date' => $date,
+                'event_time' => $startTime,
                 'venue' => $venue,
                 'location' => $location ?: $venue,
-                'event_status' => $eventStatus,
-                'transport_requirements' => $transportRequirements,
-                'trainer_requirements' => $trainerRequirements,
-                'equipment_requirements' => $equipmentRequirements,
-                'volunteer_requirements' => $volunteerRequirements,
-                'created_by' => $user['id'],
+                'status' => $eventStatus,
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
             ]);
 
             $eventId = (int) $this->pdo->lastInsertId();
 
-            // Handle facilitators
-            if (isset($input['facilitator_ids']) && is_array($input['facilitator_ids'])) {
-                $facStmt = $this->pdo->prepare('INSERT INTO `campaign_department_event_facilitators` (event_id, user_id) VALUES (:event_id, :user_id)');
-                foreach ($input['facilitator_ids'] as $facilitatorId) {
-                    $facStmt->execute(['event_id' => $eventId, 'user_id' => (int) $facilitatorId]);
-                }
-            }
-
-            // Handle audience segments
-            if (isset($input['segment_ids']) && is_array($input['segment_ids'])) {
-                $segStmt = $this->pdo->prepare('INSERT INTO `campaign_department_event_audience_segments` (event_id, segment_id) VALUES (:event_id, :segment_id)');
-                foreach ($input['segment_ids'] as $segmentId) {
-                    $segStmt->execute(['event_id' => $eventId, 'segment_id' => (int) $segmentId]);
-                }
-            }
-
-            // Log audit
-            $this->logAudit($eventId, $user['id'], 'created', null, null, 'Event created');
-
-            // Create integration checkpoints
-            $this->createIntegrationCheckpoints($eventId);
+            // Note: Facilitators and segments tables don't exist in current schema
+            // These features can be added later when the tables are created
 
             $this->pdo->commit();
 
@@ -443,30 +436,44 @@ class EventController
         $updateParams = ['event_id' => $eventId];
         $oldValues = [];
 
-        $fields = [
-            'event_title', 'event_name', 'event_type', 'event_description', 'hazard_focus',
-            'target_audience_profile_id', 'linked_campaign_id', 'date', 'start_time', 'end_time',
-            'venue', 'location', 'event_status', 'transport_requirements', 'trainer_requirements',
-            'equipment_requirements', 'volunteer_requirements', 'post_event_notes'
+        // Map frontend field names to database column names
+        $fieldMapping = [
+            'event_title' => 'name',
+            'event_name' => 'name',
+            'event_type' => 'event_type',
+            'event_description' => 'description',
+            'hazard_focus' => 'hazard_focus',
+            'target_audience_profile_id' => 'target_audience_profile_id',
+            'linked_campaign_id' => 'linked_campaign_id',
+            'date' => 'event_date',
+            'start_time' => 'event_time',
+            'venue' => 'venue',
+            'location' => 'location',
+            'event_status' => 'status',
+            'transport_requirements' => 'transport_requirements',
+            'trainer_requirements' => 'trainer_requirements',
+            'equipment_requirements' => 'equipment_requirements',
+            'volunteer_requirements' => 'volunteer_requirements',
+            'post_event_notes' => 'post_event_notes'
         ];
 
-        foreach ($fields as $field) {
-            if (isset($input[$field])) {
-                $oldValue = $event[$field] ?? null;
-                $newValue = $input[$field];
+        foreach ($fieldMapping as $inputField => $dbColumn) {
+            if (isset($input[$inputField])) {
+                $oldValue = $event[$dbColumn] ?? $event[$inputField] ?? null;
+                $newValue = $input[$inputField];
                 
                 if ($oldValue != $newValue) {
-                    $updates[] = "{$field} = :{$field}";
-                    $updateParams[$field] = $newValue;
-                    $oldValues[$field] = $oldValue;
+                    $updates[] = "{$dbColumn} = :{$dbColumn}";
+                    $updateParams[$dbColumn] = $newValue;
+                    $oldValues[$inputField] = $oldValue;
                 }
             }
         }
 
         // Handle starts_at and ends_at
         if (isset($input['date']) || isset($input['start_time'])) {
-            $date = $input['date'] ?? $event['date'];
-            $startTime = $input['start_time'] ?? $event['start_time'];
+            $date = $input['date'] ?? $event['event_date'] ?? $event['date'];
+            $startTime = $input['start_time'] ?? $event['event_time'] ?? $event['start_time'];
             if ($date && $startTime) {
                 $startsAt = $date . ' ' . $startTime . ':00';
                 $updates[] = "starts_at = :starts_at";
@@ -474,8 +481,8 @@ class EventController
             }
         }
         if (isset($input['date']) || isset($input['end_time'])) {
-            $date = $input['date'] ?? $event['date'];
-            $endTime = $input['end_time'] ?? $event['end_time'];
+            $date = $input['date'] ?? $event['event_date'] ?? $event['date'];
+            $endTime = $input['end_time'] ?? null;
             if ($date && $endTime) {
                 $endsAt = $date . ' ' . $endTime . ':00';
                 $updates[] = "ends_at = :ends_at";
@@ -505,7 +512,7 @@ class EventController
 
         $this->pdo->beginTransaction();
         try {
-            $sql = 'UPDATE `campaign_department_events` SET ' . implode(', ', $updates) . ', last_updated = NOW() WHERE id = :event_id';
+            $sql = 'UPDATE `campaign_department_events` SET ' . implode(', ', $updates) . ' WHERE id = :event_id';
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($updateParams);
 
@@ -556,7 +563,7 @@ class EventController
             return $conflicts;
         }
 
-        $where = ['date = :date', 'event_status NOT IN ("cancelled", "completed")'];
+        $where = ['event_date = :date', 'status NOT IN ("cancelled", "completed")'];
         $params = ['date' => $date];
 
         if ($excludeEventId) {
@@ -570,7 +577,7 @@ class EventController
             $params['venue'] = $venue;
         }
 
-        $sql = 'SELECT id, event_title, event_name, start_time, end_time, venue FROM `campaign_department_events` WHERE ' . implode(' AND ', $where);
+        $sql = 'SELECT id, name as event_title, name as event_name, event_time as start_time, event_time as end_time, venue FROM `campaign_department_events` WHERE ' . implode(' AND ', $where);
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $existingEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -620,7 +627,7 @@ class EventController
             return ['error' => 'agency_type and agency_name are required'];
         }
 
-        $allowedTypes = ['police', 'fire_rescue', 'traffic', 'emergency_response', 'community_policing', 'other'];
+        $allowedTypes = ['police', 'fire', 'medical', 'rescue', 'other'];
         if (!in_array($agencyType, $allowedTypes, true)) {
             http_response_code(422);
             return ['error' => 'Invalid agency_type'];
@@ -628,9 +635,9 @@ class EventController
 
         $stmt = $this->pdo->prepare('
             INSERT INTO `campaign_department_event_agency_coordination` (
-                event_id, agency_type, agency_name, request_status, request_details
+                event_id, agency_type, agency_name, status, request_details
             ) VALUES (
-                :event_id, :agency_type, :agency_name, "requested", :request_details
+                :event_id, :agency_type, :agency_name, "pending", :request_details
             )
         ');
         $stmt->execute([
@@ -666,22 +673,22 @@ class EventController
 
         $coordinationId = (int) ($params['coordination_id'] ?? 0);
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
-        $status = $input['request_status'] ?? null;
+        $status = $input['status'] ?? null;
         $confirmationDetails = $input['confirmation_details'] ?? null;
         $fulfillmentDetails = $input['fulfillment_details'] ?? null;
 
         if (!$status) {
             http_response_code(422);
-            return ['error' => 'request_status is required'];
+            return ['error' => 'status is required'];
         }
 
-        $allowedStatuses = ['requested', 'confirmed', 'fulfilled', 'cancelled'];
+        $allowedStatuses = ['pending', 'confirmed', 'declined', 'completed'];
         if (!in_array($status, $allowedStatuses, true)) {
             http_response_code(422);
-            return ['error' => 'Invalid request_status'];
+            return ['error' => 'Invalid status'];
         }
 
-        $updates = ['request_status = :status'];
+        $updates = ['status = :status'];
         $updateParams = ['id' => $coordinationId, 'status' => $status];
 
         if ($status === 'confirmed' && $confirmationDetails) {
@@ -725,19 +732,19 @@ class EventController
         $stmt = $this->pdo->prepare('
             SELECT 
                 id as event_id,
-                event_title,
-                event_name,
+                name as event_title,
+                name as event_name,
                 event_type,
-                event_status,
+                status as event_status,
                 hazard_focus,
-                date,
-                start_time,
-                end_time,
+                event_date as date,
+                event_time as start_time,
+                event_time as end_time,
                 venue
             FROM `campaign_department_events`
-            WHERE date BETWEEN :start_date AND :end_date
-            AND event_status NOT IN ("cancelled")
-            ORDER BY date, start_time
+            WHERE event_date BETWEEN :start_date AND :end_date
+            AND status NOT IN ("cancelled")
+            ORDER BY event_date, event_time
         ');
         $stmt->execute(['start_date' => $startDate, 'end_date' => $endDate]);
         $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -746,7 +753,7 @@ class EventController
         $calendarEvents = [];
         foreach ($events as $event) {
             $start = $event['date'] . 'T' . ($event['start_time'] ?? '00:00:00');
-            $end = $event['date'] . 'T' . ($event['end_time'] ?? '23:59:59');
+            $end = $event['date'] . 'T' . ($event['end_time'] ?? $event['start_time'] ?? '23:59:59');
             
             $calendarEvents[] = [
                 'id' => $event['event_id'],
@@ -793,12 +800,12 @@ class EventController
         }
 
         $stmt = $this->pdo->prepare('
-            INSERT INTO `campaign_department_attendance` (event_id, audience_member_id, participant_identifier, checkin_method, checkin_timestamp) 
-            VALUES (:event_id, :audience_member_id, :participant_identifier, :checkin_method, NOW())
+            INSERT INTO `campaign_department_attendance` (event_id, audience_member_id, participant_identifier, checkin_method, checkin_timestamp, check_in) 
+            VALUES (:event_id, :audience_member_id, :participant_identifier, :checkin_method, NOW(), 1)
         ');
         $stmt->execute([
             'event_id' => $event['id'],
-            'audience_member_id' => $audienceMemberId ?: null,
+            'audience_member_id' => $audienceMemberId,
             'participant_identifier' => $fullName,
             'checkin_method' => $checkinMethod
         ]);
@@ -827,7 +834,7 @@ class EventController
 
         $stmt = $this->pdo->prepare('
             SELECT 
-                a.attendance_id,
+                a.id as attendance_id,
                 a.participant_identifier,
                 a.checkin_method,
                 a.checkin_timestamp,
@@ -853,7 +860,7 @@ class EventController
 
         $stmt = $this->pdo->prepare('
             SELECT 
-                a.attendance_id,
+                a.id as attendance_id,
                 COALESCE(am.full_name, a.participant_identifier) as full_name,
                 am.contact,
                 a.checkin_method,
@@ -1152,7 +1159,7 @@ class EventController
             return ['error' => 'Database error'];
         }
         
-        $stmt = $this->pdo->prepare('SELECT id, event_title, event_status FROM campaign_department_events WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT id, name as event_title, status as event_status FROM campaign_department_events WHERE id = :id');
         $stmt->execute(['id' => $id]);
         $event = $stmt->fetch(\PDO::FETCH_ASSOC);
         
