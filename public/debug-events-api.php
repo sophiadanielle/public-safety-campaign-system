@@ -24,9 +24,7 @@ try {
             e.venue,
             e.location,
             e.status as event_status,
-            e.attendance_count,
             e.created_at,
-            e.updated_at,
             c.title as campaign_title,
             a.name as audience_segment_name,
             a.risk_level as audience_risk_level
