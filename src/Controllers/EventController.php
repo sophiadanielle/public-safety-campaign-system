@@ -164,15 +164,23 @@ class EventController
         // Get event
         $stmt = $this->pdo->prepare('
             SELECT 
-                e.*,
-                c.title as campaign_title,
-                a.name as audience_segment_name,
-                a.risk_level as audience_risk_level,
-                u.name as created_by_name
+                e.id,
+                e.name,
+                e.event_type,
+                e.description,
+                e.event_date,
+                e.event_time,
+                e.venue,
+                e.location,
+                e.status,
+                e.campaign_id,
+                e.linked_campaign_id,
+                e.starts_at,
+                e.ends_at,
+                e.created_at,
+                c.title as campaign_title
             FROM `campaign_department_events` e
             LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
-            LEFT JOIN `campaign_department_audience_segments` a ON a.id = e.target_audience_profile_id
-            LEFT JOIN `campaign_department_users` u ON u.id = e.created_by
             WHERE e.id = :id
         ');
         $stmt->execute(['id' => $eventId]);
@@ -595,9 +603,9 @@ class EventController
 
         $stmt = $this->pdo->prepare('
             INSERT INTO `campaign_department_event_agency_coordination` (
-                event_id, agency_type, agency_name, request_status, request_details
+                event_id, agency_type, agency_name, status, request_details
             ) VALUES (
-                :event_id, :agency_type, :agency_name, "requested", :request_details
+                :event_id, :agency_type, :agency_name, "pending", :request_details
             )
         ');
         $stmt->execute([
@@ -633,22 +641,22 @@ class EventController
 
         $coordinationId = (int) ($params['coordination_id'] ?? 0);
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
-        $status = $input['request_status'] ?? null;
+        $status = $input['status'] ?? null;
         $confirmationDetails = $input['confirmation_details'] ?? null;
         $fulfillmentDetails = $input['fulfillment_details'] ?? null;
 
         if (!$status) {
             http_response_code(422);
-            return ['error' => 'request_status is required'];
+            return ['error' => 'status is required'];
         }
 
-        $allowedStatuses = ['requested', 'confirmed', 'fulfilled', 'cancelled'];
+        $allowedStatuses = ['pending', 'confirmed', 'declined', 'completed'];
         if (!in_array($status, $allowedStatuses, true)) {
             http_response_code(422);
-            return ['error' => 'Invalid request_status'];
+            return ['error' => 'Invalid status'];
         }
 
-        $updates = ['request_status = :status'];
+        $updates = ['status = :status'];
         $updateParams = ['id' => $coordinationId, 'status' => $status];
 
         if ($status === 'confirmed' && $confirmationDetails) {

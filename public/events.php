@@ -1353,13 +1353,37 @@ async function loadEventReport() {
     }
 }
 
-function exportEventReport() {
+async function exportEventReport() {
     const eventId = document.getElementById('report_event_select').value;
     if (!eventId) {
         alert('Please select an event first');
         return;
     }
-    window.location.href = apiBase + '/api/v1/events/' + eventId + '/attendance/export?token=' + encodeURIComponent(token);
+    
+    try {
+        const response = await fetch(apiBase + '/api/v1/events/' + eventId + '/attendance/export', {
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Export failed');
+        }
+        
+        // Download the file
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'event_' + eventId + '_attendance_report.csv';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    } catch (error) {
+        alert('Failed to export report: ' + error.message);
+    }
 }
 
 // Agency coordination functions
