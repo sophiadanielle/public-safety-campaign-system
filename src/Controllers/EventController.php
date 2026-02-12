@@ -768,12 +768,12 @@ class EventController
         }
 
         $stmt = $this->pdo->prepare('
-            INSERT INTO `campaign_department_attendance` (event_id, audience_member_id, participant_identifier, checkin_method, checkin_timestamp) 
-            VALUES (:event_id, :audience_member_id, :participant_identifier, :checkin_method, NOW())
+            INSERT INTO `campaign_department_attendance` (event_id, audience_member_id, participant_identifier, checkin_method, checkin_timestamp, check_in) 
+            VALUES (:event_id, :audience_member_id, :participant_identifier, :checkin_method, NOW(), 1)
         ');
         $stmt->execute([
             'event_id' => $event['id'],
-            'audience_member_id' => $audienceMemberId ?: null,
+            'audience_member_id' => $audienceMemberId,
             'participant_identifier' => $fullName,
             'checkin_method' => $checkinMethod
         ]);
