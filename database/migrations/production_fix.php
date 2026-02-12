@@ -9,9 +9,16 @@
 $host = 'localhost';
 $dbname = 'LGU';
 $username = 'root';
-$password = 'your_production_password_here'; // UPDATE THIS
 
-echo "=== Production Database Migration ===\n";
+// Get password from command line argument or prompt
+if (isset($argv[1])) {
+    $password = $argv[1];
+} else {
+    echo "Enter MySQL root password: ";
+    $password = trim(fgets(STDIN));
+}
+
+echo "\n=== Production Database Migration ===\n";
 echo "Database: $dbname\n";
 echo "Host: $host\n\n";
 

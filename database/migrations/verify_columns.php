@@ -7,13 +7,20 @@
 $host = 'localhost';
 $dbname = 'LGU';
 $username = 'root';
-$password = '';
+
+// Get password from command line argument or prompt
+if (isset($argv[1])) {
+    $password = $argv[1];
+} else {
+    echo "Enter MySQL root password: ";
+    $password = trim(fgets(STDIN));
+}
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    echo "=== Database Column Verification ===\n\n";
+    echo "\n=== Database Column Verification ===\n\n";
     
     // Check events table columns
     echo "1. Checking campaign_department_events table:\n";
