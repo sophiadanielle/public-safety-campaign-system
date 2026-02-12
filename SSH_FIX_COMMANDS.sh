@@ -68,3 +68,4 @@ echo "tail -20 /var/log/php*-fpm.log | grep -i 'production\|basepath'"
 echo "# OR"
 echo "tail -20 /var/log/apache2/error.log | grep -i 'production\|basepath'"
 
+

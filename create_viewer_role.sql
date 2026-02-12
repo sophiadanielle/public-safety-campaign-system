@@ -18,3 +18,4 @@ WHERE LOWER(name) = 'viewer';
 -- Role ID 4 = 'NGO Partner' → maps to 'viewer' via get_user_role.php
 -- These will also work, but users should sign up with "partner" instead of "viewer"
 
+

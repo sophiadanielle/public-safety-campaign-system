@@ -147,3 +147,4 @@ sudo cat /etc/nginx/sites-enabled/campaign.alertaraqc.com
 
 If you can't modify Nginx config, we can change the JavaScript to call `/api/v1/auth/login` directly instead of `/index.php/api/v1/auth/login`. But the Nginx fix is better.
 
+

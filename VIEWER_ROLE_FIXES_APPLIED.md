@@ -152,3 +152,4 @@ After logging in as Viewer, verify:
 
 All restrictions are now **aggressively enforced** both server-side (PHP) and client-side (JavaScript)!
 
+

@@ -207,3 +207,4 @@ If issues occur, the previous version can be restored from git history. The key 
 - **Backward compatible** - Localhost still works with subdirectory
 - **Safety net** - `index.php` still has backup fix (should never trigger now)
 
+

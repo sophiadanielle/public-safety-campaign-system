@@ -223,3 +223,4 @@ To see impact data for a campaign, ensure:
 
 Once you have at least one of these activities (notifications sent, attendance recorded, or survey responses), the Impact module will display the data!
 
+

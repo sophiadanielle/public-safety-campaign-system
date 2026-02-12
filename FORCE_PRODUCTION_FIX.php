@@ -35,3 +35,4 @@ if ($isProduction) {
     echo "✗ Production NOT detected - check HTTP_HOST value\n";
 }
 
+

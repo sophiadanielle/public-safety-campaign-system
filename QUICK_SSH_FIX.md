@@ -116,3 +116,4 @@ echo "=== Checking Files ===" && \
 find /var/www -name "index.php" -type f 2>/dev/null | head -1 | xargs dirname | xargs -I {} sh -c 'cd {} && echo "Web root: {}" && echo "index.php has fix: $(head -30 index.php | grep -c FORCE_PRODUCTION_BASEPATH)" && echo "path_helper.php has fix: $(head -20 header/includes/path_helper.php 2>/dev/null | grep -c FORCE_PRODUCTION_BASEPATH || echo 0)"'
 ```
 
+

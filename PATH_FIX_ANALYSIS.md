@@ -149,3 +149,4 @@ if ($isProductionDomain) {
 - [ ] Network tab shows: `GET /header/css/global.css → 200`
 - [ ] Page renders with correct styling
 
+

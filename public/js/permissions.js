@@ -137,3 +137,4 @@ window.hideForViewer = hideForViewer;
 window.disableForViewer = disableForViewer;
 window.getCurrentUserRole = getCurrentUserRole;
 
+
