@@ -595,7 +595,7 @@ class EventController
             return ['error' => 'agency_type and agency_name are required'];
         }
 
-        $allowedTypes = ['police', 'fire_rescue', 'traffic', 'emergency_response', 'community_policing', 'other'];
+        $allowedTypes = ['police', 'fire', 'medical', 'rescue', 'other'];
         if (!in_array($agencyType, $allowedTypes, true)) {
             http_response_code(422);
             return ['error' => 'Invalid agency_type'];

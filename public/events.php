@@ -328,10 +328,9 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     <select id="agency_type" required>
                         <option value="">-- Select --</option>
                         <option value="police">Police</option>
-                        <option value="fire_rescue">Fire & Rescue</option>
-                        <option value="traffic">Traffic & Transport</option>
-                        <option value="emergency_response">Emergency Response</option>
-                        <option value="community_policing">Community Policing</option>
+                        <option value="fire">Fire</option>
+                        <option value="medical">Medical</option>
+                        <option value="rescue">Rescue</option>
                         <option value="other">Other</option>
                     </select>
                 </div>
