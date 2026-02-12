@@ -166,15 +166,28 @@ class EventController
             SELECT 
                 e.id,
                 e.name,
+                e.name as event_name,
+                e.name as event_title,
                 e.event_type,
                 e.description,
+                e.description as event_description,
                 e.event_date,
+                e.event_date as date,
                 e.event_time,
+                e.event_time as start_time,
                 e.venue,
                 e.location,
                 e.status,
+                e.status as event_status,
                 e.campaign_id,
                 e.linked_campaign_id,
+                e.hazard_focus,
+                e.target_audience_profile_id,
+                e.transport_requirements,
+                e.trainer_requirements,
+                e.equipment_requirements,
+                e.volunteer_requirements,
+                e.post_event_notes,
                 e.starts_at,
                 e.ends_at,
                 e.created_at,
@@ -185,6 +198,11 @@ class EventController
         ');
         $stmt->execute(['id' => $eventId]);
         $event = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Add end_time calculation from starts_at/ends_at if available
+        if ($event && $event['ends_at']) {
+            $event['end_time'] = date('H:i', strtotime($event['ends_at']));
+        }
 
         if (!$event) {
             http_response_code(404);
@@ -418,30 +436,44 @@ class EventController
         $updateParams = ['event_id' => $eventId];
         $oldValues = [];
 
-        $fields = [
-            'event_title', 'event_name', 'event_type', 'event_description', 'hazard_focus',
-            'target_audience_profile_id', 'linked_campaign_id', 'date', 'start_time', 'end_time',
-            'venue', 'location', 'event_status', 'transport_requirements', 'trainer_requirements',
-            'equipment_requirements', 'volunteer_requirements', 'post_event_notes'
+        // Map frontend field names to database column names
+        $fieldMapping = [
+            'event_title' => 'name',
+            'event_name' => 'name',
+            'event_type' => 'event_type',
+            'event_description' => 'description',
+            'hazard_focus' => 'hazard_focus',
+            'target_audience_profile_id' => 'target_audience_profile_id',
+            'linked_campaign_id' => 'linked_campaign_id',
+            'date' => 'event_date',
+            'start_time' => 'event_time',
+            'venue' => 'venue',
+            'location' => 'location',
+            'event_status' => 'status',
+            'transport_requirements' => 'transport_requirements',
+            'trainer_requirements' => 'trainer_requirements',
+            'equipment_requirements' => 'equipment_requirements',
+            'volunteer_requirements' => 'volunteer_requirements',
+            'post_event_notes' => 'post_event_notes'
         ];
 
-        foreach ($fields as $field) {
-            if (isset($input[$field])) {
-                $oldValue = $event[$field] ?? null;
-                $newValue = $input[$field];
+        foreach ($fieldMapping as $inputField => $dbColumn) {
+            if (isset($input[$inputField])) {
+                $oldValue = $event[$dbColumn] ?? $event[$inputField] ?? null;
+                $newValue = $input[$inputField];
                 
                 if ($oldValue != $newValue) {
-                    $updates[] = "{$field} = :{$field}";
-                    $updateParams[$field] = $newValue;
-                    $oldValues[$field] = $oldValue;
+                    $updates[] = "{$dbColumn} = :{$dbColumn}";
+                    $updateParams[$dbColumn] = $newValue;
+                    $oldValues[$inputField] = $oldValue;
                 }
             }
         }
 
         // Handle starts_at and ends_at
         if (isset($input['date']) || isset($input['start_time'])) {
-            $date = $input['date'] ?? $event['date'];
-            $startTime = $input['start_time'] ?? $event['start_time'];
+            $date = $input['date'] ?? $event['event_date'] ?? $event['date'];
+            $startTime = $input['start_time'] ?? $event['event_time'] ?? $event['start_time'];
             if ($date && $startTime) {
                 $startsAt = $date . ' ' . $startTime . ':00';
                 $updates[] = "starts_at = :starts_at";
@@ -449,8 +481,8 @@ class EventController
             }
         }
         if (isset($input['date']) || isset($input['end_time'])) {
-            $date = $input['date'] ?? $event['date'];
-            $endTime = $input['end_time'] ?? $event['end_time'];
+            $date = $input['date'] ?? $event['event_date'] ?? $event['date'];
+            $endTime = $input['end_time'] ?? null;
             if ($date && $endTime) {
                 $endsAt = $date . ' ' . $endTime . ':00';
                 $updates[] = "ends_at = :ends_at";
