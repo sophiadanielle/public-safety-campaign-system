@@ -85,19 +85,19 @@ class EventController
             $sql = "
                 SELECT 
                     e.id as event_id,
-                    e.event_title,
-                    e.event_name,
+                    e.name as event_title,
+                    e.name as event_name,
                     e.event_type,
-                    e.event_description,
+                    e.description as event_description,
                     e.hazard_focus,
                     e.target_audience_profile_id,
                     e.linked_campaign_id,
-                    e.date,
-                    e.start_time,
-                    e.end_time,
+                    e.event_date as date,
+                    e.event_time as start_time,
+                    e.event_time as end_time,
                     e.venue,
                     e.location,
-                    e.event_status,
+                    e.status as event_status,
                     e.attendance_count,
                     e.created_by,
                     e.created_at,
@@ -568,7 +568,7 @@ class EventController
             $params['venue'] = $venue;
         }
 
-        $sql = 'SELECT id, event_title, event_name, start_time, end_time, venue FROM `campaign_department_events` WHERE ' . implode(' AND ', $where);
+        $sql = 'SELECT id, name as event_title, name as event_name, event_time as start_time, event_time as end_time, venue FROM `campaign_department_events` WHERE ' . implode(' AND ', $where);
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
         $existingEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -723,10 +723,10 @@ class EventController
         $stmt = $this->pdo->prepare('
             SELECT 
                 id as event_id,
-                event_title,
-                event_name,
+                name as event_title,
+                name as event_name,
                 event_type,
-                event_status,
+                status as event_status,
                 hazard_focus,
                 date,
                 start_time,
@@ -1150,7 +1150,7 @@ class EventController
             return ['error' => 'Database error'];
         }
         
-        $stmt = $this->pdo->prepare('SELECT id, event_title, event_status FROM campaign_department_events WHERE id = :id');
+        $stmt = $this->pdo->prepare('SELECT id, name as event_title, status as event_status FROM campaign_department_events WHERE id = :id');
         $stmt->execute(['id' => $id]);
         $event = $stmt->fetch(\PDO::FETCH_ASSOC);
         
