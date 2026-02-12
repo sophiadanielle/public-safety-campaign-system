@@ -203,7 +203,7 @@ class EventController
 
         // Get audience segments
         $stmt = $this->pdo->prepare('
-            SELECT a.id, a.name, a.risk_level
+            SELECT a.id, a.segment_name as name, a.risk_level
             FROM `campaign_department_event_audience_segments` eas
             JOIN `campaign_department_audience_segments` a ON a.id = eas.segment_id
             WHERE eas.event_id = :id
