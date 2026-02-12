@@ -480,7 +480,7 @@ class EventController
 
         $this->pdo->beginTransaction();
         try {
-            $sql = 'UPDATE `campaign_department_events` SET ' . implode(', ', $updates) . ', last_updated = NOW() WHERE id = :event_id';
+            $sql = 'UPDATE `campaign_department_events` SET ' . implode(', ', $updates) . ' WHERE id = :event_id';
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($updateParams);
 
