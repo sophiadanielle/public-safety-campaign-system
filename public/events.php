@@ -306,7 +306,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 <input id="segment_ids" type="text" placeholder="e.g., 1, 2, 3 (comma-separated)">
             </div>
         </form>
-        <button class="btn btn-primary" style="margin-top:16px;" onclick="createEvent()">Create Event</button>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="submitEventForm()">Create Event</button>
         <div class="status" id="createStatus" style="margin-top:12px;"></div>
     </section>
     <?php endif; // End RBAC: Hide create form for Viewer ?>
@@ -637,7 +637,7 @@ async function checkConflicts() {
     }
 }
 
-async function createEvent() {
+async function submitEventForm() {
     const statusEl = document.getElementById('createStatus');
     const form = document.getElementById('createForm');
     const eventId = form ? form.dataset.eventId : null;
