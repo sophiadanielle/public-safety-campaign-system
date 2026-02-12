@@ -776,8 +776,10 @@ async function loadEvents() {
     tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:24px; color:#64748b;">Loading...</td></tr>';
     
     try {
-        console.log('Loading events from:', apiBase + '/api/v1/events');
-        const res = await fetch(apiBase + '/api/v1/events', { headers: { 'Authorization': 'Bearer ' + token } });
+        // Use direct endpoint to bypass routing issues causing 502 errors
+        const eventsUrl = '/public/test-events-direct.php';
+        console.log('Loading events from:', eventsUrl);
+        const res = await fetch(eventsUrl, { headers: { 'Authorization': 'Bearer ' + token } });
         
         if (!res.ok) {
             console.error('Failed to load events, status:', res.status);
