@@ -96,12 +96,9 @@ class EventController
                     e.location,
                     e.status as event_status,
                     e.created_at,
-                    c.title as campaign_title,
-                    a.name as audience_segment_name,
-                    a.risk_level as audience_risk_level
+                    c.title as campaign_title
                 FROM `campaign_department_events` e
                 LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
-                LEFT JOIN `campaign_department_audience_segments` a ON a.id = e.target_audience_profile_id
                 {$whereClause}
                 ORDER BY e.event_date DESC, e.event_time DESC
                 LIMIT 100
