@@ -328,21 +328,19 @@ class EventController
             // Insert event - only use columns that exist in database schema
             $stmt = $this->pdo->prepare('
                 INSERT INTO `campaign_department_events` (
-                    name, event_type, description,
-                    target_audience_profile_id, linked_campaign_id, event_date, event_time,
-                    venue, location, status, starts_at, ends_at
+                    campaign_id, linked_campaign_id, name, event_type, description,
+                    event_date, event_time, venue, location, status, starts_at, ends_at
                 ) VALUES (
-                    :name, :event_type, :description,
-                    :target_audience_profile_id, :linked_campaign_id, :event_date, :event_time,
-                    :venue, :location, :status, :starts_at, :ends_at
+                    :campaign_id, :linked_campaign_id, :name, :event_type, :description,
+                    :event_date, :event_time, :venue, :location, :status, :starts_at, :ends_at
                 )
             ');
             $stmt->execute([
+                'campaign_id' => $linkedCampaignId ?: null,
+                'linked_campaign_id' => $linkedCampaignId ?: null,
                 'name' => $eventTitle,
                 'event_type' => $eventType,
                 'description' => $eventDescription,
-                'target_audience_profile_id' => $targetAudienceProfileId ?: null,
-                'linked_campaign_id' => $linkedCampaignId ?: null,
                 'event_date' => $date,
                 'event_time' => $startTime,
                 'venue' => $venue,
