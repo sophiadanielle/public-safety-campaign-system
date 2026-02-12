@@ -1544,6 +1544,10 @@ async function deleteEvent(eventId) {
 let autocompleteTimeouts = {};
 
 function setupAutocomplete(inputId, endpoint, datalistId) {
+    // Temporarily disabled - autocomplete endpoints not yet implemented
+    // This prevents 500 errors in console
+    return;
+    
     const input = document.getElementById(inputId);
     const datalist = document.getElementById(datalistId);
     if (!input || !datalist) return;
@@ -1588,6 +1592,9 @@ function setupAutocomplete(inputId, endpoint, datalistId) {
 // Setup autocomplete for requirement fields (from existing events)
 // Note: Datalist doesn't work with textarea, so we'll show suggestions in a tooltip/helper text
 function setupRequirementAutocomplete(textareaId, fieldName) {
+    // Temporarily disabled - autocomplete endpoints not yet implemented
+    return;
+    
     const textarea = document.getElementById(textareaId);
     if (!textarea) return;
     
