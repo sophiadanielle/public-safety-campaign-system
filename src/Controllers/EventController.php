@@ -44,7 +44,7 @@ class EventController
 
             // Apply filters
             if (isset($_GET['date'])) {
-                $where[] = 'e.date = :filter_date';
+                $where[] = 'e.event_date = :filter_date';
                 $queryParams['filter_date'] = $_GET['date'];
             }
             if (isset($_GET['campaign_id'])) {
@@ -554,7 +554,7 @@ class EventController
             return $conflicts;
         }
 
-        $where = ['date = :date', 'event_status NOT IN ("cancelled", "completed")'];
+        $where = ['event_date = :date', 'status NOT IN ("cancelled", "completed")'];
         $params = ['date' => $date];
 
         if ($excludeEventId) {
@@ -728,14 +728,14 @@ class EventController
                 event_type,
                 status as event_status,
                 hazard_focus,
-                date,
-                start_time,
-                end_time,
+                event_date as date,
+                event_time as start_time,
+                event_time as end_time,
                 venue
             FROM `campaign_department_events`
-            WHERE date BETWEEN :start_date AND :end_date
-            AND event_status NOT IN ("cancelled")
-            ORDER BY date, start_time
+            WHERE event_date BETWEEN :start_date AND :end_date
+            AND status NOT IN ("cancelled")
+            ORDER BY event_date, event_time
         ');
         $stmt->execute(['start_date' => $startDate, 'end_date' => $endDate]);
         $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -744,7 +744,7 @@ class EventController
         $calendarEvents = [];
         foreach ($events as $event) {
             $start = $event['date'] . 'T' . ($event['start_time'] ?? '00:00:00');
-            $end = $event['date'] . 'T' . ($event['end_time'] ?? '23:59:59');
+            $end = $event['date'] . 'T' . ($event['end_time'] ?? $event['start_time'] ?? '23:59:59');
             
             $calendarEvents[] = [
                 'id' => $event['event_id'],
