@@ -328,30 +328,29 @@ class EventController
             // Insert event
             $stmt = $this->pdo->prepare('
                 INSERT INTO `campaign_department_events` (
-                    event_name, event_type, event_description, hazard_focus,
-                    target_audience_profile_id, linked_campaign_id, date, start_time, end_time,
-                    venue, location, event_status, transport_requirements, trainer_requirements,
+                    name, event_type, description, hazard_focus,
+                    target_audience_profile_id, linked_campaign_id, event_date, event_time,
+                    venue, location, status, transport_requirements, trainer_requirements,
                     equipment_requirements, volunteer_requirements, created_by, starts_at, ends_at
                 ) VALUES (
-                    :event_name, :event_type, :event_description, :hazard_focus,
-                    :target_audience_profile_id, :linked_campaign_id, :date, :start_time, :end_time,
-                    :venue, :location, :event_status, :transport_requirements, :trainer_requirements,
+                    :name, :event_type, :description, :hazard_focus,
+                    :target_audience_profile_id, :linked_campaign_id, :event_date, :event_time,
+                    :venue, :location, :status, :transport_requirements, :trainer_requirements,
                     :equipment_requirements, :volunteer_requirements, :created_by, :starts_at, :ends_at
                 )
             ');
             $stmt->execute([
-                'event_name' => $eventTitle,
+                'name' => $eventTitle,
                 'event_type' => $eventType,
-                'event_description' => $eventDescription,
+                'description' => $eventDescription,
                 'hazard_focus' => $hazardFocus,
                 'target_audience_profile_id' => $targetAudienceProfileId ?: null,
                 'linked_campaign_id' => $linkedCampaignId ?: null,
-                'date' => $date,
-                'start_time' => $startTime,
-                'end_time' => $endTime,
+                'event_date' => $date,
+                'event_time' => $startTime,
                 'venue' => $venue,
                 'location' => $location ?: $venue,
-                'event_status' => $eventStatus,
+                'status' => $eventStatus,
                 'transport_requirements' => $transportRequirements,
                 'trainer_requirements' => $trainerRequirements,
                 'equipment_requirements' => $equipmentRequirements,
