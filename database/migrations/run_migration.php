@@ -19,7 +19,7 @@ echo "<style>body{font-family:monospace;padding:20px;background:#1e1e1e;color:#d
 
 try {
     // Read the SQL migration file
-    $sqlFile = __DIR__ . '/fix_events_schema.sql';
+    $sqlFile = __DIR__ . '/fix_events_schema_v2.sql';
     
     if (!file_exists($sqlFile)) {
         throw new Exception("Migration file not found: $sqlFile");
