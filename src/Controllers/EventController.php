@@ -353,27 +353,8 @@ class EventController
 
             $eventId = (int) $this->pdo->lastInsertId();
 
-            // Handle facilitators
-            if (isset($input['facilitator_ids']) && is_array($input['facilitator_ids'])) {
-                $facStmt = $this->pdo->prepare('INSERT INTO `campaign_department_event_facilitators` (event_id, user_id) VALUES (:event_id, :user_id)');
-                foreach ($input['facilitator_ids'] as $facilitatorId) {
-                    $facStmt->execute(['event_id' => $eventId, 'user_id' => (int) $facilitatorId]);
-                }
-            }
-
-            // Handle audience segments
-            if (isset($input['segment_ids']) && is_array($input['segment_ids'])) {
-                $segStmt = $this->pdo->prepare('INSERT INTO `campaign_department_event_audience_segments` (event_id, segment_id) VALUES (:event_id, :segment_id)');
-                foreach ($input['segment_ids'] as $segmentId) {
-                    $segStmt->execute(['event_id' => $eventId, 'segment_id' => (int) $segmentId]);
-                }
-            }
-
-            // Log audit
-            $this->logAudit($eventId, $user['id'], 'created', null, null, 'Event created');
-
-            // Create integration checkpoints
-            $this->createIntegrationCheckpoints($eventId);
+            // Note: Facilitators and segments tables don't exist in current schema
+            // These features can be added later when the tables are created
 
             $this->pdo->commit();
 

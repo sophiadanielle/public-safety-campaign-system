@@ -222,9 +222,8 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             <div class="form-field">
                 <label>Event Status</label>
                 <select id="event_status">
-                    <option value="draft">Draft</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="confirmed">Confirmed</option>
+                    <option value="scheduled" selected>Scheduled</option>
+                    <option value="ongoing">Ongoing</option>
                     <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
                 </select>
