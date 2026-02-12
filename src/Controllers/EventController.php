@@ -325,25 +325,22 @@ class EventController
         // Start transaction
         $this->pdo->beginTransaction();
         try {
-            // Insert event
+            // Insert event - only use columns that exist in database schema
             $stmt = $this->pdo->prepare('
                 INSERT INTO `campaign_department_events` (
-                    name, event_type, description, hazard_focus,
+                    name, event_type, description,
                     target_audience_profile_id, linked_campaign_id, event_date, event_time,
-                    venue, location, status, transport_requirements, trainer_requirements,
-                    equipment_requirements, volunteer_requirements, created_by, starts_at, ends_at
+                    venue, location, status, starts_at, ends_at
                 ) VALUES (
-                    :name, :event_type, :description, :hazard_focus,
+                    :name, :event_type, :description,
                     :target_audience_profile_id, :linked_campaign_id, :event_date, :event_time,
-                    :venue, :location, :status, :transport_requirements, :trainer_requirements,
-                    :equipment_requirements, :volunteer_requirements, :created_by, :starts_at, :ends_at
+                    :venue, :location, :status, :starts_at, :ends_at
                 )
             ');
             $stmt->execute([
                 'name' => $eventTitle,
                 'event_type' => $eventType,
                 'description' => $eventDescription,
-                'hazard_focus' => $hazardFocus,
                 'target_audience_profile_id' => $targetAudienceProfileId ?: null,
                 'linked_campaign_id' => $linkedCampaignId ?: null,
                 'event_date' => $date,
@@ -351,11 +348,6 @@ class EventController
                 'venue' => $venue,
                 'location' => $location ?: $venue,
                 'status' => $eventStatus,
-                'transport_requirements' => $transportRequirements,
-                'trainer_requirements' => $trainerRequirements,
-                'equipment_requirements' => $equipmentRequirements,
-                'volunteer_requirements' => $volunteerRequirements,
-                'created_by' => $user['id'],
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
             ]);
