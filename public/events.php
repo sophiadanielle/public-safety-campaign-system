@@ -789,10 +789,14 @@ async function loadEvents() {
         
         const data = await res.json();
         console.log('Events API response:', data);
+        console.log('Response keys:', Object.keys(data));
+        console.log('data.data:', data.data);
+        console.log('data.events:', data.events);
         tbody.innerHTML = '';
         
         // Handle both data.data and data.events response formats
         const events = data.data || data.events || [];
+        console.log('Events array:', events);
         console.log('Events to display:', events.length);
         
         if (!events || events.length === 0) {
