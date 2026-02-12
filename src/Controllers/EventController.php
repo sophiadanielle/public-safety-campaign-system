@@ -114,12 +114,18 @@ class EventController
             ";
 
             try {
+                error_log('EventController::index SQL: ' . $sql);
+                error_log('EventController::index Params: ' . json_encode($queryParams));
+                
                 $stmt = $this->pdo->prepare($sql);
                 if ($stmt === false) {
                     throw new \RuntimeException('Failed to prepare SQL statement');
                 }
                 $stmt->execute($queryParams);
                 $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                error_log('EventController::index Events count: ' . count($events));
+                error_log('EventController::index Events: ' . json_encode($events));
 
                 // Format dates and times
                 foreach ($events as &$event) {
