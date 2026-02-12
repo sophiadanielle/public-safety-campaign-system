@@ -287,7 +287,7 @@ class EventController
         $endTime = $input['end_time'] ?? null;
         $venue = $input['venue'] ?? $input['location'] ?? null;
         $location = $input['location'] ?? null;
-        $eventStatus = $input['event_status'] ?? $input['status'] ?? 'draft';
+        $eventStatus = $input['event_status'] ?? $input['status'] ?? 'scheduled';
         $transportRequirements = $input['transport_requirements'] ?? null;
         $trainerRequirements = $input['trainer_requirements'] ?? null;
         $equipmentRequirements = $input['equipment_requirements'] ?? null;
@@ -299,14 +299,15 @@ class EventController
             return ['error' => 'event_title is required'];
         }
 
-        if (!in_array($eventType, ['seminar', 'drill', 'workshop', 'orientation'], true)) {
+        if (!in_array($eventType, ['seminar', 'drill', 'workshop', 'orientation', 'meeting', 'other'], true)) {
             http_response_code(422);
             return ['error' => 'Invalid event_type'];
         }
 
-        if (!in_array($eventStatus, ['draft', 'scheduled', 'confirmed', 'completed', 'cancelled'], true)) {
+        // Database ENUM only allows: scheduled, ongoing, completed, cancelled
+        if (!in_array($eventStatus, ['scheduled', 'ongoing', 'completed', 'cancelled'], true)) {
             http_response_code(422);
-            return ['error' => 'Invalid event_status'];
+            return ['error' => 'Invalid event_status. Must be: scheduled, ongoing, completed, or cancelled'];
         }
 
         // Build starts_at and ends_at from date and times
