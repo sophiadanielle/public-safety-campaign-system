@@ -86,8 +86,6 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 50%, #f8fafc 100%);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
         /* Header */
@@ -136,11 +134,10 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
 
         /* Main Content */
         .login-main {
-            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 40px 24px;
+            padding: 30px 24px 60px;
             position: relative;
         }
 
