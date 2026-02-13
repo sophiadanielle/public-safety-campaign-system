@@ -90,7 +90,10 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 50%, #f8fafc 100%);
-            min-height: 100vh;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
         /* Header */
@@ -139,11 +142,13 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
 
         /* Main Content */
         .login-main {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 30px 24px 60px;
+            padding: 20px 24px;
             position: relative;
+            overflow: auto;
         }
 
         .login-main::before {
@@ -191,7 +196,10 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         }
 
         .login-branding {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.95) 0%, rgba(15, 118, 110, 0.95) 100%), url('<?php echo htmlspecialchars($basePath); ?>/sidebar/images/shrine.jpg');
+            background-size: cover;
+            background-position: center;
+            background-blend-mode: overlay;
             padding: 48px;
             display: flex;
             flex-direction: column;
@@ -208,8 +216,8 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             left: 0;
             right: 0;
             bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.3;
+            background: rgba(13, 148, 136, 0.1);
+            backdrop-filter: blur(2px);
         }
 
         .branding-content {
@@ -456,13 +464,17 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
 
         /* Footer */
         .login-footer {
-            padding: 20px 24px;
+            padding: 16px 24px;
             text-align: center;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(13, 148, 136, 0.1);
         }
 
         .login-footer p {
             font-size: 13px;
             color: var(--text-muted);
+            margin: 0;
         }
 
         /* Responsive */
