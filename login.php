@@ -176,7 +176,8 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         .login-container {
             width: 100%;
             max-width: 1200px;
-            max-height: calc(100vh - 100px);
+            min-height: 600px;
+            max-height: calc(100vh - 80px);
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 0;
