@@ -52,14 +52,14 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                         return;
                     }
                     
-                    window.location.replace(basePath + '/index.php');
+                    window.location.replace(basePath + '/login.php');
                 } catch (e) {
                     if (justLoggedIn && retryCount < maxRetries) {
                         setTimeout(function() {
                             checkAuth(retryCount + 1);
                         }, 300);
                     } else {
-                        window.location.replace(basePath + '/index.php');
+                        window.location.replace(basePath + '/login.php');
                     }
                 }
             }
@@ -1041,7 +1041,7 @@ async function loadDashboard() {
         const authToken = localStorage.getItem('jwtToken');
         if (!authToken || authToken.trim() === '') {
             // No token - redirect to login
-            window.location.href = basePath + '/index.php';
+            window.location.href = basePath + '/login.php';
             return;
         }
         
@@ -1061,7 +1061,7 @@ async function loadDashboard() {
                     return;
                 } else {
                     // No token - redirect to login
-                    window.location.href = basePath + '/index.php';
+                    window.location.href = basePath + '/login.php';
                     return;
                 }
             }

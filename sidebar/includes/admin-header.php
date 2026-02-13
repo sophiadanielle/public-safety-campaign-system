@@ -366,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error clearing localStorage:', e);
             }
             const basePath = '<?php echo $basePath; ?>';
-            window.location.href = basePath + '/index.php';
+            window.location.href = basePath + '/login.php';
         });
     }
     const menuToggle = document.getElementById('menuToggle');

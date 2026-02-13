@@ -911,7 +911,7 @@ class AuthController
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
         $scriptPath = dirname(dirname($_SERVER['SCRIPT_NAME'] ?? ''));
-        $redirectUrl = $protocol . '://' . $host . $scriptPath . '/index.php?error=' . urlencode($error);
+        $redirectUrl = $protocol . '://' . $host . $scriptPath . '/login.php?error=' . urlencode($error);
         
         header('Location: ' . $redirectUrl);
         exit;

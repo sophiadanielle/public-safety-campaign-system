@@ -253,7 +253,7 @@ include __DIR__ . '/../header/includes/header.php';
 
             <p class="auth-switch-row">
                 Already have an account?
-                <a href="<?php echo htmlspecialchars($basePath . '/index.php'); ?>" class="auth-switch-link">Log in</a>
+                <a href="<?php echo htmlspecialchars($basePath . '/login.php'); ?>" class="auth-switch-link">Log in</a>
             </p>
 
             <div id="status" class="status"></div>

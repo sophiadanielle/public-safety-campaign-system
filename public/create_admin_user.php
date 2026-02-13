@@ -214,7 +214,7 @@ try {
                     <div><strong>Email:</strong> admin@barangay1.qc.gov.ph</div>
                     <div><strong>Password:</strong> password123</div>
                 </div>
-                <a href="index.php">Go to Login Page →</a>
+                <a href="login.php">Go to Login Page →</a>
             </div>
         <?php else: ?>
             <div class="message error">

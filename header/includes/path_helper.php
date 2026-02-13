@@ -151,16 +151,3 @@ echo "<!-- HOST_DETECTED: " . htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'NOT SET
 echo "<!-- SERVER_NAME: " . htmlspecialchars($_SERVER['SERVER_NAME'] ?? 'NOT SET') . " -->\n";
 echo "<!-- FINAL_BASEPATH: $basePath -->\n";
 echo "<!-- PRODUCTION_DETECTED: " . ($isProductionDomain ? 'YES' : 'NO') . " -->\n";
-
-
-
-
-
-
-
-
-
-
-
-
-

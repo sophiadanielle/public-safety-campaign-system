@@ -54,7 +54,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     
                     // Max retries exceeded - redirect to login
                     console.error('No token found after ' + maxRetries + ' attempts - redirecting to login');
-                    window.location.replace(basePath + '/index.php');
+                    window.location.replace(basePath + '/login.php');
                 } catch (e) {
                     console.error('Auth guard error:', e);
                     // If error accessing localStorage and we just logged in, retry
@@ -63,7 +63,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                             checkAuth(retryCount + 1);
                         }, 300);
                     } else {
-                        window.location.replace(basePath + '/index.php');
+                        window.location.replace(basePath + '/login.php');
                     }
                 }
             }
@@ -2578,7 +2578,7 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
         createStatusEl.className = 'status-text error';
         // Redirect to login after 2 seconds
         setTimeout(() => {
-            window.location.href = basePath + '/index.php';
+            window.location.href = basePath + '/login.php';
         }, 2000);
         return;
     }
@@ -2843,7 +2843,7 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
                     createStatusEl.className = 'status-text error';
                     localStorage.removeItem('jwtToken');
                     setTimeout(() => {
-                        window.location.href = basePath + '/index.php';
+                        window.location.href = basePath + '/login.php';
                     }, 2000);
                 }
                 return;
@@ -2857,7 +2857,7 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
                     createStatusEl.className = 'status-text error';
                     localStorage.removeItem('jwtToken');
                     setTimeout(() => {
-                        window.location.href = basePath + '/index.php';
+                        window.location.href = basePath + '/login.php';
                     }, 2000);
                 } else {
                     createStatusEl.textContent = data.error || 'Failed to create campaign.';
@@ -5392,7 +5392,7 @@ async function updateCampaign(campaignId) {
                 createStatusEl.className = 'status-text error';
                 localStorage.removeItem('jwtToken');
                 setTimeout(() => {
-                    window.location.href = basePath + '/index.php';
+                    window.location.href = basePath + '/login.php';
                 }, 2000);
             } else {
                 createStatusEl.textContent = data.error || 'Failed to update campaign.';

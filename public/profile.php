@@ -37,14 +37,14 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                         return;
                     }
                     
-                    window.location.replace(basePath + '/index.php');
+                    window.location.replace(basePath + '/login.php');
                 } catch (e) {
                     if (justLoggedIn && retryCount < maxRetries) {
                         setTimeout(function() {
                             checkAuth(retryCount + 1);
                         }, 300);
                     } else {
-                        window.location.replace(basePath + '/index.php');
+                        window.location.replace(basePath + '/login.php');
                     }
                 }
             }
@@ -322,7 +322,7 @@ async function loadProfile() {
         
         if (!res.ok) {
             if (res.status === 401) {
-                window.location.href = basePath + '/index.php';
+                window.location.href = basePath + '/login.php';
                 return;
             }
             throw new Error('Failed to load profile');

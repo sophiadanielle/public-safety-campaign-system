@@ -203,7 +203,7 @@ try {
                 <li><strong>Email:</strong> admin@barangay1.qc.gov.ph</li>
                 <li><strong>Password:</strong> password123</li>
             </ul>
-                <a href="index.php">Go to Login Page</a>
+                <a href="login.php">Go to Login Page</a>
         </div>
     </div>
 </body>

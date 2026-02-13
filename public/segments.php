@@ -501,7 +501,7 @@ function handleTokenExpiration() {
     localStorage.removeItem('jwtToken');
     localStorage.removeItem('currentUser');
     alert('Your session has expired. Please log in again.');
-    window.location.replace(basePath + '/index.php');
+    window.location.replace(basePath + '/login.php');
 }
 
 // Helper function to get token with validation

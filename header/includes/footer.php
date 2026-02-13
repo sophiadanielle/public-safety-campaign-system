@@ -252,7 +252,7 @@
                         } catch (e) {
                             console.error('Error clearing localStorage:', e);
                         }
-                        window.location.href = basePath + '/index.php';
+                        window.location.href = basePath + '/login.php';
                     };
                 }
             } catch (e) {}
