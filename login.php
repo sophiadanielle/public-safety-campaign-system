@@ -216,8 +216,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(135deg, rgba(13, 148, 136, 0.92) 0%, rgba(15, 118, 110, 0.88) 100%);
-            backdrop-filter: blur(1px);
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.85) 0%, rgba(15, 118, 110, 0.82) 100%);
         }
 
         .branding-content {
@@ -227,23 +226,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         }
 
         .branding-logo {
-            width: 160px;
-            height: 160px;
-            margin: 0 auto 28px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        }
-
-        .branding-logo img {
-            width: 100px;
-            height: auto;
-            filter: brightness(0) invert(1) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+            display: none;
         }
 
         .branding-title {
@@ -294,20 +277,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         }
 
         .login-icon {
-            width: 64px;
-            height: 64px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);
-        }
-
-        .login-icon i {
-            font-size: 28px;
-            color: white;
+            display: none;
         }
 
         .login-title {
@@ -316,6 +286,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             color: var(--secondary);
             text-align: center;
             margin-bottom: 8px;
+            margin-top: 0;
         }
 
         .login-subtitle {
