@@ -92,10 +92,13 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
 
         /* Header */
         .login-header {
-            padding: 20px 24px;
+            padding: 16px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(13, 148, 136, 0.1);
         }
 
         .login-header-logo {
@@ -137,7 +140,30 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 40px 24px;
+            padding: 24px 24px;
+            position: relative;
+        }
+
+        .login-main::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(13, 148, 136, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .login-main::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(20, 184, 166, 0.08) 0%, transparent 70%);
+            pointer-events: none;
         }
 
         .login-container {
@@ -148,10 +174,11 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         .login-card {
             background: var(--surface);
             border-radius: 20px;
-            box-shadow: var(--shadow-xl);
-            padding: 48px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(13, 148, 136, 0.1);
+            padding: 40px 40px;
             position: relative;
             overflow: hidden;
+            z-index: 1;
         }
 
         .login-card::before {
@@ -165,19 +192,31 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         }
 
         .login-icon {
-            width: 64px;
-            height: 64px;
+            width: 72px;
+            height: 72px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            border-radius: 16px;
+            border-radius: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 24px;
-            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 24px rgba(13, 148, 136, 0.35);
+            position: relative;
+        }
+
+        .login-icon::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            border-radius: 20px;
+            opacity: 0.3;
+            filter: blur(8px);
+            z-index: -1;
         }
 
         .login-icon i {
-            font-size: 28px;
+            font-size: 32px;
             color: white;
         }
 
@@ -193,7 +232,8 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             font-size: 15px;
             color: var(--text-secondary);
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 28px;
+            line-height: 1.5;
         }
 
         .form-group {
@@ -339,12 +379,12 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
 
         /* Footer */
         .login-footer {
-            padding: 24px;
+            padding: 20px 24px;
             text-align: center;
         }
 
         .login-footer p {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-muted);
         }
 

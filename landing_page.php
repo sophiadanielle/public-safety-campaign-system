@@ -129,7 +129,7 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             min-height: 100vh;
             display: flex;
             align-items: center;
-            padding: 120px 24px 80px;
+            padding: 100px 24px 60px;
             background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 50%, #ecfeff 100%);
             position: relative;
             overflow: hidden;
@@ -555,6 +555,88 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             color: var(--text-secondary);
         }
 
+        /* Testimonials Section */
+        .testimonials {
+            padding: 100px 24px;
+            background: white;
+        }
+
+        .testimonials-container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+
+        .testimonial-card {
+            background: var(--background);
+            border-radius: 20px;
+            padding: 32px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            position: relative;
+        }
+
+        .testimonial-card:hover {
+            background: white;
+            border-color: var(--border);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .testimonial-rating {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+        }
+
+        .testimonial-rating i {
+            color: #fbbf24;
+            font-size: 16px;
+        }
+
+        .testimonial-text {
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-style: italic;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .author-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .author-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+
+        .author-role {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
         /* CTA Section */
         .cta {
             padding: 100px 24px;
@@ -620,9 +702,22 @@ require_once __DIR__ . '/header/includes/path_helper.php';
 
         /* Footer */
         .footer {
-            padding: 60px 24px 30px;
-            background: var(--secondary);
+            padding: 80px 24px 40px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             color: rgba(255, 255, 255, 0.7);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2314b8a6' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.4;
         }
 
         .footer-container {
@@ -634,9 +729,11 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 30px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 30px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            margin-bottom: 32px;
+            position: relative;
+            z-index: 1;
         }
 
         .footer-logo {
@@ -646,14 +743,16 @@ require_once __DIR__ . '/header/includes/path_helper.php';
         }
 
         .footer-logo img {
-            height: 40px;
-            filter: brightness(0) invert(1);
+            height: 48px;
+            width: auto;
+            filter: brightness(0) invert(1) drop-shadow(0 2px 8px rgba(20, 184, 166, 0.3));
         }
 
         .footer-logo-text {
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 18px;
+            font-weight: 700;
             color: white;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
         .footer-links {
@@ -675,6 +774,68 @@ require_once __DIR__ . '/header/includes/path_helper.php';
         .footer-bottom {
             text-align: center;
             font-size: 14px;
+            position: relative;
+            z-index: 1;
+            padding-top: 8px;
+        }
+
+        .footer-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 48px;
+            margin-bottom: 48px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-section h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-section h3 i {
+            color: var(--primary-light);
+            font-size: 18px;
+        }
+
+        .footer-section p,
+        .footer-section ul {
+            font-size: 14px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .footer-section ul li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--primary-light);
+        }
+
+        .footer-section a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer-section a:hover {
+            color: var(--primary-light);
         }
 
         /* Responsive */
@@ -700,6 +861,10 @@ require_once __DIR__ . '/header/includes/path_helper.php';
 
             .features-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+
+            .testimonials-grid {
+                grid-template-columns: 1fr;
             }
 
             .steps-grid {
@@ -743,6 +908,11 @@ require_once __DIR__ . '/header/includes/path_helper.php';
 
             .floating-card {
                 display: none;
+            }
+
+            .footer-info {
+                grid-template-columns: 1fr;
+                gap: 32px;
             }
 
             .footer-content {
@@ -950,6 +1120,84 @@ require_once __DIR__ . '/header/includes/path_helper.php';
         </div>
     </section>
 
+    <!-- Testimonials Section -->
+    <section class="testimonials">
+        <div class="testimonials-container">
+            <div class="section-header">
+                <span class="section-label">Success Stories</span>
+                <h2 class="section-title">Trusted by Barangays Across Quezon City</h2>
+                <p class="section-description">
+                    See how communities are making a difference with our platform.
+                </p>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        "This platform has transformed how we manage our safety campaigns. The analytics help us understand what works and what doesn't."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="author-info">
+                            <div class="author-name">Maria Santos</div>
+                            <div class="author-role">Barangay Captain, Brgy. Commonwealth</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        "The event management features are incredible. We've organized more safety workshops this year than ever before."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="author-info">
+                            <div class="author-name">Juan Dela Cruz</div>
+                            <div class="author-role">Safety Officer, Brgy. Batasan Hills</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">
+                        "Easy to use and very effective. Our community engagement has increased significantly since we started using Alertara QC."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="author-info">
+                            <div class="author-name">Rosa Garcia</div>
+                            <div class="author-role">Campaign Coordinator, Brgy. Payatas</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- CTA Section -->
     <section class="cta">
         <div class="cta-container">
@@ -966,6 +1214,32 @@ require_once __DIR__ . '/header/includes/path_helper.php';
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-container">
+            <div class="footer-info">
+                <div class="footer-section">
+                    <h3><i class="fas fa-shield-alt"></i> About Alertara QC</h3>
+                    <p>
+                        A comprehensive platform designed to empower barangays across Quezon City in planning, executing, and monitoring public safety campaigns that protect and strengthen communities.
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h3><i class="fas fa-link"></i> Quick Links</h3>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#how-it-works">How It Works</a></li>
+                        <li><a href="<?php echo htmlspecialchars($basePath); ?>/login.php">Login</a></li>
+                        <li><a href="<?php echo htmlspecialchars($basePath); ?>/public/dashboard.php">Dashboard</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3><i class="fas fa-info-circle"></i> Resources</h3>
+                    <ul>
+                        <li><a href="#features">Campaign Planning</a></li>
+                        <li><a href="#features">Event Management</a></li>
+                        <li><a href="#features">Impact Analytics</a></li>
+                        <li><a href="#features">Community Surveys</a></li>
+                    </ul>
+                </div>
+            </div>
             <div class="footer-content">
                 <div class="footer-logo">
                     <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Alertara Logo">
@@ -974,6 +1248,7 @@ require_once __DIR__ . '/header/includes/path_helper.php';
                 <div class="footer-links">
                     <a href="#features" class="footer-link">Features</a>
                     <a href="<?php echo htmlspecialchars($basePath); ?>/login.php" class="footer-link">Login</a>
+                    <a href="#" class="footer-link">Contact</a>
                 </div>
             </div>
             <div class="footer-bottom">
