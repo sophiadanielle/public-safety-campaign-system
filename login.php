@@ -92,7 +92,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
 
         /* Header */
         .login-header {
-            padding: 12px 24px;
+            padding: 14px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -140,7 +140,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px 24px;
+            padding: 30px 24px;
             position: relative;
         }
 
@@ -233,7 +233,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         .branding-logo img {
             width: 120px;
             height: auto;
-            filter: brightness(0) invert(1) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
         }
 
         .branding-title {

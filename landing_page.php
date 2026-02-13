@@ -126,10 +126,11 @@ require_once __DIR__ . '/header/includes/path_helper.php';
 
         /* Hero Section */
         .hero {
-            min-height: 100vh;
+            min-height: calc(100vh - 64px);
             display: flex;
             align-items: center;
-            padding: 80px 24px 60px;
+            padding: 40px 24px 60px;
+            margin-top: 64px;
             background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 50%, #ecfeff 100%);
             position: relative;
             overflow: hidden;
@@ -745,7 +746,7 @@ require_once __DIR__ . '/header/includes/path_helper.php';
         .footer-logo img {
             height: 48px;
             width: auto;
-            filter: brightness(0) invert(1) drop-shadow(0 2px 8px rgba(20, 184, 166, 0.3));
+            filter: drop-shadow(0 2px 8px rgba(20, 184, 166, 0.5));
         }
 
         .footer-logo-text {
