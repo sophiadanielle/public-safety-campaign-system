@@ -175,8 +175,8 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
 
         .login-container {
             width: 100%;
-            max-width: 1000px;
-            max-height: calc(100vh - 120px);
+            max-width: 1200px;
+            max-height: calc(100vh - 100px);
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 0;
@@ -189,7 +189,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
 
         .login-card {
             background: var(--surface);
-            padding: 48px 48px;
+            padding: 60px 56px;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -200,7 +200,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             background: url('<?php echo htmlspecialchars($basePath); ?>/sidebar/images/shrine.jpg');
             background-size: cover;
             background-position: center;
-            padding: 48px;
+            padding: 60px 56px;
             display: flex;
             flex-direction: column;
             align-items: center;
