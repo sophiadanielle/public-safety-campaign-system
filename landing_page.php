@@ -1023,10 +1023,6 @@ require_once __DIR__ . '/header/includes/path_helper.php';
                             <div class="floating-subtext">Fire Safety Week</div>
                         </div>
                     </div>
-                        <div>
-                            <div class="floating-text">+156 Participants</div>
-                            <div class="floating-subtext">This month</div>
-                        </div>
                     </div>
                 </div>
             </div>
