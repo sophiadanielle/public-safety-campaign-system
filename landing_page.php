@@ -130,7 +130,6 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             display: flex;
             align-items: center;
             padding: 40px 24px 60px;
-            margin-top: 64px;
             background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 50%, #ecfeff 100%);
             position: relative;
             overflow: hidden;
