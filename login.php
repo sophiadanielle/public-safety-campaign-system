@@ -501,7 +501,6 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
     <header class="login-header">
         <a href="<?php echo htmlspecialchars($basePath); ?>/" class="login-header-logo">
             <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Alertara Logo">
-            <span>Alertara QC</span>
         </a>
         <a href="<?php echo htmlspecialchars($basePath); ?>/" class="back-link">
             <i class="fas fa-arrow-left"></i>

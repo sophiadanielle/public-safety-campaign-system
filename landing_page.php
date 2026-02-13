@@ -954,7 +954,6 @@ require_once __DIR__ . '/header/includes/path_helper.php';
         <div class="navbar-container">
             <a href="<?php echo htmlspecialchars($basePath); ?>/" class="navbar-logo">
                 <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Alertara Logo">
-                <span class="navbar-logo-text">Alertara QC</span>
             </a>
             <div class="navbar-actions">
                 <a href="<?php echo htmlspecialchars($basePath); ?>/login.php" class="btn-login btn-login-primary">
@@ -1256,7 +1255,6 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             <div class="footer-content">
                 <div class="footer-logo">
                     <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Alertara Logo">
-                    <span class="footer-logo-text">Alertara QC</span>
                 </div>
                 <div class="footer-social">
                     <a href="#" class="social-link" aria-label="Facebook">
