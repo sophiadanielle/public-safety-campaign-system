@@ -66,7 +66,7 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 72px;
+            height: 64px;
         }
 
         .navbar-logo {
@@ -129,7 +129,7 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             min-height: 100vh;
             display: flex;
             align-items: center;
-            padding: 100px 24px 60px;
+            padding: 80px 24px 60px;
             background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 50%, #ecfeff 100%);
             position: relative;
             overflow: hidden;
@@ -755,20 +755,32 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
-        .footer-links {
+        .footer-social {
             display: flex;
-            gap: 32px;
+            gap: 16px;
         }
 
-        .footer-link {
+        .social-link {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: rgba(255, 255, 255, 0.7);
             text-decoration: none;
-            font-size: 14px;
-            transition: color 0.2s ease;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .footer-link:hover {
+        .social-link:hover {
+            background: var(--primary);
             color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
+            border-color: var(--primary);
         }
 
         .footer-bottom {
@@ -822,10 +834,14 @@ require_once __DIR__ . '/header/includes/path_helper.php';
         }
 
         .footer-section ul li::before {
-            content: '→';
+            content: '';
             position: absolute;
             left: 0;
             color: var(--primary-light);
+        }
+
+        .footer-section ul li i {
+            width: 20px;
         }
 
         .footer-section a {
@@ -1222,12 +1238,12 @@ require_once __DIR__ . '/header/includes/path_helper.php';
                     </p>
                 </div>
                 <div class="footer-section">
-                    <h3><i class="fas fa-link"></i> Quick Links</h3>
+                    <h3><i class="fas fa-envelope"></i> Contact Us</h3>
                     <ul>
-                        <li><a href="#features">Features</a></li>
-                        <li><a href="#how-it-works">How It Works</a></li>
-                        <li><a href="<?php echo htmlspecialchars($basePath); ?>/login.php">Login</a></li>
-                        <li><a href="<?php echo htmlspecialchars($basePath); ?>/public/dashboard.php">Dashboard</a></li>
+                        <li><i class="fas fa-map-marker-alt" style="color: var(--primary-light); margin-right: 8px;"></i>Quezon City Hall, Quezon City</li>
+                        <li><i class="fas fa-phone" style="color: var(--primary-light); margin-right: 8px;"></i>+63 2 8988 4242</li>
+                        <li><i class="fas fa-envelope" style="color: var(--primary-light); margin-right: 8px;"></i>support@alertaraqc.com</li>
+                        <li><i class="fas fa-clock" style="color: var(--primary-light); margin-right: 8px;"></i>Mon-Fri: 8:00 AM - 5:00 PM</li>
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -1245,10 +1261,19 @@ require_once __DIR__ . '/header/includes/path_helper.php';
                     <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Alertara Logo">
                     <span class="footer-logo-text">Alertara QC</span>
                 </div>
-                <div class="footer-links">
-                    <a href="#features" class="footer-link">Features</a>
-                    <a href="<?php echo htmlspecialchars($basePath); ?>/login.php" class="footer-link">Login</a>
-                    <a href="#" class="footer-link">Contact</a>
+                <div class="footer-social">
+                    <a href="#" class="social-link" aria-label="Facebook">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="social-link" aria-label="Twitter">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="social-link" aria-label="Instagram">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" class="social-link" aria-label="LinkedIn">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
                 </div>
             </div>
             <div class="footer-bottom">

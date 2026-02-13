@@ -92,7 +92,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
 
         /* Header */
         .login-header {
-            padding: 16px 24px;
+            padding: 12px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -140,7 +140,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px 24px;
+            padding: 20px 24px;
             position: relative;
         }
 
@@ -168,55 +168,130 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
 
         .login-container {
             width: 100%;
-            max-width: 440px;
+            max-width: 1000px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            background: var(--surface);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(13, 148, 136, 0.1);
+            z-index: 1;
         }
 
         .login-card {
             background: var(--surface);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(13, 148, 136, 0.1);
-            padding: 40px 40px;
+            padding: 48px 48px;
             position: relative;
-            overflow: hidden;
-            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
-        .login-card::before {
+        .login-branding {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 48px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-branding::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.3;
+        }
+
+        .branding-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .branding-logo {
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 32px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .branding-logo img {
+            width: 120px;
+            height: auto;
+            filter: brightness(0) invert(1) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2));
+        }
+
+        .branding-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .branding-subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.6;
+            max-width: 320px;
+            margin: 0 auto;
+        }
+
+        .branding-features {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .branding-feature {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 14px;
+        }
+
+        .branding-feature i {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
         .login-icon {
-            width: 72px;
-            height: 72px;
+            width: 64px;
+            height: 64px;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            border-radius: 18px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
-            box-shadow: 0 8px 24px rgba(13, 148, 136, 0.35);
-            position: relative;
-        }
-
-        .login-icon::before {
-            content: '';
-            position: absolute;
-            inset: -2px;
-            background: linear-gradient(135deg, var(--primary-light), var(--primary));
-            border-radius: 20px;
-            opacity: 0.3;
-            filter: blur(8px);
-            z-index: -1;
+            box-shadow: 0 4px 16px rgba(13, 148, 136, 0.3);
         }
 
         .login-icon i {
-            font-size: 32px;
+            font-size: 28px;
             color: white;
         }
 
@@ -389,6 +464,21 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         }
 
         /* Responsive */
+        @media (max-width: 968px) {
+            .login-container {
+                grid-template-columns: 1fr;
+                max-width: 480px;
+            }
+
+            .login-branding {
+                display: none;
+            }
+
+            .login-card {
+                padding: 40px 32px;
+            }
+        }
+
         @media (max-width: 480px) {
             .login-card {
                 padding: 32px 24px;
@@ -431,6 +521,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
     <!-- Main Content -->
     <main class="login-main">
         <div class="login-container">
+            <!-- Login Form Card -->
             <div class="login-card">
                 <div class="login-icon">
                     <i class="fas fa-shield-alt"></i>
@@ -482,6 +573,33 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                     <?php if ($error): ?>
                         <?php echo htmlspecialchars($error); ?>
                     <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Branding Card -->
+            <div class="login-branding">
+                <div class="branding-content">
+                    <div class="branding-logo">
+                        <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Alertara QC Logo">
+                    </div>
+                    <h2 class="branding-title">Alertara QC</h2>
+                    <p class="branding-subtitle">
+                        Empowering barangays across Quezon City with comprehensive public safety campaign management.
+                    </p>
+                    <div class="branding-features">
+                        <div class="branding-feature">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Plan & Execute Safety Campaigns</span>
+                        </div>
+                        <div class="branding-feature">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Track Real-time Analytics</span>
+                        </div>
+                        <div class="branding-feature">
+                            <i class="fas fa-users"></i>
+                            <span>Engage Your Community</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
