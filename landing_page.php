@@ -47,6 +47,11 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             line-height: 1.6;
         }
 
+                html, body {
+            margin: 0;
+            padding: 0;
+        }
+
         /* Navigation */
         .navbar {
             position: fixed;
@@ -1018,10 +1023,6 @@ require_once __DIR__ . '/header/includes/path_helper.php';
                             <div class="floating-subtext">Fire Safety Week</div>
                         </div>
                     </div>
-                    <div class="floating-card floating-card-2">
-                        <div class="floating-icon blue">
-                            <i class="fas fa-users"></i>
-                        </div>
                         <div>
                             <div class="floating-text">+156 Participants</div>
                             <div class="floating-subtext">This month</div>
