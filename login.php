@@ -82,6 +82,11 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             box-sizing: border-box;
         }
 
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 50%, #f8fafc 100%);
