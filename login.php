@@ -140,8 +140,9 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0px 24px;
+            padding: 20px 24px;
             position: relative;
+            min-height: calc(100vh - 140px);
         }
 
         .login-main::before {
