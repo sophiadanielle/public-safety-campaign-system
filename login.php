@@ -148,7 +148,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             justify-content: center;
             padding: 20px 24px;
             position: relative;
-            overflow: auto;
+            overflow: hidden;
         }
 
         .login-main::before {
@@ -176,6 +176,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         .login-container {
             width: 100%;
             max-width: 1000px;
+            max-height: calc(100vh - 120px);
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 0;
@@ -196,10 +197,9 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         }
 
         .login-branding {
-            background: linear-gradient(135deg, rgba(13, 148, 136, 0.95) 0%, rgba(15, 118, 110, 0.95) 100%), url('<?php echo htmlspecialchars($basePath); ?>/sidebar/images/shrine.jpg');
+            background: url('<?php echo htmlspecialchars($basePath); ?>/sidebar/images/shrine.jpg');
             background-size: cover;
             background-position: center;
-            background-blend-mode: overlay;
             padding: 48px;
             display: flex;
             flex-direction: column;
@@ -216,8 +216,8 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(13, 148, 136, 0.1);
-            backdrop-filter: blur(2px);
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.92) 0%, rgba(15, 118, 110, 0.88) 100%);
+            backdrop-filter: blur(1px);
         }
 
         .branding-content {
@@ -227,65 +227,70 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         }
 
         .branding-logo {
-            width: 180px;
-            height: 180px;
-            margin: 0 auto 32px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 30px;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 28px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
             backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
 
         .branding-logo img {
-            width: 120px;
+            width: 100px;
             height: auto;
-            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+            filter: brightness(0) invert(1) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
         }
 
         .branding-title {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 800;
             color: white;
-            margin-bottom: 12px;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 16px;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+            letter-spacing: -0.5px;
         }
 
         .branding-subtitle {
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.9);
-            line-height: 1.6;
-            max-width: 320px;
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.95);
+            line-height: 1.7;
+            max-width: 340px;
             margin: 0 auto;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
         }
 
         .branding-features {
-            margin-top: 40px;
+            margin-top: 36px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
 
         .branding-feature {
             display: flex;
             align-items: center;
             gap: 12px;
-            color: rgba(255, 255, 255, 0.95);
+            color: rgba(255, 255, 255, 0.98);
             font-size: 14px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
         .branding-feature i {
-            width: 32px;
-            height: 32px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+            font-size: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
         .login-icon {
