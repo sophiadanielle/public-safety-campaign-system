@@ -51,11 +51,15 @@
 }
 
 .sidebar.sidebar-collapsed .sidebar-brand {
-    padding: 1rem 0.5rem;
+    padding: 0.5rem;
+    justify-content: center;
+    width: 100%;
 }
 
 .sidebar.sidebar-collapsed .logo-img {
-    height: 40px;
+    height: 50px;
+    max-width: 50px;
+    object-fit: contain;
 }
 
 .sidebar.sidebar-collapsed .sidebar-section-title,

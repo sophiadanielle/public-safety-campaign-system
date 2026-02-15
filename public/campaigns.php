@@ -137,6 +137,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     .main-content-wrapper {
         margin-left: 280px; /* Main sidebar only */
         margin-top: 70px;
+        padding-top: 16px;
         min-height: calc(100vh - 70px);
         transition: margin-left 0.3s ease;
     }
@@ -1651,14 +1652,12 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                         <th>Title</th>
                         <th>Category</th>
                         <th>Status</th>
-                        <th>Start</th>
-                        <th>End</th>
                         <th>Location</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="campaignTable">
-                    <tr><td colspan="8" style="text-align:center; padding:24px;">Loading...</td></tr>
+                    <tr><td colspan="6" style="text-align:center; padding:24px;">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -4469,10 +4468,8 @@ async function loadResources() {
                 <td>${c.title || ''}</td>
                 <td>${c.category || '-'}</td>
                 <td><span class="badge ${c.status || 'draft'}">${(c.status || 'draft').charAt(0).toUpperCase() + (c.status || 'draft').slice(1)}</span></td>
-                <td>${c.start_date || '-'}</td>
-                <td>${c.end_date || '-'}</td>
                 <td>${c.location || '-'}</td>
-                <td>
+                <td style="white-space: nowrap;">
                     ${(() => {
                         // Debug: Log role detection
                         console.log('Rendering Actions for campaign', c.id, 'Status:', c.status, 'Current Role:', currentUserRole);
@@ -4485,8 +4482,8 @@ async function loadResources() {
                     <!-- Staff Actions -->
                     ${isStaff() && !isViewer() ? `
                         ${c.status === 'draft' ? `
-                            ${canEditCampaign(c.status) ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">✏️ Edit</button>` : ''}
-                            <button class="btn btn-primary" onclick="submitToSecretary(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">📤 Submit to Secretary</button>
+                            ${canEditCampaign(c.status) ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Edit</button>` : ''}
+                            <button class="btn btn-primary" onclick="submitToSecretary(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Submit</button>
                         ` : ''}
                         ${c.status !== 'draft' ? `<span style="color: #9ca3af; font-size: 12px; display: block; width: 100%; margin-top: 4px;">View only</span>` : ''}
                     ` : ''}
@@ -4494,21 +4491,21 @@ async function loadResources() {
                     <!-- Secretary Actions -->
                     ${isSecretary() && !isViewer() ? `
                         ${c.status === 'draft' ? `
-                            ${canEditCampaign(c.status) ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">✏️ Edit</button>` : ''}
-                            <button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">📤 Forward to Kagawad</button>
-                            <button class="btn btn-warning" onclick="returnForRevision(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0; background: #f59e0b; color: white; border: none;">↩️ Return for Revision</button>
+                            ${canEditCampaign(c.status) ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Edit</button>` : ''}
+                            <button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Forward</button>
+                            <button class="btn btn-warning" onclick="returnForRevision(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;">Return</button>
                         ` : ''}
                         ${c.status === 'pending' ? `
-                            ${canEditCampaign(c.status) ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">✏️ Edit</button>` : ''}
-                            <button class="btn btn-warning" onclick="returnForRevision(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0; background: #f59e0b; color: white; border: none;">↩️ Return for Revision</button>
+                            ${canEditCampaign(c.status) ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Edit</button>` : ''}
+                            <button class="btn btn-warning" onclick="returnForRevision(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;">Return</button>
                         ` : ''}
                     ` : ''}
                     
                     <!-- Kagawad Actions -->
                     ${isKagawad() && !isViewer() ? `
                         ${c.status === 'pending' ? `
-                            <button class="btn btn-success" onclick="recommendApproval(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0; background: #10b981; color: white; border: none;">👍 Recommend Approval</button>
-                            <button class="btn btn-warning" onclick="returnForRevision(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0; background: #f59e0b; color: white; border: none;">↩️ Return for Revision</button>
+                            <button class="btn btn-success" onclick="recommendApproval(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Recommend</button>
+                            <button class="btn btn-warning" onclick="returnForRevision(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;">Return</button>
                         ` : ''}
                         ${c.status !== 'pending' ? `<span style="color: #9ca3af; font-size: 12px; display: block; width: 100%; margin-top: 4px;">View only</span>` : ''}
                     ` : ''}
@@ -4516,45 +4513,45 @@ async function loadResources() {
                     <!-- Captain Actions -->
                     ${isCaptain() && !isViewer() ? `
                         ${c.status === 'pending' ? `
-                            <button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0; background: #10b981; color: white; border: none;">✅ Approve</button>
+                            <button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Approve</button>
                         ` : ''}
                         ${c.status === 'approved' ? `
-                            ${!c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">📅 Finalize Schedule</button>` : ''}
-                            <button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0; background: #3b82f6; color: white; border: none;">🔒 Close Campaign</button>
+                            ${!c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Finalize</button>` : ''}
+                            <button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px; background: #3b82f6; color: white; border: none;">Close</button>
                         ` : ''}
                         ${c.status === 'ongoing' ? `
-                            <button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0; background: #3b82f6; color: white; border: none;">🔒 Close Campaign</button>
+                            <button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px; background: #3b82f6; color: white; border: none;">Close</button>
                         ` : ''}
                         ${canEditCampaign(c.status) && c.status !== 'completed' && c.status !== 'archived' ? `
-                            <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">✏️ Edit</button>
+                            <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Edit</button>
                         ` : ''}
                         ${c.status !== 'archived' && c.status !== 'completed' ? `
-                            <button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 0;">📦 Archive</button>
+                            <button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Archive</button>
                         ` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px; display: block; width: 100%; margin-top: 4px;">Archived</span>' : ''}
                     ` : ''}
                     
                     <!-- Admin Actions (Technical only, can override) - Always show if admin -->
                     ${isAdmin() && !isViewer() ? `
-                        <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">👁️ View</button>
-                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">✏️ Edit</button>
-                        ${c.status === 'draft' ? `<button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">📤 Forward</button>` : ''}
-                        ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; background: #10b981; color: white; border: none; margin: 2px;">✅ Approve</button>` : ''}
-                        ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">📅 Finalize</button>` : ''}
-                        ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; background: #3b82f6; color: white; border: none; margin: 2px;">🔒 Close</button>` : ''}
-                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">📦 Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px; display: block; width: 100%; margin-top: 4px;">Archived</span>' : ''}
-                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-danger" onclick="deleteCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; background: #ef4444; color: white; border: none; margin: 2px;">🗑️ Delete</button>` : ''}
+                        <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">View</button>
+                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Edit</button>
+                        ${c.status === 'draft' ? `<button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Forward</button>` : ''}
+                        ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; background: #10b981; color: white; border: none; margin: 1px;">Approve</button>` : ''}
+                        ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Finalize</button>` : ''}
+                        ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; background: #3b82f6; color: white; border: none; margin: 1px;">Close</button>` : ''}
+                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px; display: block; width: 100%; margin-top: 4px;">Archived</span>' : ''}
+                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-danger" onclick="deleteCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; background: #ef4444; color: white; border: none; margin: 1px;">Delete</button>` : ''}
                     ` : ''}
                     
                     <!-- Fallback: If no role detected after refresh, show admin actions as default -->
                     ${!currentUserRole && !isViewer() ? `
-                        <span style="color: #f59e0b; font-size: 11px; display: block; width: 100%; margin-bottom: 4px;">⚠️ Role detection issue - showing admin actions</span>
-                        <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">👁️ View</button>
-                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">✏️ Edit</button>
-                        ${c.status === 'draft' ? `<button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">📤 Forward</button>` : ''}
-                        ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px; background: #10b981; color: white; border: none;">✅ Approve</button>` : ''}
-                        ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">📅 Finalize</button>` : ''}
-                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; margin: 2px;">📦 Archive</button>` : ''}
-                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-danger" onclick="deleteCampaign(${c.id})" style="padding: 4px 8px; font-size: 12px; background: #ef4444; color: white; border: none; margin: 2px;">🗑️ Delete</button>` : ''}
+                        <span style="color: #f59e0b; font-size: 11px; display: block; width: 100%; margin-bottom: 4px;">Role detection issue</span>
+                        <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">View</button>
+                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Edit</button>
+                        ${c.status === 'draft' ? `<button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Forward</button>` : ''}
+                        ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Approve</button>` : ''}
+                        ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Finalize</button>` : ''}
+                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Archive</button>` : ''}
+                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-danger" onclick="deleteCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; background: #ef4444; color: white; border: none; margin: 1px;">Delete</button>` : ''}
                     ` : ''}
                 </td>
             `;
