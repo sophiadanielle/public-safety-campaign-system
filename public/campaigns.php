@@ -137,7 +137,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     .main-content-wrapper {
         margin-left: 280px; /* Main sidebar only */
         margin-top: 70px;
-        padding-top: 16px;
+        padding-top: 0;
         min-height: calc(100vh - 70px);
         transition: margin-left 0.3s ease;
     }
@@ -171,7 +171,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     .campaign-page {
         width: 100%;
         margin: 0;
-        padding: 24px;
+        padding: 16px 24px 24px 24px;
         background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
         box-sizing: border-box;
     }
@@ -182,8 +182,8 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         width: 100%;
     }
     .page-title {
-        margin: 0 0 12px;
-        font-size: 36px;
+        margin: 0 0 8px;
+        font-size: 32px;
         font-weight: 800;
         color: #0f172a;
         letter-spacing: -0.5px;
@@ -638,141 +638,28 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         overflow: visible; /* Changed from hidden to visible to prevent clipping */
         box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
     }
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+        font-size: 13px;
+    }
     .data-table thead {
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     }
     .data-table th {
-        padding: 16px 12px;
-        text-align: left;
-        font-weight: 700;
+        background: #f8fafc;
+        font-weight: 600;
         color: #0f172a;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 2px solid #e2e8f0;
-        white-space: nowrap;
-    }
-    
-    /* Responsive column widths */
-    .data-table th:nth-child(1), /* ID */
-    .data-table td:nth-child(1) {
-        width: 60px;
-        min-width: 60px;
-        max-width: 80px;
-    }
-    
-    .data-table th:nth-child(2), /* Title */
-    .data-table td:nth-child(2) {
-        width: 200px;
-        min-width: 150px;
-        max-width: 300px;
-        white-space: normal;
-        word-wrap: break-word;
-    }
-    
-    .data-table th:nth-child(3), /* Category */
-    .data-table td:nth-child(3) {
-        width: 120px;
-        min-width: 100px;
-        max-width: 150px;
-    }
-    
-    .data-table th:nth-child(4), /* Status */
-    .data-table td:nth-child(4) {
-        width: 100px;
-        min-width: 90px;
-        max-width: 120px;
-    }
-    
-    .data-table th:nth-child(5), /* Start */
-    .data-table th:nth-child(6), /* End */
-    .data-table td:nth-child(5),
-    .data-table td:nth-child(6) {
-        width: 110px;
-        min-width: 100px;
-        max-width: 130px;
-        white-space: nowrap;
-    }
-    
-    .data-table th:nth-child(7), /* Draft Schedule */
-    .data-table th:nth-child(8), /* AI Recommended */
-    .data-table th:nth-child(9), /* Final Schedule */
-    .data-table td:nth-child(7),
-    .data-table td:nth-child(8),
-    .data-table td:nth-child(9) {
-        width: 140px;
-        min-width: 120px;
-        max-width: 180px;
-        white-space: nowrap;
         font-size: 12px;
-    }
-    
-    .data-table th:nth-child(10), /* Location */
-    .data-table td:nth-child(10) {
-        width: 150px;
-        min-width: 120px;
-        max-width: 200px;
-        white-space: normal;
-        word-wrap: break-word;
-    }
-    
-    .data-table th:nth-child(11), /* Budget */
-    .data-table td:nth-child(11) {
-        width: 100px;
-        min-width: 90px;
-        max-width: 120px;
-        text-align: right;
-    }
-    
-    .data-table th:nth-child(12), /* Actions */
-    .data-table td:nth-child(12) {
-        width: 200px;
-        min-width: 180px;
-        max-width: 280px; /* Increased to accommodate wrapped buttons */
-        white-space: normal; /* Allow wrapping */
-        word-wrap: break-word;
-        position: sticky;
-        right: 0;
-        background: #fff;
-        z-index: 10;
-        padding: 12px;
-        box-sizing: border-box;
-        overflow: visible; /* Allow content to wrap */
-        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
-    }
-    
-    /* Actions column button container - flex layout for wrapping */
-    .data-table td:nth-child(12) {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        align-items: flex-start;
-        max-width: 100%;
-    }
-    
-    /* Action buttons in Actions column - ensure they wrap properly */
-    .data-table td:nth-child(12) button,
-    .data-table td:nth-child(12) .btn {
-        flex-shrink: 0;
         white-space: nowrap;
-        margin: 0 !important; /* Remove all margins, use gap instead */
-        max-width: 100%;
-        box-sizing: border-box;
     }
-    
-    /* Action column text/spans - full width for proper wrapping */
-    .data-table td:nth-child(12) span {
-        display: block;
-        width: 100%;
-        margin-bottom: 4px;
+    .data-table th,
+    .data-table td {
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
     }
-    
-    .data-table thead th:nth-child(12) {
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        z-index: 11;
-        box-shadow: -2px 0 8px rgba(0, 0, 0, 0.05);
-    }
-    
     .data-table tbody tr:hover td:nth-child(12) {
         background: #f8fafc;
     }
@@ -781,16 +668,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         border-bottom: none;
     }
     
-    .data-table td {
-        padding: 16px 12px;
-        text-align: left;
-        border-bottom: 1px solid #f1f5f9;
-        color: #475569;
-    }
-    .data-table tbody tr {
-        transition: all 0.2s;
-    }
-    .data-table tbody tr:hover {
         background: #f8fafc;
         transform: scale(1.01);
     }
@@ -4532,26 +4409,32 @@ async function loadResources() {
                     
                     <!-- Admin Actions (Technical only, can override) - Always show if admin -->
                     ${isAdmin() && !isViewer() ? `
-                        <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">View</button>
-                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Edit</button>
-                        ${c.status === 'draft' ? `<button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Forward</button>` : ''}
-                        ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; background: #10b981; color: white; border: none; margin: 1px;">Approve</button>` : ''}
-                        ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Finalize</button>` : ''}
-                        ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; background: #3b82f6; color: white; border: none; margin: 1px;">Close</button>` : ''}
-                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px; display: block; width: 100%; margin-top: 4px;">Archived</span>' : ''}
-                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-danger" onclick="deleteCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; background: #ef4444; color: white; border: none; margin: 1px;">Delete</button>` : ''}
+                        <div style="display: flex; flex-direction: column; gap: 2px; max-width: 180px;">
+                            <div style="display: flex; gap: 2px;">
+                                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">View</button>
+                                <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">Edit</button>
+                                ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">Finalize</button>` : ''}
+                            </div>
+                            <div style="display: flex; gap: 2px;">
+                                ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; background: #3b82f6; color: white; border: none; margin: 0;">Close</button>` : ''}
+                                ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px;">Archived</span>' : ''}
+                            </div>
+                        </div>
                     ` : ''}
                     
                     <!-- Fallback: If no role detected after refresh, show admin actions as default -->
                     ${!currentUserRole && !isViewer() ? `
-                        <span style="color: #f59e0b; font-size: 11px; display: block; width: 100%; margin-bottom: 4px;">Role detection issue</span>
-                        <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">View</button>
-                        <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Edit</button>
-                        ${c.status === 'draft' ? `<button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Forward</button>` : ''}
-                        ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Approve</button>` : ''}
-                        ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Finalize</button>` : ''}
-                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Archive</button>` : ''}
-                        ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-danger" onclick="deleteCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; background: #ef4444; color: white; border: none; margin: 1px;">Delete</button>` : ''}
+                        <div style="display: flex; flex-direction: column; gap: 2px; max-width: 180px;">
+                            <span style="color: #f59e0b; font-size: 10px;">Role issue</span>
+                            <div style="display: flex; gap: 2px;">
+                                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">View</button>
+                                <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">Edit</button>
+                                ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">Finalize</button>` : ''}
+                            </div>
+                            <div style="display: flex; gap: 2px;">
+                                ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">Archive</button>` : ''}
+                            </div>
+                        </div>
                     ` : ''}
                 </td>
             `;

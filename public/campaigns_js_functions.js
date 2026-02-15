@@ -118,7 +118,7 @@ async function showArchivedCampaigns() {
         
         let tableRows = '';
         if (archivedCampaigns.length === 0) {
-            tableRows = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #64748b;">No archived campaigns found.</td></tr>';
+            tableRows = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #64748b;">No archived campaigns found.</td></tr>';
         } else {
             archivedCampaigns.forEach(c => {
                 tableRows += `
@@ -126,13 +126,14 @@ async function showArchivedCampaigns() {
                         <td>${c.id}</td>
                         <td>${c.title || 'Untitled'}</td>
                         <td>${c.category || '-'}</td>
-                        <td>${c.start_date || '-'}</td>
-                        <td>${c.end_date || '-'}</td>
                         <td>
-                            <button onclick="restoreCampaign(${c.id})" style="padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px; font-size: 12px;">
+                            <button onclick="viewCampaign(${c.id})" style="padding: 4px 8px; background: #6366f1; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px; font-size: 11px;">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button onclick="restoreCampaign(${c.id})" style="padding: 4px 8px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px; font-size: 11px;">
                                 <i class="fas fa-undo"></i> Restore
                             </button>
-                            <button onclick="deleteCampaignPermanent(${c.id})" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                            <button onclick="deleteCampaignPermanent(${c.id})" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
                         </td>
@@ -162,8 +163,6 @@ async function showArchivedCampaigns() {
                                     <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">ID</th>
                                     <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Title</th>
                                     <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Category</th>
-                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Start Date</th>
-                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">End Date</th>
                                     <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Actions</th>
                                 </tr>
                             </thead>
