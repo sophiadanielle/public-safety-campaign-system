@@ -1220,10 +1220,10 @@ function updateGlobalLockScreenTheme() {
     const theme = localStorage.getItem('theme') || 'light';
     
     if (theme === 'dark') {
-        overlay.style.background = 'linear-gradient(135deg, #0d3d3a 0%, #1a5c57 50%, #0f2e2b 100%)';
+        overlay.style.background = 'linear-gradient(135deg, #0a2e2c 0%, #134540 50%, #0d1f1e 100%)';
         if (logo) logo.style.filter = 'brightness(1.2) drop-shadow(0 2px 8px rgba(76, 138, 137, 0.3))';
     } else {
-        overlay.style.background = 'linear-gradient(135deg, #2d7a75 0%, #4c8a89 50%, #3a6b68 100%)';
+        overlay.style.background = 'linear-gradient(135deg, #1a4d4a 0%, #2d5f5d 50%, #1e3d3b 100%)';
         if (logo) logo.style.filter = 'brightness(1.1) drop-shadow(0 2px 8px rgba(0,0,0,0.2))';
     }
 }
