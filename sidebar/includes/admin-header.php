@@ -1220,11 +1220,11 @@ function updateGlobalLockScreenTheme() {
     const theme = localStorage.getItem('theme') || 'light';
     
     if (theme === 'dark') {
-        overlay.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)';
-        if (logo) logo.style.filter = 'brightness(0) invert(1)';
+        overlay.style.background = 'linear-gradient(135deg, #0d3d3a 0%, #1a5c57 50%, #0f2e2b 100%)';
+        if (logo) logo.style.filter = 'brightness(1.2) drop-shadow(0 2px 8px rgba(76, 138, 137, 0.3))';
     } else {
-        overlay.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-        if (logo) logo.style.filter = 'drop-shadow(0 2px 8px rgba(0,0,0,0.2))';
+        overlay.style.background = 'linear-gradient(135deg, #2d7a75 0%, #4c8a89 50%, #3a6b68 100%)';
+        if (logo) logo.style.filter = 'brightness(1.1) drop-shadow(0 2px 8px rgba(0,0,0,0.2))';
     }
 }
 
@@ -1348,15 +1348,15 @@ function updateGlobalLockScreenTime() {
 </script>
 
 <!-- Global Screen Lock Overlay -->
-<div id="globalScreenLockOverlay" class="global-screen-lock-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; justify-content: center; align-items: center;">
-    <div style="text-align: center; color: white;">
+<div id="globalScreenLockOverlay" class="global-screen-lock-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999;">
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
         <!-- System Logo -->
-        <div style="margin-bottom: 32px;">
-            <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="System Logo" class="global-lock-screen-logo" style="width: 120px; height: 120px;">
+        <div style="margin-bottom: 16px;">
+            <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="System Logo" class="global-lock-screen-logo" style="width: 100px; height: 100px;">
         </div>
         
         <!-- User Profile -->
-        <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 20px; padding: 40px; max-width: 400px; margin: 0 auto; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);">
+        <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 20px; padding: 40px; max-width: 400px; width: 100%; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); text-align: center; color: white;">
             <!-- Profile Picture -->
             <div style="margin-bottom: 24px;">
                 <div id="globalLockScreenAvatar" style="width: 100px; height: 100px; border-radius: 50%; background: white; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 700; color: #4c8a89; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);"></div>
