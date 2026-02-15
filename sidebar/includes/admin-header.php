@@ -26,7 +26,7 @@ require_once __DIR__ . '/../../header/includes/path_helper.php';
             <i class="fas fa-bars"></i>
         </button>
         <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle sidebar" title="Hide/Show Sidebar">
-            <i class="fas fa-sidebar" id="sidebarToggleIcon"></i>
+            <i class="fas fa-angles-left" id="sidebarToggleIcon"></i>
         </button>
         <div class="search-container">
             <i class="fas fa-search search-icon"></i>
@@ -399,10 +399,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Update icon
             if (sidebar.classList.contains('sidebar-collapsed')) {
-                sidebarToggleIcon.className = 'fas fa-indent';
+                sidebarToggleIcon.className = 'fas fa-angles-right';
                 sidebarToggleBtn.title = 'Show Sidebar';
             } else {
-                sidebarToggleIcon.className = 'fas fa-sidebar';
+                sidebarToggleIcon.className = 'fas fa-angles-left';
                 sidebarToggleBtn.title = 'Hide Sidebar';
             }
             
@@ -420,12 +420,38 @@ document.addEventListener('DOMContentLoaded', function() {
             if (sidebarCollapsed) {
                 sidebar.classList.add('sidebar-collapsed');
                 document.body.classList.add('sidebar-collapsed-mode');
-                sidebarToggleIcon.className = 'fas fa-indent';
+                sidebarToggleIcon.className = 'fas fa-angles-right';
                 sidebarToggleBtn.title = 'Show Sidebar';
             }
         } catch (e) {
             console.warn('Could not restore sidebar state:', e);
         }
+    }
+    
+    // Auto-hide sidebar when clicking on main content (desktop only)
+    const mainContent = document.querySelector('.main-content-wrapper');
+    if (mainContent && sidebar && window.innerWidth > 768) {
+        mainContent.addEventListener('click', function(e) {
+            // Only auto-hide on desktop and if sidebar is open
+            if (window.innerWidth > 768 && !sidebar.classList.contains('sidebar-collapsed')) {
+                // Don't hide if clicking on interactive elements that might need the sidebar
+                if (!e.target.closest('button') && !e.target.closest('a')) {
+                    sidebar.classList.add('sidebar-collapsed');
+                    document.body.classList.add('sidebar-collapsed-mode');
+                    if (sidebarToggleIcon) {
+                        sidebarToggleIcon.className = 'fas fa-angles-right';
+                    }
+                    if (sidebarToggleBtn) {
+                        sidebarToggleBtn.title = 'Show Sidebar';
+                    }
+                    try {
+                        localStorage.setItem('sidebarCollapsed', 'true');
+                    } catch (e) {
+                        console.warn('Could not save sidebar state:', e);
+                    }
+                }
+            }
+        });
     }
     
     // Search functionality

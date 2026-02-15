@@ -168,10 +168,11 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     }
 
     .campaign-page {
-        max-width: 1600px;
-        margin: 0 auto;
+        width: 100%;
+        margin: 0;
         padding: 24px;
         background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
+        box-sizing: border-box;
     }
     .campaign-layout {
         display: block; /* Changed from flex since sidebar is now fixed */

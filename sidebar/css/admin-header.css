@@ -7,7 +7,7 @@
     position: fixed;
     top: 0;
     left: 280px;
-    right: 0;
+    width: calc(100% - 280px);
     height: 70px;
     background-color: var(--header-bg-1);
     border-bottom: 1px solid var(--border-color-1);
@@ -16,13 +16,20 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 2rem;
-    transition: left 0.3s ease;
+    transition: left 0.3s ease, width 0.3s ease;
+    box-sizing: border-box;
+}
+
+/* Collapsed sidebar header width */
+body.sidebar-collapsed-mode .admin-header {
+    width: calc(100% - 70px);
 }
 
 /* Mobile header positioning */
 @media (max-width: 768px) {
     .admin-header {
         left: 0;
+        width: 100%;
     }
 }
 

@@ -101,9 +101,10 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         }
     }
     .partners-page {
-        max-width: 1400px;
-        margin: 0 auto;
+        width: 100%;
+        margin: 0;
         padding: 24px;
+        box-sizing: border-box;
     }
     .page-header {
         margin-bottom: 40px;

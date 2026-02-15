@@ -218,9 +218,10 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     }
     
     .dashboard-page {
-        max-width: 1600px;
-        margin: 0 auto;
+        width: 100%;
+        margin: 0;
         padding: 24px;
+        box-sizing: border-box;
     }
     
     .dashboard-section {
