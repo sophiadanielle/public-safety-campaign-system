@@ -205,7 +205,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <main class="main-content-wrapper">
 <style>
                 html, body {
-            margin: 13px;
+            margin: 5px;
             padding: 0;
         }
 
