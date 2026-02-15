@@ -172,7 +172,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     .campaign-page {
         width: 100%;
         margin: 0;
-        padding: 8px 24px 24px 24px;
+        padding: 4px 24px 24px 24px;
         background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
         box-sizing: border-box;
         overflow-x: hidden;
@@ -184,27 +184,29 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         width: 100%;
     }
     .page-title {
-        margin: 0 0 8px;
-        font-size: 32px;
+        margin: 0 0 6px;
+        font-size: 28px;
         font-weight: 800;
         color: #0f172a;
         letter-spacing: -0.5px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 0;
+        line-height: 1.2;
     }
     .page-title::before {
         content: '';
         width: 4px;
-        height: 36px;
+        height: 28px;
         background: linear-gradient(135deg, #4c8a89 0%, #667eea 100%);
         border-radius: 2px;
+        margin-right: 12px;
     }
     .page-subtitle {
-        margin: 0 0 40px;
+        margin: 0 0 24px;
         color: #64748b;
-        font-size: 16px;
-        line-height: 1.6;
+        font-size: 14px;
+        line-height: 1.5;
     }
     /* Ensure list section card allows horizontal scrolling */
     #list-section.card {
@@ -634,7 +636,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         width: 100%;
         border-collapse: collapse;
         margin-top: 16px;
-        font-size: 13px;
+        font-size: 14px;
         table-layout: auto;
     }
     .data-table thead {
@@ -644,12 +646,12 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         background: #f8fafc;
         font-weight: 600;
         color: #0f172a;
-        font-size: 12px;
+        font-size: 13px;
         white-space: nowrap;
     }
     .data-table th,
     .data-table td {
-        padding: 8px 10px;
+        padding: 10px 12px;
         text-align: left;
         border-bottom: 1px solid #e2e8f0;
     }
