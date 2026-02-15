@@ -6,7 +6,7 @@
 .admin-header {
     position: fixed;
     top: 0;
-    left: 0;
+    left: 280px;
     right: 0;
     height: 70px;
     background-color: var(--header-bg-1);
@@ -16,6 +16,14 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 2rem;
+    transition: left 0.3s ease;
+}
+
+/* Mobile header positioning */
+@media (max-width: 768px) {
+    .admin-header {
+        left: 0;
+    }
 }
 
 [data-theme="dark"] .admin-header {
@@ -39,7 +47,7 @@
     padding: 0.625rem;
     border-radius: 0.5rem;
     transition: all 0.2s ease;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     width: 40px;
@@ -51,7 +59,18 @@
     color: var(--primary-color-1);
 }
 
-/* Sidebar Toggle Button */
+/* Show menu toggle on mobile only */
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: flex;
+    }
+    
+    .sidebar-toggle-btn {
+        display: none;
+    }
+}
+
+/* Sidebar Toggle Button - Desktop only */
 .sidebar-toggle-btn {
     background: none;
     border: none;
@@ -75,7 +94,6 @@
 
 .sidebar-toggle-btn:active {
     transform: scale(0.95);
-    color: var(--primary-color-1);
 }
 
 /* Search Container */
