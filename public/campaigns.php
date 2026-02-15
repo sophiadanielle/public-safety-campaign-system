@@ -134,7 +134,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         <div class="campaign-page">
 <style>
                 html, body {
-            margin: 17px;
+            margin: 13px;
             padding: 0;
         }
 
