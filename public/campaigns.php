@@ -135,7 +135,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 <style>
                 html, body {
             margin: 0;
-            padding: 20px;
+            padding: 50px;
         }
 
     /* Main content wrapper - accounts for fixed sidebar and header */
