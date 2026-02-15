@@ -70,6 +70,11 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     
     <main class="main-content-wrapper">
 <style>
+                html, body {
+            margin: 13px;
+            padding: 0;
+        }
+
     .main-content-wrapper {
         margin-left: 280px;
         margin-top: 70px;

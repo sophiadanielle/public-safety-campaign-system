@@ -63,6 +63,11 @@ if ($currentUserRole) {
     
     <main class="main-content-wrapper">
 <style>
+                html, body {
+            margin: 13px;
+            padding: 0;
+        }
+
     .main-content-wrapper {
         margin-left: 280px;
         margin-top: 70px;
