@@ -348,6 +348,34 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         </div>
     </div>
 
+    <!-- Screen Lock Settings -->
+    <div class="settings-card">
+        <div class="settings-section">
+            <h3>🔐 Screen Lock</h3>
+            <div class="settings-item">
+                <div class="settings-item-label">
+                    <strong>Enable Screen Lock</strong>
+                    <span>Lock your screen with Ctrl+L to protect your session</span>
+                </div>
+                <div class="settings-item-control">
+                    <div class="toggle-switch" id="screenLockToggle" onclick="toggleSetting(this, 'screen_lock_enabled')"></div>
+                </div>
+            </div>
+            <div style="background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-top: 16px;">
+                <div style="display: flex; align-items: start; gap: 12px;">
+                    <i class="fas fa-info-circle" style="color: #4c8a89; font-size: 18px; margin-top: 2px;"></i>
+                    <div>
+                        <strong style="display: block; color: #0f172a; margin-bottom: 8px; font-size: 14px;">Keyboard Shortcut</strong>
+                        <p style="margin: 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+                            Press <kbd style="background: white; border: 2px solid #cbd5e1; border-radius: 4px; padding: 2px 8px; font-family: monospace; font-size: 12px; font-weight: 600;">Ctrl</kbd> + <kbd style="background: white; border: 2px solid #cbd5e1; border-radius: 4px; padding: 2px 8px; font-family: monospace; font-size: 12px; font-weight: 600;">L</kbd> to lock your screen instantly.
+                            <br>You'll need to enter your password to unlock.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Security Settings -->
     <div class="settings-card">
         <div class="settings-section">
@@ -396,6 +424,51 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         </div>
     </div>
 </main>
+
+<!-- Screen Lock Overlay -->
+<div id="screenLockOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index: 99999; justify-content: center; align-items: center;">
+    <div style="text-align: center; color: white;">
+        <!-- System Logo -->
+        <div style="margin-bottom: 32px;">
+            <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="System Logo" style="width: 120px; height: 120px; filter: brightness(0) invert(1);">
+        </div>
+        
+        <!-- User Profile -->
+        <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 20px; padding: 40px; max-width: 400px; margin: 0 auto; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);">
+            <!-- Profile Picture -->
+            <div style="margin-bottom: 24px;">
+                <div id="lockScreenAvatar" style="width: 100px; height: 100px; border-radius: 50%; background: white; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 700; color: #4c8a89; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);"></div>
+            </div>
+            
+            <!-- Full Name -->
+            <h2 id="lockScreenName" style="margin: 0 0 8px 0; font-size: 24px; font-weight: 700;"></h2>
+            <p style="margin: 0 0 32px 0; opacity: 0.9; font-size: 14px;">Screen is locked</p>
+            
+            <!-- Password Input -->
+            <form id="unlockForm" onsubmit="return unlockScreen(event);">
+                <div style="position: relative; margin-bottom: 16px;">
+                    <input 
+                        type="password" 
+                        id="unlockPassword" 
+                        placeholder="Enter password to unlock" 
+                        style="width: 100%; padding: 16px 48px 16px 16px; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 12px; font-size: 16px; background: rgba(255, 255, 255, 0.2); color: white; outline: none; box-sizing: border-box;"
+                        autocomplete="off"
+                    >
+                    <i class="fas fa-lock" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); opacity: 0.7;"></i>
+                </div>
+                <div id="unlockError" style="display: none; background: rgba(220, 38, 38, 0.2); border: 2px solid rgba(220, 38, 38, 0.5); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 14px;">
+                    <i class="fas fa-exclamation-circle"></i> Incorrect password. Try again.
+                </div>
+                <button type="submit" style="width: 100%; padding: 16px; background: white; color: #4c8a89; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+                    <i class="fas fa-unlock"></i> Unlock
+                </button>
+            </form>
+            
+            <!-- Time Display -->
+            <div id="lockScreenTime" style="margin-top: 24px; font-size: 48px; font-weight: 300; opacity: 0.9;"></div>
+        </div>
+    </div>
+</div>
 
 <script>
 <?php require_once __DIR__ . '/../header/includes/path_helper.php'; ?>
@@ -525,9 +598,130 @@ function deleteAccount() {
     }
 }
 
+// Screen Lock Functionality
+function initScreenLock() {
+    // Load screen lock preference
+    const screenLockEnabled = localStorage.getItem('screen_lock_enabled') === 'true';
+    if (screenLockEnabled) {
+        document.getElementById('screenLockToggle').classList.add('active');
+    }
+    
+    // Add Ctrl+L keyboard listener
+    document.addEventListener('keydown', function(e) {
+        // Check if Ctrl+L is pressed
+        if (e.ctrlKey && e.key === 'l') {
+            e.preventDefault(); // Prevent browser's default behavior
+            
+            // Check if screen lock is enabled
+            const isEnabled = localStorage.getItem('screen_lock_enabled') === 'true';
+            if (isEnabled) {
+                activateScreenLock();
+            }
+        }
+    });
+    
+    // Update time on lock screen every second
+    setInterval(updateLockScreenTime, 1000);
+}
+
+function activateScreenLock() {
+    // Get user info from localStorage
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const fullName = currentUser.full_name || currentUser.name || 'User';
+    
+    // Set user name
+    document.getElementById('lockScreenName').textContent = fullName;
+    
+    // Set avatar (first letter of name)
+    const firstLetter = fullName.charAt(0).toUpperCase();
+    document.getElementById('lockScreenAvatar').textContent = firstLetter;
+    
+    // Update time
+    updateLockScreenTime();
+    
+    // Clear password field and error
+    document.getElementById('unlockPassword').value = '';
+    document.getElementById('unlockError').style.display = 'none';
+    
+    // Show overlay
+    const overlay = document.getElementById('screenLockOverlay');
+    overlay.style.display = 'flex';
+    
+    // Focus on password input
+    setTimeout(() => {
+        document.getElementById('unlockPassword').focus();
+    }, 100);
+}
+
+function unlockScreen(event) {
+    event.preventDefault();
+    
+    const password = document.getElementById('unlockPassword').value;
+    const errorEl = document.getElementById('unlockError');
+    
+    // Check password (hardcoded as 'password' for now)
+    if (password === 'password') {
+        // Correct password - unlock
+        document.getElementById('screenLockOverlay').style.display = 'none';
+        document.getElementById('unlockPassword').value = '';
+        errorEl.style.display = 'none';
+    } else {
+        // Incorrect password - show error
+        errorEl.style.display = 'block';
+        document.getElementById('unlockPassword').value = '';
+        document.getElementById('unlockPassword').focus();
+        
+        // Shake animation
+        const form = document.getElementById('unlockForm');
+        form.style.animation = 'shake 0.5s';
+        setTimeout(() => {
+            form.style.animation = '';
+        }, 500);
+    }
+    
+    return false;
+}
+
+function updateLockScreenTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const timeEl = document.getElementById('lockScreenTime');
+    if (timeEl) {
+        timeEl.textContent = hours + ':' + minutes;
+    }
+}
+
 // Initialize
 loadSettings();
+initScreenLock();
 </script>
+
+<style>
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+    20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+
+#unlockPassword::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+#unlockPassword:focus {
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.25);
+}
+
+button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+button[type="submit"]:active {
+    transform: translateY(0);
+}
+</style>
     </main>
 </body>
 </html>

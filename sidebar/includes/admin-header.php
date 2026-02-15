@@ -1208,5 +1208,179 @@ document.addEventListener('DOMContentLoaded', function() {
     window.loadMessages = loadMessages;
     window.loadMessageCount = loadMessageCount;
     window.openConversation = openConversation;
+    
+    // Screen Lock Functionality - Global
+    initGlobalScreenLock();
 });
+
+function initGlobalScreenLock() {
+    // Add Ctrl+L keyboard listener globally
+    document.addEventListener('keydown', function(e) {
+        // Check if Ctrl+L is pressed
+        if (e.ctrlKey && e.key === 'l') {
+            e.preventDefault(); // Prevent browser's default behavior
+            
+            // Check if screen lock is enabled
+            const isEnabled = localStorage.getItem('screen_lock_enabled') === 'true';
+            if (isEnabled) {
+                activateGlobalScreenLock();
+            }
+        }
+    });
+    
+    // Update time on lock screen every second
+    setInterval(updateGlobalLockScreenTime, 1000);
+}
+
+function activateGlobalScreenLock() {
+    // Get user info from localStorage
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const fullName = currentUser.full_name || currentUser.name || 'User';
+    
+    // Set user name
+    const nameEl = document.getElementById('globalLockScreenName');
+    if (nameEl) nameEl.textContent = fullName;
+    
+    // Set avatar (first letter of name)
+    const firstLetter = fullName.charAt(0).toUpperCase();
+    const avatarEl = document.getElementById('globalLockScreenAvatar');
+    if (avatarEl) avatarEl.textContent = firstLetter;
+    
+    // Update time
+    updateGlobalLockScreenTime();
+    
+    // Clear password field and error
+    const passwordEl = document.getElementById('globalUnlockPassword');
+    const errorEl = document.getElementById('globalUnlockError');
+    if (passwordEl) passwordEl.value = '';
+    if (errorEl) errorEl.style.display = 'none';
+    
+    // Show overlay
+    const overlay = document.getElementById('globalScreenLockOverlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        
+        // Focus on password input
+        setTimeout(() => {
+            if (passwordEl) passwordEl.focus();
+        }, 100);
+    }
+}
+
+function unlockGlobalScreen(event) {
+    event.preventDefault();
+    
+    const passwordEl = document.getElementById('globalUnlockPassword');
+    const errorEl = document.getElementById('globalUnlockError');
+    const overlayEl = document.getElementById('globalScreenLockOverlay');
+    
+    if (!passwordEl || !errorEl || !overlayEl) return false;
+    
+    const password = passwordEl.value;
+    
+    // Check password (hardcoded as 'password' for now)
+    if (password === 'password') {
+        // Correct password - unlock
+        overlayEl.style.display = 'none';
+        passwordEl.value = '';
+        errorEl.style.display = 'none';
+    } else {
+        // Incorrect password - show error
+        errorEl.style.display = 'block';
+        passwordEl.value = '';
+        passwordEl.focus();
+        
+        // Shake animation
+        const form = document.getElementById('globalUnlockForm');
+        if (form) {
+            form.style.animation = 'shake 0.5s';
+            setTimeout(() => {
+                form.style.animation = '';
+            }, 500);
+        }
+    }
+    
+    return false;
+}
+
+function updateGlobalLockScreenTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const timeEl = document.getElementById('globalLockScreenTime');
+    if (timeEl) {
+        timeEl.textContent = hours + ':' + minutes;
+    }
+}
 </script>
+
+<!-- Global Screen Lock Overlay -->
+<div id="globalScreenLockOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index: 99999; justify-content: center; align-items: center;">
+    <div style="text-align: center; color: white;">
+        <!-- System Logo -->
+        <div style="margin-bottom: 32px;">
+            <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="System Logo" style="width: 120px; height: 120px; filter: brightness(0) invert(1);">
+        </div>
+        
+        <!-- User Profile -->
+        <div style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 20px; padding: 40px; max-width: 400px; margin: 0 auto; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);">
+            <!-- Profile Picture -->
+            <div style="margin-bottom: 24px;">
+                <div id="globalLockScreenAvatar" style="width: 100px; height: 100px; border-radius: 50%; background: white; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 700; color: #4c8a89; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);"></div>
+            </div>
+            
+            <!-- Full Name -->
+            <h2 id="globalLockScreenName" style="margin: 0 0 8px 0; font-size: 24px; font-weight: 700;"></h2>
+            <p style="margin: 0 0 32px 0; opacity: 0.9; font-size: 14px;">Screen is locked</p>
+            
+            <!-- Password Input -->
+            <form id="globalUnlockForm" onsubmit="return unlockGlobalScreen(event);">
+                <div style="position: relative; margin-bottom: 16px;">
+                    <input 
+                        type="password" 
+                        id="globalUnlockPassword" 
+                        placeholder="Enter password to unlock" 
+                        style="width: 100%; padding: 16px 48px 16px 16px; border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 12px; font-size: 16px; background: rgba(255, 255, 255, 0.2); color: white; outline: none; box-sizing: border-box;"
+                        autocomplete="off"
+                    >
+                    <i class="fas fa-lock" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); opacity: 0.7;"></i>
+                </div>
+                <div id="globalUnlockError" style="display: none; background: rgba(220, 38, 38, 0.2); border: 2px solid rgba(220, 38, 38, 0.5); border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 14px;">
+                    <i class="fas fa-exclamation-circle"></i> Incorrect password. Try again.
+                </div>
+                <button type="submit" style="width: 100%; padding: 16px; background: white; color: #4c8a89; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
+                    <i class="fas fa-unlock"></i> Unlock
+                </button>
+            </form>
+            
+            <!-- Time Display -->
+            <div id="globalLockScreenTime" style="margin-top: 24px; font-size: 48px; font-weight: 300; opacity: 0.9;"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+    20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+
+#globalUnlockPassword::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+#globalUnlockPassword:focus {
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.25);
+}
+
+#globalScreenLockOverlay button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+#globalScreenLockOverlay button[type="submit"]:active {
+    transform: translateY(0);
+}
+</style>

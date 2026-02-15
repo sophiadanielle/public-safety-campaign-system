@@ -210,12 +210,10 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         }
 
     .main-content-wrapper {
-        margin-left: 280px; /* Main sidebar only */
-        margin-top: 60px;
-        padding-top: 0;
-        min-height: calc(100vh - 60px);
+        margin-left: 280px;
+        margin-top: 70px;
+        min-height: calc(100vh - 70px);
         transition: margin-left 0.3s ease;
-        overflow-x: hidden;
     }
     
     @media (max-width: 768px) {
