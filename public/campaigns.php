@@ -194,18 +194,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         font-weight: 800;
         color: #0f172a;
         letter-spacing: -0.5px;
-        display: flex;
-        align-items: center;
-        gap: 0;
         line-height: 1.2;
-    }
-    .page-title::before {
-        content: '';
-        width: 4px;
-        height: 28px;
-        background: linear-gradient(135deg, #4c8a89 0%, #667eea 100%);
-        border-radius: 2px;
-        margin-right: 12px;
     }
     .page-subtitle {
         margin: 0 0 24px;
