@@ -205,15 +205,17 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <main class="main-content-wrapper">
 <style>
                 html, body {
-            margin: 0;
+            margin: 13px;
             padding: 0;
         }
 
     .main-content-wrapper {
-        margin-left: 280px;
-        margin-top: 70px;
-        min-height: calc(100vh - 70px);
+        margin-left: 280px; /* Main sidebar only */
+        margin-top: 60px;
+        padding-top: 0;
+        min-height: calc(100vh - 60px);
         transition: margin-left 0.3s ease;
+        overflow-x: hidden;
     }
     
     @media (max-width: 768px) {
