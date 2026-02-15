@@ -140,6 +140,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         padding-top: 0;
         min-height: calc(100vh - 70px);
         transition: margin-left 0.3s ease;
+        overflow-x: hidden;
     }
     
     /* Make sidebar visible by default on desktop */
@@ -171,9 +172,10 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     .campaign-page {
         width: 100%;
         margin: 0;
-        padding: 16px 24px 24px 24px;
+        padding: 8px 24px 24px 24px;
         background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
         box-sizing: border-box;
+        overflow-x: hidden;
     }
     .campaign-layout {
         display: block; /* Changed from flex since sidebar is now fixed */
@@ -630,19 +632,10 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     
     .data-table {
         width: 100%;
-        min-width: 1450px; /* Increased minimum width to ensure Actions column is fully visible */
-        border-collapse: separate;
-        border-spacing: 0;
-        background: #fff;
-        border-radius: 12px;
-        overflow: visible; /* Changed from hidden to visible to prevent clipping */
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-    }
-    .data-table {
-        width: 100%;
         border-collapse: collapse;
         margin-top: 16px;
         font-size: 13px;
+        table-layout: auto;
     }
     .data-table thead {
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -1525,12 +1518,12 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Title</th>
-                        <th>Category</th>
-                        <th>Status</th>
-                        <th>Location</th>
-                        <th>Actions</th>
+                        <th style="width: 50px;">ID</th>
+                        <th style="width: auto;">Title</th>
+                        <th style="width: 120px;">Category</th>
+                        <th style="width: 100px;">Status</th>
+                        <th style="width: 200px;">Location</th>
+                        <th style="width: 200px; min-width: 200px; max-width: 200px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="campaignTable">
@@ -4409,30 +4402,30 @@ async function loadResources() {
                     
                     <!-- Admin Actions (Technical only, can override) - Always show if admin -->
                     ${isAdmin() && !isViewer() ? `
-                        <div style="display: flex; flex-direction: column; gap: 2px; max-width: 180px;">
-                            <div style="display: flex; gap: 2px;">
-                                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">View</button>
-                                <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">Edit</button>
-                                ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">Finalize</button>` : ''}
+                        <div style="display: flex; flex-direction: column; gap: 2px; width: 190px;">
+                            <div style="display: flex; gap: 2px; flex-wrap: nowrap;">
+                                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 2px 5px; font-size: 10px; margin: 0; white-space: nowrap;">View</button>
+                                <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 2px 5px; font-size: 10px; margin: 0; white-space: nowrap;">Edit</button>
+                                ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 2px 5px; font-size: 10px; margin: 0; white-space: nowrap;">Finalize</button>` : ''}
                             </div>
-                            <div style="display: flex; gap: 2px;">
-                                ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; background: #3b82f6; color: white; border: none; margin: 0;">Close</button>` : ''}
-                                ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px;">Archived</span>' : ''}
+                            <div style="display: flex; gap: 2px; flex-wrap: nowrap;">
+                                ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 2px 5px; font-size: 10px; background: #3b82f6; color: white; border: none; margin: 0; white-space: nowrap;">Close</button>` : ''}
+                                ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 2px 5px; font-size: 10px; margin: 0; white-space: nowrap;">Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px;">Archived</span>' : ''}
                             </div>
                         </div>
                     ` : ''}
                     
                     <!-- Fallback: If no role detected after refresh, show admin actions as default -->
                     ${!currentUserRole && !isViewer() ? `
-                        <div style="display: flex; flex-direction: column; gap: 2px; max-width: 180px;">
-                            <span style="color: #f59e0b; font-size: 10px;">Role issue</span>
-                            <div style="display: flex; gap: 2px;">
-                                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">View</button>
-                                <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">Edit</button>
-                                ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">Finalize</button>` : ''}
+                        <div style="display: flex; flex-direction: column; gap: 2px; width: 190px;">
+                            <span style="color: #f59e0b; font-size: 9px;">Role issue</span>
+                            <div style="display: flex; gap: 2px; flex-wrap: nowrap;">
+                                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 2px 5px; font-size: 10px; margin: 0; white-space: nowrap;">View</button>
+                                <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 2px 5px; font-size: 10px; margin: 0; white-space: nowrap;">Edit</button>
+                                ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 2px 5px; font-size: 10px; margin: 0; white-space: nowrap;">Finalize</button>` : ''}
                             </div>
-                            <div style="display: flex; gap: 2px;">
-                                ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 0;">Archive</button>` : ''}
+                            <div style="display: flex; gap: 2px; flex-wrap: nowrap;">
+                                ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 2px 5px; font-size: 10px; margin: 0; white-space: nowrap;">Archive</button>` : ''}
                             </div>
                         </div>
                     ` : ''}
