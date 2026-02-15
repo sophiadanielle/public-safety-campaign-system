@@ -25,6 +25,9 @@ require_once __DIR__ . '/../../header/includes/path_helper.php';
         <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
             <i class="fas fa-bars"></i>
         </button>
+        <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle sidebar" title="Hide/Show Sidebar">
+            <i class="fas fa-sidebar" id="sidebarToggleIcon"></i>
+        </button>
         <div class="search-container">
             <i class="fas fa-search search-icon"></i>
             <input type="text" class="search-input" placeholder="Search...">
@@ -371,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     const menuToggle = document.getElementById('menuToggle');
     
-    // Toggle sidebar from header menu button
+    // Toggle sidebar from header menu button (mobile)
     if (menuToggle) {
         menuToggle.addEventListener('click', function() {
             // Use the global sidebarToggle function exposed by sidebar.php
@@ -381,6 +384,48 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.warn('Sidebar toggle function not found. Make sure sidebar.php is included before admin-header.php');
             }
         });
+    }
+    
+    // Sidebar toggle button for desktop (hide/show sidebar)
+    const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggleIcon = document.getElementById('sidebarToggleIcon');
+    
+    if (sidebarToggleBtn && sidebar) {
+        sidebarToggleBtn.addEventListener('click', function() {
+            // Toggle collapsed state
+            sidebar.classList.toggle('sidebar-collapsed');
+            document.body.classList.toggle('sidebar-collapsed-mode');
+            
+            // Update icon
+            if (sidebar.classList.contains('sidebar-collapsed')) {
+                sidebarToggleIcon.className = 'fas fa-indent';
+                sidebarToggleBtn.title = 'Show Sidebar';
+            } else {
+                sidebarToggleIcon.className = 'fas fa-sidebar';
+                sidebarToggleBtn.title = 'Hide Sidebar';
+            }
+            
+            // Save preference to localStorage
+            try {
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('sidebar-collapsed'));
+            } catch (e) {
+                console.warn('Could not save sidebar state:', e);
+            }
+        });
+        
+        // Restore sidebar state from localStorage on page load
+        try {
+            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (sidebarCollapsed) {
+                sidebar.classList.add('sidebar-collapsed');
+                document.body.classList.add('sidebar-collapsed-mode');
+                sidebarToggleIcon.className = 'fas fa-indent';
+                sidebarToggleBtn.title = 'Show Sidebar';
+            }
+        } catch (e) {
+            console.warn('Could not restore sidebar state:', e);
+        }
     }
     
     // Search functionality

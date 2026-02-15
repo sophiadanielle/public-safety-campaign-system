@@ -44,6 +44,32 @@
     transform: translateX(0);
 }
 
+/* Collapsed sidebar state (hidden on desktop) */
+.sidebar.sidebar-collapsed {
+    transform: translateX(-100%);
+}
+
+/* When sidebar is visible on desktop */
+@media (min-width: 769px) {
+    .sidebar {
+        transform: translateX(0);
+    }
+    
+    .sidebar.sidebar-collapsed {
+        transform: translateX(-100%);
+    }
+    
+    /* Adjust main content when sidebar is visible */
+    body:not(.sidebar-collapsed-mode) .main-content-wrapper {
+        margin-left: var(--sidebar-width-1);
+    }
+    
+    /* Adjust main content when sidebar is hidden */
+    body.sidebar-collapsed-mode .main-content-wrapper {
+        margin-left: 0;
+    }
+}
+
 /* Sidebar Header */
 .sidebar-header {
     display: flex;

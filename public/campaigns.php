@@ -5176,12 +5176,13 @@ async function viewCampaign(campaignId) {
         
         // Create modal with campaign details
         const modal = document.createElement('div');
+        modal.id = 'viewCampaignModal';
         modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
         modal.innerHTML = `
             <div style="background: white; border-radius: 12px; padding: 24px; max-width: 800px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 style="margin: 0; color: #0f172a; font-size: 24px;">Campaign Details</h2>
-                    <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+                    <button id="closeViewModalBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
                 </div>
                 <div style="display: grid; gap: 16px;">
                     <div><strong>ID:</strong> ${c.id}</div>
@@ -5206,12 +5207,37 @@ async function viewCampaign(campaignId) {
                     <div><strong>Updated At:</strong> ${formatDate(c.updated_at)}</div>
                 </div>
                 <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
-                    <button onclick="document.body.removeChild(this.closest('div'))" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#cbd5e1'" onmouseout="this.style.background='#e2e8f0'">Close</button>
-                    ${!isViewer() && canEditCampaign(c.status) ? `<button onclick="var modal = this.closest('div'); editCampaign(${c.id}); document.body.removeChild(modal);" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#3d6f6e'" onmouseout="this.style.background='#4c8a89'">Edit</button>` : ''}
+                    <button id="closeViewModalFooterBtn" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#cbd5e1'" onmouseout="this.style.background='#e2e8f0'">Close</button>
+                    ${!isViewer() && canEditCampaign(c.status) ? `<button id="editFromViewBtn" data-campaign-id="${c.id}" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#3d6f6e'" onmouseout="this.style.background='#4c8a89'">Edit</button>` : ''}
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
+        
+        // Add event listeners for close buttons
+        const closeTopBtn = document.getElementById('closeViewModalBtn');
+        const closeFooterBtn = document.getElementById('closeViewModalFooterBtn');
+        const editBtn = document.getElementById('editFromViewBtn');
+        
+        if (closeTopBtn) {
+            closeTopBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+        }
+        
+        if (closeFooterBtn) {
+            closeFooterBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+        }
+        
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                const campaignId = editBtn.getAttribute('data-campaign-id');
+                modal.remove();
+                editCampaign(parseInt(campaignId));
+            });
+        }
         
         // Close on outside click
         modal.addEventListener('click', (e) => {

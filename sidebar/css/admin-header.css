@@ -51,6 +51,33 @@
     color: var(--primary-color-1);
 }
 
+/* Sidebar Toggle Button */
+.sidebar-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--nav-text-1);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.625rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.sidebar-toggle-btn:hover {
+    background-color: var(--sidebar-hover-bg-1);
+    color: var(--primary-color-1);
+}
+
+.sidebar-toggle-btn:active {
+    transform: scale(0.95);
+    color: var(--primary-color-1);
+}
+
 /* Search Container */
 .search-container {
     position: relative;
