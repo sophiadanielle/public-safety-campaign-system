@@ -1310,20 +1310,16 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 <input type="hidden" id="status" value="draft">
                 
                 <div class="form-field">
-                    <label for="start_date">Start Date *</label>
-                    <input id="start_date" type="date">
+                    <label for="start_datetime">Start Date & Time *</label>
+                    <input id="start_datetime" type="datetime-local">
+                    <input id="start_date" type="hidden">
+                    <input id="start_time" type="hidden">
                 </div>
                 <div class="form-field">
-                    <label for="start_time">Start Time *</label>
-                    <input id="start_time" type="time">
-                </div>
-                <div class="form-field">
-                    <label for="end_date">End Date *</label>
-                    <input id="end_date" type="date">
-                </div>
-                <div class="form-field">
-                    <label for="end_time">End Time *</label>
-                    <input id="end_time" type="time">
+                    <label for="end_datetime">End Date & Time *</label>
+                    <input id="end_datetime" type="datetime-local">
+                    <input id="end_date" type="hidden">
+                    <input id="end_time" type="hidden">
                 </div>
                 <div class="form-field" id="final_schedule_field" style="display: none;">
                     <label for="final_schedule_display" style="display: flex; align-items: center; gap: 6px; font-weight: 600;">
@@ -1353,8 +1349,14 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     </select>
                 </div>
                 <div class="form-field">
-                    <label for="budget">Budget (PHP)</label>
-                    <input id="budget" type="number" step="0.01" placeholder="50000.00">
+                    <label for="budget" style="display: flex; align-items: center; gap: 8px;">
+                        Budget (PHP)
+                        <button type="button" id="toggleBudgetBtn" onclick="toggleBudgetVisibility()" style="background: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;" title="Show/Hide Budget">
+                            <i class="fas fa-eye-slash" id="budgetEyeIcon"></i>
+                        </button>
+                    </label>
+                    <input id="budget" type="number" step="0.01" placeholder="50000.00" style="display: none;">
+                    <div id="budgetHiddenPlaceholder" style="padding: 12px 16px; background: #f1f5f9; border: 2px solid #e2e8f0; border-radius: 12px; color: #64748b; font-size: 14px;">••••••</div>
                 </div>
                 <div class="form-field">
                     <label for="staff_count">Staff Count</label>
@@ -1589,8 +1591,14 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         </p>
         <div class="resource-grid" id="resourceGrid">
             <div class="resource-card">
-                <h4>💰 Total Budget</h4>
-                <div class="resource-value" id="totalBudget">₱0.00</div>
+                <h4 style="display: flex; align-items: center; gap: 8px; justify-content: space-between;">
+                    <span>💰 Total Budget</span>
+                    <button type="button" id="toggleTotalBudgetBtn" onclick="toggleTotalBudgetVisibility()" style="background: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;" title="Show/Hide Total Budget">
+                        <i class="fas fa-eye-slash" id="totalBudgetEyeIcon"></i>
+                    </button>
+                </h4>
+                <div class="resource-value" id="totalBudget" style="display: none;">₱0.00</div>
+                <div class="resource-value" id="totalBudgetHidden" style="font-size: 24px; font-weight: 700; color: #64748b;">••••••</div>
                 <div style="margin-top: 8px; font-size: 12px; color: #64748b;" id="budgetBreakdown">All campaigns</div>
             </div>
             <div class="resource-card">
@@ -1615,9 +1623,14 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <section class="card" id="list-section">
         <div class="section-header" style="margin-bottom: 20px;">
             <h2 class="section-title analytics-accent">All Campaigns</h2>
-            <button class="btn btn-secondary" onclick="loadCampaigns()" style="display: flex; align-items: center; gap: 6px;">
-                <i class="fas fa-sync-alt"></i> Refresh
-            </button>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" onclick="showArchivedCampaigns()" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-archive"></i> View Archived
+                </button>
+                <button class="btn btn-secondary" onclick="loadCampaigns()" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
         </div>
         <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
             Complete list of all campaigns. AI recommendations shown in the <strong>"AI Recommended"</strong> column are generated using engagement data from the <strong>Surveys module</strong> and historical performance metrics.
@@ -1639,16 +1652,12 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                         <th>Status</th>
                         <th>Start</th>
                         <th>End</th>
-                        <th>Draft Schedule</th>
-                        <th>AI Recommended</th>
-                        <th>Final Schedule</th>
                         <th>Location</th>
-                        <th>Budget</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="campaignTable">
-                    <tr><td colspan="12" style="text-align:center; padding:24px;">Loading...</td></tr>
+                    <tr><td colspan="8" style="text-align:center; padding:24px;">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -1682,8 +1691,8 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         </table>
     </section>
 
-    <!-- Target Segments -->
-    <section class="card" id="segments-section">
+    <!-- Target Segments section removed -->
+    <section class="card" id="segments-section" style="display: none;">
         <div class="section-header">
             <h2 class="section-title analytics-accent">Target Segments</h2>
             <button class="btn btn-secondary" onclick="loadSegments()">
@@ -1767,8 +1776,8 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         </div>
     </section>
 
-    <!-- Linked Content -->
-    <section class="card" id="content-section">
+    <!-- Linked Content section removed -->
+    <section class="card" id="content-section" style="display: none;">
         <div class="section-header">
             <h2 class="section-title analytics-accent">Linked Content</h2>
             <button class="btn btn-secondary" onclick="loadCampaignContent()">
@@ -4461,11 +4470,7 @@ async function loadResources() {
                 <td><span class="badge ${c.status || 'draft'}">${(c.status || 'draft').charAt(0).toUpperCase() + (c.status || 'draft').slice(1)}</span></td>
                 <td>${c.start_date || '-'}</td>
                 <td>${c.end_date || '-'}</td>
-                <td>${formatDateTime(c.draft_schedule_datetime)}</td>
-                <td>${formatDateTime(c.ai_recommended_datetime)}</td>
-                <td>${formatDateTime(c.final_schedule_datetime)}</td>
                 <td>${c.location || '-'}</td>
-                <td>${c.budget ? '₱' + parseFloat(c.budget).toLocaleString('en-US', {minimumFractionDigits: 2}) : '-'}</td>
                 <td>
                     ${(() => {
                         // Debug: Log role detection
@@ -5201,8 +5206,8 @@ async function viewCampaign(campaignId) {
                     <div><strong>Updated At:</strong> ${formatDate(c.updated_at)}</div>
                 </div>
                 <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
-                    <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Close</button>
-                    ${!isViewer() && canEditCampaign(c.status) ? `<button onclick="editCampaign(${c.id}); this.closest('div[style*=\"position: fixed\"]').remove();" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer;">Edit</button>` : ''}
+                    <button onclick="document.body.removeChild(this.closest('div'))" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#cbd5e1'" onmouseout="this.style.background='#e2e8f0'">Close</button>
+                    ${!isViewer() && canEditCampaign(c.status) ? `<button onclick="var modal = this.closest('div'); editCampaign(${c.id}); document.body.removeChild(modal);" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#3d6f6e'" onmouseout="this.style.background='#4c8a89'">Edit</button>` : ''}
                 </div>
             </div>
         `;
@@ -6354,6 +6359,7 @@ window.getDataFactorsHTML = getDataFactorsHTML;
 window.getAIRecommendationsHTML = getAIRecommendationsHTML;
 window.getAIDecisionBasisHTML = getAIDecisionBasisHTML;
 </script>
+<script src="<?php echo htmlspecialchars($basePath . '/public/campaigns_js_functions.js'); ?>"></script>
     
     <?php include __DIR__ . '/../header/includes/footer.php'; ?>
     </main> <!-- /.main-content-wrapper -->

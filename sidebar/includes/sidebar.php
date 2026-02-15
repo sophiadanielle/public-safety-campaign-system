@@ -176,11 +176,10 @@
                                 'icon' => 'fa-bullhorn',
                                 'features' => [
                                     ['label' => 'Plan New Campaign', 'href' => '#planning-section', 'icon' => 'fa-plus-circle'],
-                                    ['label' => 'All Campaigns', 'href' => '#list-section', 'icon' => 'fa-list'],
-                                    ['label' => 'Gantt Chart', 'href' => '#timeline-section', 'icon' => 'fa-chart-gantt'],
-                                    ['label' => 'Resource Allocation', 'href' => '#resources-section', 'icon' => 'fa-cubes'],
                                     ['label' => 'AI-Powered Deployment Optimization', 'href' => '#automl-section', 'icon' => 'fa-robot'],
-                                    ['label' => 'Target Segments', 'href' => '#segments-section', 'icon' => 'fa-users'],
+                                    ['label' => 'Campaign Calendar', 'href' => '#timeline-section', 'icon' => 'fa-calendar-alt'],
+                                    ['label' => 'Resource Allocation', 'href' => '#resources-section', 'icon' => 'fa-cubes'],
+                                    ['label' => 'All Campaigns', 'href' => '#list-section', 'icon' => 'fa-list'],
                                 ]
                             ],
                             'content.php' => [
