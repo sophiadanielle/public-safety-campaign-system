@@ -1348,10 +1348,10 @@ function updateGlobalLockScreenTime() {
 </script>
 
 <!-- Global Screen Lock Overlay -->
-<div id="globalScreenLockOverlay" class="global-screen-lock-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999;">
-    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
+<div id="globalScreenLockOverlay" class="global-screen-lock-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; z-index: 99999;">
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 20px; box-sizing: border-box;">
         <!-- System Logo -->
-        <div style="margin-bottom: 16px;">
+        <div style="margin-bottom: 8px;">
             <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="System Logo" class="global-lock-screen-logo" style="width: 100px; height: 100px;">
         </div>
         
