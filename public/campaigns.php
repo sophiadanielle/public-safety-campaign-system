@@ -133,6 +133,11 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <main class="main-content-wrapper">
         <div class="campaign-page">
 <style>
+                html, body {
+            margin: 0;
+            padding: 0;
+        }
+
     /* Main content wrapper - accounts for fixed sidebar and header */
     .main-content-wrapper {
         margin-left: 280px; /* Main sidebar only */
@@ -1525,7 +1530,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                         <th style="width: 110px; max-width: 110px;">Category</th>
                         <th style="width: 100px;">Status</th>
                         <th style="width: 180px; max-width: 180px;">Location</th>
-                        <th style="width: 220px; min-width: 220px; max-width: 220px;">Actions</th>
+                        <th style="width: 240px; min-width: 240px; max-width: 240px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="campaignTable">
@@ -4404,30 +4409,30 @@ async function loadResources() {
                     
                     <!-- Admin Actions (Technical only, can override) - Always show if admin -->
                     ${isAdmin() && !isViewer() ? `
-                        <div style="display: flex; flex-direction: column; gap: 3px; width: 210px;">
-                            <div style="display: flex; gap: 3px; flex-wrap: nowrap;">
-                                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 0; white-space: nowrap;">View</button>
-                                <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 0; white-space: nowrap;">Edit</button>
-                                ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 0; white-space: nowrap;">Finalize</button>` : ''}
+                        <div style="display: flex; flex-direction: column; gap: 4px; width: 230px;">
+                            <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
+                                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">View</button>
+                                <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Edit</button>
+                                ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px;">Archived</span>' : ''}
                             </div>
-                            <div style="display: flex; gap: 3px; flex-wrap: nowrap;">
-                                ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; background: #3b82f6; color: white; border: none; margin: 0; white-space: nowrap;">Close</button>` : ''}
-                                ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 0; white-space: nowrap;">Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px;">Archived</span>' : ''}
+                            <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
+                                ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Finalize</button>` : ''}
+                                ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; background: #3b82f6; color: white; border: none; margin: 0; white-space: nowrap;">Close</button>` : ''}
                             </div>
                         </div>
                     ` : ''}
                     
                     <!-- Fallback: If no role detected after refresh, show admin actions as default -->
                     ${!currentUserRole && !isViewer() ? `
-                        <div style="display: flex; flex-direction: column; gap: 3px; width: 210px;">
+                        <div style="display: flex; flex-direction: column; gap: 4px; width: 230px;">
                             <span style="color: #f59e0b; font-size: 10px;">Role issue</span>
-                            <div style="display: flex; gap: 3px; flex-wrap: nowrap;">
-                                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 0; white-space: nowrap;">View</button>
-                                <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 0; white-space: nowrap;">Edit</button>
-                                ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 0; white-space: nowrap;">Finalize</button>` : ''}
+                            <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
+                                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">View</button>
+                                <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Edit</button>
+                                ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Archive</button>` : ''}
                             </div>
-                            <div style="display: flex; gap: 3px; flex-wrap: nowrap;">
-                                ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 0; white-space: nowrap;">Archive</button>` : ''}
+                            <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
+                                ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Finalize</button>` : ''}
                             </div>
                         </div>
                     ` : ''}
