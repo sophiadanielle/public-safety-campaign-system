@@ -426,11 +426,11 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
 </main>
 
 <!-- Screen Lock Overlay -->
-<div id="screenLockOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index: 99999; justify-content: center; align-items: center;">
+<div id="screenLockOverlay" class="screen-lock-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; justify-content: center; align-items: center;">
     <div style="text-align: center; color: white;">
         <!-- System Logo -->
         <div style="margin-bottom: 32px;">
-            <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="System Logo" style="width: 120px; height: 120px; filter: brightness(0) invert(1);">
+            <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="System Logo" class="lock-screen-logo" style="width: 120px; height: 120px;">
         </div>
         
         <!-- User Profile -->
@@ -598,12 +598,36 @@ function deleteAccount() {
     }
 }
 
+// Update lock screen theme based on current theme
+function updateLockScreenTheme() {
+    const overlay = document.getElementById('screenLockOverlay');
+    const logo = document.querySelector('.lock-screen-logo');
+    const theme = localStorage.getItem('theme') || 'light';
+    
+    if (theme === 'dark') {
+        overlay.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)';
+        if (logo) logo.style.filter = 'brightness(0) invert(1)';
+    } else {
+        overlay.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        if (logo) logo.style.filter = 'drop-shadow(0 2px 8px rgba(0,0,0,0.2))';
+    }
+}
+
 // Screen Lock Functionality
 function initScreenLock() {
     // Load screen lock preference
     const screenLockEnabled = localStorage.getItem('screen_lock_enabled') === 'true';
     if (screenLockEnabled) {
         document.getElementById('screenLockToggle').classList.add('active');
+    }
+    
+    // Check if screen was locked before refresh
+    const wasLocked = sessionStorage.getItem('screen_locked') === 'true';
+    if (wasLocked && screenLockEnabled) {
+        // Re-activate lock screen after page load
+        setTimeout(() => {
+            activateScreenLock();
+        }, 100);
     }
     
     // Add Ctrl+L keyboard listener
@@ -643,9 +667,15 @@ function activateScreenLock() {
     document.getElementById('unlockPassword').value = '';
     document.getElementById('unlockError').style.display = 'none';
     
+    // Update theme-aware background
+    updateLockScreenTheme();
+    
     // Show overlay
     const overlay = document.getElementById('screenLockOverlay');
     overlay.style.display = 'flex';
+    
+    // Set lock state in sessionStorage for persistence
+    sessionStorage.setItem('screen_locked', 'true');
     
     // Focus on password input
     setTimeout(() => {
@@ -656,20 +686,23 @@ function activateScreenLock() {
 function unlockScreen(event) {
     event.preventDefault();
     
-    const password = document.getElementById('unlockPassword').value;
+    const passwordEl = document.getElementById('unlockPassword');
     const errorEl = document.getElementById('unlockError');
+    const password = passwordEl.value.trim();
     
     // Check password (hardcoded as 'password' for now)
     if (password === 'password') {
         // Correct password - unlock
         document.getElementById('screenLockOverlay').style.display = 'none';
-        document.getElementById('unlockPassword').value = '';
+        passwordEl.value = '';
         errorEl.style.display = 'none';
+        // Clear lock state from sessionStorage
+        sessionStorage.removeItem('screen_locked');
     } else {
         // Incorrect password - show error
         errorEl.style.display = 'block';
-        document.getElementById('unlockPassword').value = '';
-        document.getElementById('unlockPassword').focus();
+        passwordEl.value = '';
+        passwordEl.focus();
         
         // Shake animation
         const form = document.getElementById('unlockForm');
