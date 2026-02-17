@@ -99,7 +99,7 @@ async function showArchivedCampaigns() {
         const token = localStorage.getItem('jwtToken');
         const apiBase = window.apiBase || '';
         
-        const res = await fetch(apiBase + '/api/v1/campaigns?status=archived', {
+        const res = await fetch(apiBase + '/api/v1/campaigns', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         
@@ -109,7 +109,12 @@ async function showArchivedCampaigns() {
             return;
         }
         
-        const archivedCampaigns = data.data || [];
+        // Filter for only archived campaigns on the client side
+        const allCampaigns = data.data || [];
+        const archivedCampaigns = allCampaigns.filter(c => {
+            const status = (c.status || '').toLowerCase().trim();
+            return status === 'archived';
+        });
         
         // Create modal
         const modal = document.createElement('div');
