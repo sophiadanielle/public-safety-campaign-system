@@ -20,6 +20,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/sidebar.css'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/admin-header.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="<?php echo htmlspecialchars($publicPath . '/js/custom-modals.js'); ?>"></script>
     <script>
         document.documentElement.setAttribute('data-theme', 'light');
         localStorage.setItem('theme', 'light');
@@ -978,12 +979,12 @@ async function viewSegment(segmentId) {
         });
         const data = await res.json();
         if (data.error) {
-            alert('Error: ' + data.error);
+            await customAlert('Error: ' + data.error, 'Error');
             return;
         }
         
         const seg = data.data;
-        const segmentId = seg.segment_id || seg.id;
+        const segId = seg.segment_id || seg.id;
         const segmentName = seg.segment_name || seg.name || 'N/A';
         
         // Create modal with segment details
@@ -996,7 +997,7 @@ async function viewSegment(segmentId) {
                     <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
                 </div>
                 <div style="display: grid; gap: 16px;">
-                    <div><strong>ID:</strong> ${segmentId}</div>
+                    <div><strong>ID:</strong> ${segId}</div>
                     <div><strong>Segment Name:</strong> ${segmentName}</div>
                     <div><strong>Geographic Scope:</strong> ${seg.geographic_scope || 'N/A'}</div>
                     <div><strong>Location Reference:</strong> ${seg.location_reference || 'N/A'}</div>
@@ -1008,7 +1009,7 @@ async function viewSegment(segmentId) {
                 </div>
                 <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
                     <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Close</button>
-                    <button onclick="editSegment(${segmentId}); this.closest('div[style*=\"position: fixed\"]').remove();" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer;">Edit</button>
+                    <button onclick="editSegment(${segId}); this.closest('div[style*=\"position: fixed\"]').remove();" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer;">Edit</button>
                 </div>
             </div>
         `;
@@ -1021,7 +1022,7 @@ async function viewSegment(segmentId) {
             }
         });
     } catch (err) {
-        alert('Failed to load segment: ' + err.message);
+        await customAlert('Failed to load segment: ' + err.message, 'Error');
     }
 }
 
@@ -1033,7 +1034,7 @@ async function editSegment(segmentId) {
         });
         const data = await res.json();
         if (data.error) {
-            alert('Error: ' + data.error);
+            await customAlert('Error: ' + data.error, 'Error');
             return;
         }
         
@@ -1064,13 +1065,14 @@ async function editSegment(segmentId) {
         document.getElementById('create-segment').scrollIntoView({ behavior: 'smooth', block: 'start' });
         
     } catch (err) {
-        alert('Failed to load segment: ' + err.message);
+        await customAlert('Failed to load segment: ' + err.message, 'Error');
     }
 }
 
 // Delete segment
 async function deleteSegment(segmentId) {
-    if (!confirm('Are you sure you want to delete this segment? This action cannot be undone and will remove all member associations.')) {
+    const confirmed = await customConfirm('Are you sure you want to delete this segment? This action cannot be undone and will remove all member associations.', 'Delete Segment');
+    if (!confirmed) {
         return;
     }
     
@@ -1084,14 +1086,20 @@ async function deleteSegment(segmentId) {
         
         const data = await res.json();
         if (!res.ok) {
-            alert('Error: ' + (data.error || 'Failed to delete segment'));
+            const errorMsg = data.error || 'Failed to delete segment';
+            // Handle database table missing error
+            if (errorMsg.toLowerCase().includes('sqlstate') || errorMsg.toLowerCase().includes('table') || errorMsg.toLowerCase().includes('1146')) {
+                await customAlert('Unable to delete segment due to a database configuration issue. Please contact the system administrator.', 'Database Error');
+            } else {
+                await customAlert('Error: ' + errorMsg, 'Delete Failed');
+            }
             return;
         }
         
-        alert('Segment deleted successfully!');
+        await customAlert('Segment deleted successfully!', 'Success');
         loadSegments();
     } catch (err) {
-        alert('Failed to delete segment: ' + err.message);
+        await customAlert('Failed to delete segment: ' + err.message, 'Error');
     }
 }
 

@@ -83,6 +83,8 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <script src="<?php echo htmlspecialchars($publicPath . '/js/custom-modals.js'); ?>"></script>
+    <script src="<?php echo htmlspecialchars($publicPath . '/js/modal-replacer.js'); ?>"></script>
     <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
     <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
     <script>
@@ -5098,8 +5100,7 @@ async function viewCampaign(campaignId) {
                     
                     <!-- Schedule & Timeline -->
                     <div style="margin-bottom: 24px;">
-                        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-                            <span style="background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">S</span>
+                        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;">
                             Schedule & Timeline
                         </h3>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
@@ -5128,8 +5129,7 @@ async function viewCampaign(campaignId) {
                     
                     <!-- Resources & Budget -->
                     <div style="margin-bottom: 24px;">
-                        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-                            <span style="background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">R</span>
+                        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;">
                             Resources & Budget
                         </h3>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
@@ -5163,8 +5163,7 @@ async function viewCampaign(campaignId) {
                     <!-- Location & Zones -->
                     ${c.location || (c.barangay_target_zones && formatJSON(c.barangay_target_zones) !== 'None') ? `
                         <div style="margin-bottom: 24px;">
-                            <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-                                <span style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">L</span>
+                            <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;">
                                 Location & Target Zones
                             </h3>
                             ${c.location ? `
