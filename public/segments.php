@@ -987,33 +987,140 @@ async function viewSegment(segmentId) {
         const segId = seg.segment_id || seg.id;
         const segmentName = seg.segment_name || seg.name || 'N/A';
         
+        // Format dates
+        const formatDate = (dateStr) => {
+            if (!dateStr) return 'Not set';
+            try {
+                return new Date(dateStr).toLocaleString('en-US', {dateStyle: 'long', timeStyle: 'short'});
+            } catch (e) {
+                return dateStr;
+            }
+        };
+        
+        // Risk level colors
+        const riskColors = {
+            'high': { bg: '#fee2e2', color: '#991b1b', border: '#ef4444' },
+            'medium': { bg: '#fef3c7', color: '#92400e', border: '#f59e0b' },
+            'low': { bg: '#d1fae5', color: '#065f46', border: '#10b981' }
+        };
+        const riskStyle = riskColors[seg.risk_level?.toLowerCase()] || { bg: '#f3f4f6', color: '#374151', border: '#9ca3af' };
+        
         // Create modal with segment details
         const modal = document.createElement('div');
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+        modal.id = 'viewSegmentModal';
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);';
         modal.innerHTML = `
-            <div style="background: white; border-radius: 12px; padding: 24px; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="margin: 0; color: #0f172a; font-size: 24px;">Segment Details</h2>
-                    <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+            <div style="background: white; border-radius: 16px; max-width: 800px; width: 100%; max-height: 90vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; padding: 24px 32px; position: relative;">
+                    <button id="closeViewSegmentBtn" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">&times;</button>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <div>
+                            <div style="font-size: 14px; opacity: 0.9; font-weight: 500;">Segment #${segId}</div>
+                            <h2 style="margin: 4px 0 0 0; font-size: 28px; font-weight: 700; line-height: 1.2;">${segmentName}</h2>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+                        ${seg.geographic_scope ? `<span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;">${seg.geographic_scope}</span>` : ''}
+                        ${seg.sector_type ? `<span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;">${seg.sector_type}</span>` : ''}
+                        ${seg.risk_level ? `<span style="background: ${riskStyle.bg}; color: ${riskStyle.color}; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">${seg.risk_level}</span>` : ''}
+                    </div>
                 </div>
-                <div style="display: grid; gap: 16px;">
-                    <div><strong>ID:</strong> ${segId}</div>
-                    <div><strong>Segment Name:</strong> ${segmentName}</div>
-                    <div><strong>Geographic Scope:</strong> ${seg.geographic_scope || 'N/A'}</div>
-                    <div><strong>Location Reference:</strong> ${seg.location_reference || 'N/A'}</div>
-                    <div><strong>Sector Type:</strong> ${seg.sector_type || 'N/A'}</div>
-                    <div><strong>Risk Level:</strong> ${seg.risk_level ? `<span class="badge ${seg.risk_level.toLowerCase()}">${seg.risk_level}</span>` : 'N/A'}</div>
-                    <div><strong>Basis of Segmentation:</strong> ${seg.basis_of_segmentation || 'N/A'}</div>
-                    <div><strong>Created At:</strong> ${seg.created_at ? new Date(seg.created_at).toLocaleString() : 'N/A'}</div>
-                    <div><strong>Updated At:</strong> ${seg.updated_at ? new Date(seg.updated_at).toLocaleString() : 'N/A'}</div>
+                
+                <!-- Content -->
+                <div style="padding: 32px; overflow-y: auto; flex: 1;">
+                    <!-- Location & Scope -->
+                    <div style="margin-bottom: 24px;">
+                        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;">
+                            Location & Scope
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                            <div style="background: white; border: 2px solid #e2e8f0; padding: 16px; border-radius: 10px;">
+                                <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Geographic Scope</div>
+                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">${seg.geographic_scope || 'Not specified'}</div>
+                            </div>
+                            <div style="background: white; border: 2px solid #e2e8f0; padding: 16px; border-radius: 10px;">
+                                <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Location Reference</div>
+                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">${seg.location_reference || 'Not specified'}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Segment Details -->
+                    <div style="margin-bottom: 24px;">
+                        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;">
+                            Segment Information
+                        </h3>
+                        <div style="display: grid; gap: 16px;">
+                            ${seg.sector_type ? `
+                                <div style="background: #f0fdfa; padding: 16px; border-radius: 10px; border-left: 4px solid #14b8a6;">
+                                    <div style="font-size: 12px; font-weight: 600; color: #115e59; margin-bottom: 6px;">Sector Type</div>
+                                    <div style="color: #134e4a; font-size: 15px; font-weight: 500;">${seg.sector_type}</div>
+                                </div>
+                            ` : ''}
+                            ${seg.risk_level ? `
+                                <div style="background: ${riskStyle.bg}; padding: 16px; border-radius: 10px; border-left: 4px solid ${riskStyle.border};">
+                                    <div style="font-size: 12px; font-weight: 600; color: ${riskStyle.color}; margin-bottom: 6px;">Risk Level</div>
+                                    <div style="color: ${riskStyle.color}; font-size: 15px; font-weight: 600;">${seg.risk_level}</div>
+                                </div>
+                            ` : ''}
+                            ${seg.basis_of_segmentation ? `
+                                <div style="background: #f8fafc; padding: 16px; border-radius: 10px; border-left: 4px solid #4c8a89;">
+                                    <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Basis of Segmentation</div>
+                                    <div style="color: #475569; font-size: 15px;">${seg.basis_of_segmentation}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Metadata -->
+                    <div style="padding-top: 20px; border-top: 2px solid #f1f5f9;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 13px;">
+                            <div>
+                                <span style="color: #64748b; font-weight: 500;">Created:</span>
+                                <span style="color: #0f172a; font-weight: 600; margin-left: 4px;">${formatDate(seg.created_at)}</span>
+                            </div>
+                            <div>
+                                <span style="color: #64748b; font-weight: 500;">Updated:</span>
+                                <span style="color: #0f172a; font-weight: 600; margin-left: 4px;">${formatDate(seg.updated_at)}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
-                    <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Close</button>
-                    <button onclick="editSegment(${segId}); this.closest('div[style*=\"position: fixed\"]').remove();" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer;">Edit</button>
+                
+                <!-- Footer -->
+                <div style="background: #f8fafc; padding: 20px 32px; border-top: 2px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button id="closeViewSegmentFooterBtn" style="padding: 10px 24px; background: white; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; color: #475569; transition: all 0.2s; font-size: 14px;" onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#cbd5e1'" onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">Close</button>
+                    <button id="editSegmentFromViewBtn" data-segment-id="${segId}" style="padding: 10px 24px; background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(76, 138, 137, 0.3); font-size: 14px;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(76, 138, 137, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(76, 138, 137, 0.3)'">Edit Segment</button>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
+        
+        // Add event listeners for close buttons
+        const closeTopBtn = document.getElementById('closeViewSegmentBtn');
+        const closeFooterBtn = document.getElementById('closeViewSegmentFooterBtn');
+        const editBtn = document.getElementById('editSegmentFromViewBtn');
+        
+        if (closeTopBtn) {
+            closeTopBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+        }
+        
+        if (closeFooterBtn) {
+            closeFooterBtn.addEventListener('click', () => {
+                modal.remove();
+            });
+        }
+        
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                const segmentId = editBtn.getAttribute('data-segment-id');
+                modal.remove();
+                editSegment(parseInt(segmentId));
+            });
+        }
         
         // Close on outside click
         modal.addEventListener('click', (e) => {
