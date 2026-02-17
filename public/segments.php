@@ -534,8 +534,10 @@ function populateSegmentDropdowns(segments) {
         viewMembersSelect.innerHTML = '<option value="">-- Choose a segment to view its members --</option>';
         segments.forEach(seg => {
             const option = document.createElement('option');
-            option.value = seg.segment_id;
-            option.textContent = seg.segment_name || 'Unnamed Segment';
+            const segmentId = seg.segment_id || seg.id;
+            const segmentName = seg.segment_name || seg.name || 'Unnamed Segment';
+            option.value = segmentId;
+            option.textContent = segmentName;
             viewMembersSelect.appendChild(option);
         });
         if (currentValue) {
@@ -550,8 +552,10 @@ function populateSegmentDropdowns(segments) {
         viewHistorySelect.innerHTML = '<option value="">-- Choose a segment to view its participation history --</option>';
         segments.forEach(seg => {
             const option = document.createElement('option');
-            option.value = seg.segment_id;
-            option.textContent = seg.segment_name || 'Unnamed Segment';
+            const segmentId = seg.segment_id || seg.id;
+            const segmentName = seg.segment_name || seg.name || 'Unnamed Segment';
+            option.value = segmentId;
+            option.textContent = segmentName;
             viewHistorySelect.appendChild(option);
         });
         if (currentValue) {
@@ -566,8 +570,10 @@ function populateSegmentDropdowns(segments) {
         importSelect.innerHTML = '<option value="">-- Choose a segment to add members to --</option>';
         segments.forEach(seg => {
             const option = document.createElement('option');
-            option.value = seg.segment_id;
-            option.textContent = seg.segment_name || 'Unnamed Segment';
+            const segmentId = seg.segment_id || seg.id;
+            const segmentName = seg.segment_name || seg.name || 'Unnamed Segment';
+            option.value = segmentId;
+            option.textContent = segmentName;
             importSelect.appendChild(option);
         });
         if (currentValue) {
@@ -586,10 +592,11 @@ function populateSegmentDropdowns(segments) {
         segmentNameSelect.innerHTML += '<option value="__new__">+ Create New Segment Name</option>';
         
         segments.forEach(seg => {
-            if (seg.segment_name) {
+            const segmentName = seg.segment_name || seg.name;
+            if (segmentName) {
                 const option = document.createElement('option');
-                option.value = seg.segment_name;
-                option.textContent = seg.segment_name;
+                option.value = segmentName;
+                option.textContent = segmentName;
                 segmentNameSelect.appendChild(option);
             }
         });
@@ -682,19 +689,21 @@ async function loadSegments() {
         
         segments.forEach(seg => {
             const riskClass = seg.risk_level ? seg.risk_level.toLowerCase() : '';
+            const segmentId = seg.segment_id || seg.id;
+            const segmentName = seg.segment_name || seg.name || 'N/A';
             html += `
                 <tr>
-                    <td>#${seg.segment_id}</td>
-                    <td><strong>${seg.segment_name || 'N/A'}</strong></td>
+                    <td>#${segmentId || 'undefined'}</td>
+                    <td><strong>${segmentName}</strong></td>
                     <td>${seg.geographic_scope || '—'}</td>
                     <td>${seg.location_reference || '—'}</td>
                     <td>${seg.sector_type || '—'}</td>
                     <td>${seg.risk_level ? `<span class="badge ${riskClass}">${seg.risk_level}</span>` : '—'}</td>
                     <td>${seg.basis_of_segmentation || '—'}</td>
                     <td>
-                        <button onclick="viewSegment(${seg.segment_id})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; margin: 2px;">👁️ View</button>
-                        <button onclick="editSegment(${seg.segment_id})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; margin: 2px;">✏️ Edit</button>
-                        <button onclick="deleteSegment(${seg.segment_id})" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; background: #ef4444; color: white; margin: 2px;">🗑️ Delete</button>
+                        <button onclick="viewSegment(${segmentId})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; margin: 2px;">👁️ View</button>
+                        <button onclick="editSegment(${segmentId})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; margin: 2px;">✏️ Edit</button>
+                        <button onclick="deleteSegment(${segmentId})" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; background: #ef4444; color: white; margin: 2px;">🗑️ Delete</button>
                     </td>
                 </tr>
             `;
@@ -974,6 +983,8 @@ async function viewSegment(segmentId) {
         }
         
         const seg = data.data;
+        const segmentId = seg.segment_id || seg.id;
+        const segmentName = seg.segment_name || seg.name || 'N/A';
         
         // Create modal with segment details
         const modal = document.createElement('div');
@@ -985,8 +996,8 @@ async function viewSegment(segmentId) {
                     <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
                 </div>
                 <div style="display: grid; gap: 16px;">
-                    <div><strong>ID:</strong> ${seg.segment_id}</div>
-                    <div><strong>Segment Name:</strong> ${seg.segment_name || 'N/A'}</div>
+                    <div><strong>ID:</strong> ${segmentId}</div>
+                    <div><strong>Segment Name:</strong> ${segmentName}</div>
                     <div><strong>Geographic Scope:</strong> ${seg.geographic_scope || 'N/A'}</div>
                     <div><strong>Location Reference:</strong> ${seg.location_reference || 'N/A'}</div>
                     <div><strong>Sector Type:</strong> ${seg.sector_type || 'N/A'}</div>
@@ -997,7 +1008,7 @@ async function viewSegment(segmentId) {
                 </div>
                 <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
                     <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer;">Close</button>
-                    <button onclick="editSegment(${seg.segment_id}); this.closest('div[style*=\"position: fixed\"]').remove();" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer;">Edit</button>
+                    <button onclick="editSegment(${segmentId}); this.closest('div[style*=\"position: fixed\"]').remove();" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer;">Edit</button>
                 </div>
             </div>
         `;
@@ -1027,9 +1038,10 @@ async function editSegment(segmentId) {
         }
         
         const seg = data.data;
+        const segmentName = seg.segment_name || seg.name || '';
         
         // Populate form with segment data
-        document.getElementById('segment_name').value = seg.segment_name || '';
+        document.getElementById('segment_name').value = segmentName;
         document.getElementById('geographic_scope').value = seg.geographic_scope || '';
         document.getElementById('location_reference').value = seg.location_reference || '';
         document.getElementById('sector_type').value = seg.sector_type || '';

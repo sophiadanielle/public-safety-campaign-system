@@ -5665,6 +5665,68 @@ async function archiveCampaign(campaignId) {
     }
 }
 
+// Show Archived Campaigns
+function showArchivedCampaigns() {
+    const tbody = document.getElementById('campaignTable');
+    if (!tbody) {
+        console.error('showArchivedCampaigns() - Campaign table not found');
+        return;
+    }
+    
+    // Filter only archived campaigns from allCampaigns array
+    const archivedCampaigns = allCampaigns.filter(c => {
+        const status = (c.status || '').toLowerCase();
+        return status === 'archived';
+    });
+    
+    if (archivedCampaigns.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:24px; color: #64748b;">No archived campaigns found.</td></tr>';
+        return;
+    }
+    
+    // Clear and render only archived campaigns
+    tbody.innerHTML = '';
+    
+    archivedCampaigns.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.style.opacity = '0.7';
+        
+        const formatDate = (d) => {
+            if (!d) return '—';
+            try {
+                const date = new Date(d);
+                if (isNaN(date.getTime())) return d;
+                return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+            } catch (e) {
+                return d;
+            }
+        };
+        
+        const statusBadge = `<span class="badge archived" style="background: #f3f4f6; color: #6b7280;">Archived</span>`;
+        
+        tr.innerHTML = `
+            <td>${c.id}</td>
+            <td><strong>${c.title || 'Untitled'}</strong></td>
+            <td>${c.category || '—'}</td>
+            <td>${c.geographic_scope || '—'}</td>
+            <td>${statusBadge}</td>
+            <td>${formatDate(c.start_date)}</td>
+            <td>${formatDate(c.end_date)}</td>
+            <td>${c.budget ? '₱' + parseFloat(c.budget).toLocaleString() : '—'}</td>
+            <td>${c.assigned_staff || '—'}</td>
+            <td>${formatDate(c.created_at)}</td>
+            <td>${c.created_by_name || '—'}</td>
+            <td>
+                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0;">View</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    // Show message about viewing archived campaigns
+    alert(`Showing ${archivedCampaigns.length} archived campaign(s). Click "Refresh" to return to all campaigns view.`);
+}
+
 // Segments
 // Toggle segment help container
 function toggleSegmentHelp() {

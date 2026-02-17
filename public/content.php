@@ -729,11 +729,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 </div>
                 <small style="color: #94a3b8; font-size: 12px; margin-top: 4px; display: block;">Select multiple visibility levels for LGU internal governance. Selected items will appear as tags above.</small>
             </div>
-            <div class="form-field">
-                <label>Tags (comma separated)</label>
-                <input type="text" name="tags" placeholder="fire,poster,safety">
-                <small style="color: #94a3b8; font-size: 12px; margin-top: 4px; display: block;">Add tags to improve searchability within the LGU content repository</small>
-            </div>
         </form>
         <button type="submit" form="uploadForm" class="btn btn-primary" style="margin-top:16px; display: inline-flex; align-items: center; gap: 8px;">
             <i class="fas fa-upload"></i> Upload Campaign Material
