@@ -742,9 +742,14 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <section id="content-library" class="card filter-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h2 class="section-title" style="margin: 0;">Content Library</h2>
-            <button type="button" onclick="showSearchFilterHelp()" class="btn btn-secondary" style="padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fas fa-question-circle"></i> How It Works
-            </button>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" onclick="showArchivedContent()" class="btn btn-secondary" style="padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-archive"></i> View Archived
+                </button>
+                <button type="button" onclick="showSearchFilterHelp()" class="btn btn-secondary" style="padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-question-circle"></i> How It Works
+                </button>
+            </div>
         </div>
         <div class="filter-grid">
             <div class="filter-field">
@@ -3281,6 +3286,159 @@ async function loadUsageHistory() {
         container.innerHTML = html;
     } catch (err) {
         container.innerHTML = '<p style="text-align: center; color: #dc2626; padding: 20px;">Error: ' + err.message + '</p>';
+    }
+}
+
+// Show Archived Content Modal
+async function showArchivedContent() {
+    try {
+        // Filter archived content from the contents array
+        const archivedContent = contents.filter(item => {
+            const status = normalizeStatus(item.approval_status);
+            return status === 'archived';
+        });
+        
+        // Create modal
+        const modal = document.createElement('div');
+        modal.id = 'archivedContentModal';
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+        
+        let tableRows = '';
+        if (archivedContent.length === 0) {
+            tableRows = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #64748b;">No archived content found.</td></tr>';
+        } else {
+            archivedContent.forEach(item => {
+                const contentType = (item.content_type || 'text').charAt(0).toUpperCase() + (item.content_type || 'text').slice(1);
+                tableRows += `
+                    <tr>
+                        <td>#${item.id}</td>
+                        <td><strong>${item.title || 'Untitled'}</strong></td>
+                        <td><span style="background: #e0f2fe; color: #1d4ed8; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${contentType}</span></td>
+                        <td>${item.hazard_category || '—'}</td>
+                        <td>
+                            <button onclick="viewContent(${item.id})" style="padding: 4px 8px; background: #6366f1; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px; font-size: 11px;">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button onclick="restoreContent(${item.id})" style="padding: 4px 8px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px; font-size: 11px;">
+                                <i class="fas fa-undo"></i> Restore
+                            </button>
+                            <button onclick="deleteContentPermanent(${item.id})" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+        
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 12px; max-width: 1200px; width: 100%; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+                <div style="background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 700;">
+                        <i class="fas fa-archive"></i> Archived Content
+                    </h2>
+                    <button onclick="document.getElementById('archivedContentModal').remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px;">
+                        &times;
+                    </button>
+                </div>
+                <div style="padding: 20px; overflow-y: auto; flex: 1;">
+                    <p style="margin: 0 0 16px 0; color: #64748b; font-size: 14px;">
+                        Archived content is hidden from the main library. You can restore it or delete it permanently.
+                    </p>
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f8fafc;">
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">ID</th>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Title</th>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Type</th>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Category</th>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+    } catch (err) {
+        alert('Failed to load archived content: ' + err.message);
+    }
+}
+
+// Restore Content from Archive
+async function restoreContent(contentId) {
+    if (!confirm('Restore this content from archive?')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/' + contentId + '/approval', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token 
+            },
+            body: JSON.stringify({
+                approval_status: 'draft',
+                approval_notes: 'Restored from archive'
+            })
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to restore content'));
+            return;
+        }
+        
+        alert('Content restored successfully!');
+        document.getElementById('archivedContentModal').remove();
+        loadAllContent().then(() => {
+            loadContent();
+            loadTemplates();
+            loadMediaGallery();
+        });
+    } catch (err) {
+        alert('Failed to restore content: ' + err.message);
+    }
+}
+
+// Delete Content Permanently
+async function deleteContentPermanent(contentId) {
+    if (!confirm('Permanently delete this content? This action cannot be undone.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/' + contentId, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+            alert('Error: ' + (data.error || 'Failed to delete content'));
+            return;
+        }
+        
+        alert('Content deleted permanently!');
+        showArchivedContent(); // Refresh the modal
+    } catch (err) {
+        alert('Failed to delete content: ' + err.message);
     }
 }
 

@@ -253,16 +253,15 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 <datalist id="hazard_focus_suggestions"></datalist>
             </div>
             <div class="form-field">
-                <label>Date *</label>
-                <input id="date" type="date" required onchange="checkConflicts()">
+                <label>Start Date & Time *</label>
+                <input id="start_datetime" type="datetime-local" required onchange="syncStartDateTime(); checkConflicts()">
+                <input id="date" type="hidden">
+                <input id="start_time" type="hidden">
             </div>
             <div class="form-field">
-                <label>Start Time *</label>
-                <input id="start_time" type="time" required onchange="checkConflicts()">
-            </div>
-            <div class="form-field">
-                <label>End Time</label>
-                <input id="end_time" type="time" onchange="checkConflicts()">
+                <label>End Date & Time</label>
+                <input id="end_datetime" type="datetime-local" onchange="syncEndDateTime(); checkConflicts()">
+                <input id="end_time" type="hidden">
             </div>
             <div class="form-field">
                 <label>Venue *</label>
@@ -277,38 +276,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             <div class="form-field" style="grid-column: 1 / -1;">
                 <label>Event Description</label>
                 <textarea id="event_description" rows="3" placeholder="Describe the event purpose, objectives, and key activities..."></textarea>
-            </div>
-            
-            <div style="grid-column: 1 / -1; margin-top:16px; padding-top:16px; border-top:2px solid #f1f5f9;">
-                <h3 style="font-size:16px; font-weight:600; color:#1e293b; margin-bottom:12px;">Resource Requirements</h3>
-            </div>
-            <div class="form-field" style="grid-column: 1 / -1;">
-                <label>Transport Requirements</label>
-                <textarea id="transport_requirements" rows="2" placeholder="e.g., 2 vehicles for materials transport, shuttle service for participants"></textarea>
-            </div>
-            <div class="form-field" style="grid-column: 1 / -1;">
-                <label>Trainer Requirements</label>
-                <textarea id="trainer_requirements" rows="2" placeholder="e.g., 1 certified fire safety instructor, 2 first aid trainers"></textarea>
-            </div>
-            <div class="form-field" style="grid-column: 1 / -1;">
-                <label>Equipment Requirements</label>
-                <textarea id="equipment_requirements" rows="2" placeholder="e.g., projector, sound system, fire extinguisher demo units"></textarea>
-            </div>
-            <div class="form-field" style="grid-column: 1 / -1;">
-                <label>Volunteer Requirements</label>
-                <textarea id="volunteer_requirements" rows="2" placeholder="e.g., 5 volunteers for registration, 3 for crowd control"></textarea>
-            </div>
-            
-            <div style="grid-column: 1 / -1; margin-top:16px; padding-top:16px; border-top:2px solid #f1f5f9;">
-                <h3 style="font-size:16px; font-weight:600; color:#1e293b; margin-bottom:12px;">Participants & Coordination</h3>
-            </div>
-            <div class="form-field">
-                <label>Facilitator User IDs</label>
-                <input id="facilitator_ids" type="text" placeholder="e.g., 1, 2, 3 (comma-separated)">
-            </div>
-            <div class="form-field">
-                <label>Audience Segment IDs</label>
-                <input id="segment_ids" type="text" placeholder="e.g., 1, 2, 3 (comma-separated)">
             </div>
         </form>
         <button class="btn btn-primary" style="margin-top:16px;" onclick="submitEventForm()">Create Event</button>
@@ -641,44 +608,58 @@ async function checkConflicts() {
     }
 }
 
+// Sync datetime-local to hidden date/time fields
+function syncStartDateTime() {
+    const startDatetime = document.getElementById('start_datetime');
+    const dateField = document.getElementById('date');
+    const startTimeField = document.getElementById('start_time');
+    
+    if (startDatetime && startDatetime.value) {
+        const dt = new Date(startDatetime.value);
+        const year = dt.getFullYear();
+        const month = String(dt.getMonth() + 1).padStart(2, '0');
+        const day = String(dt.getDate()).padStart(2, '0');
+        const hours = String(dt.getHours()).padStart(2, '0');
+        const minutes = String(dt.getMinutes()).padStart(2, '0');
+        
+        dateField.value = `${year}-${month}-${day}`;
+        startTimeField.value = `${hours}:${minutes}`;
+    }
+}
+
+function syncEndDateTime() {
+    const endDatetime = document.getElementById('end_datetime');
+    const endTimeField = document.getElementById('end_time');
+    
+    if (endDatetime && endDatetime.value) {
+        const dt = new Date(endDatetime.value);
+        const hours = String(dt.getHours()).padStart(2, '0');
+        const minutes = String(dt.getMinutes()).padStart(2, '0');
+        
+        endTimeField.value = `${hours}:${minutes}`;
+    } else {
+        endTimeField.value = '';
+    }
+}
+
 async function submitEventForm() {
     const statusEl = document.getElementById('createStatus');
     const form = document.getElementById('createForm');
     const eventId = form ? form.dataset.eventId : null;
     
-    // Parse facilitator IDs
-    const facilitatorIds = [];
-    const facIdsText = document.getElementById('facilitator_ids').value.trim();
-    if (facIdsText) {
-        facilitatorIds.push(...facIdsText.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id)));
-    }
-    
-    // Parse segment IDs
-    const segmentIds = [];
-    const segIdsText = document.getElementById('segment_ids').value.trim();
-    if (segIdsText) {
-        segmentIds.push(...segIdsText.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id)));
-    }
-    
     const payload = {
         event_title: document.getElementById('event_title').value.trim(),
         event_type: document.getElementById('event_type').value,
-        event_description: document.getElementById('event_description').value.trim() || null,
-        hazard_focus: document.getElementById('hazard_focus').value.trim() || null,
-        target_audience_profile_id: parseInt(document.getElementById('target_audience_profile_id').value) || null,
         linked_campaign_id: parseInt(document.getElementById('linked_campaign_id').value) || null,
-        date: document.getElementById('date').value || null,
-        start_time: document.getElementById('start_time').value || null,
+        target_audience_profile_id: parseInt(document.getElementById('target_audience_profile_id').value) || null,
+        hazard_focus: document.getElementById('hazard_focus').value.trim() || null,
+        date: document.getElementById('date').value,
+        start_time: document.getElementById('start_time').value,
         end_time: document.getElementById('end_time').value || null,
+        event_description: document.getElementById('event_description').value.trim() || null,
         venue: document.getElementById('venue').value.trim() || null,
         location: document.getElementById('location').value.trim() || null,
-        event_status: document.getElementById('event_status').value,
-        transport_requirements: document.getElementById('transport_requirements').value.trim() || null,
-        trainer_requirements: document.getElementById('trainer_requirements').value.trim() || null,
-        equipment_requirements: document.getElementById('equipment_requirements').value.trim() || null,
-        volunteer_requirements: document.getElementById('volunteer_requirements').value.trim() || null,
-        facilitator_ids: facilitatorIds,
-        segment_ids: segmentIds
+        event_status: document.getElementById('event_status').value
     };
     
     if (!payload.event_title) {

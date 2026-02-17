@@ -5047,38 +5047,161 @@ async function viewCampaign(campaignId) {
         // Create modal with campaign details
         const modal = document.createElement('div');
         modal.id = 'viewCampaignModal';
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);';
+        
+        const statusColors = {
+            'draft': { bg: '#f3f4f6', color: '#374151', icon: '📝' },
+            'pending': { bg: '#fef3c7', color: '#92400e', icon: '⏳' },
+            'approved': { bg: '#d1fae5', color: '#065f46', icon: '✅' },
+            'ongoing': { bg: '#dbeafe', color: '#1e40af', icon: '🔄' },
+            'scheduled': { bg: '#e0f2fe', color: '#0c4a6e', icon: '📅' },
+            'completed': { bg: '#dcfce7', color: '#166534', icon: '✓' },
+            'archived': { bg: '#f3f4f6', color: '#6b7280', icon: '📦' }
+        };
+        const statusStyle = statusColors[c.status] || statusColors['draft'];
+        
         modal.innerHTML = `
-            <div style="background: white; border-radius: 12px; padding: 24px; max-width: 800px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="margin: 0; color: #0f172a; font-size: 24px;">Campaign Details</h2>
-                    <button id="closeViewModalBtn" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+            <div style="background: white; border-radius: 16px; max-width: 900px; width: 100%; max-height: 90vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+                <!-- Header -->
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px 32px; position: relative;">
+                    <button id="closeViewModalBtn" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">&times;</button>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                        <span style="font-size: 32px;">${statusStyle.icon}</span>
+                        <div>
+                            <div style="font-size: 14px; opacity: 0.9; font-weight: 500;">Campaign #${c.id}</div>
+                            <h2 style="margin: 4px 0 0 0; font-size: 28px; font-weight: 700; line-height: 1.2;">${c.title || 'Untitled Campaign'}</h2>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+                        <span style="background: ${statusStyle.bg}; color: ${statusStyle.color}; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                            ${statusStyle.icon} ${(c.status || 'draft').charAt(0).toUpperCase() + (c.status || 'draft').slice(1)}
+                        </span>
+                        ${c.category ? `<span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;">📂 ${c.category}</span>` : ''}
+                        ${c.geographic_scope ? `<span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;">📍 ${c.geographic_scope}</span>` : ''}
+                    </div>
                 </div>
-                <div style="display: grid; gap: 16px;">
-                    <div><strong>ID:</strong> ${c.id}</div>
-                    <div><strong>Title:</strong> ${c.title || 'N/A'}</div>
-                    <div><strong>Description:</strong> ${c.description || 'N/A'}</div>
-                    <div><strong>Category:</strong> ${c.category || 'N/A'}</div>
-                    <div><strong>Status:</strong> <span class="badge ${c.status || 'draft'}">${(c.status || 'draft').charAt(0).toUpperCase() + (c.status || 'draft').slice(1)}</span></div>
-                    <div><strong>Geographic Scope:</strong> ${c.geographic_scope || 'N/A'}</div>
-                    <div><strong>Start Date:</strong> ${formatDate(c.start_date)}</div>
-                    <div><strong>End Date:</strong> ${formatDate(c.end_date)}</div>
-                    <div><strong>Draft Schedule:</strong> ${formatDate(c.draft_schedule_datetime)}</div>
-                    <div><strong>AI Recommended:</strong> ${formatDate(c.ai_recommended_datetime)}</div>
-                    <div><strong>Final Schedule:</strong> ${formatDate(c.final_schedule_datetime)}</div>
-                    <div><strong>Location:</strong> ${c.location || 'N/A'}</div>
-                    <div><strong>Objectives:</strong> ${c.objectives || 'N/A'}</div>
-                    <div><strong>Budget:</strong> ${c.budget ? '₱' + parseFloat(c.budget).toLocaleString('en-US', {minimumFractionDigits: 2}) : 'N/A'}</div>
-                    <div><strong>Staff Count:</strong> ${c.staff_count || 'N/A'}</div>
-                    <div><strong>Assigned Staff:</strong> ${formatJSON(c.assigned_staff)}</div>
-                    <div><strong>Barangay Target Zones:</strong> ${formatJSON(c.barangay_target_zones)}</div>
-                    <div><strong>Materials:</strong> ${formatJSON(c.materials_json)}</div>
-                    <div><strong>Created At:</strong> ${formatDate(c.created_at)}</div>
-                    <div><strong>Updated At:</strong> ${formatDate(c.updated_at)}</div>
+                
+                <!-- Content -->
+                <div style="padding: 32px; overflow-y: auto; flex: 1;">
+                    ${c.description ? `
+                        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid #667eea;">
+                            <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Description</div>
+                            <p style="margin: 0; color: #475569; line-height: 1.6; font-size: 15px;">${c.description}</p>
+                        </div>
+                    ` : ''}
+                    
+                    ${c.objectives ? `
+                        <div style="background: #fef3c7; padding: 20px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid #f59e0b;">
+                            <div style="font-size: 12px; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">🎯 Objectives</div>
+                            <p style="margin: 0; color: #78350f; line-height: 1.6; font-size: 15px;">${c.objectives}</p>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Schedule & Timeline -->
+                    <div style="margin-bottom: 24px;">
+                        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                            <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">📅</span>
+                            Schedule & Timeline
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                            <div style="background: white; border: 2px solid #e2e8f0; padding: 16px; border-radius: 10px;">
+                                <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Start Date</div>
+                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">${formatDate(c.start_date)}</div>
+                            </div>
+                            <div style="background: white; border: 2px solid #e2e8f0; padding: 16px; border-radius: 10px;">
+                                <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">End Date</div>
+                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">${formatDate(c.end_date)}</div>
+                            </div>
+                            ${c.final_schedule_datetime ? `
+                                <div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 2px solid #059669; padding: 16px; border-radius: 10px;">
+                                    <div style="font-size: 11px; font-weight: 600; color: #065f46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">✓ Final Schedule</div>
+                                    <div style="font-size: 15px; font-weight: 600; color: #065f46;">${formatDate(c.final_schedule_datetime)}</div>
+                                </div>
+                            ` : ''}
+                            ${c.ai_recommended_datetime ? `
+                                <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: 2px solid #3b82f6; padding: 16px; border-radius: 10px;">
+                                    <div style="font-size: 11px; font-weight: 600; color: #1e40af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">🤖 AI Recommended</div>
+                                    <div style="font-size: 15px; font-weight: 600; color: #1e40af;">${formatDate(c.ai_recommended_datetime)}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Resources & Budget -->
+                    <div style="margin-bottom: 24px;">
+                        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                            <span style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">💰</span>
+                            Resources & Budget
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                            ${c.budget ? `
+                                <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 20px; border-radius: 10px; border: 2px solid #f59e0b;">
+                                    <div style="font-size: 11px; font-weight: 600; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Budget</div>
+                                    <div style="font-size: 24px; font-weight: 700; color: #92400e;">₱${parseFloat(c.budget).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                                </div>
+                            ` : ''}
+                            ${c.staff_count ? `
+                                <div style="background: white; border: 2px solid #e2e8f0; padding: 20px; border-radius: 10px;">
+                                    <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Staff Count</div>
+                                    <div style="font-size: 24px; font-weight: 700; color: #0f172a;">${c.staff_count}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        ${c.assigned_staff && formatJSON(c.assigned_staff) !== 'None' ? `
+                            <div style="margin-top: 16px; background: #f8fafc; padding: 16px; border-radius: 10px; border-left: 4px solid #4c8a89;">
+                                <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px;">👥 Assigned Staff</div>
+                                <div style="color: #475569; font-size: 14px;">${formatJSON(c.assigned_staff)}</div>
+                            </div>
+                        ` : ''}
+                        ${c.materials_json && formatJSON(c.materials_json) !== 'None' ? `
+                            <div style="margin-top: 16px; background: #f8fafc; padding: 16px; border-radius: 10px; border-left: 4px solid #8b5cf6;">
+                                <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px;">📦 Materials</div>
+                                <div style="color: #475569; font-size: 14px;">${formatJSON(c.materials_json)}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <!-- Location & Zones -->
+                    ${c.location || (c.barangay_target_zones && formatJSON(c.barangay_target_zones) !== 'None') ? `
+                        <div style="margin-bottom: 24px;">
+                            <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">📍</span>
+                                Location & Target Zones
+                            </h3>
+                            ${c.location ? `
+                                <div style="background: white; border: 2px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 12px;">
+                                    <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Location</div>
+                                    <div style="color: #0f172a; font-size: 15px; font-weight: 500;">${c.location}</div>
+                                </div>
+                            ` : ''}
+                            ${c.barangay_target_zones && formatJSON(c.barangay_target_zones) !== 'None' ? `
+                                <div style="background: #fef3c7; padding: 16px; border-radius: 10px; border-left: 4px solid #f59e0b;">
+                                    <div style="font-size: 12px; font-weight: 600; color: #92400e; margin-bottom: 8px;">🎯 Barangay Target Zones</div>
+                                    <div style="color: #78350f; font-size: 14px;">${formatJSON(c.barangay_target_zones)}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Metadata -->
+                    <div style="padding-top: 20px; border-top: 2px solid #f1f5f9;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 13px;">
+                            <div>
+                                <span style="color: #64748b; font-weight: 500;">Created:</span>
+                                <span style="color: #0f172a; font-weight: 600; margin-left: 4px;">${formatDate(c.created_at)}</span>
+                            </div>
+                            <div>
+                                <span style="color: #64748b; font-weight: 500;">Updated:</span>
+                                <span style="color: #0f172a; font-weight: 600; margin-left: 4px;">${formatDate(c.updated_at)}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
-                    <button id="closeViewModalFooterBtn" style="padding: 8px 16px; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#cbd5e1'" onmouseout="this.style.background='#e2e8f0'">Close</button>
-                    ${!isViewer() && canEditCampaign(c.status) ? `<button id="editFromViewBtn" data-campaign-id="${c.id}" style="padding: 8px 16px; background: #4c8a89; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#3d6f6e'" onmouseout="this.style.background='#4c8a89'">Edit</button>` : ''}
+                
+                <!-- Footer -->
+                <div style="background: #f8fafc; padding: 20px 32px; border-top: 2px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button id="closeViewModalFooterBtn" style="padding: 10px 24px; background: white; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; color: #475569; transition: all 0.2s; font-size: 14px;" onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#cbd5e1'" onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">Close</button>
+                    ${!isViewer() && canEditCampaign(c.status) ? `<button id="editFromViewBtn" data-campaign-id="${c.id}" style="padding: 10px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.3); font-size: 14px;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(102, 126, 234, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(102, 126, 234, 0.3)'">✏️ Edit Campaign</button>` : ''}
                 </div>
             </div>
         `;
