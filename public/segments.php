@@ -979,7 +979,7 @@ async function viewSegment(segmentId) {
         });
         const data = await res.json();
         if (data.error) {
-            alert('Error: ' + data.error);
+            await customAlert('Error: ' + data.error, 'Error');
             return;
         }
         
@@ -1129,7 +1129,7 @@ async function viewSegment(segmentId) {
             }
         });
     } catch (err) {
-        alert('Failed to load segment: ' + err.message);
+        await customAlert('Failed to load segment: ' + err.message, 'Error');
     }
 }
 
@@ -1141,7 +1141,7 @@ async function editSegment(segmentId) {
         });
         const data = await res.json();
         if (data.error) {
-            alert('Error: ' + data.error);
+            await customAlert('Error: ' + data.error, 'Error');
             return;
         }
         
@@ -1172,13 +1172,14 @@ async function editSegment(segmentId) {
         document.getElementById('create-segment').scrollIntoView({ behavior: 'smooth', block: 'start' });
         
     } catch (err) {
-        alert('Failed to load segment: ' + err.message);
+        await customAlert('Failed to load segment: ' + err.message, 'Error');
     }
 }
 
 // Delete segment
 async function deleteSegment(segmentId) {
-    if (!confirm('Are you sure you want to delete this segment? This action cannot be undone and will remove all member associations.')) {
+    const confirmed = await customConfirm('Are you sure you want to delete this segment? This action cannot be undone and will remove all member associations.', 'Delete Segment');
+    if (!confirmed) {
         return;
     }
     
@@ -1195,17 +1196,17 @@ async function deleteSegment(segmentId) {
             const errorMsg = data.error || 'Failed to delete segment';
             // Handle database table missing error
             if (errorMsg.toLowerCase().includes('sqlstate') || errorMsg.toLowerCase().includes('table') || errorMsg.toLowerCase().includes('1146')) {
-                alert('Unable to delete segment due to a database configuration issue. Please contact the system administrator.');
+                await customAlert('Unable to delete segment due to a database configuration issue. Please contact the system administrator.', 'Database Error');
             } else {
-                alert('Error: ' + errorMsg);
+                await customAlert('Error: ' + errorMsg, 'Delete Failed');
             }
             return;
         }
         
-        alert('Segment deleted successfully!');
+        await customAlert('Segment deleted successfully!', 'Success');
         loadSegments();
     } catch (err) {
-        alert('Failed to delete segment: ' + err.message);
+        await customAlert('Failed to delete segment: ' + err.message, 'Error');
     }
 }
 

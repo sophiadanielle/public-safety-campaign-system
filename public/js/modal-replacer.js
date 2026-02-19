@@ -2,17 +2,12 @@
  * Modal Replacement Helper
  * This script wraps the native alert/confirm/prompt to use custom modals
  * Add this after custom-modals.js to automatically replace all calls
- * 
- * CURRENTLY DISABLED - Using default browser modals
- * To enable custom modals, uncomment the code below
  */
 
 // Store original functions
 window._originalAlert = window.alert;
 window._originalConfirm = window.confirm;
 window._originalPrompt = window.prompt;
-
-/* CUSTOM MODALS DISABLED - UNCOMMENT TO ENABLE
 
 // Replace alert with custom modal
 window.alert = function(message) {
@@ -46,8 +41,6 @@ window.prompt = function(message, defaultValue) {
     return window._originalPrompt(message, defaultValue);
 };
 
-*/
-
 // Helper function to convert alert calls in async context
 window.asyncAlert = async function(message, title = 'Notice') {
     if (window.customAlert) {
@@ -66,4 +59,4 @@ window.asyncConfirm = async function(message, title = 'Confirm') {
     }
 };
 
-console.log('Modal replacer loaded - using DEFAULT browser modals (custom modals disabled)');
+console.log('Modal replacer loaded - alert() calls will use custom modals');
