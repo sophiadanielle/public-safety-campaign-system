@@ -5523,13 +5523,13 @@ async function approveCampaign(campaignId) {
 // Finalize Schedule (Captain only)
 async function finalizeSchedule(campaignId) {
     if (!canFinalizeSchedule()) {
-        await customAlert('Only Captain can finalize schedules.', 'Permission Denied');
+        alert('Only Captain can finalize schedules.');
         return;
     }
     
     const campaign = allCampaigns.find(c => c.id === campaignId);
     if (!campaign) {
-        await customAlert('Campaign not found', 'Error');
+        alert('Campaign not found');
         return;
     }
     
@@ -5537,13 +5537,12 @@ async function finalizeSchedule(campaignId) {
     let scheduleDateTime = campaign.ai_recommended_datetime || campaign.draft_schedule_datetime;
     
     if (!scheduleDateTime) {
-        const manualDateTime = await customPrompt('Enter final schedule date & time (YYYY-MM-DD HH:MM:SS):', '', 'Schedule Date & Time');
+        const manualDateTime = prompt('Enter final schedule date & time (YYYY-MM-DD HH:MM:SS):');
         if (!manualDateTime) return;
         scheduleDateTime = manualDateTime;
     }
     
-    const confirmed = await customConfirm(`Finalize schedule for ${campaign.title}?\nSchedule: ${scheduleDateTime}`, 'Finalize Schedule');
-    if (!confirmed) {
+    if (!confirm(`Finalize schedule for ${campaign.title}?\nSchedule: ${scheduleDateTime}`)) {
         return;
     }
     
@@ -5559,15 +5558,15 @@ async function finalizeSchedule(campaignId) {
         
         const data = await res.json();
         if (!res.ok) {
-            await customAlert('Error: ' + (data.error || 'Failed to finalize schedule'), 'Error');
+            alert('Error: ' + (data.error || 'Failed to finalize schedule'));
             return;
         }
         
-        await customAlert('Schedule finalized successfully!', 'Success');
+        alert('Schedule finalized successfully!');
         // FIX: Use centralized refresh to ensure all views update
         refreshAllCampaignViews();
     } catch (err) {
-        await customAlert('Failed to finalize schedule: ' + err.message, 'Error');
+        alert('Failed to finalize schedule: ' + err.message);
     }
 }
 
@@ -5703,23 +5702,22 @@ async function recommendApproval(campaignId) {
 // Close Campaign (Captain only - Approved/Ongoing → Completed)
 async function closeCampaign(campaignId) {
     if (!isCaptain() && !isAdmin()) {
-        await customAlert('Only Captain can close campaigns.', 'Permission Denied');
+        alert('Only Captain can close campaigns.');
         return;
     }
     
     const campaign = allCampaigns.find(c => c.id === campaignId);
     if (!campaign) {
-        await customAlert('Campaign not found', 'Error');
+        alert('Campaign not found');
         return;
     }
     
     if (campaign.status !== 'approved' && campaign.status !== 'ongoing') {
-        await customAlert('Only Approved or Ongoing campaigns can be closed.', 'Invalid Status');
+        alert('Only Approved or Ongoing campaigns can be closed.');
         return;
     }
     
-    const confirmed = await customConfirm(`Close "${campaign.title}"? This will mark the campaign as Completed.`, 'Close Campaign');
-    if (!confirmed) {
+    if (!confirm(`Close "${campaign.title}"? This will mark the campaign as Completed.`)) {
         return;
     }
     
@@ -5735,14 +5733,14 @@ async function closeCampaign(campaignId) {
         
         const data = await res.json();
         if (!res.ok) {
-            await customAlert('Error: ' + (data.error || 'Failed to close campaign'), 'Error');
+            alert('Error: ' + (data.error || 'Failed to close campaign'));
             return;
         }
         
-        await customAlert('Campaign closed successfully!', 'Success');
+        alert('Campaign closed successfully!');
         refreshAllCampaignViews();
     } catch (err) {
-        await customAlert('Failed to close campaign: ' + err.message, 'Error');
+        alert('Failed to close campaign: ' + err.message);
     }
 }
 
