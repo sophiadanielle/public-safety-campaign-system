@@ -1024,7 +1024,7 @@ class CampaignController
                     draft_schedule_datetime = ai_recommended_datetime,
                     status = CASE 
                         WHEN status = "draft" THEN "scheduled"
-                        WHEN status IN ("pending", "approved") THEN "published"
+                        WHEN status IN ("pending", "approved") THEN "scheduled"
                         ELSE status
                     END
                 WHERE id = :id AND ai_recommended_datetime IS NOT NULL
@@ -1043,7 +1043,7 @@ class CampaignController
                     draft_schedule_datetime = :final_schedule_datetime,
                     status = CASE 
                         WHEN status = "draft" THEN "scheduled"
-                        WHEN status IN ("pending", "approved") THEN "published"
+                        WHEN status IN ("pending", "approved") THEN "scheduled"
                         ELSE status
                     END
                 WHERE id = :id

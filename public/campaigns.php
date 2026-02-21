@@ -1287,6 +1287,97 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     </div><!-- End Modal Overlay -->
     <?php endif; // End RBAC: Hide planning modal for Viewer ?>
 
+    <!-- Add Budget Line Items Modal -->
+    <?php if (!$isViewer): ?>
+    <div id="budgetModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; overflow-y: auto; padding: 20px;">
+        <div class="modal-content" style="background: white; max-width: 800px; margin: 20px auto; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative;">
+            <!-- Modal Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 16px 16px 0 0;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-coins" style="color: #4c8a89;"></i>
+                    Add Budget Line Items
+                </h2>
+                <button type="button" onclick="closeBudgetModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; padding: 4px 8px; line-height: 1;" title="Close">
+                    &times;
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div style="padding: 24px; max-height: calc(100vh - 200px); overflow-y: auto;">
+                <!-- Campaign Selection -->
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Campaign *</label>
+                    <select id="budget_campaign_id" required style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="">Select Campaign...</option>
+                    </select>
+                </div>
+                
+                <!-- Line Items Table -->
+                <div style="overflow-x: auto; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #e2e8f0;">
+                                <th style="padding: 10px; text-align: left; font-weight: 600;">Item Name *</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; width: 120px;">Type *</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; width: 80px;">Qty *</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; width: 120px;">Unit Cost (₱) *</th>
+                                <th style="padding: 10px; text-align: center; font-weight: 600; width: 60px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="budgetItemsContainer">
+                            <tr class="budget-item-row" data-row="0">
+                                <td style="padding: 8px;"><input type="text" class="budget-item-name" placeholder="e.g., Tarpaulin" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
+                                <td style="padding: 8px;">
+                                    <select class="budget-item-type" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                                        <option value="consumable">Consumable</option>
+                                        <option value="material">Material</option>
+                                    </select>
+                                </td>
+                                <td style="padding: 8px;"><input type="number" class="budget-item-qty" min="1" value="1" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
+                                <td style="padding: 8px;"><input type="number" class="budget-item-cost" min="0" step="0.01" placeholder="0.00" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
+                                <td style="padding: 8px; text-align: center;">
+                                    <button type="button" onclick="removeBudgetRow(this)" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; background: #ef4444; color: white; border: none;" title="Remove row">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button type="button" onclick="addBudgetRow()" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; margin-bottom: 20px;">
+                    <i class="fas fa-plus"></i> Add Another Item
+                </button>
+                
+                <!-- Funding Source (Overall) -->
+                <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; border-radius: 6px; padding: 16px; margin-bottom: 20px;">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block; color: #0c4a6e;">
+                        <i class="fas fa-wallet" style="margin-right: 6px;"></i> Funding Source (for all items) *
+                    </label>
+                    <select id="budget_funding_source" required style="width: 100%; max-width: 300px; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="government_allocated">Government Allocated</option>
+                        <option value="reimbursable">Reimbursable</option>
+                    </select>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #64748b;">This funding source will be applied to all line items above.</p>
+                </div>
+                
+                <div id="budgetStatus" style="margin-bottom: 16px; display: none;"></div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div style="padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" onclick="clearBudgetRows()" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-eraser"></i> Clear All
+                </button>
+                <button type="button" onclick="closeBudgetModal()" class="btn btn-secondary">Cancel</button>
+                <button type="button" onclick="saveAllBudgetItems()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-save"></i> Save All Items
+                </button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Campaigns List - Moved to top -->
     <section class="card" id="list-section">
         <div class="section-header" style="margin-bottom: 20px;">
@@ -1385,82 +1476,18 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <section class="card" id="budgeting-section">
         <div class="section-header" style="margin-bottom: 20px;">
             <h2 class="section-title analytics-accent">💰 Financial & Budgeting</h2>
-            <button class="btn btn-secondary" onclick="loadBudgetData()" style="display: flex; align-items: center; gap: 6px;">
-                <i class="fas fa-sync-alt"></i> Refresh
-            </button>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="openBudgetModal()" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-plus"></i> Add Budget Line Items
+                </button>
+                <button class="btn btn-secondary" onclick="loadBudgetData()" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
         </div>
         <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
             Manage budget line items for campaigns. Track consumables and materials with funding source allocation. Budget data is connected to <strong>Resource Allocation</strong> for Materials Allocated.
         </p>
-        
-        <!-- Budget Entry Form with Multiple Items Support -->
-        <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
-            <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                <i class="fas fa-plus-circle" style="color: #4c8a89;"></i> Add Budget Line Items
-            </h4>
-            
-            <!-- Campaign Selection -->
-            <div style="margin-bottom: 16px;">
-                <label style="font-weight: 600; margin-bottom: 8px; display: block;">Campaign *</label>
-                <select id="budget_campaign_id" required style="width: 100%; max-width: 400px; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
-                    <option value="">Select Campaign...</option>
-                </select>
-            </div>
-            
-            <!-- Line Items Table -->
-            <div style="overflow-x: auto; margin-bottom: 16px;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <thead>
-                        <tr style="background: #e2e8f0;">
-                            <th style="padding: 10px; text-align: left; font-weight: 600;">Item Name *</th>
-                            <th style="padding: 10px; text-align: left; font-weight: 600; width: 120px;">Type *</th>
-                            <th style="padding: 10px; text-align: left; font-weight: 600; width: 80px;">Qty *</th>
-                            <th style="padding: 10px; text-align: left; font-weight: 600; width: 120px;">Unit Cost (₱) *</th>
-                            <th style="padding: 10px; text-align: left; font-weight: 600; width: 140px;">Funding Source *</th>
-                            <th style="padding: 10px; text-align: center; font-weight: 600; width: 60px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="budgetItemsContainer">
-                        <tr class="budget-item-row" data-row="0">
-                            <td style="padding: 8px;"><input type="text" class="budget-item-name" placeholder="e.g., Tarpaulin" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
-                            <td style="padding: 8px;">
-                                <select class="budget-item-type" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;">
-                                    <option value="consumable">Consumable</option>
-                                    <option value="material">Material</option>
-                                </select>
-                            </td>
-                            <td style="padding: 8px;"><input type="number" class="budget-item-qty" min="1" value="1" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
-                            <td style="padding: 8px;"><input type="number" class="budget-item-cost" min="0" step="0.01" placeholder="0.00" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
-                            <td style="padding: 8px;">
-                                <select class="budget-item-funding" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;">
-                                    <option value="government_allocated">Government</option>
-                                    <option value="reimbursable">Reimbursable</option>
-                                </select>
-                            </td>
-                            <td style="padding: 8px; text-align: center;">
-                                <button type="button" onclick="removeBudgetRow(this)" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; background: #ef4444; color: white; border: none;" title="Remove row">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Action Buttons -->
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-                <button type="button" onclick="addBudgetRow()" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="fas fa-plus"></i> Add Another Item
-                </button>
-                <button type="button" onclick="saveAllBudgetItems()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="fas fa-save"></i> Save All Items
-                </button>
-                <button type="button" onclick="clearBudgetRows()" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="fas fa-eraser"></i> Clear All
-                </button>
-            </div>
-            <div id="budgetStatus" style="margin-top: 12px; display: none;"></div>
-        </div>
         
         <!-- Budget Summary Cards -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
@@ -4501,6 +4528,13 @@ async function loadResources() {
         allCampaigns = data.data || [];
         console.log('loadCampaigns() - Campaigns count:', allCampaigns.length);
         
+        // Filter out archived campaigns from main list (they show in View Archived only)
+        allCampaigns = allCampaigns.filter(c => {
+            const status = (c.status || '').toLowerCase();
+            return status !== 'archived';
+        });
+        console.log('loadCampaigns() - Filtered out archived, remaining:', allCampaigns.length);
+        
         // RBAC: For Viewer, filter to show only approved/ongoing campaigns (read-only)
         const isViewerCheck = isViewer();
         if (isViewerCheck) {
@@ -4866,10 +4900,10 @@ function renderPaginatedCampaigns() {
             <td><span class="badge ${c.status || 'draft'}">${(c.status || 'draft').charAt(0).toUpperCase() + (c.status || 'draft').slice(1)}</span></td>
             <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${c.location || '-'}">${c.location || '-'}</td>
             <td style="white-space: nowrap;">
-                <button class="btn btn-secondary" onclick="viewCampaignDetails(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">View</button>
+                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">View</button>
                 ${!isViewer() ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">Edit</button>` : ''}
                 ${!isViewer() && c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">Finalize</button>` : ''}
-                ${!isViewer() && (c.status === 'ongoing' || c.status === 'active') ? `<button class="btn btn-success" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Close</button>` : ''}
+                ${!isViewer() && (c.status === 'ongoing' || c.status === 'active' || c.status === 'scheduled') ? `<button class="btn btn-success" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Close</button>` : ''}
                 ${!isViewer() && c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-warning" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;">Archive</button>` : ''}
             </td>
         `;
@@ -4923,7 +4957,48 @@ function populateBudgetCampaignDropdown() {
 // Budget row counter
 let budgetRowCounter = 1;
 
-// Add new budget row
+// Budget Modal Functions
+function openBudgetModal() {
+    const modal = document.getElementById('budgetModal');
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        // Populate campaign dropdown
+        populateBudgetCampaignDropdown();
+    }
+}
+
+function closeBudgetModal() {
+    const modal = document.getElementById('budgetModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Close budget modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('budgetModal');
+    if (modal && e.target === modal) {
+        closeBudgetModal();
+    }
+});
+
+// Populate budget campaign dropdown
+function populateBudgetCampaignDropdown() {
+    const select = document.getElementById('budget_campaign_id');
+    if (!select || !allCampaigns) return;
+    
+    select.innerHTML = '<option value="">Select Campaign...</option>';
+    allCampaigns.forEach(c => {
+        const option = document.createElement('option');
+        option.value = c.id;
+        option.textContent = `${c.title} (ID: ${c.id})`;
+        select.appendChild(option);
+    });
+}
+
+// Add new budget row (without funding source - it's now overall)
 function addBudgetRow() {
     const container = document.getElementById('budgetItemsContainer');
     if (!container) return;
@@ -5008,6 +5083,9 @@ async function saveAllBudgetItems() {
         return;
     }
     
+    // Get overall funding source
+    const fundingSource = document.getElementById('budget_funding_source')?.value || 'government_allocated';
+    
     const rows = document.querySelectorAll('#budgetItemsContainer .budget-item-row');
     const items = [];
     
@@ -5016,7 +5094,6 @@ async function saveAllBudgetItems() {
         const itemType = row.querySelector('.budget-item-type')?.value;
         const quantity = parseInt(row.querySelector('.budget-item-qty')?.value) || 1;
         const unitCost = parseFloat(row.querySelector('.budget-item-cost')?.value) || 0;
-        const fundingSource = row.querySelector('.budget-item-funding')?.value;
         
         if (itemName) {
             items.push({ item_name: itemName, item_type: itemType, quantity, unit_cost: unitCost, funding_source: fundingSource });
@@ -5061,6 +5138,7 @@ async function saveAllBudgetItems() {
     if (errorCount === 0) {
         showBudgetStatus(`Successfully saved ${savedCount} item(s)!`, 'success');
         clearBudgetRows();
+        closeBudgetModal();
         loadBudgetData();
     } else {
         showBudgetStatus(`Saved ${savedCount} item(s), ${errorCount} failed`, 'error');
@@ -5632,8 +5710,8 @@ async function editCampaign(campaignId) {
             };
         }
         
-        // Scroll to form
-        document.getElementById('planning-section').scrollIntoView({ behavior: 'smooth' });
+        // Open the Plan Campaign modal (since planning section is now a modal)
+        openPlanCampaignModal();
         
     } catch (err) {
         alert('Failed to load campaign: ' + err.message);
