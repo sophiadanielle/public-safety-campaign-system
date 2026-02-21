@@ -959,19 +959,38 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             showStatus('Authenticating...', 'loading');
 
             try {
+                // Add timeout to prevent hanging
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+                
                 const response = await fetch(basePath + '/api/auth_minimal.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ email, password }),
+                    signal: controller.signal
                 });
+                
+                clearTimeout(timeoutId);
 
-                const data = await response.json();
+                // Log response for debugging
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error('Server returned invalid response: ' + responseText.substring(0, 100));
+                }
 
                 if (!response.ok || data.error) {
                     throw new Error(data.error || 'Invalid email or password');
                 }
 
-                if (data.requires_otp) {
+                if (data.success && data.user_id) {
                     currentUserId = data.user_id;
                     document.getElementById('otpEmailDisplay').textContent = data.email;
                     showStatus('', '');
@@ -982,7 +1001,12 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                 }
 
             } catch (error) {
-                showStatus(error.message, 'error');
+                console.error('Login error:', error);
+                if (error.name === 'AbortError') {
+                    showStatus('Request timeout - please try again', 'error');
+                } else {
+                    showStatus(error.message, 'error');
+                }
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
                 loginCard.classList.add('shake');
