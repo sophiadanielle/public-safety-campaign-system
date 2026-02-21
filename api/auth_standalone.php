@@ -25,7 +25,7 @@ try {
     $dbHost = 'localhost';
     $dbName = 'LGU';
     $dbUser = 'root';
-    $dbPass = '';
+    $dbPass = 'YsqnXk6q#145';
     $dbPort = '3306';
     
     if (file_exists($envPath)) {
