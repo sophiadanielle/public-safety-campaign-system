@@ -45,11 +45,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             --success: #16a34a;
         }
 
-                        html, body {
-            margin: 13px;
-            padding: 0;
-        }
-
         .main-content-wrapper {
             margin-left: 280px;
             margin-top: 60px;
@@ -804,9 +799,9 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 
                     tr.innerHTML = `
                         <td>
-                            <div class="user-cell">
+                            <div class="user-cell" style="display:flex;align-items:center;gap:8px;">
                                 <div class="user-avatar">${avatarHtml}</div>
-                                <div class="user-info">
+                                <div class="user-info" style="display:flex;flex-direction:column;">
                                     <span class="user-name">${user.name || 'Unknown'}</span>
                                     <span class="user-email">${user.email || ''}</span>
                                 </div>
@@ -864,7 +859,9 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             document.getElementById('userPassword').required = true;
             document.getElementById('avatarPreview').innerHTML = '<span id="avatarInitials">?</span>';
             document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Save User';
-            document.getElementById('userModal').classList.add('show');
+            const modal = document.getElementById('userModal');
+            modal.style.display = 'flex';
+            modal.classList.add('show');
         }
 
         async function editUser(userId) {
@@ -895,7 +892,9 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     document.getElementById('avatarPreview').innerHTML = `<span id="avatarInitials">${initials}</span>`;
                 }
 
-                document.getElementById('userModal').classList.add('show');
+                const modal = document.getElementById('userModal');
+                modal.style.display = 'flex';
+                modal.classList.add('show');
 
             } catch (err) {
                 showStatus('Error loading user: ' + err.message, 'error');
@@ -910,7 +909,10 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 return;
             }
             
+            // Force hide the modal with direct style manipulation
             modal.classList.remove('show');
+            modal.style.display = 'none';
+            console.log('Modal hidden');
             
             setTimeout(() => {
                 const form = document.getElementById('userForm');
