@@ -85,6 +85,10 @@ require_once __DIR__ . '/../../header/includes/path_helper.php';
             <i class="fas fa-user"></i>
             <span>Profile</span>
         </a>
+        <a href="<?php echo $publicPath; ?>/user_management.php" class="dropdown-item" id="userManagementLink">
+            <i class="fas fa-users-cog"></i>
+            <span>User Management</span>
+        </a>
         <a href="<?php echo $publicPath; ?>/settings.php" class="dropdown-item">
             <i class="fas fa-cog"></i>
             <span>Settings</span>
@@ -98,6 +102,194 @@ require_once __DIR__ . '/../../header/includes/path_helper.php';
         </a>
     </div>
 </div>
+
+<!-- Logout Confirmation Modal -->
+<div class="logout-modal-overlay" id="logoutModal">
+    <div class="logout-modal">
+        <div class="logout-modal-header">
+            <div class="logout-modal-icon">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+        </div>
+        <div class="logout-modal-body">
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to log out of your account?</p>
+        </div>
+        <div class="logout-modal-footer">
+            <button class="btn-logout-cancel" onclick="closeLogoutModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button class="btn-logout-confirm" onclick="confirmLogout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Logout Modal Styles */
+.logout-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 24px;
+}
+
+.logout-modal-overlay.show {
+    display: flex;
+}
+
+.logout-modal {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    animation: logoutModalSlideIn 0.3s ease;
+    overflow: hidden;
+}
+
+@keyframes logoutModalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.logout-modal-header {
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    padding: 32px;
+    text-align: center;
+}
+
+.logout-modal-icon {
+    width: 72px;
+    height: 72px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.logout-modal-icon i {
+    font-size: 32px;
+    color: white;
+}
+
+.logout-modal-body {
+    padding: 32px;
+    text-align: center;
+}
+
+.logout-modal-body h3 {
+    margin: 0 0 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.logout-modal-body p {
+    margin: 0;
+    font-size: 15px;
+    color: #64748b;
+    line-height: 1.5;
+}
+
+.logout-modal-footer {
+    padding: 20px 32px 32px;
+    display: flex;
+    gap: 12px;
+}
+
+.btn-logout-cancel,
+.btn-logout-confirm {
+    flex: 1;
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-logout-cancel {
+    background: #f1f5f9;
+    color: #475569;
+    border: 2px solid #e2e8f0;
+}
+
+.btn-logout-cancel:hover {
+    background: #e2e8f0;
+}
+
+.btn-logout-confirm {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.btn-logout-confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+}
+
+/* Header color accent from logo */
+.admin-header {
+    border-bottom: 2px solid rgba(13, 148, 136, 0.1) !important;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.98), rgba(240, 253, 250, 0.95)) !important;
+}
+
+.admin-header .notification-btn:hover {
+    background: rgba(13, 148, 136, 0.1);
+    color: #0d9488;
+}
+
+.admin-header .notification-btn.active {
+    background: rgba(13, 148, 136, 0.15);
+    color: #0d9488;
+}
+
+.user-profile:hover {
+    background: rgba(13, 148, 136, 0.08);
+}
+
+.user-profile.active {
+    background: rgba(13, 148, 136, 0.12);
+}
+
+/* Avatar with initials */
+.user-avatar-initials {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 50%;
+}
+</style>
 
 <!-- Notification Modal -->
 <div class="notification-modal" id="notificationModal">
@@ -278,10 +470,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Helper function to get initials from name
+    function getInitials(name) {
+        if (!name) return 'U';
+        const parts = name.trim().split(' ');
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+        return name.substring(0, 2).toUpperCase();
+    }
+    
     // Helper function to update user display
     function updateUserDisplay(user) {
         if (!user) {
-            user = { name: 'User', email: '', role_id: null };
+            user = { name: 'User', fullname: 'User', email: '', user_type: null };
         }
         
         // Store userId for message functions
@@ -289,45 +491,33 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('userId', user.id.toString());
         }
         
+        // Support both old (name) and new (fullname) field names
+        const displayName = user.fullname || user.name || 'User';
+        const userType = user.user_type || user.role || 'User';
+        const avatarUrl = user.avatar_url || null;
+        
         // Update header user info
         const userNameEl = document.getElementById('headerUserName');
         const userRoleEl = document.getElementById('headerUserRole');
         const userAvatarEl = document.getElementById('headerUserAvatar');
         
-        // TASK 3: PROVE WHERE "User" IS COMING FROM
-        console.log('=== TASK 3 PROOF: updateUserDisplay called with user.name ===', user.name);
-        console.log('=== TASK 3 PROOF: user.name || "User" will result in ===', user.name || 'User');
         if (userNameEl) {
-            const finalName = user.name || 'User';
-            console.log('=== TASK 3 PROOF: Setting headerUserName.textContent to ===', finalName);
-            userNameEl.textContent = finalName;
+            userNameEl.textContent = displayName;
         }
         if (userRoleEl) {
-            // Use role name from API if available, otherwise fallback to hardcoded mapping
-            let roleDisplayName = user.role || 'User';
-            
-            // Fallback mapping for legacy role_ids (if role name not in API response)
-            if (!user.role && user.role_id) {
-                const roleNames = {
-                    1: 'Barangay Administrator',
-                    2: 'Barangay Staff',
-                    3: 'School Partner',
-                    4: 'NGO Partner'
-                };
-                roleDisplayName = roleNames[user.role_id] || 'User';
-            }
-            
-            // Capitalize first letter of each word for display
-            roleDisplayName = roleDisplayName.split(' ').map(word => 
-                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-            ).join(' ');
-            
-            userRoleEl.textContent = roleDisplayName;
+            userRoleEl.textContent = userType;
         }
         if (userAvatarEl) {
-            const encodedName = encodeURIComponent(user.name || 'User');
-            userAvatarEl.src = `https://ui-avatars.com/api/?name=${encodedName}&background=4c8a89&color=fff&size=128`;
-            userAvatarEl.alt = user.name || 'User';
+            if (avatarUrl && avatarUrl.startsWith('data:')) {
+                userAvatarEl.src = avatarUrl;
+            } else if (avatarUrl) {
+                userAvatarEl.src = avatarUrl;
+            } else {
+                // Use initials avatar
+                const initials = getInitials(displayName);
+                userAvatarEl.outerHTML = `<div class="user-avatar-initials" id="headerUserAvatar">${initials}</div>`;
+            }
+            userAvatarEl.alt = displayName;
         }
         
         // Update dropdown user info
@@ -335,16 +525,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const dropdownEmailEl = document.getElementById('dropdownUserEmail');
         const dropdownAvatarEl = document.getElementById('dropdownUserAvatar');
         
-        console.log('Updating dropdown - Name:', user.name, 'Email:', user.email);
-        if (dropdownNameEl) dropdownNameEl.textContent = user.name || 'User';
+        if (dropdownNameEl) dropdownNameEl.textContent = displayName;
         if (dropdownEmailEl) {
             dropdownEmailEl.textContent = user.email || '';
-            console.log('Dropdown email element updated to:', user.email);
         }
         if (dropdownAvatarEl) {
-            const encodedName = encodeURIComponent(user.name || 'User');
-            dropdownAvatarEl.src = `https://ui-avatars.com/api/?name=${encodedName}&background=4c8a89&color=fff&size=128`;
-            dropdownAvatarEl.alt = user.name || 'User';
+            if (avatarUrl && avatarUrl.startsWith('data:')) {
+                dropdownAvatarEl.src = avatarUrl;
+            } else if (avatarUrl) {
+                dropdownAvatarEl.src = avatarUrl;
+            } else {
+                const initials = getInitials(displayName);
+                dropdownAvatarEl.outerHTML = `<div class="user-avatar-initials" style="width: 48px; height: 48px; font-size: 18px;">${initials}</div>`;
+            }
+            dropdownAvatarEl.alt = displayName;
+        }
+        
+        // Show/hide User Management link based on user type
+        const userMgmtLink = document.getElementById('userManagementLink');
+        if (userMgmtLink) {
+            if (userType === 'Super Admin' || userType === 'Admin') {
+                userMgmtLink.style.display = 'flex';
+            } else {
+                userMgmtLink.style.display = 'none';
+            }
         }
     }
     
@@ -357,21 +561,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // Refresh notification count every 30 seconds
     setInterval(loadNotificationCount, 30000);
     
-    // Logout functionality
+    // Logout functionality - show confirmation modal
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            try {
-                localStorage.removeItem('jwtToken');
-                localStorage.removeItem('currentUser');
-            } catch (e) {
-                console.error('Error clearing localStorage:', e);
-            }
-            const basePath = '<?php echo $basePath; ?>';
-            window.location.href = basePath + '/login.php';
+            openLogoutModal();
         });
     }
+    
+    // Logout modal functions
+    window.openLogoutModal = function() {
+        document.getElementById('logoutModal').classList.add('show');
+        document.getElementById('userProfileDropdown').classList.remove('show');
+    };
+    
+    window.closeLogoutModal = function() {
+        document.getElementById('logoutModal').classList.remove('show');
+    };
+    
+    window.confirmLogout = function() {
+        try {
+            localStorage.removeItem('jwtToken');
+            localStorage.removeItem('currentUser');
+            sessionStorage.clear();
+            document.cookie.split(";").forEach(function(c) {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+        } catch (e) {
+            console.error('Error clearing storage:', e);
+        }
+        const basePath = '<?php echo $basePath; ?>';
+        window.location.href = basePath + '/login.php';
+    };
+    
+    // Close logout modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('logoutModal').classList.contains('show')) {
+            closeLogoutModal();
+        }
+    });
+    
+    // Close logout modal on overlay click
+    document.getElementById('logoutModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeLogoutModal();
+        }
+    });
     const menuToggle = document.getElementById('menuToggle');
     
     // Toggle sidebar from header menu button (mobile)
