@@ -22,12 +22,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 try {
     // Load .env file manually
     $envPath = dirname(__DIR__) . '/.env';
+    
+    // Check if running in production (based on server name)
+    $isProduction = isset($_SERVER['SERVER_NAME']) && 
+                    (strpos($_SERVER['SERVER_NAME'], 'alertaraqc.com') !== false ||
+                     strpos($_SERVER['SERVER_NAME'], '72.60.209.226') !== false);
+    
+    // Default values for local development
     $dbHost = 'localhost';
     $dbName = 'LGU';
     $dbUser = 'root';
-    $dbPass = 'YsqnXk6q#145';
+    $dbPass = '';  // Empty for local XAMPP
     $dbPort = '3306';
     
+    // Try to load from .env file
     if (file_exists($envPath)) {
         $lines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         if ($lines) {
@@ -42,16 +50,27 @@ try {
                 $val = trim(substr($line, $pos + 1));
                 
                 // Remove quotes if present
-                if (($val[0] === '"' && substr($val, -1) === '"') || 
-                    ($val[0] === "'" && substr($val, -1) === "'")) {
+                if (strlen($val) > 1 && 
+                    (($val[0] === '"' && substr($val, -1) === '"') || 
+                     ($val[0] === "'" && substr($val, -1) === "'"))) {
                     $val = substr($val, 1, -1);
                 }
                 
-                if ($key === 'DB_HOST') $dbHost = $val;
-                if ($key === 'DB_NAME') $dbName = $val;
-                if ($key === 'DB_USER') $dbUser = $val;
-                if ($key === 'DB_PASSWORD') $dbPass = $val;
-                if ($key === 'DB_PORT') $dbPort = $val;
+                // Use production credentials if on production server
+                if ($isProduction) {
+                    if ($key === 'PROD_DB_HOST') $dbHost = $val;
+                    if ($key === 'PROD_DB_NAME') $dbName = $val;
+                    if ($key === 'PROD_DB_USER') $dbUser = $val;
+                    if ($key === 'PROD_DB_PASS') $dbPass = $val;
+                    if ($key === 'PROD_DB_PORT') $dbPort = $val;
+                } else {
+                    // Use local credentials
+                    if ($key === 'DB_HOST') $dbHost = $val;
+                    if ($key === 'DB_NAME') $dbName = $val;
+                    if ($key === 'DB_USER') $dbUser = $val;
+                    if ($key === 'DB_PASSWORD') $dbPass = $val;
+                    if ($key === 'DB_PORT') $dbPort = $val;
+                }
             }
         }
     }
