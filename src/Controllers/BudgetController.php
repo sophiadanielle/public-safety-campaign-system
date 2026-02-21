@@ -10,8 +10,13 @@ class BudgetController
 {
     private PDO $pdo;
 
-    public function __construct(PDO $pdo)
-    {
+    public function __construct(
+        PDO $pdo,
+        ?string $jwtSecret = null,
+        ?string $jwtIssuer = null,
+        ?string $jwtAudience = null,
+        ?int $jwtExpirySeconds = null
+    ) {
         $this->pdo = $pdo;
         $this->ensureTableExists();
     }
