@@ -220,6 +220,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             flex-direction: column;
             min-width: 0;
             margin-left: 0;
+            text-align: left;
         }
 
         .user-name {
@@ -228,6 +229,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            line-height: 1.4;
         }
 
         .user-email {
@@ -236,6 +238,26 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            line-height: 1.4;
+        }
+
+        /* Center align table cells for cleaner look */
+        .table-container table td,
+        .table-container table th {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        /* Keep user cell left-aligned but centered vertically */
+        .table-container table td:first-child {
+            text-align: left;
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: flex-start;
         }
 
         .badge {
@@ -651,7 +673,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Logo">
                     <span id="modalTitle">Add New User</span>
                 </h3>
-                <button type="button" class="modal-close" id="modalCloseBtn">
+                <button type="button" class="modal-close" id="modalCloseBtn" onclick="closeModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -708,7 +730,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn" onclick="closeModal()">Cancel</button>
                 <button type="submit" class="btn btn-primary" form="userForm" id="submitBtn">
                     <i class="fas fa-save"></i>
                     Save User

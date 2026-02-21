@@ -4866,9 +4866,11 @@ function renderPaginatedCampaigns() {
             <td><span class="badge ${c.status || 'draft'}">${(c.status || 'draft').charAt(0).toUpperCase() + (c.status || 'draft').slice(1)}</span></td>
             <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${c.location || '-'}">${c.location || '-'}</td>
             <td style="white-space: nowrap;">
-                <button class="btn btn-secondary" onclick="viewCampaignDetails(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">View</button>
-                ${!isViewer() ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Edit</button>` : ''}
-                ${!isViewer() ? `<button class="btn btn-danger" onclick="deleteCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px; background: #ef4444; color: white; border: none;">Delete</button>` : ''}
+                <button class="btn btn-secondary" onclick="viewCampaignDetails(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">View</button>
+                ${!isViewer() ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">Edit</button>` : ''}
+                ${!isViewer() && c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">Finalize</button>` : ''}
+                ${!isViewer() && (c.status === 'ongoing' || c.status === 'active') ? `<button class="btn btn-success" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Close</button>` : ''}
+                ${!isViewer() && c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-warning" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;">Archive</button>` : ''}
             </td>
         `;
         tbody.appendChild(tr);
