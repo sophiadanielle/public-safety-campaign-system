@@ -707,7 +707,8 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     </div>
 
     <script>
-        // Version: 2.1 - Modal close fix
+        // Version: 2.2 - Cache bust: <?php echo time(); ?>
+        console.log('User Management Script Loaded - Version 2.2');
         const apiBase = '<?php echo $apiPath; ?>';
         const basePath = '<?php echo $basePath; ?>';
         let showingArchived = false;
