@@ -84,7 +84,12 @@ try {
     
 } catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Database connection failed']);
+    echo json_encode([
+        'error' => 'Database connection failed',
+        'message' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine()
+    ]);
     exit;
 }
 
@@ -113,17 +118,17 @@ switch ($action) {
 }
 
 function handleLogin($pdo) {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $email = trim($input['email'] ?? '');
-    $password = $input['password'] ?? '';
-    
-    if (empty($email) || empty($password)) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Email and password are required']);
-        return;
-    }
-    
     try {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $email = trim($input['email'] ?? '');
+        $password = $input['password'] ?? '';
+        
+        if (empty($email) || empty($password)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Email and password are required']);
+            return;
+        }
+        
         $stmt = $pdo->prepare("SELECT * FROM campaign_users WHERE email = ? AND archived = 0");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -148,7 +153,7 @@ function handleLogin($pdo) {
                 @$mailService->sendOTP($email, $user['fullname'], $otpCode);
             }
         } catch (Exception $e) {
-            // Ignore
+            // Ignore email errors
         }
         
         echo json_encode([
@@ -159,9 +164,14 @@ function handleLogin($pdo) {
             'user_id' => $user['id']
         ]);
         
-    } catch (PDOException $e) {
+    } catch (Exception $e) {
         http_response_code(500);
-        echo json_encode(['error' => 'Server error']);
+        echo json_encode([
+            'error' => 'Server error',
+            'message' => $e->getMessage(),
+            'file' => basename($e->getFile()),
+            'line' => $e->getLine()
+        ]);
     }
 }
 
