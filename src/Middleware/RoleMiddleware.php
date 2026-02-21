@@ -85,7 +85,21 @@ class RoleMiddleware
      */
     public static function getUserRole(?array $user, ?PDO $pdo): ?string
     {
-        if (!$user || !isset($user['role_id'])) {
+        if (!$user) {
+            return null;
+        }
+
+        // Check if user has role directly (from campaign_users table via OTP login)
+        if (isset($user['role']) && !empty($user['role'])) {
+            return $user['role'];
+        }
+
+        // Check if user has user_type (from campaign_users table)
+        if (isset($user['user_type']) && !empty($user['user_type'])) {
+            return $user['user_type'];
+        }
+
+        if (!isset($user['role_id'])) {
             return null;
         }
 
@@ -94,9 +108,15 @@ class RoleMiddleware
             return null;
         }
 
+        // Query campaign_department_roles for role_id > 0
+        $roleId = (int) $user['role_id'];
+        if ($roleId <= 0) {
+            return null;
+        }
+
         try {
             $stmt = $pdo->prepare('SELECT name FROM campaign_department_roles WHERE id = :id LIMIT 1');
-            $stmt->execute(['id' => (int) $user['role_id']]);
+            $stmt->execute(['id' => $roleId]);
             $role = $stmt->fetch();
 
             return $role ? $role['name'] : null;

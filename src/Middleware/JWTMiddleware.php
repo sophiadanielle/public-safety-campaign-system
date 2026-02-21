@@ -63,29 +63,39 @@ class JWTMiddleware
         }
 
         // Query database for full user record
+        // Try campaign_users first (OTP login), then fall back to campaign_department_users (standard login)
         error_log('DIAGNOSTIC: JWTMiddleware::authenticate - Querying database for user ID: ' . $userId);
+        $user = false;
+        
         try {
-            $stmt = $pdo->prepare('SELECT id, name, email, role_id, barangay_id FROM campaign_department_users WHERE id = :id AND is_active = 1 LIMIT 1');
+            // First try campaign_users table (used by OTP auth)
+            $stmt = $pdo->prepare('SELECT id, fullname as name, email, user_type as role, 0 as role_id, NULL as barangay_id FROM campaign_users WHERE id = :id AND archived = 0 LIMIT 1');
             $stmt->execute(['id' => $userId]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            // CRITICAL PROOF: Log exact database query result
-            error_log('=== CRITICAL PROOF: JWTMiddleware database query result ===');
-            error_log('CRITICAL: Query executed: SELECT id, name, email, role_id, barangay_id FROM campaign_department_users WHERE id = ' . $userId . ' AND is_active = 1');
-            error_log('CRITICAL: fetch() returned: ' . ($user === false ? 'FALSE (no rows)' : ($user === null ? 'NULL' : 'ARRAY')));
-            if ($user !== false && $user !== null) {
-                error_log('CRITICAL: User array: ' . json_encode($user, JSON_PRETTY_PRINT));
-                error_log('CRITICAL: user["name"] value: ' . (isset($user['name']) ? var_export($user['name'], true) : 'KEY NOT SET'));
-                error_log('CRITICAL: user["name"] type: ' . (isset($user['name']) ? gettype($user['name']) : 'N/A'));
-                error_log('CRITICAL: user["name"] empty check: ' . (isset($user['name']) && empty($user['name']) ? 'EMPTY' : 'NOT EMPTY'));
-            } else {
-                error_log('CRITICAL: User NOT FOUND in database - query returned no rows');
+            if ($user) {
+                error_log('DIAGNOSTIC: Found user in campaign_users table');
             }
         } catch (\PDOException $e) {
-            error_log('CRITICAL ERROR: Database query failed: ' . $e->getMessage());
-            error_log('CRITICAL ERROR: SQL State: ' . $e->getCode());
-            $user = false;
+            error_log('DIAGNOSTIC: campaign_users query failed: ' . $e->getMessage());
         }
+        
+        // Fall back to campaign_department_users if not found
+        if (!$user) {
+            try {
+                $stmt = $pdo->prepare('SELECT id, name, email, role_id, barangay_id FROM campaign_department_users WHERE id = :id AND is_active = 1 LIMIT 1');
+                $stmt->execute(['id' => $userId]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($user) {
+                    error_log('DIAGNOSTIC: Found user in campaign_department_users table');
+                }
+            } catch (\PDOException $e) {
+                error_log('DIAGNOSTIC: campaign_department_users query failed: ' . $e->getMessage());
+            }
+        }
+        
+        error_log('DIAGNOSTIC: Final user result: ' . ($user ? json_encode($user) : 'NOT FOUND'));
         
         if (!$user) {
             // If user not found in database, return data from JWT token as fallback

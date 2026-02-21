@@ -14,12 +14,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// Load JWT library
+// Load JWT library and MailService
 if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
     require_once __DIR__ . '/../vendor/autoload.php';
 }
 
 use Firebase\JWT\JWT;
+use App\Services\MailService;
 
 // Check action
 $action = $_GET['action'] ?? 'login';
@@ -80,13 +81,25 @@ try {
     $stmt = $pdo->prepare("INSERT INTO campaign_otp_codes (user_id, email, otp_code, expires_at) VALUES (?, ?, ?, ?)");
     $stmt->execute([$user['id'], $email, $otpCode, $expiresAt]);
     
+    // Send OTP via email
+    $emailSent = false;
+    try {
+        $mailService = new MailService();
+        $emailSent = $mailService->sendOTP($email, $user['fullname'] ?? 'User', $otpCode);
+        if (!$emailSent) {
+            error_log("Failed to send OTP email to: $email");
+        }
+    } catch (Exception $mailError) {
+        error_log("Mail service error: " . $mailError->getMessage());
+    }
+    
     // Success
     echo json_encode([
         'success' => true,
-        'message' => 'OTP generated',
+        'message' => $emailSent ? 'OTP sent to your email' : 'OTP generated (check email)',
         'user_id' => $user['id'],
         'email' => substr($email, 0, 2) . '***@' . explode('@', $email)[1],
-        'otp_for_testing' => $otpCode
+        'email_sent' => $emailSent
     ]);
     
 } catch (Exception $e) {
@@ -137,17 +150,23 @@ function handleVerifyOTP() {
             return;
         }
         
-        // Generate JWT token
+        // Generate JWT token with correct iss and aud claims to match JWTMiddleware
         $jwtSecret = getenv('JWT_SECRET') ?: 'your-secret-key-change-in-production';
+        $jwtIssuer = 'public-safety-campaign-system';
+        $jwtAudience = 'public-safety-campaign-system';
+        $now = time();
         $payload = [
-            'iss' => 'alertaraqc.com',
-            'iat' => time(),
-            'exp' => time() + (24 * 60 * 60),
+            'iss' => $jwtIssuer,
+            'aud' => $jwtAudience,
+            'iat' => $now,
+            'nbf' => $now,
+            'exp' => $now + (24 * 60 * 60),
             'sub' => $user['id'],
             'email' => $user['email'],
             'name' => $user['fullname'],
             'fullname' => $user['fullname'],
             'user_type' => $user['user_type'],
+            'role_id' => 0,
             'role' => $user['user_type'],
             'avatar_url' => $user['avatar_url']
         ];

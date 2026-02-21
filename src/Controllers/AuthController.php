@@ -295,18 +295,43 @@ class AuthController
                 return ['user' => $this->publicUser($user)];
             }
 
-            // Fetch full user data with barangay name and role name
+            // Fetch full user data - try campaign_users first (OTP login), then campaign_department_users
             $userId = (int) $user['id'];
-            $stmt = $this->pdo->prepare('
-                SELECT u.id, u.name, u.email, u.role_id, u.barangay_id, u.phone_number, u.created_at, 
-                       b.name as barangay_name, r.name as role_name
-                FROM campaign_department_users u 
-                LEFT JOIN `campaign_department_barangays` b ON b.id = u.barangay_id 
-                LEFT JOIN `campaign_department_roles` r ON r.id = u.role_id
-                WHERE u.id = :id AND u.is_active = 1
-            ');
-            $stmt->execute(['id' => $userId]);
-            $fullUser = $stmt->fetch(PDO::FETCH_ASSOC);
+            $fullUser = null;
+            
+            // Try campaign_users table first (used by OTP auth)
+            try {
+                $stmt = $this->pdo->prepare('
+                    SELECT id, fullname as name, email, user_type as role_name, 0 as role_id, 
+                           NULL as barangay_id, phone, date_created as created_at, NULL as barangay_name
+                    FROM campaign_users 
+                    WHERE id = :id AND archived = 0
+                ');
+                $stmt->execute(['id' => $userId]);
+                $fullUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($fullUser) {
+                    error_log('AuthController::me - Found user in campaign_users table');
+                }
+            } catch (\PDOException $e) {
+                error_log('AuthController::me - campaign_users query failed: ' . $e->getMessage());
+            }
+            
+            // Fall back to campaign_department_users
+            if (!$fullUser) {
+                $stmt = $this->pdo->prepare('
+                    SELECT u.id, u.name, u.email, u.role_id, u.barangay_id, u.phone_number, u.created_at, 
+                           b.name as barangay_name, r.name as role_name
+                    FROM campaign_department_users u 
+                    LEFT JOIN `campaign_department_barangays` b ON b.id = u.barangay_id 
+                    LEFT JOIN `campaign_department_roles` r ON r.id = u.role_id
+                    WHERE u.id = :id AND u.is_active = 1
+                ');
+                $stmt->execute(['id' => $userId]);
+                $fullUser = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($fullUser) {
+                    error_log('AuthController::me - Found user in campaign_department_users table');
+                }
+            }
 
             // TASK 2: PROVE REAL API RESPONSE - Log exact database result
             $dbResultJson = json_encode($fullUser, JSON_PRETTY_PRINT);

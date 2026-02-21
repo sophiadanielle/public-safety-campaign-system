@@ -157,15 +157,24 @@ function handleVerifyOTP($pdo) {
             return;
         }
         
+        // Generate JWT token with correct iss and aud claims to match JWTMiddleware
         $jwtSecret = getenv('JWT_SECRET') ?: 'your-secret-key-change-in-production';
+        $jwtIssuer = 'public-safety-campaign-system';
+        $jwtAudience = 'public-safety-campaign-system';
+        $now = time();
         $payload = [
-            'iss' => 'alertaraqc.com',
-            'iat' => time(),
-            'exp' => time() + (24 * 60 * 60),
+            'iss' => $jwtIssuer,
+            'aud' => $jwtAudience,
+            'iat' => $now,
+            'nbf' => $now,
+            'exp' => $now + (24 * 60 * 60),
             'sub' => $user['id'],
             'email' => $user['email'],
+            'name' => $user['fullname'],
             'fullname' => $user['fullname'],
             'user_type' => $user['user_type'],
+            'role_id' => 0,
+            'role' => $user['user_type'],
             'avatar_url' => $user['avatar_url']
         ];
         
