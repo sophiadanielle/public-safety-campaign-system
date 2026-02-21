@@ -959,7 +959,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             showStatus('Authenticating...', 'loading');
 
             try {
-                const response = await fetch(basePath + '/api/auth_standalone.php?action=login', {
+                const response = await fetch(basePath + '/api/auth_minimal.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
