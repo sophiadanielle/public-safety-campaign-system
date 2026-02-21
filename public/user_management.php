@@ -612,7 +612,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 <table>
                     <thead>
                         <tr>
-                            <th>User</th>
+                            <th>Userr</th>
                             <th>User Type</th>
                             <th>Created</th>
                             <th>Actions</th>
