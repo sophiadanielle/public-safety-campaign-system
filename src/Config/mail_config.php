@@ -7,8 +7,8 @@
 return [
     'smtp_host' => getenv('SMTP_HOST') ?: 'smtp.gmail.com',
     'smtp_port' => getenv('SMTP_PORT') ?: 587,
-    'smtp_username' => getenv('dxjolomamaril@gmail.com') ?: '',
-    'smtp_password' => getenv('btyd vamg uraa jnsi') ?: '',
+    'smtp_username' => getenv('SMTP_USERNAME') ?: 'dxjolomamaril@gmail.com',
+    'smtp_password' => getenv('SMTP_PASSWORD') ?: 'btyd vamg uraa jnsi',
     'smtp_encryption' => getenv('SMTP_ENCRYPTION') ?: 'tls',
     'from_email' => getenv('MAIL_FROM_EMAIL') ?: 'noreply@alertaraqc.com',
     'from_name' => getenv('MAIL_FROM_NAME') ?: 'Alertara QC',
