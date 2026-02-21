@@ -30,17 +30,67 @@ if ($action === 'verify-otp') {
     exit;
 }
 
-// Step 2: Can we connect to database?
+// Step 2: Load database credentials from .env file
 try {
-    $pdo = new PDO(
-        "mysql:host=localhost;port=3306;dbname=LGU;charset=utf8mb4",
-        "root",
-        "YsqnXk6q#145",
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-        ]
-    );
+    $envPath = dirname(__DIR__) . '/.env';
+    
+    // Check if running in production
+    $isProduction = isset($_SERVER['SERVER_NAME']) && 
+                    (strpos($_SERVER['SERVER_NAME'], 'alertaraqc.com') !== false ||
+                     strpos($_SERVER['SERVER_NAME'], '72.60.209.226') !== false);
+    
+    // Default values for local development
+    $dbHost = 'localhost';
+    $dbName = 'LGU';
+    $dbUser = 'root';
+    $dbPass = '';
+    $dbPort = '3306';
+    
+    // Load from .env file
+    if (file_exists($envPath)) {
+        $lines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($lines) {
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (empty($line) || $line[0] === '#') continue;
+                
+                $pos = strpos($line, '=');
+                if ($pos === false) continue;
+                
+                $key = trim(substr($line, 0, $pos));
+                $val = trim(substr($line, $pos + 1));
+                
+                // Remove quotes if present
+                if (strlen($val) > 1 && 
+                    (($val[0] === '"' && substr($val, -1) === '"') || 
+                     ($val[0] === "'" && substr($val, -1) === "'"))) {
+                    $val = substr($val, 1, -1);
+                }
+                
+                // Use production credentials if on production server
+                if ($isProduction) {
+                    if ($key === 'PROD_DB_HOST') $dbHost = $val;
+                    if ($key === 'PROD_DB_NAME') $dbName = $val;
+                    if ($key === 'PROD_DB_USER') $dbUser = $val;
+                    if ($key === 'PROD_DB_PASS') $dbPass = $val;
+                    if ($key === 'PROD_DB_PORT') $dbPort = $val;
+                } else {
+                    if ($key === 'DB_HOST') $dbHost = $val;
+                    if ($key === 'DB_NAME') $dbName = $val;
+                    if ($key === 'DB_USER') $dbUser = $val;
+                    if ($key === 'DB_PASSWORD') $dbPass = $val;
+                    if ($key === 'DB_PORT') $dbPort = $val;
+                }
+            }
+        }
+    }
+    
+    // Create PDO connection
+    $dsn = "mysql:host=$dbHost;port=$dbPort;dbname=$dbName;charset=utf8mb4";
+    $pdo = new PDO($dsn, $dbUser, $dbPass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]);
 } catch (Exception $e) {
     echo json_encode(['error' => 'DB connection failed: ' . $e->getMessage()]);
     exit;
@@ -108,15 +158,53 @@ try {
 
 function handleVerifyOTP() {
     try {
-        $pdo = new PDO(
-            "mysql:host=localhost;port=3306;dbname=LGU;charset=utf8mb4",
-            "root",
-            "YsqnXk6q#145",
-            [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-            ]
-        );
+        // Load database credentials from .env file
+        $envPath = dirname(__DIR__) . '/.env';
+        
+        $isProduction = isset($_SERVER['SERVER_NAME']) && 
+                        (strpos($_SERVER['SERVER_NAME'], 'alertaraqc.com') !== false ||
+                         strpos($_SERVER['SERVER_NAME'], '72.60.209.226') !== false);
+        
+        $dbHost = 'localhost';
+        $dbName = 'LGU';
+        $dbUser = 'root';
+        $dbPass = '';
+        $dbPort = '3306';
+        
+        if (file_exists($envPath)) {
+            $lines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            if ($lines) {
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if (empty($line) || $line[0] === '#') continue;
+                    $pos = strpos($line, '=');
+                    if ($pos === false) continue;
+                    $key = trim(substr($line, 0, $pos));
+                    $val = trim(substr($line, $pos + 1));
+                    if (strlen($val) > 1 && (($val[0] === '"' && substr($val, -1) === '"') || ($val[0] === "'" && substr($val, -1) === "'"))) {
+                        $val = substr($val, 1, -1);
+                    }
+                    if ($isProduction) {
+                        if ($key === 'PROD_DB_HOST') $dbHost = $val;
+                        if ($key === 'PROD_DB_NAME') $dbName = $val;
+                        if ($key === 'PROD_DB_USER') $dbUser = $val;
+                        if ($key === 'PROD_DB_PASS') $dbPass = $val;
+                        if ($key === 'PROD_DB_PORT') $dbPort = $val;
+                    } else {
+                        if ($key === 'DB_HOST') $dbHost = $val;
+                        if ($key === 'DB_NAME') $dbName = $val;
+                        if ($key === 'DB_USER') $dbUser = $val;
+                        if ($key === 'DB_PASSWORD') $dbPass = $val;
+                        if ($key === 'DB_PORT') $dbPort = $val;
+                    }
+                }
+            }
+        }
+        
+        $pdo = new PDO("mysql:host=$dbHost;port=$dbPort;dbname=$dbName;charset=utf8mb4", $dbUser, $dbPass, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]);
         
         $input = json_decode(file_get_contents('php://input'), true);
         $userId = intval($input['user_id'] ?? 0);
