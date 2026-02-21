@@ -18,8 +18,8 @@ echo "<h1>OTP and User Management - Database Migration</h1>";
 echo "<style>body{font-family:monospace;padding:20px;background:#1e1e1e;color:#d4d4d4;}pre{background:#2d2d2d;padding:10px;overflow-x:auto;}.success{color:#4ec9b0;}.error{color:#f48771;}.warning{color:#dcdcaa;}</style>";
 
 try {
-    // Read the SQL migration file
-    $sqlFile = __DIR__ . '/../../migrations/032_otp_and_user_management.sql';
+    // Read the SQL migration file (MySQL 5.7+ compatible version)
+    $sqlFile = __DIR__ . '/../../migrations/032_otp_and_user_management_compatible.sql';
     
     if (!file_exists($sqlFile)) {
         throw new Exception("Migration file not found: $sqlFile");
