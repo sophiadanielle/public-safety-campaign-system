@@ -85,6 +85,10 @@ require_once __DIR__ . '/../../header/includes/path_helper.php';
             <i class="fas fa-user"></i>
             <span>Profile</span>
         </a>
+        <a href="<?php echo $publicPath; ?>/user_management.php" class="dropdown-item">
+            <i class="fas fa-users-cog"></i>
+            <span>User Management</span>
+        </a>
         <a href="<?php echo $publicPath; ?>/settings.php" class="dropdown-item">
             <i class="fas fa-cog"></i>
             <span>Settings</span>
@@ -325,8 +329,13 @@ document.addEventListener('DOMContentLoaded', function() {
             userRoleEl.textContent = roleDisplayName;
         }
         if (userAvatarEl) {
-            const encodedName = encodeURIComponent(user.name || 'User');
-            userAvatarEl.src = `https://ui-avatars.com/api/?name=${encodedName}&background=4c8a89&color=fff&size=128`;
+            // Use avatar_url if available, otherwise use initials
+            if (user.avatar_url) {
+                userAvatarEl.src = user.avatar_url;
+            } else {
+                const encodedName = encodeURIComponent(user.name || 'User');
+                userAvatarEl.src = `https://ui-avatars.com/api/?name=${encodedName}&background=4c8a89&color=fff&size=128`;
+            }
             userAvatarEl.alt = user.name || 'User';
         }
         
@@ -342,8 +351,13 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Dropdown email element updated to:', user.email);
         }
         if (dropdownAvatarEl) {
-            const encodedName = encodeURIComponent(user.name || 'User');
-            dropdownAvatarEl.src = `https://ui-avatars.com/api/?name=${encodedName}&background=4c8a89&color=fff&size=128`;
+            // Use avatar_url if available, otherwise use initials
+            if (user.avatar_url) {
+                dropdownAvatarEl.src = user.avatar_url;
+            } else {
+                const encodedName = encodeURIComponent(user.name || 'User');
+                dropdownAvatarEl.src = `https://ui-avatars.com/api/?name=${encodedName}&background=4c8a89&color=fff&size=128`;
+            }
             dropdownAvatarEl.alt = user.name || 'User';
         }
     }

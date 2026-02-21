@@ -494,6 +494,247 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         .shake {
             animation: shake 0.3s ease-in-out;
         }
+
+        /* OTP Modal Styles */
+        .otp-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(8px);
+        }
+
+        .otp-modal-overlay.show {
+            display: flex;
+        }
+
+        .otp-modal {
+            background: var(--surface);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
+            animation: otpModalSlideIn 0.4s ease;
+            overflow: hidden;
+        }
+
+        @keyframes otpModalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .otp-modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 32px;
+            text-align: center;
+            position: relative;
+        }
+
+        .otp-modal-header img {
+            height: 48px;
+            margin-bottom: 16px;
+            filter: brightness(0) invert(1);
+        }
+
+        .otp-modal-header h2 {
+            color: white;
+            font-size: 22px;
+            font-weight: 700;
+            margin: 0 0 8px;
+        }
+
+        .otp-modal-header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .otp-modal-body {
+            padding: 32px;
+        }
+
+        .otp-email-display {
+            background: #f0fdfa;
+            border: 1px solid #99f6e4;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .otp-email-display i {
+            color: var(--primary);
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .otp-email-display p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .otp-email-display strong {
+            color: var(--primary-dark);
+        }
+
+        .otp-input-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .otp-input {
+            width: 52px;
+            height: 60px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            outline: none;
+            transition: all 0.2s ease;
+            color: var(--primary-dark);
+        }
+
+        .otp-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
+        }
+
+        .otp-input.filled {
+            border-color: var(--primary);
+            background: #f0fdfa;
+        }
+
+        .otp-timer {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .otp-timer span {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .otp-resend {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .otp-resend button {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .otp-resend button:hover:not(:disabled) {
+            background: #f0fdfa;
+        }
+
+        .otp-resend button:disabled {
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .otp-verify-btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
+        }
+
+        .otp-verify-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4);
+        }
+
+        .otp-verify-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .otp-modal-footer {
+            padding: 20px 32px;
+            background: #f8fafc;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .otp-back-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .otp-back-btn:hover {
+            background: white;
+            color: var(--text-primary);
+        }
+
+        .otp-status {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+            display: none;
+        }
+
+        .otp-status.error {
+            display: block;
+            background: #fef2f2;
+            color: var(--error);
+            border: 1px solid #fecaca;
+        }
+
+        .otp-status.success {
+            display: block;
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
     </style>
 </head>
 <body>
@@ -600,8 +841,60 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         <p>&copy; <?php echo date('Y'); ?> Barangay Public Safety Campaign Management System</p>
     </footer>
 
+    <!-- OTP Verification Modal -->
+    <div class="otp-modal-overlay" id="otpModal">
+        <div class="otp-modal">
+            <div class="otp-modal-header">
+                <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Alertara Logo">
+                <h2>Verify Your Identity</h2>
+                <p>Enter the 6-digit code sent to your email</p>
+            </div>
+            <div class="otp-modal-body">
+                <div class="otp-email-display">
+                    <i class="fas fa-envelope"></i>
+                    <p>Code sent to <strong id="otpEmailDisplay">your email</strong></p>
+                </div>
+
+                <div id="otpStatus" class="otp-status"></div>
+
+                <div class="otp-input-container">
+                    <input type="text" class="otp-input" maxlength="1" data-index="0" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" class="otp-input" maxlength="1" data-index="1" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" class="otp-input" maxlength="1" data-index="2" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" class="otp-input" maxlength="1" data-index="3" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" class="otp-input" maxlength="1" data-index="4" inputmode="numeric" pattern="[0-9]">
+                    <input type="text" class="otp-input" maxlength="1" data-index="5" inputmode="numeric" pattern="[0-9]">
+                </div>
+
+                <div class="otp-timer">
+                    Code expires in <span id="otpTimer">5:00</span>
+                </div>
+
+                <div class="otp-resend">
+                    <button type="button" id="resendOtpBtn" onclick="resendOTP()" disabled>
+                        <i class="fas fa-redo"></i> Resend Code
+                    </button>
+                </div>
+
+                <button type="button" class="otp-verify-btn" id="verifyOtpBtn" onclick="verifyOTP()">
+                    <i class="fas fa-shield-alt"></i>
+                    Verify & Sign In
+                </button>
+            </div>
+            <div class="otp-modal-footer">
+                <button type="button" class="otp-back-btn" onclick="closeOtpModal()">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Login
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const basePath = '<?php echo isset($basePath) ? $basePath : ''; ?>';
+        let otpEmail = '';
+        let otpTimerInterval = null;
+        let otpExpiresAt = null;
         
         function togglePassword() {
             const passwordInput = document.getElementById('password');
@@ -622,6 +915,12 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             const statusEl = document.getElementById('statusMessage');
             statusEl.textContent = message;
             statusEl.className = 'status-message ' + type;
+        }
+
+        function showOtpStatus(message, type) {
+            const statusEl = document.getElementById('otpStatus');
+            statusEl.textContent = message;
+            statusEl.className = 'otp-status ' + type;
         }
 
         function setRoleCookieFromJWT(token) {
@@ -659,20 +958,16 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
 
             // Disable button and show loading
             loginBtn.disabled = true;
-            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
-            showStatus('Authenticating...', 'loading');
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+            showStatus('Verifying credentials...', 'loading');
 
             try {
-                const response = await fetch('/index.php/api/v1/auth/login', {
+                // Send OTP request
+                const response = await fetch('/index.php/api/v1/auth/otp/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
-
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error('Server returned an invalid response');
-                }
 
                 const data = await response.json();
 
@@ -680,8 +975,113 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                     throw new Error(data.error || 'Invalid email or password');
                 }
 
+                // Store email for OTP verification
+                otpEmail = email;
+                
+                // Show OTP modal
+                document.getElementById('otpEmailDisplay').textContent = data.email || email;
+                openOtpModal();
+                
+                showStatus('', '');
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+
+            } catch (error) {
+                showStatus(error.message, 'error');
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+                loginCard.classList.add('shake');
+                setTimeout(() => loginCard.classList.remove('shake'), 300);
+            }
+
+            return false;
+        }
+
+        function openOtpModal() {
+            document.getElementById('otpModal').classList.add('show');
+            clearOtpInputs();
+            startOtpTimer(300); // 5 minutes
+            document.querySelector('.otp-input[data-index="0"]').focus();
+        }
+
+        function closeOtpModal() {
+            document.getElementById('otpModal').classList.remove('show');
+            clearOtpTimer();
+            clearOtpInputs();
+            document.getElementById('otpStatus').className = 'otp-status';
+        }
+
+        function clearOtpInputs() {
+            document.querySelectorAll('.otp-input').forEach(input => {
+                input.value = '';
+                input.classList.remove('filled');
+            });
+        }
+
+        function startOtpTimer(seconds) {
+            clearOtpTimer();
+            otpExpiresAt = Date.now() + (seconds * 1000);
+            document.getElementById('resendOtpBtn').disabled = true;
+            
+            updateTimerDisplay();
+            otpTimerInterval = setInterval(updateTimerDisplay, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const remaining = Math.max(0, Math.floor((otpExpiresAt - Date.now()) / 1000));
+            const minutes = Math.floor(remaining / 60);
+            const secs = remaining % 60;
+            document.getElementById('otpTimer').textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
+            
+            if (remaining <= 0) {
+                clearOtpTimer();
+                document.getElementById('resendOtpBtn').disabled = false;
+                document.getElementById('otpTimer').textContent = 'Expired';
+            }
+        }
+
+        function clearOtpTimer() {
+            if (otpTimerInterval) {
+                clearInterval(otpTimerInterval);
+                otpTimerInterval = null;
+            }
+        }
+
+        function getOtpValue() {
+            let otp = '';
+            document.querySelectorAll('.otp-input').forEach(input => {
+                otp += input.value;
+            });
+            return otp;
+        }
+
+        async function verifyOTP() {
+            const otp = getOtpValue();
+            
+            if (otp.length !== 6) {
+                showOtpStatus('Please enter all 6 digits', 'error');
+                return;
+            }
+
+            const verifyBtn = document.getElementById('verifyOtpBtn');
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+
+            try {
+                const response = await fetch('/index.php/api/v1/auth/otp/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: otpEmail, otp })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || 'Invalid OTP');
+                }
+
                 if (!data.token) {
-                    throw new Error('Authentication failed. Please try again.');
+                    throw new Error('Verification failed. Please try again.');
                 }
 
                 // Store token
@@ -697,34 +1097,116 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                 sessionStorage.setItem('justLoggedIn', 'true');
                 sessionStorage.setItem('loginTimestamp', Date.now().toString());
 
-                showStatus('Login successful! Redirecting...', 'success');
-                loginBtn.innerHTML = '<i class="fas fa-check"></i> Success!';
+                showOtpStatus('Verification successful! Redirecting...', 'success');
+                verifyBtn.innerHTML = '<i class="fas fa-check"></i> Success!';
 
                 // Redirect to dashboard
                 setTimeout(() => {
                     window.location.href = basePath + '/public/dashboard.php?logged_in=1&t=' + Date.now();
-                }, 500);
+                }, 800);
 
             } catch (error) {
-                showStatus(error.message, 'error');
-                loginBtn.disabled = false;
-                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
-                loginCard.classList.add('shake');
-                setTimeout(() => loginCard.classList.remove('shake'), 300);
+                showOtpStatus(error.message, 'error');
+                verifyBtn.disabled = false;
+                verifyBtn.innerHTML = '<i class="fas fa-shield-alt"></i> Verify & Sign In';
             }
-
-            return false;
         }
 
-        // Focus email input on load
+        async function resendOTP() {
+            const resendBtn = document.getElementById('resendOtpBtn');
+            resendBtn.disabled = true;
+            resendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+            try {
+                const response = await fetch('/index.php/api/v1/auth/otp/resend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: otpEmail })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || 'Failed to resend OTP');
+                }
+
+                clearOtpInputs();
+                startOtpTimer(300);
+                showOtpStatus('New code sent to your email', 'success');
+                setTimeout(() => {
+                    document.getElementById('otpStatus').className = 'otp-status';
+                }, 3000);
+
+            } catch (error) {
+                showOtpStatus(error.message, 'error');
+                resendBtn.disabled = false;
+            }
+
+            resendBtn.innerHTML = '<i class="fas fa-redo"></i> Resend Code';
+        }
+
+        // OTP input handling
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('email').focus();
+
+            const otpInputs = document.querySelectorAll('.otp-input');
+            
+            otpInputs.forEach((input, index) => {
+                input.addEventListener('input', function(e) {
+                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    e.target.value = value;
+                    
+                    if (value) {
+                        e.target.classList.add('filled');
+                        if (index < otpInputs.length - 1) {
+                            otpInputs[index + 1].focus();
+                        }
+                    } else {
+                        e.target.classList.remove('filled');
+                    }
+
+                    // Auto-verify when all digits entered
+                    if (getOtpValue().length === 6) {
+                        verifyOTP();
+                    }
+                });
+
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                        otpInputs[index - 1].focus();
+                    }
+                });
+
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedData = (e.clipboardData || window.clipboardData).getData('text');
+                    const digits = pastedData.replace(/[^0-9]/g, '').slice(0, 6);
+                    
+                    digits.split('').forEach((digit, i) => {
+                        if (otpInputs[i]) {
+                            otpInputs[i].value = digit;
+                            otpInputs[i].classList.add('filled');
+                        }
+                    });
+
+                    if (digits.length === 6) {
+                        verifyOTP();
+                    }
+                });
+            });
         });
 
         // Handle Enter key
         document.getElementById('password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Close modal on Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeOtpModal();
             }
         });
     </script>

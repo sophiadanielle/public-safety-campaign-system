@@ -322,6 +322,8 @@ if ($isApiRequest) {
         'dashboard.php',
         'notifications.php',
         'messages.php',
+        'otp.php',
+        'user_management.php',
     ];
 
     $allRoutes = [];

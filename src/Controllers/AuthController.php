@@ -319,7 +319,8 @@ class AuthController
             // Fall back to campaign_department_users
             if (!$fullUser) {
                 $stmt = $this->pdo->prepare('
-                    SELECT u.id, u.name, u.email, u.role_id, u.barangay_id, u.phone_number, u.created_at, 
+                    SELECT u.id, u.name, u.email, u.role_id, u.barangay_id, u.phone_number, u.created_at,
+                           u.user_type, u.avatar_url,
                            b.name as barangay_name, r.name as role_name
                     FROM campaign_department_users u 
                     LEFT JOIN `campaign_department_barangays` b ON b.id = u.barangay_id 
@@ -474,7 +475,9 @@ class AuthController
             'name' => $userName,
             'email' => $user['email'] ?? '',
             'role_id' => isset($user['role_id']) ? (int) $user['role_id'] : null,
-            'role' => $user['role_name'] ?? $user['role'] ?? null, // Include role name from database
+            'role' => $user['role_name'] ?? $user['role'] ?? null,
+            'user_type' => $user['user_type'] ?? null,
+            'avatar_url' => $user['avatar_url'] ?? null,
             'barangay_id' => isset($user['barangay_id']) ? (int) $user['barangay_id'] : null,
             'barangay_name' => $user['barangay_name'] ?? null,
             'phone_number' => $user['phone_number'] ?? $user['phone'] ?? null,
