@@ -6,6 +6,14 @@ use App\Controllers\AutoMLController;
 use App\Middleware\JWTMiddleware;
 
 return [
+    // Campaign-specific AI recommendation (called from campaigns.php)
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/campaigns/{id}/ai-recommendation',
+        'handler' => [AutoMLController::class, 'getAIRecommendation'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    
     // Existing prediction endpoint
     [
         'method' => 'POST',

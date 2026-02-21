@@ -669,36 +669,42 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             </div>
             <div class="form-field">
                 <label>Intended Audience</label>
-                <div class="multi-select-container">
-                    <div class="multi-select-tags" id="intended_audience_tags"></div>
-                    <select class="multi-select-dropdown" name="intended_audience_segment[]" id="intendedAudience" multiple size="3">
-                        <option value="general public">General Public</option>
-                        <option value="households">Households</option>
-                        <option value="residential areas">Residential Areas</option>
-                        <option value="youth">Youth</option>
-                        <option value="teenagers">Teenagers</option>
-                        <option value="students">Students</option>
-                        <option value="schools">Schools</option>
-                        <option value="teachers">Teachers</option>
-                        <option value="senior citizens">Senior Citizens</option>
-                        <option value="elderly">Elderly</option>
-                        <option value="caregivers">Caregivers</option>
-                        <option value="families">Families</option>
-                        <option value="flood-prone areas">Flood-prone Areas</option>
-                        <option value="coastal communities">Coastal Communities</option>
-                        <option value="commercial districts">Commercial Districts</option>
-                        <option value="workplaces">Workplaces</option>
-                        <option value="community volunteers">Community Volunteers</option>
-                        <option value="barangay health workers">Barangay Health Workers</option>
-                        <option value="building administrators">Building Administrators</option>
-                        <option value="trainers">Trainers</option>
-                        <option value="facilitators">Facilitators</option>
-                        <option value="barangay officials">Barangay Officials</option>
-                        <option value="residential buildings">Residential Buildings</option>
-                        <option value="commercial buildings">Commercial Buildings</option>
-                    </select>
+                <div class="audience-dropdown-container" style="position: relative;">
+                    <div class="multi-select-tags" id="intended_audience_tags" style="margin-bottom: 8px;"></div>
+                    <div class="audience-dropdown-trigger" id="audienceDropdownTrigger" style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px; background: #fafbfc; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #64748b; transition: all 0.2s;">
+                        <span id="audienceDropdownText">Select audiences...</span>
+                        <i class="fas fa-chevron-down" style="transition: transform 0.2s;"></i>
+                    </div>
+                    <div class="audience-dropdown-menu" id="audienceDropdownMenu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-radius: 12px; margin-top: 4px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
+                        <div style="padding: 8px;">
+                            <div class="audience-option" data-value="general public"><input type="checkbox" name="intended_audience_segment[]" value="general public"> General Public</div>
+                            <div class="audience-option" data-value="households"><input type="checkbox" name="intended_audience_segment[]" value="households"> Households</div>
+                            <div class="audience-option" data-value="residential areas"><input type="checkbox" name="intended_audience_segment[]" value="residential areas"> Residential Areas</div>
+                            <div class="audience-option" data-value="youth"><input type="checkbox" name="intended_audience_segment[]" value="youth"> Youth</div>
+                            <div class="audience-option" data-value="teenagers"><input type="checkbox" name="intended_audience_segment[]" value="teenagers"> Teenagers</div>
+                            <div class="audience-option" data-value="students"><input type="checkbox" name="intended_audience_segment[]" value="students"> Students</div>
+                            <div class="audience-option" data-value="schools"><input type="checkbox" name="intended_audience_segment[]" value="schools"> Schools</div>
+                            <div class="audience-option" data-value="teachers"><input type="checkbox" name="intended_audience_segment[]" value="teachers"> Teachers</div>
+                            <div class="audience-option" data-value="senior citizens"><input type="checkbox" name="intended_audience_segment[]" value="senior citizens"> Senior Citizens</div>
+                            <div class="audience-option" data-value="elderly"><input type="checkbox" name="intended_audience_segment[]" value="elderly"> Elderly</div>
+                            <div class="audience-option" data-value="caregivers"><input type="checkbox" name="intended_audience_segment[]" value="caregivers"> Caregivers</div>
+                            <div class="audience-option" data-value="families"><input type="checkbox" name="intended_audience_segment[]" value="families"> Families</div>
+                            <div class="audience-option" data-value="flood-prone areas"><input type="checkbox" name="intended_audience_segment[]" value="flood-prone areas"> Flood-prone Areas</div>
+                            <div class="audience-option" data-value="coastal communities"><input type="checkbox" name="intended_audience_segment[]" value="coastal communities"> Coastal Communities</div>
+                            <div class="audience-option" data-value="commercial districts"><input type="checkbox" name="intended_audience_segment[]" value="commercial districts"> Commercial Districts</div>
+                            <div class="audience-option" data-value="workplaces"><input type="checkbox" name="intended_audience_segment[]" value="workplaces"> Workplaces</div>
+                            <div class="audience-option" data-value="community volunteers"><input type="checkbox" name="intended_audience_segment[]" value="community volunteers"> Community Volunteers</div>
+                            <div class="audience-option" data-value="barangay health workers"><input type="checkbox" name="intended_audience_segment[]" value="barangay health workers"> Barangay Health Workers</div>
+                            <div class="audience-option" data-value="building administrators"><input type="checkbox" name="intended_audience_segment[]" value="building administrators"> Building Administrators</div>
+                            <div class="audience-option" data-value="trainers"><input type="checkbox" name="intended_audience_segment[]" value="trainers"> Trainers</div>
+                            <div class="audience-option" data-value="facilitators"><input type="checkbox" name="intended_audience_segment[]" value="facilitators"> Facilitators</div>
+                            <div class="audience-option" data-value="barangay officials"><input type="checkbox" name="intended_audience_segment[]" value="barangay officials"> Barangay Officials</div>
+                            <div class="audience-option" data-value="residential buildings"><input type="checkbox" name="intended_audience_segment[]" value="residential buildings"> Residential Buildings</div>
+                            <div class="audience-option" data-value="commercial buildings"><input type="checkbox" name="intended_audience_segment[]" value="commercial buildings"> Commercial Buildings</div>
+                        </div>
+                    </div>
                 </div>
-                <small style="color: #94a3b8; font-size: 12px; margin-top: 4px; display: block;">Select multiple audiences. Selected items will appear as tags above.</small>
+                <small style="color: #94a3b8; font-size: 12px; margin-top: 4px; display: block;">Click to select multiple audiences. Selected items will appear as tags above.</small>
             </div>
             <div class="form-field">
                 <label>Linked Campaign *</label>
@@ -3448,22 +3454,83 @@ async function deleteContentPermanent(contentId) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOMContentLoaded - Initializing Content Repository...');
     
+    // Initialize Audience Dropdown
+    function initAudienceDropdown() {
+        const trigger = document.getElementById('audienceDropdownTrigger');
+        const menu = document.getElementById('audienceDropdownMenu');
+        const tagsContainer = document.getElementById('intended_audience_tags');
+        const textSpan = document.getElementById('audienceDropdownText');
+        
+        if (!trigger || !menu) return;
+        
+        // Toggle dropdown
+        trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = menu.style.display === 'block';
+            menu.style.display = isOpen ? 'none' : 'block';
+            trigger.querySelector('i').style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+            trigger.style.borderColor = isOpen ? '#e2e8f0' : '#4c8a89';
+        });
+        
+        // Close on outside click
+        document.addEventListener('click', function(e) {
+            if (!trigger.contains(e.target) && !menu.contains(e.target)) {
+                menu.style.display = 'none';
+                trigger.querySelector('i').style.transform = 'rotate(0deg)';
+                trigger.style.borderColor = '#e2e8f0';
+            }
+        });
+        
+        // Handle checkbox changes
+        const options = menu.querySelectorAll('.audience-option');
+        options.forEach(option => {
+            option.style.cssText = 'padding: 10px 12px; cursor: pointer; border-radius: 8px; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; transition: all 0.2s;';
+            option.addEventListener('mouseenter', function() { this.style.background = '#f1f5f9'; });
+            option.addEventListener('mouseleave', function() { this.style.background = 'transparent'; });
+            
+            const checkbox = option.querySelector('input[type="checkbox"]');
+            option.addEventListener('click', function(e) {
+                if (e.target !== checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                }
+                updateAudienceTags();
+            });
+        });
+        
+        function updateAudienceTags() {
+            const checked = menu.querySelectorAll('input[type="checkbox"]:checked');
+            tagsContainer.innerHTML = '';
+            
+            checked.forEach(cb => {
+                const tag = document.createElement('span');
+                tag.className = 'multi-select-tag';
+                tag.innerHTML = `${cb.value} <span class="multi-select-tag-remove" data-value="${cb.value}">&times;</span>`;
+                tag.querySelector('.multi-select-tag-remove').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const val = this.dataset.value;
+                    const targetCb = menu.querySelector(`input[value="${val}"]`);
+                    if (targetCb) targetCb.checked = false;
+                    updateAudienceTags();
+                });
+                tagsContainer.appendChild(tag);
+            });
+            
+            textSpan.textContent = checked.length > 0 ? `${checked.length} selected` : 'Select audiences...';
+        }
+    }
+    
+    initAudienceDropdown();
+    
     // Initialize multi-select components - try multiple times to ensure DOM is ready
     function initMultiSelects() {
-        const intendedAudience = document.getElementById('intendedAudience');
         const sourceSelect = document.getElementById('sourceSelect');
         const visibilitySelect = document.getElementById('visibilitySelect');
         
         console.log('Initializing multi-selects:', {
-            intendedAudience: !!intendedAudience,
             sourceSelect: !!sourceSelect,
             visibilitySelect: !!visibilitySelect
         });
         
-        if (intendedAudience && !intendedAudience.dataset.multiSelectInit) {
-            console.log('Initializing intendedAudience multi-select');
-            initMultiSelectEnhanced('intendedAudience');
-        }
         if (sourceSelect && !sourceSelect.dataset.multiSelectInit) {
             console.log('Initializing sourceSelect multi-select');
             initMultiSelectEnhanced('sourceSelect');

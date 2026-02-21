@@ -218,8 +218,8 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         .user-info {
             display: flex;
             flex-direction: column;
-            flex: 1;
             min-width: 0;
+            margin-left: 0;
         }
 
         .user-name {
@@ -903,17 +903,12 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         }
 
         function closeModal() {
-            console.log('closeModal called');
             const modal = document.getElementById('userModal');
-            if (!modal) {
-                console.error('Modal element not found');
-                return;
-            }
+            if (!modal) return;
             
-            // Force hide the modal with direct style manipulation
-            modal.classList.remove('show');
+            // Force hide the modal
             modal.style.display = 'none';
-            console.log('Modal hidden');
+            modal.classList.remove('show');
             
             setTimeout(() => {
                 const form = document.getElementById('userForm');
@@ -1019,11 +1014,10 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 
                 showStatus(isEdit ? 'User updated successfully' : 'User created successfully', 'success');
                 
-                // Close modal and refresh data
+                // Close modal and do full page refresh
                 setTimeout(() => {
-                    closeModal();
-                    loadUsers();
-                }, 300);
+                    window.location.reload();
+                }, 1000);
 
             } catch (err) {
                 showStatus(err.message, 'error');

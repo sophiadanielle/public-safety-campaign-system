@@ -175,6 +175,37 @@ require_once __DIR__ . '/../../header/includes/path_helper.php';
     </div>
 </div>
 
+<!-- Logout Confirmation Modal -->
+<div class="logout-confirm-modal" id="logoutConfirmModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div style="background: white; border-radius: 20px; padding: 32px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); animation: modalSlideIn 0.3s ease;">
+        <button id="logoutModalClose" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 20px; color: #64748b; cursor: pointer; padding: 8px; border-radius: 8px; transition: all 0.2s;">
+            <i class="fas fa-times"></i>
+        </button>
+        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+            <i class="fas fa-sign-out-alt" style="font-size: 32px; color: #dc2626;"></i>
+        </div>
+        <h3 style="margin: 0 0 12px; font-size: 24px; font-weight: 700; color: #0f172a;">Confirm Logout</h3>
+        <p style="margin: 0 0 28px; color: #64748b; font-size: 15px; line-height: 1.6;">Are you sure you want to logout? You will need to login again to access the system.</p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="logoutCancelBtn" style="padding: 12px 28px; background: #f1f5f9; color: #475569; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                Cancel
+            </button>
+            <button id="logoutConfirmBtn" style="padding: 12px 28px; background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);">
+                <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i>Yes, Logout
+            </button>
+        </div>
+    </div>
+</div>
+<style>
+    @keyframes modalSlideIn {
+        from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    #logoutCancelBtn:hover { background: #e2e8f0; }
+    #logoutConfirmBtn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4); }
+    #logoutModalClose:hover { background: #f1f5f9; color: #0f172a; }
+</style>
+
 <script>
 // Admin Header functionality
 document.addEventListener('DOMContentLoaded', function() {
@@ -371,19 +402,64 @@ document.addEventListener('DOMContentLoaded', function() {
     // Refresh notification count every 30 seconds
     setInterval(loadNotificationCount, 30000);
     
-    // Logout functionality
+    // Logout functionality with confirmation modal
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            try {
-                localStorage.removeItem('jwtToken');
-                localStorage.removeItem('currentUser');
-            } catch (e) {
-                console.error('Error clearing localStorage:', e);
-            }
-            const basePath = '<?php echo $basePath; ?>';
-            window.location.href = basePath + '/login.php';
+            showLogoutModal();
+        });
+    }
+    
+    // Show logout confirmation modal
+    function showLogoutModal() {
+        const modal = document.getElementById('logoutConfirmModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            // Close user profile dropdown
+            const userProfileDropdown = document.getElementById('userProfileDropdown');
+            if (userProfileDropdown) userProfileDropdown.classList.remove('show');
+        }
+    }
+    
+    // Hide logout confirmation modal
+    function hideLogoutModal() {
+        const modal = document.getElementById('logoutConfirmModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    // Confirm logout
+    function confirmLogout() {
+        try {
+            localStorage.removeItem('jwtToken');
+            localStorage.removeItem('currentUser');
+        } catch (e) {
+            console.error('Error clearing localStorage:', e);
+        }
+        const basePath = '<?php echo $basePath; ?>';
+        window.location.href = basePath + '/login.php';
+    }
+    
+    // Attach logout modal event listeners
+    const logoutConfirmBtn = document.getElementById('logoutConfirmBtn');
+    const logoutCancelBtn = document.getElementById('logoutCancelBtn');
+    const logoutModalClose = document.getElementById('logoutModalClose');
+    const logoutConfirmModal = document.getElementById('logoutConfirmModal');
+    
+    if (logoutConfirmBtn) {
+        logoutConfirmBtn.addEventListener('click', confirmLogout);
+    }
+    if (logoutCancelBtn) {
+        logoutCancelBtn.addEventListener('click', hideLogoutModal);
+    }
+    if (logoutModalClose) {
+        logoutModalClose.addEventListener('click', hideLogoutModal);
+    }
+    if (logoutConfirmModal) {
+        logoutConfirmModal.addEventListener('click', function(e) {
+            if (e.target === this) hideLogoutModal();
         });
     }
     const menuToggle = document.getElementById('menuToggle');

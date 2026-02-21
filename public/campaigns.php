@@ -290,14 +290,15 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         letter-spacing: 0.5px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .badge.draft { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; }
-    .badge.pending { background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%); color: #78350f; }
-    .badge.approved { background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; }
-    .badge.ongoing { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #166534; }
-    .badge.completed { background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); color: #3730a3; }
-    .badge.scheduled { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); color: #1d4ed8; }
-    .badge.active { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); color: #166534; }
-    .badge.archived { background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); color: #6b7280; }
+    .badge.draft { background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); color: #4b5563; }
+    .badge.pending { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); color: #92400e; }
+    .badge.approved { background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%); color: #1e40af; }
+    .badge.ongoing { background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%); color: #166534; }
+    .badge.completed { background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); color: #ffffff; }
+    .badge.scheduled { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); color: #ffffff; }
+    .badge.active { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #ffffff; }
+    .badge.archived { background: linear-gradient(135deg, #78716c 0%, #57534e 100%); color: #ffffff; }
+    .badge.cancelled { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #ffffff; }
     
     .form-grid {
         display: grid;
@@ -1261,21 +1262,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                         Select multiple staff members. Selected items will appear as tags above.
                     </small>
                 </div>
-                <div class="form-field full-width" style="margin-bottom: 24px;">
-                    <label for="materials_json" style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px; font-weight: 600;">
-                        <i class="fas fa-file-alt" style="color: #667eea;"></i>
-                        Materials
-                    </label>
-                    <div class="multi-select-container materials-select">
-                        <div class="multi-select-tags" id="materials_json_tags"></div>
-                        <select class="multi-select-dropdown" id="materials_json" name="materials[]" multiple size="3">
-                        </select>
-                    </div>
-                    <small style="color: #94a3b8; font-size: 12px; margin-top: 8px; display: block; line-height: 1.5;">
-                        <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
-                        Select multiple materials from the <strong>Content Repository</strong>. Only approved content can be attached.
-                    </small>
-                </div>
             </div>
             
             <div class="btn-group">
@@ -1286,6 +1272,113 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         </form>
     </section>
     <?php endif; // End RBAC: Hide planning section for Viewer ?>
+
+    <!-- Financial & Budgeting Section -->
+    <?php if (!$isViewer): ?>
+    <section class="card" id="budgeting-section">
+        <div class="section-header" style="margin-bottom: 20px;">
+            <h2 class="section-title analytics-accent">💰 Financial & Budgeting</h2>
+            <button class="btn btn-secondary" onclick="loadBudgetData()" style="display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+        <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+            Manage budget line items for campaigns. Track consumables and materials with funding source allocation. Budget data is connected to <strong>Resource Allocation</strong> for Materials Allocated.
+        </p>
+        
+        <!-- Budget Entry Form -->
+        <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+            <h4 style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-plus-circle" style="color: #4c8a89;"></i> Add Budget Line Item
+            </h4>
+            <form id="budgetForm" class="form-grid" style="gap: 16px;">
+                <div class="form-field">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Campaign *</label>
+                    <select id="budget_campaign_id" required style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="">Select Campaign...</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Item Name *</label>
+                    <input type="text" id="budget_item_name" required placeholder="e.g., Tarpaulin, Leaflets, Megaphone" style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                </div>
+                <div class="form-field">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Item Type *</label>
+                    <select id="budget_item_type" required style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="consumable">Consumable</option>
+                        <option value="material">Material</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Quantity *</label>
+                    <input type="number" id="budget_quantity" required min="1" value="1" style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                </div>
+                <div class="form-field">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Unit Cost (₱) *</label>
+                    <input type="number" id="budget_unit_cost" required min="0" step="0.01" placeholder="0.00" style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                </div>
+                <div class="form-field">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Funding Source *</label>
+                    <select id="budget_funding_source" required style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="government_allocated">Government Allocated</option>
+                        <option value="reimbursable">Reimbursable</option>
+                    </select>
+                </div>
+                <div class="form-field full-width">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Notes</label>
+                    <textarea id="budget_notes" rows="2" placeholder="Optional notes..." style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
+                </div>
+            </form>
+            <div style="margin-top: 16px;">
+                <button type="button" onclick="saveBudgetItem()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-save"></i> Save Budget Item
+                </button>
+            </div>
+            <div id="budgetStatus" style="margin-top: 12px; display: none;"></div>
+        </div>
+        
+        <!-- Budget Summary Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 12px; padding: 20px; text-align: center;">
+                <div style="font-size: 12px; color: #166534; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Total Budget</div>
+                <div id="budgetTotalDisplay" style="font-size: 24px; font-weight: 700; color: #166534;">₱0.00</div>
+            </div>
+            <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 12px; padding: 20px; text-align: center;">
+                <div style="font-size: 12px; color: #1e40af; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Government Allocated</div>
+                <div id="budgetGovDisplay" style="font-size: 24px; font-weight: 700; color: #1e40af;">₱0.00</div>
+            </div>
+            <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 20px; text-align: center;">
+                <div style="font-size: 12px; color: #92400e; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Reimbursable</div>
+                <div id="budgetReimbDisplay" style="font-size: 24px; font-weight: 700; color: #92400e;">₱0.00</div>
+            </div>
+            <div style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); border-radius: 12px; padding: 20px; text-align: center;">
+                <div style="font-size: 12px; color: #7c3aed; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Line Items</div>
+                <div id="budgetItemsDisplay" style="font-size: 24px; font-weight: 700; color: #7c3aed;">0</div>
+            </div>
+        </div>
+        
+        <!-- Budget Table -->
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Campaign</th>
+                        <th>Item</th>
+                        <th>Type</th>
+                        <th>Qty</th>
+                        <th>Unit Cost</th>
+                        <th>Total</th>
+                        <th>Funding</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="budgetTable">
+                    <tr><td colspan="8" style="text-align:center; padding:24px; color: #64748b;">No budget items yet. Add items using the form above.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <?php endif; ?>
 
     <!-- AutoML Panel -->
     <?php if (!$isViewer): // RBAC: Hide AutoML section for Viewer (management tool) ?>
@@ -1445,6 +1538,18 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
             Calendar view of campaign schedules. Click on any campaign event to view details. Events from the <strong>Events module</strong> are integrated to show potential conflicts.
         </p>
+        <!-- Status Legend -->
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <span style="font-weight: 600; color: #475569; font-size: 13px; display: flex; align-items: center; gap: 6px;"><i class="fas fa-info-circle"></i> Status Legend:</span>
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);"></span> Draft</span>
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);"></span> Pending</span>
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);"></span> Approved</span>
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);"></span> Scheduled</span>
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);"></span> Active/Ongoing</span>
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);"></span> Completed</span>
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #78716c 0%, #57534e 100%);"></span> Archived</span>
+            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);"></span> Cancelled</span>
+        </div>
         <div id="calendar"></div>
     </section>
 
@@ -1497,7 +1602,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 <button class="btn btn-secondary" onclick="showArchivedCampaigns()" style="display: flex; align-items: center; gap: 6px;">
                     <i class="fas fa-archive"></i> View Archived
                 </button>
-                <button class="btn btn-secondary" onclick="loadCampaigns()" style="display: flex; align-items: center; gap: 6px;">
+                <button class="btn btn-secondary" onclick="loadCampaignsWithFilters()" style="display: flex; align-items: center; gap: 6px;">
                     <i class="fas fa-sync-alt"></i> Refresh
                 </button>
             </div>
@@ -1505,13 +1610,48 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
             Complete list of all campaigns. AI recommendations shown in the <strong>"AI Recommended"</strong> column are generated using engagement data from the <strong>Surveys module</strong> and historical performance metrics.
         </p>
-        <div class="form-field" style="max-width: 300px; margin-bottom: 20px;">
-            <label for="active_campaign" style="display: flex; align-items: center; gap: 6px; font-weight: 600;">
-                <i class="fas fa-filter" style="color: #667eea;"></i>
-                Active Campaign
-            </label>
-            <select id="active_campaign" onchange="onCampaignChange()" style="padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px; transition: border-color 0.2s;" onfocus="this.style.borderColor='#667eea';" onblur="this.style.borderColor='#e2e8f0';"></select>
+        
+        <!-- Search and Filter Bar -->
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <div style="flex: 1; min-width: 250px;">
+                <div style="position: relative;">
+                    <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                    <input type="text" id="campaignSearchInput" placeholder="Search campaigns by title..." 
+                        style="width: 100%; padding: 12px 16px 12px 42px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; transition: all 0.2s; background: white;"
+                        onkeyup="filterCampaigns()" onfocus="this.style.borderColor='#4c8a89'; this.style.boxShadow='0 0 0 4px rgba(76, 138, 137, 0.1)';" 
+                        onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none';">
+                </div>
+            </div>
+            <div style="min-width: 160px;">
+                <select id="campaignCategoryFilter" onchange="filterCampaigns()" 
+                    style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; background: white; cursor: pointer;">
+                    <option value="">All Categories</option>
+                    <option value="Fire">Fire</option>
+                    <option value="Flood">Flood</option>
+                    <option value="Earthquake">Earthquake</option>
+                    <option value="Typhoon">Typhoon</option>
+                    <option value="Health">Health</option>
+                    <option value="Emergency">Emergency</option>
+                </select>
+            </div>
+            <div style="min-width: 160px;">
+                <select id="campaignStatusFilter" onchange="filterCampaigns()" 
+                    style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px; background: white; cursor: pointer;">
+                    <option value="">All Statuses</option>
+                    <option value="draft">Draft</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                </select>
+            </div>
+            <button onclick="clearCampaignFilters()" class="btn btn-secondary" style="padding: 12px 20px;">
+                <i class="fas fa-times"></i> Clear
+            </button>
         </div>
+        
         <div class="table-wrapper">
             <table class="data-table">
                 <thead>
@@ -1528,6 +1668,17 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     <tr><td colspan="6" style="text-align:center; padding:24px;">Loading...</td></tr>
                 </tbody>
             </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div id="campaignPagination" style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; padding: 16px; background: #f8fafc; border-radius: 12px;">
+            <button id="prevPageBtn" onclick="changeCampaignPage(-1)" class="btn btn-secondary" style="padding: 10px 16px;" disabled>
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            <span id="pageInfo" style="padding: 10px 20px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; font-weight: 600; color: #475569;">Page 1 of 1</span>
+            <button id="nextPageBtn" onclick="changeCampaignPage(1)" class="btn btn-secondary" style="padding: 10px 16px;" disabled>
+                Next <i class="fas fa-chevron-right"></i>
+            </button>
         </div>
     </section>
 
@@ -4532,6 +4683,9 @@ async function loadResources() {
             console.log('loadCampaigns() - Calendar events refetched');
         }
         loadResources();
+        
+        // Apply pagination after loading
+        filterCampaigns();
     } catch (err) {
         console.error('loadCampaigns() - Exception caught:', err);
         console.error('loadCampaigns() - Error message:', err.message);
@@ -4553,6 +4707,305 @@ async function loadResources() {
         </td></tr>`;
     }
 }
+
+// Pagination and filtering variables
+let filteredCampaigns = [];
+let currentPage = 1;
+const itemsPerPage = 10;
+
+// Filter campaigns based on search and filters
+function filterCampaigns() {
+    const searchTerm = (document.getElementById('campaignSearchInput')?.value || '').toLowerCase().trim();
+    const categoryFilter = document.getElementById('campaignCategoryFilter')?.value || '';
+    const statusFilter = document.getElementById('campaignStatusFilter')?.value || '';
+    
+    filteredCampaigns = allCampaigns.filter(c => {
+        const matchesSearch = !searchTerm || (c.title || '').toLowerCase().includes(searchTerm);
+        const matchesCategory = !categoryFilter || (c.category || '').toLowerCase() === categoryFilter.toLowerCase();
+        const matchesStatus = !statusFilter || (c.status || '').toLowerCase() === statusFilter.toLowerCase();
+        return matchesSearch && matchesCategory && matchesStatus;
+    });
+    
+    currentPage = 1;
+    renderPaginatedCampaigns();
+}
+
+// Clear all filters
+function clearCampaignFilters() {
+    const searchInput = document.getElementById('campaignSearchInput');
+    const categoryFilter = document.getElementById('campaignCategoryFilter');
+    const statusFilter = document.getElementById('campaignStatusFilter');
+    
+    if (searchInput) searchInput.value = '';
+    if (categoryFilter) categoryFilter.value = '';
+    if (statusFilter) statusFilter.value = '';
+    
+    filterCampaigns();
+}
+
+// Change page
+function changeCampaignPage(delta) {
+    const totalPages = Math.ceil(filteredCampaigns.length / itemsPerPage);
+    const newPage = currentPage + delta;
+    
+    if (newPage >= 1 && newPage <= totalPages) {
+        currentPage = newPage;
+        renderPaginatedCampaigns();
+    }
+}
+
+// Render paginated campaigns
+function renderPaginatedCampaigns() {
+    const tbody = document.getElementById('campaignTable');
+    if (!tbody) return;
+    
+    const totalPages = Math.max(1, Math.ceil(filteredCampaigns.length / itemsPerPage));
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageData = filteredCampaigns.slice(startIndex, endIndex);
+    
+    // Update pagination controls
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    const pageInfo = document.getElementById('pageInfo');
+    
+    if (prevBtn) prevBtn.disabled = currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+    if (pageInfo) pageInfo.textContent = `Page ${currentPage} of ${totalPages} (${filteredCampaigns.length} campaigns)`;
+    
+    if (pageData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color: #64748b;">No campaigns match your filters.</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    pageData.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${c.id}</td>
+            <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${c.title || ''}">${c.title || ''}</td>
+            <td style="max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${c.category || '-'}">${c.category || '-'}</td>
+            <td><span class="badge ${c.status || 'draft'}">${(c.status || 'draft').charAt(0).toUpperCase() + (c.status || 'draft').slice(1)}</span></td>
+            <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${c.location || '-'}">${c.location || '-'}</td>
+            <td style="white-space: nowrap;">
+                <button class="btn btn-secondary" onclick="viewCampaignDetails(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">View</button>
+                ${!isViewer() ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Edit</button>` : ''}
+                ${!isViewer() ? `<button class="btn btn-danger" onclick="deleteCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px; background: #ef4444; color: white; border: none;">Delete</button>` : ''}
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Load campaigns with filters (alias for refresh)
+function loadCampaignsWithFilters() {
+    loadCampaigns();
+}
+
+// ============================================
+// BUDGET MANAGEMENT FUNCTIONS
+// ============================================
+
+let allBudgetItems = [];
+
+// Load budget data
+async function loadBudgetData() {
+    try {
+        const res = await fetch(apiBase + '/api/v1/budgets', {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            allBudgetItems = data.data || [];
+            renderBudgetTable();
+            updateBudgetSummary(data.summary);
+        }
+    } catch (err) {
+        console.error('Failed to load budget data:', err);
+    }
+}
+
+// Populate budget campaign dropdown
+function populateBudgetCampaignDropdown() {
+    const select = document.getElementById('budget_campaign_id');
+    if (!select || !allCampaigns) return;
+    
+    select.innerHTML = '<option value="">Select Campaign...</option>';
+    allCampaigns.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${c.id} - ${c.title || 'Untitled'}`;
+        select.appendChild(opt);
+    });
+}
+
+// Save budget item
+async function saveBudgetItem() {
+    const campaignId = document.getElementById('budget_campaign_id')?.value;
+    const itemName = document.getElementById('budget_item_name')?.value?.trim();
+    const itemType = document.getElementById('budget_item_type')?.value;
+    const quantity = parseInt(document.getElementById('budget_quantity')?.value) || 1;
+    const unitCost = parseFloat(document.getElementById('budget_unit_cost')?.value) || 0;
+    const fundingSource = document.getElementById('budget_funding_source')?.value;
+    const notes = document.getElementById('budget_notes')?.value?.trim();
+    
+    if (!campaignId || !itemName) {
+        showBudgetStatus('Please select a campaign and enter item name', 'error');
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/budgets', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify({
+                campaign_id: parseInt(campaignId),
+                item_name: itemName,
+                item_type: itemType,
+                quantity: quantity,
+                unit_cost: unitCost,
+                funding_source: fundingSource,
+                notes: notes
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            showBudgetStatus('Budget item saved successfully!', 'success');
+            clearBudgetForm();
+            loadBudgetData();
+        } else {
+            showBudgetStatus(data.error || 'Failed to save budget item', 'error');
+        }
+    } catch (err) {
+        showBudgetStatus('Error: ' + err.message, 'error');
+    }
+}
+
+// Delete budget item
+async function deleteBudgetItem(id) {
+    if (!confirm('Are you sure you want to delete this budget item?')) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/budgets/' + id, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            loadBudgetData();
+        } else {
+            alert(data.error || 'Failed to delete');
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+// Render budget table
+function renderBudgetTable() {
+    const tbody = document.getElementById('budgetTable');
+    if (!tbody) return;
+    
+    if (!allBudgetItems || allBudgetItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color: #64748b;">No budget items yet. Add items using the form above.</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    allBudgetItems.forEach(item => {
+        const totalCost = (item.quantity || 0) * (item.unit_cost || 0);
+        const fundingLabel = item.funding_source === 'government_allocated' ? 'Government' : 'Reimbursable';
+        const fundingClass = item.funding_source === 'government_allocated' ? 'approved' : 'pending';
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;" title="${item.campaign_title || ''}">${item.campaign_title || 'Campaign #' + item.campaign_id}</td>
+            <td>${item.item_name || '-'}</td>
+            <td><span class="badge ${item.item_type === 'material' ? 'scheduled' : 'draft'}">${item.item_type || 'consumable'}</span></td>
+            <td>${item.quantity || 0}</td>
+            <td>₱${parseFloat(item.unit_cost || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+            <td style="font-weight: 600;">₱${totalCost.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+            <td><span class="badge ${fundingClass}">${fundingLabel}</span></td>
+            <td>
+                <button class="btn btn-danger" onclick="deleteBudgetItem(${item.id})" style="padding: 3px 8px; font-size: 11px; background: #ef4444; color: white; border: none;">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Update budget summary cards
+function updateBudgetSummary(summary) {
+    if (!summary) return;
+    
+    const formatCurrency = (val) => '₱' + parseFloat(val || 0).toLocaleString('en-PH', {minimumFractionDigits: 2});
+    
+    const totalEl = document.getElementById('budgetTotalDisplay');
+    const govEl = document.getElementById('budgetGovDisplay');
+    const reimbEl = document.getElementById('budgetReimbDisplay');
+    const itemsEl = document.getElementById('budgetItemsDisplay');
+    
+    if (totalEl) totalEl.textContent = formatCurrency(summary.total_budget);
+    if (govEl) govEl.textContent = formatCurrency(summary.government_allocated);
+    if (reimbEl) reimbEl.textContent = formatCurrency(summary.reimbursable);
+    if (itemsEl) itemsEl.textContent = summary.item_count || 0;
+    
+    // Update Materials Allocated in Resource Allocation
+    const materialsEl = document.getElementById('materialsUsed');
+    if (materialsEl) {
+        materialsEl.innerHTML = `${summary.item_count || 0} items<br><small style="font-size: 12px; color: #64748b;">₱${parseFloat(summary.total_budget || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}</small>`;
+    }
+}
+
+// Clear budget form
+function clearBudgetForm() {
+    document.getElementById('budget_campaign_id').value = '';
+    document.getElementById('budget_item_name').value = '';
+    document.getElementById('budget_item_type').value = 'consumable';
+    document.getElementById('budget_quantity').value = '1';
+    document.getElementById('budget_unit_cost').value = '';
+    document.getElementById('budget_funding_source').value = 'government_allocated';
+    document.getElementById('budget_notes').value = '';
+}
+
+// Show budget status message
+function showBudgetStatus(message, type) {
+    const el = document.getElementById('budgetStatus');
+    if (!el) return;
+    
+    el.textContent = message;
+    el.style.display = 'block';
+    el.style.padding = '10px 16px';
+    el.style.borderRadius = '8px';
+    el.style.fontWeight = '500';
+    
+    if (type === 'success') {
+        el.style.background = '#dcfce7';
+        el.style.color = '#166534';
+    } else {
+        el.style.background = '#fee2e2';
+        el.style.color = '#dc2626';
+    }
+    
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+// Initialize budget section when campaigns load
+const originalLoadCampaigns = loadCampaigns;
+loadCampaigns = async function() {
+    await originalLoadCampaigns();
+    populateBudgetCampaignDropdown();
+    loadBudgetData();
+};
 
 function onCampaignChange() {
     activeCampaignId = parseInt(document.getElementById('active_campaign').value);
