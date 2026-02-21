@@ -640,7 +640,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Logo">
                     <span id="modalTitle">Add New User</span>
                 </h3>
-                <button type="button" class="modal-close" onclick="closeModal(); return false;">
+                <button type="button" class="modal-close" onclick="event.stopPropagation(); closeModal();">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -697,7 +697,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal(); return false;">Cancel</button>
+                <button type="button" class="btn btn-secondary" onclick="event.stopPropagation(); closeModal();">Cancel</button>
                 <button type="submit" class="btn btn-primary" form="userForm" id="submitBtn">
                     <i class="fas fa-save"></i>
                     Save User
@@ -707,6 +707,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     </div>
 
     <script>
+        // Version: 2.1 - Modal close fix
         const apiBase = '<?php echo $apiPath; ?>';
         const basePath = '<?php echo $basePath; ?>';
         let showingArchived = false;
@@ -886,22 +887,35 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         }
 
         function closeModal() {
+            console.log('closeModal called');
             const modal = document.getElementById('userModal');
-            if (modal) {
-                modal.classList.remove('show');
-                setTimeout(() => {
-                    document.getElementById('userForm').reset();
-                    document.getElementById('userId').value = '';
-                    document.getElementById('avatarPreview').innerHTML = '<span id="avatarInitials">?</span>';
-                    const passwordLabel = document.getElementById('passwordGroup')?.querySelector('.form-label');
-                    if (passwordLabel) {
-                        passwordLabel.textContent = 'Password *';
-                    }
-                    document.getElementById('passwordGroup').style.display = 'block';
-                    document.getElementById('userPassword').required = false;
-                }, 300);
+            if (!modal) {
+                console.error('Modal element not found');
+                return;
             }
-            return false;
+            
+            modal.classList.remove('show');
+            
+            setTimeout(() => {
+                const form = document.getElementById('userForm');
+                if (form) form.reset();
+                
+                const userIdField = document.getElementById('userId');
+                if (userIdField) userIdField.value = '';
+                
+                const avatarPreview = document.getElementById('avatarPreview');
+                if (avatarPreview) avatarPreview.innerHTML = '<span id="avatarInitials">?</span>';
+                
+                const passwordGroup = document.getElementById('passwordGroup');
+                if (passwordGroup) {
+                    const passwordLabel = passwordGroup.querySelector('.form-label');
+                    if (passwordLabel) passwordLabel.textContent = 'Password *';
+                    passwordGroup.style.display = 'block';
+                }
+                
+                const passwordField = document.getElementById('userPassword');
+                if (passwordField) passwordField.required = false;
+            }, 300);
         }
 
         function previewAvatar(input) {
