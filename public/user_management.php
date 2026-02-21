@@ -186,7 +186,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         .user-cell {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             min-width: 200px;
         }
 
@@ -637,7 +637,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Logo">
                     <span id="modalTitle">Add New User</span>
                 </h3>
-                <button class="modal-close" onclick="closeModal()">
+                <button type="button" class="modal-close" onclick="closeModal(); return false;">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -694,7 +694,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal(); return false;">Cancel</button>
                 <button type="submit" class="btn btn-primary" form="userForm" id="submitBtn">
                     <i class="fas fa-save"></i>
                     Save User
@@ -886,13 +886,19 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             const modal = document.getElementById('userModal');
             if (modal) {
                 modal.classList.remove('show');
-                document.getElementById('userForm').reset();
-                document.getElementById('userId').value = '';
-                const passwordLabel = document.getElementById('passwordGroup')?.querySelector('.form-label');
-                if (passwordLabel) {
-                    passwordLabel.textContent = 'Password *';
-                }
+                setTimeout(() => {
+                    document.getElementById('userForm').reset();
+                    document.getElementById('userId').value = '';
+                    document.getElementById('avatarPreview').innerHTML = '<span id="avatarInitials">?</span>';
+                    const passwordLabel = document.getElementById('passwordGroup')?.querySelector('.form-label');
+                    if (passwordLabel) {
+                        passwordLabel.textContent = 'Password *';
+                    }
+                    document.getElementById('passwordGroup').style.display = 'block';
+                    document.getElementById('userPassword').required = false;
+                }, 300);
             }
+            return false;
         }
 
         function previewAvatar(input) {
@@ -975,13 +981,13 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     });
                 }
 
-                closeModal();
                 showStatus(isEdit ? 'User updated successfully' : 'User created successfully', 'success');
                 
-                // Refresh page after a short delay to show the toast
+                // Close modal and refresh data
                 setTimeout(() => {
+                    closeModal();
                     loadUsers();
-                }, 500);
+                }, 300);
 
             } catch (err) {
                 showStatus(err.message, 'error');
