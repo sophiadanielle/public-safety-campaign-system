@@ -45,6 +45,11 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             --success: #16a34a;
         }
 
+                        html, body {
+            margin: 13px;
+            padding: 0;
+        }
+
         .main-content-wrapper {
             margin-left: 280px;
             margin-top: 60px;
@@ -372,14 +377,18 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         }
 
         .modal-close {
-            background: none;
-            border: none;
+            background: none !important;
+            border: none !important;
             font-size: 20px;
-            color: var(--text-muted);
-            cursor: pointer;
+            color: var(--text-muted) !important;
+            cursor: pointer !important;
             padding: 8px;
             border-radius: 8px;
             transition: all 0.2s;
+            pointer-events: auto !important;
+            opacity: 1 !important;
+            position: relative;
+            z-index: 10001;
         }
 
         .modal-close:hover {
@@ -487,6 +496,12 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             display: flex;
             justify-content: flex-end;
             gap: 12px;
+        }
+
+        .modal-footer .btn {
+            pointer-events: auto !important;
+            cursor: pointer !important;
+            opacity: 1 !important;
         }
 
         .empty-state {
@@ -1072,18 +1087,36 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             loadUsers();
         });
 
-        // Close modal event listeners
-        document.getElementById('modalCloseBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            closeModal();
-        });
-
-        document.getElementById('modalCancelBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            closeModal();
-        });
+        // Close modal event listeners - attach after DOM is fully ready
+        function attachModalListeners() {
+            const closeBtn = document.getElementById('modalCloseBtn');
+            const cancelBtn = document.getElementById('modalCancelBtn');
+            
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Close button clicked');
+                    closeModal();
+                }, true); // Use capture phase
+            } else {
+                console.error('modalCloseBtn not found');
+            }
+            
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Cancel button clicked');
+                    closeModal();
+                }, true); // Use capture phase
+            } else {
+                console.error('modalCancelBtn not found');
+            }
+        }
+        
+        // Attach listeners immediately
+        attachModalListeners();
 
         // Close modal on escape key
         document.addEventListener('keydown', function(e) {
