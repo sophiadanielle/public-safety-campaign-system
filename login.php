@@ -545,7 +545,22 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         .otp-modal-header img {
             height: 48px;
             margin-bottom: 16px;
-            filter: brightness(0) invert(1);
+        }
+
+        .otp-modal-header .otp-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+
+        .otp-modal-header .otp-icon i {
+            font-size: 32px;
+            color: white;
         }
 
         .otp-modal-header h2 {
@@ -845,7 +860,9 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
     <div class="otp-modal-overlay" id="otpModal">
         <div class="otp-modal">
             <div class="otp-modal-header">
-                <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Alertara Logo">
+                <div class="otp-icon">
+                    <i class="fas fa-key"></i>
+                </div>
                 <h2>Verify Your Identity</h2>
                 <p>Enter the 6-digit code sent to your email</p>
             </div>

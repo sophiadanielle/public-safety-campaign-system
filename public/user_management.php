@@ -187,6 +187,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             display: flex;
             align-items: center;
             gap: 12px;
+            min-width: 200px;
         }
 
         .user-avatar {
@@ -213,16 +214,24 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         .user-info {
             display: flex;
             flex-direction: column;
+            flex: 1;
+            min-width: 0;
         }
 
         .user-name {
             font-weight: 600;
             color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .user-email {
             font-size: 12px;
             color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .badge {
@@ -528,10 +537,27 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         }
 
         .status-message {
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-bottom: 16px;
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            padding: 16px 24px;
+            border-radius: 12px;
             font-size: 14px;
+            z-index: 20000;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            min-width: 300px;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
 
         .status-message.success {
@@ -691,7 +717,9 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             el.textContent = message;
             el.className = 'status-message ' + type;
             el.style.display = 'block';
-            setTimeout(() => { el.style.display = 'none'; }, 5000);
+            setTimeout(() => { 
+                el.style.display = 'none';
+            }, 5000);
         }
 
         function getInitials(name) {
@@ -855,8 +883,16 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         }
 
         function closeModal() {
-            document.getElementById('userModal').classList.remove('show');
-            document.getElementById('passwordGroup').querySelector('.form-label').textContent = 'Password *';
+            const modal = document.getElementById('userModal');
+            if (modal) {
+                modal.classList.remove('show');
+                document.getElementById('userForm').reset();
+                document.getElementById('userId').value = '';
+                const passwordLabel = document.getElementById('passwordGroup')?.querySelector('.form-label');
+                if (passwordLabel) {
+                    passwordLabel.textContent = 'Password *';
+                }
+            }
         }
 
         function previewAvatar(input) {
@@ -941,7 +977,11 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 
                 closeModal();
                 showStatus(isEdit ? 'User updated successfully' : 'User created successfully', 'success');
-                loadUsers();
+                
+                // Refresh page after a short delay to show the toast
+                setTimeout(() => {
+                    loadUsers();
+                }, 500);
 
             } catch (err) {
                 showStatus(err.message, 'error');
