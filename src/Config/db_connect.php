@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
-// Disable ALL output for API calls to prevent breaking JSON responses
+// CRITICAL: Disable ALL output for API calls to prevent breaking JSON responses
 $isApiCall = strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false;
 if ($isApiCall) {
     // Suppress all errors and warnings
     error_reporting(0);
     ini_set('display_errors', '0');
-    // Redirect error_log to null
-    ini_set('error_log', '/dev/null');
+    // Override error_log function to prevent output
+    function error_log($message, $message_type = 0, $destination = null, $extra_headers = null) {
+        // Do nothing for API calls
+        return true;
+    }
 }
 $debugEnabled = !$isApiCall;
 
