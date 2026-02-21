@@ -959,7 +959,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             showStatus('Authenticating...', 'loading');
 
             try {
-                const response = await fetch(basePath + '/api/auth_otp_clean.php?action=login', {
+                const response = await fetch(basePath + '/api/auth_standalone.php?action=login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
@@ -1069,7 +1069,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
             
             try {
-                const response = await fetch(basePath + '/api/auth_otp_clean.php?action=verify-otp', {
+                const response = await fetch(basePath + '/api/auth_standalone.php?action=verify-otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: currentUserId, otp_code: otpCode })
@@ -1111,7 +1111,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             resendBtn.textContent = 'Sending...';
             
             try {
-                const response = await fetch(basePath + '/api/auth_otp_clean.php?action=resend-otp', {
+                const response = await fetch(basePath + '/api/auth_standalone.php?action=resend-otp', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: currentUserId })
