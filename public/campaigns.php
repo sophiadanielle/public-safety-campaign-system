@@ -1290,7 +1290,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <!-- Add Budget Line Items Modal -->
     <?php if (!$isViewer): ?>
     <div id="budgetModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; overflow-y: auto; padding: 20px;">
-        <div class="modal-content" style="background: white; max-width: 800px; margin: 20px auto; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative;">
+        <div class="modal-content" style="background: white; max-width: 950px; margin: 20px auto; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative;">
             <!-- Modal Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 16px 16px 0 0;">
                 <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 10px;">
@@ -2989,9 +2989,13 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
 });
 
 // Plan New Campaign Modal Functions
-function openPlanCampaignModal() {
+function openPlanCampaignModal(isEdit = false) {
     const modal = document.getElementById('planCampaignModal');
     if (modal) {
+        // Reset form if not editing (opening for new campaign)
+        if (!isEdit) {
+            clearForm();
+        }
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
         // Focus on first input
@@ -4903,7 +4907,7 @@ function renderPaginatedCampaigns() {
                 <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">View</button>
                 ${!isViewer() ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">Edit</button>` : ''}
                 ${!isViewer() && c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">Finalize</button>` : ''}
-                ${!isViewer() && (c.status === 'ongoing' || c.status === 'active' || c.status === 'scheduled') ? `<button class="btn btn-success" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Close</button>` : ''}
+                ${!isViewer() && (c.status === 'approved' || c.status === 'ongoing') ? `<button class="btn btn-success" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Close</button>` : ''}
                 ${!isViewer() && c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-warning" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;">Archive</button>` : ''}
             </td>
         `;
@@ -5016,12 +5020,6 @@ function addBudgetRow() {
         </td>
         <td style="padding: 8px;"><input type="number" class="budget-item-qty" min="1" value="1" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
         <td style="padding: 8px;"><input type="number" class="budget-item-cost" min="0" step="0.01" placeholder="0.00" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
-        <td style="padding: 8px;">
-            <select class="budget-item-funding" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;">
-                <option value="government_allocated">Government</option>
-                <option value="reimbursable">Reimbursable</option>
-            </select>
-        </td>
         <td style="padding: 8px; text-align: center;">
             <button type="button" onclick="removeBudgetRow(this)" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; background: #ef4444; color: white; border: none;" title="Remove row">
                 <i class="fas fa-times"></i>
@@ -5058,12 +5056,6 @@ function clearBudgetRows() {
             </td>
             <td style="padding: 8px;"><input type="number" class="budget-item-qty" min="1" value="1" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
             <td style="padding: 8px;"><input type="number" class="budget-item-cost" min="0" step="0.01" placeholder="0.00" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
-            <td style="padding: 8px;">
-                <select class="budget-item-funding" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;">
-                    <option value="government_allocated">Government</option>
-                    <option value="reimbursable">Reimbursable</option>
-                </select>
-            </td>
             <td style="padding: 8px; text-align: center;">
                 <button type="button" onclick="removeBudgetRow(this)" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; background: #ef4444; color: white; border: none;" title="Remove row">
                     <i class="fas fa-times"></i>
@@ -5606,6 +5598,18 @@ async function editCampaign(campaignId) {
         if (document.getElementById('end_time')) {
             document.getElementById('end_time').value = c.end_time || '';
         }
+        
+        // Populate datetime-local fields for start and end
+        if (document.getElementById('start_datetime') && c.start_date) {
+            const startTime = c.start_time || '00:00:00';
+            const startDateTimeValue = c.start_date + 'T' + startTime.substring(0, 5);
+            document.getElementById('start_datetime').value = startDateTimeValue;
+        }
+        if (document.getElementById('end_datetime') && c.end_date) {
+            const endTime = c.end_time || '00:00:00';
+            const endDateTimeValue = c.end_date + 'T' + endTime.substring(0, 5);
+            document.getElementById('end_datetime').value = endDateTimeValue;
+        }
         // Handle final schedule display (read-only)
         const finalScheduleField = document.getElementById('final_schedule_field');
         const finalScheduleValue = document.getElementById('final_schedule_value');
@@ -5711,7 +5715,7 @@ async function editCampaign(campaignId) {
         }
         
         // Open the Plan Campaign modal (since planning section is now a modal)
-        openPlanCampaignModal();
+        openPlanCampaignModal(true); // Pass true to indicate edit mode
         
     } catch (err) {
         alert('Failed to load campaign: ' + err.message);

@@ -815,6 +815,12 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                     </button>
                 </form>
 
+                <div style="text-align: center; margin-top: 16px;">
+                    <a href="#" onclick="openForgotPasswordModal(); return false;" style="color: var(--primary); font-size: 14px; text-decoration: none; font-weight: 500;">
+                        <i class="fas fa-key" style="margin-right: 6px;"></i>Forgot Password?
+                    </a>
+                </div>
+
                 <div id="statusMessage" class="status-message <?php echo $error ? 'error' : ''; ?>">
                     <?php if ($error): ?>
                         <?php echo htmlspecialchars($error); ?>
@@ -907,11 +913,112 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         </div>
     </div>
 
+    <!-- Forgot Password Modal -->
+    <div class="otp-modal-overlay" id="forgotPasswordModal">
+        <div class="otp-modal">
+            <div class="otp-modal-header">
+                <div class="otp-icon">
+                    <i class="fas fa-unlock-alt"></i>
+                </div>
+                <h2>Reset Password</h2>
+                <p>Enter your email to receive a reset code</p>
+            </div>
+            <div class="otp-modal-body">
+                <!-- Step 1: Email Input -->
+                <div id="forgotStep1">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" for="forgotEmail">Email Address</label>
+                        <div class="input-wrapper">
+                            <input 
+                                type="email" 
+                                id="forgotEmail" 
+                                placeholder="Enter your email"
+                                style="width: 100%; padding: 14px 16px 14px 48px; font-size: 15px; border: 2px solid var(--border); border-radius: 12px; outline: none;"
+                            >
+                            <i class="fas fa-envelope input-icon"></i>
+                        </div>
+                    </div>
+                    <div id="forgotStatus1" class="otp-status"></div>
+                    <button type="button" class="otp-verify-btn" id="sendResetCodeBtn" onclick="sendResetCode()">
+                        <i class="fas fa-paper-plane"></i>
+                        Send Reset Code
+                    </button>
+                </div>
+
+                <!-- Step 2: OTP Verification -->
+                <div id="forgotStep2" style="display: none;">
+                    <div class="otp-email-display">
+                        <i class="fas fa-envelope"></i>
+                        <p>Code sent to <strong id="forgotEmailDisplay">your email</strong></p>
+                    </div>
+                    <div id="forgotStatus2" class="otp-status"></div>
+                    <div class="otp-input-container">
+                        <input type="text" class="otp-input forgot-otp-input" maxlength="1" data-index="0" inputmode="numeric" pattern="[0-9]">
+                        <input type="text" class="otp-input forgot-otp-input" maxlength="1" data-index="1" inputmode="numeric" pattern="[0-9]">
+                        <input type="text" class="otp-input forgot-otp-input" maxlength="1" data-index="2" inputmode="numeric" pattern="[0-9]">
+                        <input type="text" class="otp-input forgot-otp-input" maxlength="1" data-index="3" inputmode="numeric" pattern="[0-9]">
+                        <input type="text" class="otp-input forgot-otp-input" maxlength="1" data-index="4" inputmode="numeric" pattern="[0-9]">
+                        <input type="text" class="otp-input forgot-otp-input" maxlength="1" data-index="5" inputmode="numeric" pattern="[0-9]">
+                    </div>
+                    <div class="otp-timer">
+                        Code expires in <span id="forgotOtpTimer">5:00</span>
+                    </div>
+                    <button type="button" class="otp-verify-btn" id="verifyResetCodeBtn" onclick="verifyResetCode()">
+                        <i class="fas fa-check-circle"></i>
+                        Verify Code
+                    </button>
+                </div>
+
+                <!-- Step 3: New Password -->
+                <div id="forgotStep3" style="display: none;">
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label class="form-label" for="newPassword">New Password</label>
+                        <div class="input-wrapper">
+                            <input 
+                                type="password" 
+                                id="newPassword" 
+                                placeholder="Enter new password"
+                                style="width: 100%; padding: 14px 16px 14px 48px; font-size: 15px; border: 2px solid var(--border); border-radius: 12px; outline: none;"
+                            >
+                            <i class="fas fa-lock input-icon"></i>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label class="form-label" for="confirmPassword">Confirm Password</label>
+                        <div class="input-wrapper">
+                            <input 
+                                type="password" 
+                                id="confirmPassword" 
+                                placeholder="Confirm new password"
+                                style="width: 100%; padding: 14px 16px 14px 48px; font-size: 15px; border: 2px solid var(--border); border-radius: 12px; outline: none;"
+                            >
+                            <i class="fas fa-lock input-icon"></i>
+                        </div>
+                    </div>
+                    <div id="forgotStatus3" class="otp-status"></div>
+                    <button type="button" class="otp-verify-btn" id="resetPasswordBtn" onclick="resetPassword()">
+                        <i class="fas fa-save"></i>
+                        Reset Password
+                    </button>
+                </div>
+            </div>
+            <div class="otp-modal-footer">
+                <button type="button" class="otp-back-btn" onclick="closeForgotPasswordModal()">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Login
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const basePath = '<?php echo isset($basePath) ? $basePath : ''; ?>';
         let otpEmail = '';
         let otpTimerInterval = null;
         let otpExpiresAt = null;
+        let forgotEmail = '';
+        let forgotOtpTimerInterval = null;
+        let forgotResetToken = '';
         
         function togglePassword() {
             const passwordInput = document.getElementById('password');
@@ -1224,7 +1331,275 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeOtpModal();
+                closeForgotPasswordModal();
             }
+        });
+
+        // ============================================
+        // FORGOT PASSWORD FUNCTIONS
+        // ============================================
+        
+        function openForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').classList.add('show');
+            document.getElementById('forgotStep1').style.display = 'block';
+            document.getElementById('forgotStep2').style.display = 'none';
+            document.getElementById('forgotStep3').style.display = 'none';
+            document.getElementById('forgotEmail').value = '';
+            document.getElementById('forgotEmail').focus();
+            clearForgotStatus();
+        }
+
+        function closeForgotPasswordModal() {
+            document.getElementById('forgotPasswordModal').classList.remove('show');
+            clearForgotOtpTimer();
+            clearForgotOtpInputs();
+            clearForgotStatus();
+            forgotEmail = '';
+            forgotResetToken = '';
+        }
+
+        function clearForgotStatus() {
+            ['forgotStatus1', 'forgotStatus2', 'forgotStatus3'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.className = 'otp-status';
+                    el.textContent = '';
+                }
+            });
+        }
+
+        function showForgotStatus(stepNum, message, type) {
+            const el = document.getElementById('forgotStatus' + stepNum);
+            if (el) {
+                el.textContent = message;
+                el.className = 'otp-status ' + type;
+            }
+        }
+
+        function clearForgotOtpInputs() {
+            document.querySelectorAll('.forgot-otp-input').forEach(input => {
+                input.value = '';
+                input.classList.remove('filled');
+            });
+        }
+
+        function clearForgotOtpTimer() {
+            if (forgotOtpTimerInterval) {
+                clearInterval(forgotOtpTimerInterval);
+                forgotOtpTimerInterval = null;
+            }
+        }
+
+        function startForgotOtpTimer(seconds) {
+            clearForgotOtpTimer();
+            let remaining = seconds;
+            
+            function updateDisplay() {
+                const minutes = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                document.getElementById('forgotOtpTimer').textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
+                
+                if (remaining <= 0) {
+                    clearForgotOtpTimer();
+                    document.getElementById('forgotOtpTimer').textContent = 'Expired';
+                }
+                remaining--;
+            }
+            
+            updateDisplay();
+            forgotOtpTimerInterval = setInterval(updateDisplay, 1000);
+        }
+
+        function getForgotOtpValue() {
+            let otp = '';
+            document.querySelectorAll('.forgot-otp-input').forEach(input => {
+                otp += input.value;
+            });
+            return otp;
+        }
+
+        async function sendResetCode() {
+            const email = document.getElementById('forgotEmail').value.trim();
+            
+            if (!email) {
+                showForgotStatus(1, 'Please enter your email address', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('sendResetCodeBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+            try {
+                const response = await fetch('/index.php/api/v1/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || 'Failed to send reset code');
+                }
+
+                forgotEmail = email;
+                document.getElementById('forgotEmailDisplay').textContent = email;
+                document.getElementById('forgotStep1').style.display = 'none';
+                document.getElementById('forgotStep2').style.display = 'block';
+                clearForgotOtpInputs();
+                startForgotOtpTimer(300);
+                document.querySelector('.forgot-otp-input[data-index="0"]').focus();
+                
+                showForgotStatus(2, 'Reset code sent to your email', 'success');
+                setTimeout(() => {
+                    const el = document.getElementById('forgotStatus2');
+                    if (el) el.className = 'otp-status';
+                }, 3000);
+
+            } catch (error) {
+                showForgotStatus(1, error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reset Code';
+            }
+        }
+
+        async function verifyResetCode() {
+            const otp = getForgotOtpValue();
+            
+            if (otp.length !== 6) {
+                showForgotStatus(2, 'Please enter all 6 digits', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('verifyResetCodeBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+
+            try {
+                const response = await fetch('/index.php/api/v1/auth/verify-reset-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: forgotEmail, otp })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || 'Invalid reset code');
+                }
+
+                forgotResetToken = data.reset_token;
+                document.getElementById('forgotStep2').style.display = 'none';
+                document.getElementById('forgotStep3').style.display = 'block';
+                document.getElementById('newPassword').focus();
+                clearForgotOtpTimer();
+
+            } catch (error) {
+                showForgotStatus(2, error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Verify Code';
+            }
+        }
+
+        async function resetPassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!newPassword || newPassword.length < 6) {
+                showForgotStatus(3, 'Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showForgotStatus(3, 'Passwords do not match', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('resetPasswordBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+
+            try {
+                const response = await fetch('/index.php/api/v1/auth/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email: forgotEmail, 
+                        reset_token: forgotResetToken,
+                        new_password: newPassword 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || 'Failed to reset password');
+                }
+
+                showForgotStatus(3, 'Password reset successful! Redirecting to login...', 'success');
+                
+                setTimeout(() => {
+                    closeForgotPasswordModal();
+                    showStatus('Password reset successful! Please login with your new password.', 'success');
+                }, 2000);
+
+            } catch (error) {
+                showForgotStatus(3, error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Reset Password';
+            }
+        }
+
+        // Setup forgot password OTP input handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            const forgotOtpInputs = document.querySelectorAll('.forgot-otp-input');
+            
+            forgotOtpInputs.forEach((input, index) => {
+                input.addEventListener('input', function(e) {
+                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    e.target.value = value;
+                    
+                    if (value) {
+                        e.target.classList.add('filled');
+                        if (index < forgotOtpInputs.length - 1) {
+                            forgotOtpInputs[index + 1].focus();
+                        }
+                    } else {
+                        e.target.classList.remove('filled');
+                    }
+
+                    if (getForgotOtpValue().length === 6) {
+                        verifyResetCode();
+                    }
+                });
+
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                        forgotOtpInputs[index - 1].focus();
+                    }
+                });
+
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedData = (e.clipboardData || window.clipboardData).getData('text');
+                    const digits = pastedData.replace(/[^0-9]/g, '').slice(0, 6);
+                    
+                    digits.split('').forEach((digit, i) => {
+                        if (forgotOtpInputs[i]) {
+                            forgotOtpInputs[i].value = digit;
+                            forgotOtpInputs[i].classList.add('filled');
+                        }
+                    });
+
+                    if (digits.length === 6) {
+                        verifyResetCode();
+                    }
+                });
+            });
         });
     </script>
 </body>

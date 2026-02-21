@@ -40,6 +40,27 @@ return [
         'middleware' => JWTMiddleware::class,
     ],
     [
+        'method' => 'POST',
+        'path' => '/api/v1/auth/verify-password',
+        'handler' => [AuthController::class, 'verifyPassword'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/auth/forgot-password',
+        'handler' => [AuthController::class, 'forgotPassword'],
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/auth/verify-reset-code',
+        'handler' => [AuthController::class, 'verifyResetCode'],
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/auth/reset-password',
+        'handler' => [AuthController::class, 'resetPassword'],
+    ],
+    [
         'method' => 'GET',
         'path' => '/api/v1/auth/google',
         'handler' => [AuthController::class, 'google'],

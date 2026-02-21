@@ -597,6 +597,309 @@ class AuthController
     }
 
     /**
+     * Verify user password (for screen lock unlock)
+     */
+    public function verifyPassword(?array $user, array $params = []): array
+    {
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        
+        $email = isset($input['email']) ? trim($input['email']) : '';
+        $password = isset($input['password']) ? (string)$input['password'] : '';
+        
+        if (empty($email) || empty($password)) {
+            http_response_code(422);
+            return ['error' => 'Email and password are required', 'success' => false];
+        }
+        
+        // Normalize email
+        $normalizedEmail = strtolower(trim($email));
+        
+        // Check for demo admin credentials
+        if ($normalizedEmail === 'admin@barangay1.qc.gov.ph' && ($password === 'pass123' || trim($password) === 'pass123')) {
+            return ['success' => true, 'message' => 'Password verified'];
+        }
+        
+        // If PDO is null, only allow demo login
+        if ($this->pdo === null) {
+            http_response_code(401);
+            return ['error' => 'Invalid password', 'success' => false];
+        }
+        
+        try {
+            // Fetch user by email
+            $stmt = $this->pdo->prepare('SELECT id, password_hash FROM campaign_department_users WHERE LOWER(TRIM(email)) = :email AND is_active = 1 LIMIT 1');
+            $stmt->execute(['email' => $normalizedEmail]);
+            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$userData) {
+                http_response_code(401);
+                return ['error' => 'User not found', 'success' => false];
+            }
+            
+            // Verify password
+            if (!password_verify($password, $userData['password_hash'])) {
+                http_response_code(401);
+                return ['error' => 'Invalid password', 'success' => false];
+            }
+            
+            return ['success' => true, 'message' => 'Password verified'];
+        } catch (\PDOException $e) {
+            error_log('Database error in verifyPassword: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Database error', 'success' => false];
+        }
+    }
+
+    /**
+     * Send forgot password reset code
+     */
+    public function forgotPassword(?array $user = null, array $params = []): array
+    {
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $email = isset($input['email']) ? trim($input['email']) : '';
+        
+        if (empty($email)) {
+            http_response_code(422);
+            return ['error' => 'Email is required'];
+        }
+        
+        $normalizedEmail = strtolower(trim($email));
+        
+        // Check if PDO is available
+        if ($this->pdo === null) {
+            http_response_code(503);
+            return ['error' => 'Database unavailable'];
+        }
+        
+        try {
+            // Check if user exists
+            $stmt = $this->pdo->prepare('SELECT id, email, name FROM campaign_department_users WHERE LOWER(TRIM(email)) = :email AND is_active = 1 LIMIT 1');
+            $stmt->execute(['email' => $normalizedEmail]);
+            $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$userData) {
+                // Don't reveal if email exists or not for security
+                return ['success' => true, 'message' => 'If the email exists, a reset code has been sent'];
+            }
+            
+            // Generate 6-digit OTP
+            $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+            
+            // Ensure password_reset_tokens table exists
+            $this->pdo->exec("
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    email VARCHAR(255) NOT NULL,
+                    otp VARCHAR(6) NOT NULL,
+                    reset_token VARCHAR(255) NULL,
+                    expires_at DATETIME NOT NULL,
+                    used TINYINT(1) DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_email (email),
+                    INDEX idx_otp (otp)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ");
+            
+            // Delete any existing tokens for this email
+            $this->pdo->prepare('DELETE FROM password_reset_tokens WHERE email = ?')->execute([$normalizedEmail]);
+            
+            // Insert new token
+            $stmt = $this->pdo->prepare('INSERT INTO password_reset_tokens (user_id, email, otp, expires_at) VALUES (?, ?, ?, ?)');
+            $stmt->execute([$userData['id'], $normalizedEmail, $otp, $expiresAt]);
+            
+            // Send email with OTP (using existing email infrastructure if available)
+            $this->sendPasswordResetEmail($userData['email'], $userData['name'] ?? 'User', $otp);
+            
+            return ['success' => true, 'message' => 'Reset code sent to your email'];
+            
+        } catch (\PDOException $e) {
+            error_log('Database error in forgotPassword: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to process request'];
+        }
+    }
+
+    /**
+     * Verify reset code and return reset token
+     */
+    public function verifyResetCode(?array $user = null, array $params = []): array
+    {
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $email = isset($input['email']) ? strtolower(trim($input['email'])) : '';
+        $otp = isset($input['otp']) ? trim($input['otp']) : '';
+        
+        if (empty($email) || empty($otp)) {
+            http_response_code(422);
+            return ['error' => 'Email and OTP are required'];
+        }
+        
+        if ($this->pdo === null) {
+            http_response_code(503);
+            return ['error' => 'Database unavailable'];
+        }
+        
+        try {
+            // Find valid token
+            $stmt = $this->pdo->prepare('
+                SELECT id, user_id FROM password_reset_tokens 
+                WHERE email = ? AND otp = ? AND used = 0 AND expires_at > NOW()
+                LIMIT 1
+            ');
+            $stmt->execute([$email, $otp]);
+            $token = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$token) {
+                http_response_code(401);
+                return ['error' => 'Invalid or expired reset code'];
+            }
+            
+            // Generate reset token for password change
+            $resetToken = bin2hex(random_bytes(32));
+            
+            // Update token record with reset token
+            $stmt = $this->pdo->prepare('UPDATE password_reset_tokens SET reset_token = ? WHERE id = ?');
+            $stmt->execute([$resetToken, $token['id']]);
+            
+            return ['success' => true, 'reset_token' => $resetToken];
+            
+        } catch (\PDOException $e) {
+            error_log('Database error in verifyResetCode: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to verify code'];
+        }
+    }
+
+    /**
+     * Reset password with valid reset token
+     */
+    public function resetPassword(?array $user = null, array $params = []): array
+    {
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $email = isset($input['email']) ? strtolower(trim($input['email'])) : '';
+        $resetToken = isset($input['reset_token']) ? trim($input['reset_token']) : '';
+        $newPassword = isset($input['new_password']) ? $input['new_password'] : '';
+        
+        if (empty($email) || empty($resetToken) || empty($newPassword)) {
+            http_response_code(422);
+            return ['error' => 'Email, reset token, and new password are required'];
+        }
+        
+        if (strlen($newPassword) < 6) {
+            http_response_code(422);
+            return ['error' => 'Password must be at least 6 characters'];
+        }
+        
+        if ($this->pdo === null) {
+            http_response_code(503);
+            return ['error' => 'Database unavailable'];
+        }
+        
+        try {
+            // Find valid reset token
+            $stmt = $this->pdo->prepare('
+                SELECT id, user_id FROM password_reset_tokens 
+                WHERE email = ? AND reset_token = ? AND used = 0 AND expires_at > NOW()
+                LIMIT 1
+            ');
+            $stmt->execute([$email, $resetToken]);
+            $token = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$token) {
+                http_response_code(401);
+                return ['error' => 'Invalid or expired reset token'];
+            }
+            
+            // Update password
+            $passwordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+            $stmt = $this->pdo->prepare('UPDATE campaign_department_users SET password_hash = ? WHERE id = ?');
+            $stmt->execute([$passwordHash, $token['user_id']]);
+            
+            // Mark token as used
+            $stmt = $this->pdo->prepare('UPDATE password_reset_tokens SET used = 1 WHERE id = ?');
+            $stmt->execute([$token['id']]);
+            
+            return ['success' => true, 'message' => 'Password reset successfully'];
+            
+        } catch (\PDOException $e) {
+            error_log('Database error in resetPassword: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to reset password'];
+        }
+    }
+
+    /**
+     * Send password reset email
+     */
+    private function sendPasswordResetEmail(string $email, string $name, string $otp): void
+    {
+        try {
+            // Try to use PHPMailer if available
+            $mailerPath = __DIR__ . '/../../vendor/autoload.php';
+            if (file_exists($mailerPath)) {
+                require_once $mailerPath;
+                
+                if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
+                    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+                    
+                    // SMTP configuration from environment
+                    $mail->isSMTP();
+                    $mail->Host = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
+                    $mail->SMTPAuth = true;
+                    $mail->Username = $_ENV['SMTP_USER'] ?? '';
+                    $mail->Password = $_ENV['SMTP_PASS'] ?? '';
+                    $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port = (int)($_ENV['SMTP_PORT'] ?? 587);
+                    
+                    $mail->setFrom($_ENV['SMTP_FROM'] ?? 'noreply@alertaraqc.com', 'Alertara QC');
+                    $mail->addAddress($email, $name);
+                    
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Password Reset Code - Alertara QC';
+                    $mail->Body = "
+                        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+                            <div style='background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 30px; text-align: center;'>
+                                <h1 style='color: white; margin: 0;'>Password Reset</h1>
+                            </div>
+                            <div style='padding: 30px; background: #f8fafc;'>
+                                <p>Hello <strong>{$name}</strong>,</p>
+                                <p>You requested to reset your password. Use the code below to complete the process:</p>
+                                <div style='background: white; border: 2px solid #0d9488; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;'>
+                                    <span style='font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #0d9488;'>{$otp}</span>
+                                </div>
+                                <p style='color: #64748b; font-size: 14px;'>This code will expire in 5 minutes.</p>
+                                <p style='color: #64748b; font-size: 14px;'>If you didn't request this, please ignore this email.</p>
+                            </div>
+                            <div style='padding: 20px; text-align: center; color: #94a3b8; font-size: 12px;'>
+                                <p>Alertara QC - Barangay Public Safety Campaign Management System</p>
+                            </div>
+                        </div>
+                    ";
+                    $mail->AltBody = "Your password reset code is: {$otp}. This code expires in 5 minutes.";
+                    
+                    $mail->send();
+                    error_log("Password reset email sent to: {$email}");
+                    return;
+                }
+            }
+            
+            // Fallback to PHP mail() function
+            $subject = 'Password Reset Code - Alertara QC';
+            $message = "Hello {$name},\n\nYour password reset code is: {$otp}\n\nThis code expires in 5 minutes.\n\nIf you didn't request this, please ignore this email.\n\n- Alertara QC";
+            $headers = "From: noreply@alertaraqc.com\r\n";
+            $headers .= "Reply-To: noreply@alertaraqc.com\r\n";
+            
+            mail($email, $subject, $message, $headers);
+            error_log("Password reset email sent via mail() to: {$email}");
+            
+        } catch (\Throwable $e) {
+            error_log("Failed to send password reset email: " . $e->getMessage());
+            // Don't throw - we still want to return success to not reveal email existence
+        }
+    }
+
+    /**
      * Best-effort automatic repair for the default admin account.
      * This avoids "Invalid credentials" when the DB seed is out of sync.
      */

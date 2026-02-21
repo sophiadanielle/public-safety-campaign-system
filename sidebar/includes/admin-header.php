@@ -1388,42 +1388,106 @@ function activateGlobalScreenLock() {
     }
 }
 
-function unlockGlobalScreen(event) {
+async function unlockGlobalScreen(event) {
     event.preventDefault();
     
     const passwordEl = document.getElementById('globalUnlockPassword');
     const errorEl = document.getElementById('globalUnlockError');
     const overlayEl = document.getElementById('globalScreenLockOverlay');
+    const unlockBtn = document.querySelector('#globalUnlockForm button[type="submit"]');
     
     if (!passwordEl || !errorEl || !overlayEl) return false;
     
     const password = passwordEl.value.trim();
     
-    // Check password (hardcoded as 'password' for now)
-    if (password === 'password') {
-        // Correct password - unlock
-        overlayEl.style.display = 'none';
-        passwordEl.value = '';
-        errorEl.style.display = 'none';
-        // Clear lock state from sessionStorage
-        sessionStorage.removeItem('screen_locked');
-    } else {
-        // Incorrect password - show error
+    if (!password) {
+        errorEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please enter your password.';
+        errorEl.style.display = 'block';
+        passwordEl.focus();
+        return false;
+    }
+    
+    // Get current user email from localStorage
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const email = currentUser.email;
+    
+    if (!email) {
+        errorEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Session expired. Please log in again.';
+        errorEl.style.display = 'block';
+        return false;
+    }
+    
+    // Show loading state
+    if (unlockBtn) {
+        unlockBtn.disabled = true;
+        unlockBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+    }
+    
+    try {
+        // Verify password via API
+        const apiBase = '<?php echo $apiPath; ?>';
+        const res = await fetch(apiBase + '/api/v1/auth/verify-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + (localStorage.getItem('jwtToken') || '')
+            },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+            // Correct password - unlock
+            overlayEl.style.display = 'none';
+            passwordEl.value = '';
+            errorEl.style.display = 'none';
+            // Clear lock state from sessionStorage
+            sessionStorage.removeItem('screen_locked');
+        } else {
+            // Incorrect password - show error
+            errorEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.error || 'Incorrect password. Try again.');
+            errorEl.style.display = 'block';
+            passwordEl.value = '';
+            passwordEl.focus();
+            
+            // Shake animation
+            const form = document.getElementById('globalUnlockForm');
+            if (form) {
+                form.style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    form.style.animation = '';
+                }, 500);
+            }
+        }
+    } catch (err) {
+        errorEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> Network error. Please try again.';
         errorEl.style.display = 'block';
         passwordEl.value = '';
         passwordEl.focus();
-        
-        // Shake animation
-        const form = document.getElementById('globalUnlockForm');
-        if (form) {
-            form.style.animation = 'shake 0.5s';
-            setTimeout(() => {
-                form.style.animation = '';
-            }, 500);
+    } finally {
+        // Reset button state
+        if (unlockBtn) {
+            unlockBtn.disabled = false;
+            unlockBtn.innerHTML = '<i class="fas fa-unlock"></i> Unlock';
         }
     }
     
     return false;
+}
+
+// Logout from lock screen
+function logoutFromLockScreen() {
+    // Clear all auth data
+    localStorage.removeItem('jwtToken');
+    localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('screen_locked');
+    
+    // Clear role cookie
+    document.cookie = 'user_role_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    
+    // Redirect to login page
+    window.location.href = '<?php echo $basePath; ?>/login.php';
 }
 
 function updateGlobalLockScreenTime() {
@@ -1475,6 +1539,11 @@ function updateGlobalLockScreenTime() {
                     <i class="fas fa-unlock"></i> Unlock
                 </button>
             </form>
+            
+            <!-- Logout Option -->
+            <button type="button" onclick="logoutFromLockScreen()" style="width: 100%; margin-top: 12px; padding: 12px; background: transparent; color: rgba(255, 255, 255, 0.8); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 12px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s;">
+                <i class="fas fa-sign-out-alt"></i> Logout Instead
+            </button>
             
             <!-- Time Display -->
             <div id="globalLockScreenTime" style="margin-top: 24px; font-size: 48px; font-weight: 300; opacity: 0.9;"></div>
