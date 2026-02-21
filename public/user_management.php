@@ -187,9 +187,9 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         }
 
         .user-cell {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
             min-width: 200px;
         }
 
@@ -612,7 +612,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 <table>
                     <thead>
                         <tr>
-                            <th>Userr</th>
+                            <th>User</th>
                             <th>User Type</th>
                             <th>Created</th>
                             <th>Actions</th>
@@ -640,7 +640,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Logo">
                     <span id="modalTitle">Add New User</span>
                 </h3>
-                <button type="button" class="modal-close" onclick="event.stopPropagation(); closeModal();">
+                <button type="button" class="modal-close" id="modalCloseBtn">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -697,7 +697,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="event.stopPropagation(); closeModal();">Cancel</button>
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
                 <button type="submit" class="btn btn-primary" form="userForm" id="submitBtn">
                     <i class="fas fa-save"></i>
                     Save User
@@ -1070,6 +1070,19 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadUsers();
+        });
+
+        // Close modal event listeners
+        document.getElementById('modalCloseBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeModal();
+        });
+
+        document.getElementById('modalCancelBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeModal();
         });
 
         // Close modal on escape key
