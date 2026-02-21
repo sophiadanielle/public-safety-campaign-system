@@ -4,6 +4,10 @@
  * Handles login with OTP verification using campaign_users table
  */
 
+// Suppress all errors and warnings to prevent breaking JSON output
+error_reporting(0);
+ini_set('display_errors', 0);
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -14,10 +18,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once __DIR__ . '/../src/Config/db_connect.php';
-require_once __DIR__ . '/../vendor/autoload.php';
+try {
+    require_once __DIR__ . '/../src/Config/db_connect.php';
+    
+    // Check if vendor autoload exists
+    if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
+        require_once __DIR__ . '/../vendor/autoload.php';
+    }
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Server configuration error']);
+    exit;
+}
 
-use App\Services\MailService;
 use Firebase\JWT\JWT;
 
 $action = $_GET['action'] ?? '';
@@ -74,15 +87,20 @@ function handleLogin($pdo) {
         $stmt = $pdo->prepare("INSERT INTO campaign_otp_codes (user_id, email, otp_code, expires_at) VALUES (?, ?, ?, ?)");
         $stmt->execute([$user['id'], $email, $otpCode, $expiresAt]);
         
+        // Try to send OTP email if MailService is available
         try {
-            $mailService = new MailService();
-            $emailSent = $mailService->sendOTP($email, $user['fullname'], $otpCode);
-            
-            if (!$emailSent) {
-                error_log("Failed to send OTP email to: $email");
+            if (class_exists('App\Services\MailService')) {
+                $mailService = new \App\Services\MailService();
+                $emailSent = $mailService->sendOTP($email, $user['fullname'], $otpCode);
+                
+                if (!$emailSent) {
+                    error_log("Failed to send OTP email to: $email");
+                }
+            } else {
+                error_log("MailService not available - OTP: $otpCode for $email");
             }
         } catch (Exception $e) {
-            error_log("Mail service error: " . $e->getMessage());
+            error_log("Mail service error: " . $e->getMessage() . " - OTP: $otpCode");
         }
         
         echo json_encode([
@@ -203,11 +221,20 @@ function handleResendOTP($pdo) {
         $stmt = $pdo->prepare("INSERT INTO campaign_otp_codes (user_id, email, otp_code, expires_at) VALUES (?, ?, ?, ?)");
         $stmt->execute([$userId, $user['email'], $otpCode, $expiresAt]);
         
+        // Try to send OTP email if MailService is available
         try {
-            $mailService = new MailService();
-            $mailService->sendOTP($user['email'], $user['fullname'], $otpCode);
+            if (class_exists('App\Services\MailService')) {
+                $mailService = new \App\Services\MailService();
+                $emailSent = $mailService->sendOTP($user['email'], $user['fullname'], $otpCode);
+                
+                if (!$emailSent) {
+                    error_log("Failed to resend OTP email to: " . $user['email']);
+                }
+            } else {
+                error_log("MailService not available - Resend OTP: $otpCode for " . $user['email']);
+            }
         } catch (Exception $e) {
-            error_log("Mail service error: " . $e->getMessage());
+            error_log("Mail service error on resend: " . $e->getMessage() . " - OTP: $otpCode");
         }
         
         echo json_encode([
@@ -216,7 +243,7 @@ function handleResendOTP($pdo) {
             'email' => maskEmail($user['email'])
         ]);
         
-    } catch (Exception $e) {
+    } catch (PDOException $e) {
         error_log("Resend OTP error: " . $e->getMessage());
         http_response_code(500);
         echo json_encode(['error' => 'Server error. Please try again.']);
