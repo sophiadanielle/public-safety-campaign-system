@@ -248,14 +248,14 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
 
 <main class="profile-page">
     <div class="page-header">
-        <h1><i class="fas fa-user-circle" style="color: #0d9488; margin-right: 12px;"></i>User Profile</h1>
+        <h1>User Profile</h1>
         <p>Manage your account information and preferences</p>
     </div>
 
     <div class="profile-card">
         <div class="profile-header">
-            <div class="profile-avatar" id="profileAvatarContainer">
-                <img id="profileAvatar" src="https://ui-avatars.com/api/?name=User&background=0d9488&color=fff&size=128" alt="User">
+            <div class="profile-avatar">
+                <img id="profileAvatar" src="https://ui-avatars.com/api/?name=User&background=4c8a89&color=fff&size=128" alt="User">
             </div>
             <div class="profile-info">
                 <h2 id="profileName">Loading...</h2>
@@ -269,30 +269,20 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                 <h3>Personal Information</h3>
                 <div class="form-grid">
                     <div class="form-field">
-                        <label for="fullname">Full Name</label>
-                        <input type="text" id="fullname" name="fullname" required>
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" name="name" required>
                     </div>
                     <div class="form-field">
                         <label for="email">Email Address</label>
                         <input type="email" id="email" name="email" required>
                     </div>
-                </div>
-            </div>
-
-            <div class="form-section">
-                <h3>Profile Picture</h3>
-                <div class="avatar-upload-section">
-                    <div class="current-avatar">
-                        <img id="avatarPreview" src="https://ui-avatars.com/api/?name=User&background=0d9488&color=fff&size=128" alt="Avatar">
+                    <div class="form-field">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" placeholder="Optional">
                     </div>
-                    <div class="avatar-upload-controls">
-                        <input type="file" id="avatarInput" accept="image/*" style="display: none;">
-                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('avatarInput').click()">
-                            <i class="fas fa-camera"></i> Change Photo
-                        </button>
-                        <button type="button" class="btn btn-secondary" onclick="removeAvatar()" style="color: #dc2626;">
-                            <i class="fas fa-trash"></i> Remove
-                        </button>
+                    <div class="form-field">
+                        <label for="barangay">Barangay</label>
+                        <input type="text" id="barangay" name="barangay" readonly>
                     </div>
                 </div>
             </div>
@@ -301,8 +291,8 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                 <h3>Account Information</h3>
                 <div class="form-grid">
                     <div class="form-field">
-                        <label for="userType">User Type</label>
-                        <input type="text" id="userType" name="user_type" readonly>
+                        <label for="role">Role</label>
+                        <input type="text" id="role" name="role" readonly>
                     </div>
                     <div class="form-field">
                         <label for="memberSince">Member Since</label>
@@ -311,96 +301,27 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                 </div>
             </div>
 
-            <div class="form-section">
-                <h3>Change Password</h3>
-                <div class="form-grid">
-                    <div class="form-field">
-                        <label for="currentPassword">Current Password</label>
-                        <input type="password" id="currentPassword" name="current_password" placeholder="Enter current password">
-                    </div>
-                    <div class="form-field">
-                        <label for="newPassword">New Password</label>
-                        <input type="password" id="newPassword" name="new_password" placeholder="Enter new password">
-                    </div>
-                </div>
-                <p style="font-size: 13px; color: #64748b; margin-top: 8px;">Leave blank if you don't want to change your password.</p>
-            </div>
-
             <div class="status-message" id="statusMessage"></div>
 
             <div style="display: flex; gap: 12px; margin-top: 24px;">
-                <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);">
-                    <i class="fas fa-save"></i> Save Changes
-                </button>
-                <button type="button" class="btn btn-secondary" onclick="resetForm()">
-                    <i class="fas fa-undo"></i> Reset
-                </button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="button" class="btn btn-secondary" onclick="resetForm()">Reset</button>
             </div>
         </form>
     </div>
 </main>
 
-<style>
-.avatar-upload-section {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-}
-
-.current-avatar {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 3px solid #0d9488;
-}
-
-.current-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.avatar-upload-controls {
-    display: flex;
-    gap: 12px;
-}
-
-.avatar-initials {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
-    color: white;
-    font-weight: 700;
-    font-size: 36px;
-}
-</style>
-
 <script>
 <?php require_once __DIR__ . '/../header/includes/path_helper.php'; ?>
 const basePath = '<?php echo $basePath; ?>';
 const token = localStorage.getItem('jwtToken') || '';
-const apiBase = '<?php echo $basePath; ?>/api/user_management.php';
+const apiBase = '<?php echo $apiPath; ?>';
 let currentUser = null;
-let currentAvatarBase64 = null;
-
-// Get initials from name
-function getInitials(name) {
-    if (!name) return 'U';
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-}
 
 // Load user profile
 async function loadProfile() {
     try {
-        const res = await fetch(apiBase + '?action=me', {
+        const res = await fetch(apiBase + '/api/v1/users/me', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         
@@ -413,61 +334,65 @@ async function loadProfile() {
         }
         
         const data = await res.json();
-        currentUser = data.user || data;
+        currentUser = data.user || data.data || data;
         
         // Update display
-        const displayName = currentUser.fullname || 'User';
-        document.getElementById('profileName').textContent = displayName;
+        document.getElementById('profileName').textContent = currentUser.name || 'User';
         document.getElementById('profileEmail').textContent = currentUser.email || '';
-        document.getElementById('profileRole').textContent = currentUser.user_type || 'User';
         
-        // Update avatar
-        const avatarEl = document.getElementById('profileAvatar');
-        const previewEl = document.getElementById('avatarPreview');
+        // Use role name from API if available, otherwise fallback to hardcoded mapping
+        let roleDisplayName = currentUser.role || 'User';
         
-        if (currentUser.avatar_url) {
-            avatarEl.src = currentUser.avatar_url;
-            previewEl.src = currentUser.avatar_url;
-            currentAvatarBase64 = currentUser.avatar_url;
-        } else {
-            const initials = getInitials(displayName);
-            avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0d9488&color=fff&size=128`;
-            previewEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0d9488&color=fff&size=128`;
+        // Fallback mapping for legacy role_ids (if role name not in API response)
+        if (!currentUser.role && currentUser.role_id) {
+            const roleNames = {
+                1: 'Barangay Administrator',
+                2: 'Barangay Staff',
+                3: 'School Partner',
+                4: 'NGO Partner'
+            };
+            roleDisplayName = roleNames[currentUser.role_id] || 'User';
         }
         
+        // Capitalize first letter of each word for display
+        roleDisplayName = roleDisplayName.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
+        
+        document.getElementById('profileRole').textContent = roleDisplayName;
+        
+        // Update avatar
+        const encodedName = encodeURIComponent(currentUser.name || 'User');
+        document.getElementById('profileAvatar').src = `https://ui-avatars.com/api/?name=${encodedName}&background=4c8a89&color=fff&size=128`;
+        
         // Populate form
-        document.getElementById('fullname').value = currentUser.fullname || '';
+        document.getElementById('name').value = currentUser.name || '';
         document.getElementById('email').value = currentUser.email || '';
-        document.getElementById('userType').value = currentUser.user_type || 'User';
-        document.getElementById('memberSince').value = currentUser.date_created 
-            ? new Date(currentUser.date_created).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) 
-            : 'N/A';
+        document.getElementById('phone').value = currentUser.phone || '';
+        document.getElementById('barangay').value = currentUser.barangay_name || 'N/A';
+        
+        // Use role name from API if available
+        let roleFormValue = currentUser.role || 'User';
+        if (!currentUser.role && currentUser.role_id) {
+            const roleNames = {
+                1: 'Barangay Administrator',
+                2: 'Barangay Staff',
+                3: 'School Partner',
+                4: 'NGO Partner'
+            };
+            roleFormValue = roleNames[currentUser.role_id] || 'User';
+        }
+        roleFormValue = roleFormValue.split(' ').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        ).join(' ');
+        document.getElementById('role').value = roleFormValue;
+        
+        document.getElementById('memberSince').value = currentUser.created_at ? new Date(currentUser.created_at).toLocaleDateString() : 'N/A';
         
     } catch (err) {
         console.error('Error loading profile:', err);
         showStatus('Error loading profile: ' + err.message, 'error');
     }
-}
-
-// Handle avatar upload
-document.getElementById('avatarInput').addEventListener('change', function(e) {
-    if (this.files && this.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('avatarPreview').src = e.target.result;
-            document.getElementById('profileAvatar').src = e.target.result;
-            currentAvatarBase64 = e.target.result;
-        };
-        reader.readAsDataURL(this.files[0]);
-    }
-});
-
-function removeAvatar() {
-    const displayName = currentUser?.fullname || 'User';
-    const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0d9488&color=fff&size=128`;
-    document.getElementById('avatarPreview').src = defaultAvatar;
-    document.getElementById('profileAvatar').src = defaultAvatar;
-    currentAvatarBase64 = null;
 }
 
 // Save profile
@@ -481,19 +406,12 @@ document.getElementById('profileForm').addEventListener('submit', async function
     
     try {
         const formData = {
-            id: currentUser.id,
-            fullname: document.getElementById('fullname').value.trim(),
+            name: document.getElementById('name').value.trim(),
             email: document.getElementById('email').value.trim(),
-            avatar_url: currentAvatarBase64
+            phone: document.getElementById('phone').value.trim() || null,
         };
         
-        // Add password if provided
-        const newPassword = document.getElementById('newPassword').value;
-        if (newPassword) {
-            formData.password = newPassword;
-        }
-        
-        const res = await fetch(apiBase, {
+        const res = await fetch(apiBase + '/api/v1/users/me', {
             method: 'PUT',
             headers: {
                 'Authorization': 'Bearer ' + token,
@@ -508,19 +426,8 @@ document.getElementById('profileForm').addEventListener('submit', async function
             throw new Error(data.error || 'Failed to update profile');
         }
         
-        // Clear password fields
-        document.getElementById('currentPassword').value = '';
-        document.getElementById('newPassword').value = '';
-        
-        // Update localStorage with new user data
-        const storedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        storedUser.fullname = formData.fullname;
-        storedUser.email = formData.email;
-        storedUser.avatar_url = formData.avatar_url;
-        localStorage.setItem('currentUser', JSON.stringify(storedUser));
-        
         showStatus('Profile updated successfully!', 'success');
-        loadProfile();
+        loadProfile(); // Reload to get updated data
         
     } catch (err) {
         showStatus('Error: ' + err.message, 'error');
@@ -529,22 +436,9 @@ document.getElementById('profileForm').addEventListener('submit', async function
 
 function resetForm() {
     if (currentUser) {
-        document.getElementById('fullname').value = currentUser.fullname || '';
+        document.getElementById('name').value = currentUser.name || '';
         document.getElementById('email').value = currentUser.email || '';
-        document.getElementById('currentPassword').value = '';
-        document.getElementById('newPassword').value = '';
-        
-        if (currentUser.avatar_url) {
-            document.getElementById('avatarPreview').src = currentUser.avatar_url;
-            document.getElementById('profileAvatar').src = currentUser.avatar_url;
-            currentAvatarBase64 = currentUser.avatar_url;
-        } else {
-            const displayName = currentUser.fullname || 'User';
-            const defaultAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=0d9488&color=fff&size=128`;
-            document.getElementById('avatarPreview').src = defaultAvatar;
-            document.getElementById('profileAvatar').src = defaultAvatar;
-            currentAvatarBase64 = null;
-        }
+        document.getElementById('phone').value = currentUser.phone || '';
     }
     document.getElementById('statusMessage').className = 'status-message';
 }

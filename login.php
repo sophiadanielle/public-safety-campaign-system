@@ -494,304 +494,9 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         .shake {
             animation: shake 0.3s ease-in-out;
         }
-        /* OTP Modal Styles */
-        .otp-modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(8px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 24px;
-        }
-        
-        .otp-modal-overlay.show {
-            display: flex;
-        }
-        
-        .otp-modal {
-            background: white;
-            border-radius: 24px;
-            width: 100%;
-            max-width: 440px;
-            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25);
-            animation: otpModalSlideIn 0.4s ease;
-            overflow: hidden;
-        }
-        
-        @keyframes otpModalSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-30px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        
-        .otp-modal-header {
-            background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
-            padding: 32px;
-            text-align: center;
-        }
-        
-        .otp-modal-logo {
-            width: 64px;
-            height: 64px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-        }
-        
-        .otp-modal-logo i {
-            font-size: 28px;
-            color: white;
-        }
-        
-        .otp-modal-header h2 {
-            color: white;
-            font-size: 22px;
-            font-weight: 700;
-            margin: 0 0 8px;
-        }
-        
-        .otp-modal-header p {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 14px;
-            margin: 0;
-            line-height: 1.5;
-        }
-        
-        .otp-modal-body {
-            padding: 32px;
-        }
-        
-        .otp-email-display {
-            background: #f0fdfa;
-            border: 2px solid #99f6e4;
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-            margin-bottom: 24px;
-        }
-        
-        .otp-email-display i {
-            color: #0d9488;
-            margin-right: 8px;
-        }
-        
-        .otp-email-display span {
-            color: #0f766e;
-            font-weight: 600;
-        }
-        
-        .otp-input-container {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 24px;
-        }
-        
-        .otp-input {
-            width: 52px;
-            height: 60px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            text-align: center;
-            font-size: 24px;
-            font-weight: 700;
-            color: #0f172a;
-            transition: all 0.2s ease;
-        }
-        
-        .otp-input:focus {
-            outline: none;
-            border-color: #0d9488;
-            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
-        }
-        
-        .otp-input.filled {
-            border-color: #0d9488;
-            background: #f0fdfa;
-        }
-        
-        .otp-input.error {
-            border-color: #dc2626;
-            background: #fef2f2;
-        }
-        
-        .otp-timer {
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 14px;
-            color: #64748b;
-        }
-        
-        .otp-timer span {
-            color: #0d9488;
-            font-weight: 600;
-        }
-        
-        .btn-verify-otp {
-            width: 100%;
-            padding: 16px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            color: white;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.3);
-        }
-        
-        .btn-verify-otp:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4);
-        }
-        
-        .btn-verify-otp:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .otp-resend {
-            text-align: center;
-            margin-top: 20px;
-        }
-        
-        .otp-resend button {
-            background: none;
-            border: none;
-            color: #0d9488;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 14px;
-            transition: color 0.2s ease;
-        }
-        
-        .otp-resend button:hover {
-            color: #0f766e;
-            text-decoration: underline;
-        }
-        
-        .otp-resend button:disabled {
-            color: #94a3b8;
-            cursor: not-allowed;
-        }
-        
-        .otp-status {
-            margin-top: 16px;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            text-align: center;
-            display: none;
-        }
-        
-        .otp-status.error {
-            display: block;
-            background: #fef2f2;
-            color: #dc2626;
-            border: 1px solid #fecaca;
-        }
-        
-        .otp-status.success {
-            display: block;
-            background: #f0fdf4;
-            color: #16a34a;
-            border: 1px solid #bbf7d0;
-        }
-        
-        .otp-back-btn {
-            position: absolute;
-            top: 16px;
-            left: 16px;
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            transition: all 0.2s ease;
-        }
-        
-        .otp-back-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        .otp-modal-header {
-            position: relative;
-        }
     </style>
 </head>
 <body>
-    <!-- OTP Verification Modal -->
-    <div class="otp-modal-overlay" id="otpModal">
-        <div class="otp-modal">
-            <div class="otp-modal-header">
-                <button class="otp-back-btn" onclick="closeOtpModal()">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <div class="otp-modal-logo">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <h2>Verify Your Identity</h2>
-                <p>We've sent a 6-digit verification code to your email</p>
-            </div>
-            <div class="otp-modal-body">
-                <div class="otp-email-display">
-                    <i class="fas fa-envelope"></i>
-                    <span id="otpEmailDisplay">em***@example.com</span>
-                </div>
-                
-                <div class="otp-input-container">
-                    <input type="text" class="otp-input" maxlength="1" data-index="0" inputmode="numeric">
-                    <input type="text" class="otp-input" maxlength="1" data-index="1" inputmode="numeric">
-                    <input type="text" class="otp-input" maxlength="1" data-index="2" inputmode="numeric">
-                    <input type="text" class="otp-input" maxlength="1" data-index="3" inputmode="numeric">
-                    <input type="text" class="otp-input" maxlength="1" data-index="4" inputmode="numeric">
-                    <input type="text" class="otp-input" maxlength="1" data-index="5" inputmode="numeric">
-                </div>
-                
-                <div class="otp-timer">
-                    Code expires in <span id="otpTimer">5:00</span>
-                </div>
-                
-                <button class="btn-verify-otp" id="verifyOtpBtn" onclick="verifyOtp()">
-                    <i class="fas fa-check-circle"></i>
-                    Verify Code
-                </button>
-                
-                <div class="otp-resend">
-                    <span style="color: #64748b;">Didn't receive the code? </span>
-                    <button id="resendOtpBtn" onclick="resendOtp()" disabled>Resend Code</button>
-                </div>
-                
-                <div class="otp-status" id="otpStatus"></div>
-            </div>
-        </div>
-    </div>
-
     <!-- Header -->
     <header class="login-header">
         <a href="<?php echo htmlspecialchars($basePath); ?>/" class="login-header-logo">
@@ -897,9 +602,6 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
 
     <script>
         const basePath = '<?php echo isset($basePath) ? $basePath : ''; ?>';
-        let currentUserId = null;
-        let otpTimerInterval = null;
-        let resendCooldown = 30;
         
         function togglePassword() {
             const passwordInput = document.getElementById('password');
@@ -922,20 +624,21 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             statusEl.className = 'status-message ' + type;
         }
 
-        function showOtpStatus(message, type) {
-            const statusEl = document.getElementById('otpStatus');
-            statusEl.textContent = message;
-            statusEl.className = 'otp-status ' + type;
-        }
-
-        function setUserTypeCookie(userType) {
+        function setRoleCookieFromJWT(token) {
             try {
-                if (!userType) return;
-                const expires = new Date();
-                expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000));
-                document.cookie = 'user_type=' + encodeURIComponent(userType) + ';path=/;expires=' + expires.toUTCString() + ';SameSite=Lax';
+                if (!token) return;
+                const parts = token.split('.');
+                if (parts.length === 3) {
+                    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+                    const roleId = payload.role_id || payload.rid;
+                    if (roleId && typeof roleId === 'number') {
+                        const expires = new Date();
+                        expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000));
+                        document.cookie = 'user_role_id=' + roleId + ';path=/;expires=' + expires.toUTCString() + ';SameSite=Lax';
+                    }
+                }
             } catch (e) {
-                console.error('Failed to set user type cookie:', e);
+                console.error('Failed to set role cookie:', e);
             }
         }
 
@@ -954,59 +657,56 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                 return false;
             }
 
+            // Disable button and show loading
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
             showStatus('Authenticating...', 'loading');
 
             try {
-                // Add timeout to prevent hanging
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-                
-                const response = await fetch(basePath + '/api/auth_minimal.php', {
+                const response = await fetch('/index.php/api/v1/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password }),
-                    signal: controller.signal
+                    body: JSON.stringify({ email, password })
                 });
-                
-                clearTimeout(timeoutId);
 
-                // Log response for debugging
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-                
-                const responseText = await response.text();
-                console.log('Response text:', responseText);
-                
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch (e) {
-                    throw new Error('Server returned invalid response: ' + responseText.substring(0, 100));
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Server returned an invalid response');
                 }
+
+                const data = await response.json();
 
                 if (!response.ok || data.error) {
                     throw new Error(data.error || 'Invalid email or password');
                 }
 
-                if (data.success && data.user_id) {
-                    currentUserId = data.user_id;
-                    document.getElementById('otpEmailDisplay').textContent = data.email;
-                    showStatus('', '');
-                    loginBtn.disabled = false;
-                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
-                    openOtpModal();
-                    return false;
+                if (!data.token) {
+                    throw new Error('Authentication failed. Please try again.');
                 }
 
-            } catch (error) {
-                console.error('Login error:', error);
-                if (error.name === 'AbortError') {
-                    showStatus('Request timeout - please try again', 'error');
-                } else {
-                    showStatus(error.message, 'error');
+                // Store token
+                localStorage.setItem('jwtToken', data.token);
+                if (data.user) {
+                    localStorage.setItem('currentUser', JSON.stringify(data.user));
                 }
+                
+                // Set role cookie
+                setRoleCookieFromJWT(data.token);
+                
+                // Set session flags
+                sessionStorage.setItem('justLoggedIn', 'true');
+                sessionStorage.setItem('loginTimestamp', Date.now().toString());
+
+                showStatus('Login successful! Redirecting...', 'success');
+                loginBtn.innerHTML = '<i class="fas fa-check"></i> Success!';
+
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = basePath + '/public/dashboard.php?logged_in=1&t=' + Date.now();
+                }, 500);
+
+            } catch (error) {
+                showStatus(error.message, 'error');
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
                 loginCard.classList.add('shake');
@@ -1016,205 +716,9 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
             return false;
         }
 
-        function openOtpModal() {
-            document.getElementById('otpModal').classList.add('show');
-            clearOtpInputs();
-            startOtpTimer();
-            startResendCooldown();
-            document.querySelector('.otp-input[data-index="0"]').focus();
-        }
-
-        function closeOtpModal() {
-            document.getElementById('otpModal').classList.remove('show');
-            clearInterval(otpTimerInterval);
-            clearOtpInputs();
-            showOtpStatus('', '');
-        }
-
-        function clearOtpInputs() {
-            document.querySelectorAll('.otp-input').forEach(input => {
-                input.value = '';
-                input.classList.remove('filled', 'error');
-            });
-        }
-
-        function startOtpTimer() {
-            let timeLeft = 300;
-            const timerEl = document.getElementById('otpTimer');
-            
-            clearInterval(otpTimerInterval);
-            
-            otpTimerInterval = setInterval(() => {
-                timeLeft--;
-                const minutes = Math.floor(timeLeft / 60);
-                const seconds = timeLeft % 60;
-                timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                
-                if (timeLeft <= 0) {
-                    clearInterval(otpTimerInterval);
-                    timerEl.textContent = 'Expired';
-                    timerEl.style.color = '#dc2626';
-                }
-            }, 1000);
-        }
-
-        function startResendCooldown() {
-            const resendBtn = document.getElementById('resendOtpBtn');
-            let cooldown = resendCooldown;
-            
-            resendBtn.disabled = true;
-            resendBtn.textContent = `Resend in ${cooldown}s`;
-            
-            const cooldownInterval = setInterval(() => {
-                cooldown--;
-                resendBtn.textContent = `Resend in ${cooldown}s`;
-                
-                if (cooldown <= 0) {
-                    clearInterval(cooldownInterval);
-                    resendBtn.disabled = false;
-                    resendBtn.textContent = 'Resend Code';
-                }
-            }, 1000);
-        }
-
-        async function verifyOtp() {
-            const inputs = document.querySelectorAll('.otp-input');
-            let otpCode = '';
-            inputs.forEach(input => otpCode += input.value);
-            
-            if (otpCode.length !== 6) {
-                showOtpStatus('Please enter the complete 6-digit code', 'error');
-                inputs.forEach(input => input.classList.add('error'));
-                return;
-            }
-            
-            const verifyBtn = document.getElementById('verifyOtpBtn');
-            verifyBtn.disabled = true;
-            verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
-            
-            try {
-                const response = await fetch(basePath + '/api/auth_minimal.php?action=verify-otp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUserId, otp_code: otpCode })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok || data.error) {
-                    throw new Error(data.error || 'Invalid OTP code');
-                }
-                
-                localStorage.setItem('jwtToken', data.token);
-                if (data.user) {
-                    localStorage.setItem('currentUser', JSON.stringify(data.user));
-                    setUserTypeCookie(data.user.user_type);
-                }
-                
-                sessionStorage.setItem('justLoggedIn', 'true');
-                sessionStorage.setItem('loginTimestamp', Date.now().toString());
-                
-                showOtpStatus('Verification successful! Redirecting...', 'success');
-                verifyBtn.innerHTML = '<i class="fas fa-check"></i> Success!';
-                
-                setTimeout(() => {
-                    window.location.href = basePath + '/public/dashboard.php?logged_in=1&t=' + Date.now();
-                }, 500);
-                
-            } catch (error) {
-                showOtpStatus(error.message, 'error');
-                document.querySelectorAll('.otp-input').forEach(input => input.classList.add('error'));
-                verifyBtn.disabled = false;
-                verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verify Code';
-            }
-        }
-
-        async function resendOtp() {
-            const resendBtn = document.getElementById('resendOtpBtn');
-            resendBtn.disabled = true;
-            resendBtn.textContent = 'Sending...';
-            
-            try {
-                const response = await fetch(basePath + '/api/auth_standalone.php?action=resend-otp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: currentUserId })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok || data.error) {
-                    throw new Error(data.error || 'Failed to resend OTP');
-                }
-                
-                clearOtpInputs();
-                showOtpStatus('New code sent to your email', 'success');
-                startOtpTimer();
-                startResendCooldown();
-                document.querySelector('.otp-input[data-index="0"]').focus();
-                
-                setTimeout(() => showOtpStatus('', ''), 3000);
-                
-            } catch (error) {
-                showOtpStatus(error.message, 'error');
-                resendBtn.disabled = false;
-                resendBtn.textContent = 'Resend Code';
-            }
-        }
-
-        // OTP Input handling
+        // Focus email input on load
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('email').focus();
-            
-            const otpInputs = document.querySelectorAll('.otp-input');
-            
-            otpInputs.forEach((input, index) => {
-                input.addEventListener('input', function(e) {
-                    const value = e.target.value.replace(/[^0-9]/g, '');
-                    e.target.value = value;
-                    
-                    if (value) {
-                        e.target.classList.add('filled');
-                        e.target.classList.remove('error');
-                        if (index < otpInputs.length - 1) {
-                            otpInputs[index + 1].focus();
-                        }
-                    } else {
-                        e.target.classList.remove('filled');
-                    }
-                    
-                    // Auto-verify when all filled
-                    let allFilled = true;
-                    otpInputs.forEach(inp => {
-                        if (!inp.value) allFilled = false;
-                    });
-                    if (allFilled) {
-                        verifyOtp();
-                    }
-                });
-                
-                input.addEventListener('keydown', function(e) {
-                    if (e.key === 'Backspace' && !e.target.value && index > 0) {
-                        otpInputs[index - 1].focus();
-                    }
-                });
-                
-                input.addEventListener('paste', function(e) {
-                    e.preventDefault();
-                    const pastedData = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
-                    
-                    for (let i = 0; i < Math.min(pastedData.length, otpInputs.length); i++) {
-                        otpInputs[i].value = pastedData[i];
-                        otpInputs[i].classList.add('filled');
-                    }
-                    
-                    if (pastedData.length >= otpInputs.length) {
-                        verifyOtp();
-                    } else {
-                        otpInputs[Math.min(pastedData.length, otpInputs.length - 1)].focus();
-                    }
-                });
-            });
         });
 
         // Handle Enter key

@@ -2,20 +2,6 @@
 
 declare(strict_types=1);
 
-// CRITICAL: Disable ALL output for API calls to prevent breaking JSON responses
-$isApiCall = strpos($_SERVER['REQUEST_URI'] ?? '', '/api/') !== false;
-if ($isApiCall) {
-    // Suppress all errors and warnings
-    error_reporting(0);
-    ini_set('display_errors', '0');
-    // Override error_log function to prevent output
-    function error_log($message, $message_type = 0, $destination = null, $extra_headers = null) {
-        // Do nothing for API calls
-        return true;
-    }
-}
-$debugEnabled = !$isApiCall;
-
 // Load .env file - try multiple paths
 $envPaths = [
     dirname(__DIR__, 2) . '/.env',
@@ -26,7 +12,7 @@ $envPaths = [
 
 foreach ($envPaths as $envPath) {
     if (file_exists($envPath)) {
-        if ($debugEnabled) error_log('DB DEBUG: db_connect.php - Found .env file at: ' . $envPath);
+        error_log('DB DEBUG: db_connect.php - Found .env file at: ' . $envPath);
         $lines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         if ($lines !== false) {
             foreach ($lines as $lineNum => $line) {
