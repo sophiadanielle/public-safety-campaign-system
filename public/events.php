@@ -28,6 +28,8 @@ try {
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/module-sidebar.css'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/admin-header.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="<?php echo htmlspecialchars($publicPath . '/js/custom-modals.js'); ?>"></script>
@@ -1420,99 +1422,171 @@ function switchView(view) {
     }
 }
 
-// Render calendar view
+// FullCalendar instance
+let eventCalendar = null;
+let allEvents = [];
+
+// Render calendar view with FullCalendar
 async function renderCalendar(containerId = null) {
     const container = containerId ? document.getElementById(containerId) : document.getElementById('calendarContainer');
     const fullCalendarContainer = document.getElementById('fullCalendarContainer');
     
-    const containers = [];
-    if (container) containers.push(container);
-    if (fullCalendarContainer) containers.push(fullCalendarContainer);
+    // Use the first available container
+    const calendarEl = container || fullCalendarContainer;
     
-    if (containers.length === 0) return;
+    if (!calendarEl) {
+        console.error('No calendar container found');
+        return;
+    }
     
-    containers.forEach(c => {
-        c.innerHTML = '<p style="text-align:center; color:#64748b; padding:40px;">Loading calendar...</p>';
-    });
+    // Check if FullCalendar is loaded
+    if (typeof FullCalendar === 'undefined') {
+        console.error('FullCalendar library not loaded');
+        calendarEl.innerHTML = '<p style="text-align:center; color:#dc2626; padding:40px;">Error: Calendar library not loaded. Please refresh the page.</p>';
+        return;
+    }
+    
+    // If calendar already exists, just refetch events
+    if (eventCalendar) {
+        eventCalendar.refetchEvents();
+        return;
+    }
+    
+    // Clear container
+    calendarEl.innerHTML = '';
     
     try {
-        const today = new Date();
-        const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-        const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
-        
-        const res = await fetch(apiBase + '/api/v1/events/calendar?start=' + startDate + '&end=' + endDate, {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const data = await res.json();
-        
-        let html = '';
-        if (data.events && data.events.length > 0) {
-            // Group events by date
-            const eventsByDate = {};
-            data.events.forEach(event => {
-                const date = event.start.split('T')[0];
-                if (!eventsByDate[date]) eventsByDate[date] = [];
-                eventsByDate[date].push(event);
-            });
-            
-            // Create calendar grid
-            html = '<div style="display:grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 16px;">';
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            days.forEach(day => {
-                html += `<div style="padding:8px; text-align:center; font-weight:600; background:#f8fafc; border-radius:4px;">${day}</div>`;
-            });
-            html += '</div>';
-            
-            // Render events by date
-            html += '<div style="display:flex; flex-direction:column; gap:12px;">';
-            Object.keys(eventsByDate).sort().forEach(date => {
-                const dateObj = new Date(date);
-                html += `<div style="border:1px solid #e2e8f0; border-radius:8px; padding:12px; background:white;">`;
-                html += `<strong style="display:block; margin-bottom:8px; color:#1e293b;">${dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>`;
-                eventsByDate[date].forEach(event => {
-                    const statusColors = {
-                        'draft': '#e5e7eb',
-                        'scheduled': '#3b82f6',
-                        'confirmed': '#10b981',
-                        'completed': '#10b981',
-                        'cancelled': '#ef4444'
-                    };
-                    const hazardColors = {
-                        'fire': '#ef4444',
-                        'flood': '#3b82f6',
-                        'earthquake': '#f59e0b',
-                        'health': '#10b981',
-                        'traffic': '#8b5cf6'
-                    };
-                    const bgColor = statusColors[event.status] || hazardColors[event.hazard_focus] || '#6b7280';
-                    html += `
-                        <div style="padding:8px; margin-bottom:4px; background:${bgColor}15; border-left:4px solid ${bgColor}; border-radius:4px;">
-                            <strong style="color:#1e293b;">${event.title}</strong>
-                            <div style="font-size:12px; color:#64748b; margin-top:4px;">
-                                ${event.start.split('T')[1]?.substring(0, 5) || ''} - ${event.end ? event.end.split('T')[1]?.substring(0, 5) : 'N/A'} | ${event.venue || 'TBD'}
-                            </div>
-                            <div style="font-size:11px; margin-top:4px;">
-                                <span style="background:${bgColor}; color:white; padding:2px 6px; border-radius:3px;">${event.status}</span>
-                                ${event.hazard_focus ? `<span style="background:#f3f4f6; color:#374151; padding:2px 6px; border-radius:3px; margin-left:4px;">${event.hazard_focus}</span>` : ''}
-                            </div>
+        // Initialize FullCalendar
+        eventCalendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,listWeek'
+            },
+            views: {
+                dayGridMonth: {
+                    titleFormat: { year: 'numeric', month: 'long' },
+                    dayHeaderFormat: { weekday: 'short' },
+                    dayMaxEvents: 3,
+                    moreLinkClick: 'popover'
+                },
+                timeGridWeek: {
+                    titleFormat: { year: 'numeric', month: 'short', day: 'numeric' },
+                    slotMinTime: '06:00:00',
+                    slotMaxTime: '22:00:00',
+                    slotDuration: '01:00:00',
+                    allDaySlot: true
+                },
+                listWeek: {
+                    titleFormat: { year: 'numeric', month: 'long', day: 'numeric' }
+                }
+            },
+            firstDay: 1,
+            height: 'auto',
+            aspectRatio: 1.8,
+            events: async function(fetchInfo, successCallback, failureCallback) {
+                try {
+                    const start = fetchInfo.startStr.split('T')[0];
+                    const end = fetchInfo.endStr.split('T')[0];
+                    
+                    console.log('Fetching events for calendar:', start, 'to', end);
+                    
+                    // Fetch events from API
+                    const res = await fetch(apiBase + '/api/v1/events?include_archived=false', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    const data = await res.json();
+                    
+                    const events = data.data || data.events || [];
+                    allEvents = events;
+                    
+                    console.log('Events loaded for calendar:', events.length);
+                    
+                    // Convert to FullCalendar format
+                    const calendarEvents = events.map(event => {
+                        const eventDate = event.date || event.event_date || '';
+                        const startTime = event.start_time || '09:00';
+                        const endTime = event.end_time || '17:00';
+                        
+                        // Get color based on status
+                        const statusColors = {
+                            'draft': '#9ca3af',
+                            'scheduled': '#3b82f6',
+                            'ongoing': '#f59e0b',
+                            'completed': '#10b981',
+                            'cancelled': '#ef4444',
+                            'archived': '#6b7280'
+                        };
+                        
+                        const status = (event.event_status || event.status || 'scheduled').toLowerCase();
+                        const bgColor = statusColors[status] || '#4c8a89';
+                        
+                        return {
+                            id: event.id,
+                            title: `[#${event.id}] ${event.event_title || event.name || 'Untitled'}`,
+                            start: eventDate ? `${eventDate}T${startTime}` : null,
+                            end: eventDate ? `${eventDate}T${endTime}` : null,
+                            backgroundColor: bgColor,
+                            borderColor: bgColor,
+                            textColor: '#ffffff',
+                            extendedProps: {
+                                venue: event.venue || '',
+                                status: status,
+                                hazard_focus: event.hazard_focus || '',
+                                event_type: event.event_type || '',
+                                description: event.event_description || event.description || ''
+                            }
+                        };
+                    }).filter(e => e.start); // Only include events with valid dates
+                    
+                    console.log('Calendar events formatted:', calendarEvents.length);
+                    successCallback(calendarEvents);
+                } catch (err) {
+                    console.error('Error fetching calendar events:', err);
+                    failureCallback(err);
+                }
+            },
+            eventClick: function(info) {
+                // Show event details on click
+                const event = info.event;
+                const props = event.extendedProps;
+                
+                const detailHtml = `
+                    <div style="padding:16px;">
+                        <h3 style="margin:0 0 12px 0; color:#1e293b;">${event.title}</h3>
+                        <p style="margin:4px 0; color:#64748b;"><strong>Date:</strong> ${event.start ? event.start.toLocaleDateString() : 'N/A'}</p>
+                        <p style="margin:4px 0; color:#64748b;"><strong>Time:</strong> ${event.start ? event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'} - ${event.end ? event.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}</p>
+                        <p style="margin:4px 0; color:#64748b;"><strong>Venue:</strong> ${props.venue || 'TBD'}</p>
+                        <p style="margin:4px 0; color:#64748b;"><strong>Status:</strong> <span style="background:${event.backgroundColor}; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">${props.status}</span></p>
+                        ${props.hazard_focus ? `<p style="margin:4px 0; color:#64748b;"><strong>Hazard Focus:</strong> ${props.hazard_focus}</p>` : ''}
+                        ${props.description ? `<p style="margin:8px 0 0 0; color:#475569; font-size:13px;">${props.description}</p>` : ''}
+                        <div style="margin-top:16px; display:flex; gap:8px;">
+                            <button class="btn btn-primary" onclick="openViewEventModal(${event.id.replace('[#', '').split(']')[0]})" style="padding:6px 12px; font-size:12px;">View Details</button>
+                            <button class="btn btn-secondary" onclick="openEditEventModal(${event.id.replace('[#', '').split(']')[0]})" style="padding:6px 12px; font-size:12px;">Edit</button>
                         </div>
-                    `;
-                });
-                html += '</div>';
-            });
-            html += '</div>';
-        } else {
-            html = '<p style="text-align:center; color:#64748b; padding:40px;">No events found for this month.</p>';
-        }
+                    </div>
+                `;
+                
+                // Show in a tooltip or modal
+                if (typeof customAlert === 'function') {
+                    customAlert(detailHtml, event.title);
+                } else {
+                    alert(`Event: ${event.title}\nVenue: ${props.venue}\nStatus: ${props.status}`);
+                }
+            },
+            eventDidMount: function(info) {
+                // Add tooltip
+                info.el.title = `${info.event.title}\n${info.event.extendedProps.venue || 'No venue'}\nStatus: ${info.event.extendedProps.status}`;
+            }
+        });
         
-        containers.forEach(c => {
-            c.innerHTML = html;
-        });
+        eventCalendar.render();
+        console.log('FullCalendar rendered successfully');
+        
     } catch (err) {
-        const errorHtml = '<p style="text-align:center; color:#dc2626; padding:40px;">Error loading calendar: ' + err.message + '</p>';
-        containers.forEach(c => {
-            c.innerHTML = errorHtml;
-        });
+        console.error('Error initializing calendar:', err);
+        calendarEl.innerHTML = '<p style="text-align:center; color:#dc2626; padding:40px;">Error loading calendar: ' + err.message + '</p>';
     }
 }
 
@@ -2909,36 +2983,56 @@ async function openEditEventModal(eventId) {
             const e = data.event;
             console.log('Edit event data:', e);
             
-            // Populate basic fields first
-            document.getElementById('edit_event_title').value = e.event_title || e.name || '';
-            document.getElementById('edit_event_type').value = e.event_type || 'seminar';
-            document.getElementById('edit_event_status').value = e.event_status || e.status || 'scheduled';
-            document.getElementById('edit_hazard_focus').value = e.hazard_focus || e.hazard_category || '';
-            document.getElementById('edit_venue').value = e.venue || '';
-            document.getElementById('edit_location').value = e.location || '';
-            document.getElementById('edit_event_description').value = e.event_description || e.description || '';
+            // Store event data for later use
+            const eventData = e;
             
-            // Set datetime fields
-            const eventDate = e.date || e.event_date || '';
-            if (eventDate && e.start_time) {
-                document.getElementById('edit_start_datetime').value = `${eventDate}T${e.start_time}`;
-            }
-            if (eventDate && e.end_time) {
-                document.getElementById('edit_end_datetime').value = `${eventDate}T${e.end_time}`;
-            }
-            
-            // Populate dropdowns and then set values
+            // Populate dropdowns FIRST, then set all values
             await populateModalDropdowns();
             
-            // Set dropdown values AFTER populating (with delay to ensure DOM is updated)
-            setTimeout(() => {
-                if (e.linked_campaign_id) {
-                    document.getElementById('edit_linked_campaign_id').value = e.linked_campaign_id;
+            // Now populate all fields after dropdowns are ready
+            document.getElementById('edit_event_title').value = eventData.event_title || eventData.name || '';
+            document.getElementById('edit_event_type').value = eventData.event_type || 'seminar';
+            document.getElementById('edit_event_status').value = eventData.event_status || eventData.status || 'scheduled';
+            document.getElementById('edit_hazard_focus').value = eventData.hazard_focus || eventData.hazard_category || '';
+            document.getElementById('edit_venue').value = eventData.venue || '';
+            document.getElementById('edit_location').value = eventData.location || '';
+            document.getElementById('edit_event_description').value = eventData.event_description || eventData.description || '';
+            
+            // Set datetime fields
+            const eventDate = eventData.date || eventData.event_date || '';
+            if (eventDate && eventData.start_time) {
+                document.getElementById('edit_start_datetime').value = `${eventDate}T${eventData.start_time}`;
+            }
+            if (eventDate && eventData.end_time) {
+                document.getElementById('edit_end_datetime').value = `${eventDate}T${eventData.end_time}`;
+            }
+            
+            // Set dropdown values - use multiple attempts to ensure they're set
+            const setDropdownValues = () => {
+                const campaignId = eventData.linked_campaign_id || eventData.campaign_id || '';
+                const audienceId = eventData.target_audience_profile_id || eventData.target_audience_id || eventData.audience_segment_id || '';
+                
+                console.log('Setting dropdown values - Campaign:', campaignId, 'Audience:', audienceId);
+                
+                if (campaignId) {
+                    const campaignSelect = document.getElementById('edit_linked_campaign_id');
+                    if (campaignSelect) {
+                        campaignSelect.value = campaignId;
+                        console.log('Campaign dropdown set to:', campaignSelect.value);
+                    }
                 }
-                if (e.target_audience_profile_id || e.target_audience_id) {
-                    document.getElementById('edit_target_audience_profile_id').value = e.target_audience_profile_id || e.target_audience_id || '';
+                if (audienceId) {
+                    const audienceSelect = document.getElementById('edit_target_audience_profile_id');
+                    if (audienceSelect) {
+                        audienceSelect.value = audienceId;
+                        console.log('Audience dropdown set to:', audienceSelect.value);
+                    }
                 }
-            }, 100);
+            };
+            
+            // Try setting values immediately and after a delay
+            setDropdownValues();
+            setTimeout(setDropdownValues, 200);
         }
     } catch (err) {
         console.error('Error loading event for edit:', err);

@@ -1867,10 +1867,28 @@ async function archiveContent(contentId) {
         });
         const data = await res.json();
         if (res.ok) {
+            // Update the local contents array immediately to mark item as archived
+            const itemIndex = contents.findIndex(item => item.id === contentId || item.id === String(contentId));
+            if (itemIndex !== -1) {
+                contents[itemIndex].approval_status = 'archived';
+                console.log('Content ' + contentId + ' marked as archived in local array');
+            }
+            
+            // Also update localStorage if it exists there
+            const uploaded = JSON.parse(localStorage.getItem("content_repository_uploaded") || "[]");
+            const uploadedIndex = uploaded.findIndex(item => item.id === contentId || item.id === String(contentId));
+            if (uploadedIndex !== -1) {
+                uploaded[uploadedIndex].approval_status = 'archived';
+                localStorage.setItem("content_repository_uploaded", JSON.stringify(uploaded));
+            }
+            
             currentTemplatesPage = 1; // Reset to first page when content is archived
+            currentPage = 1;
+            currentMediaGalleryPage = 1;
+            
             await customAlert('Content archived successfully!', 'Success');
-            // Reload all content to refresh the contents array, then reload views
-            await loadAllContent();
+            
+            // Reload views - the filter in loadContent will now exclude archived items
             loadContent();
             loadTemplates();
             loadMediaGallery();
@@ -3056,12 +3074,25 @@ async function loadMediaGallery() {
         const mediaType = document.getElementById('mediaTypeFilter').value;
         
         // Filter from combined data: approval_status === "APPROVED" AND has media content
+        // Normalize status helper
+        const normalizeStatus = (raw) => {
+            if (!raw) return "draft";
+            return raw.toString().trim().toLowerCase().replace(/\s+/g, "_");
+        };
+        
+        const approvedItems = contents.filter(i => normalizeStatus(i.approval_status) === 'approved');
         console.log('Media Gallery - Total contents:', contents.length);
-        console.log('Media Gallery - Approved items:', contents.filter(i => (i.approval_status || '').toUpperCase() === 'APPROVED').length);
+        console.log('Media Gallery - Approved items:', approvedItems.length);
+        
+        // If no approved items, show all items with files for debugging
+        if (approvedItems.length === 0) {
+            console.log('Media Gallery - No approved items found. All statuses:', 
+                [...new Set(contents.map(i => i.approval_status))]);
+        }
         
         let mediaItems = contents.filter(item => {
-            const approvalStatus = (item.approval_status || '').toUpperCase();
-            if (approvalStatus !== 'APPROVED') return false;
+            const status = normalizeStatus(item.approval_status);
+            if (status !== 'approved') return false;
             
             const fileType = item.file_type || item.mime_type || '';
             const contentType = (item.content_type || '').toLowerCase();
@@ -3091,10 +3122,14 @@ async function loadMediaGallery() {
             const isMedia = isImageMime || isVideoMime || isMediaContentType || hasImageExt || hasVideoExt;
             
             // Also include if it has an uploaded file (even without explicit media type)
-            return isMedia || (hasUploadedFile && hasAnyFile);
+            // OR if it has any file path at all (be more permissive)
+            return isMedia || hasUploadedFile || hasAnyFile;
         });
         
-        console.log('Media Gallery - Media items found:', mediaItems.length, mediaItems);
+        console.log('Media Gallery - Media items found:', mediaItems.length);
+        if (mediaItems.length > 0) {
+            console.log('Media Gallery - First item:', mediaItems[0]);
+        }
         
         // Apply additional media type filter if specified
         if (mediaType === 'image') {

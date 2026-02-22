@@ -1691,6 +1691,47 @@ async function submitEditSurveyForm() {
     }
 }
 
+// Publish Survey from Edit Modal
+async function publishSurveyFromEdit() {
+    const statusEl = document.getElementById('editSurveyStatus');
+    const surveyId = document.getElementById('edit_survey_id').value;
+    
+    if (!surveyId) {
+        statusEl.textContent = '✗ Error: No survey selected';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+    
+    if (!confirm('Publish this survey? Once published, it will be available for responses.')) {
+        return;
+    }
+    
+    statusEl.textContent = 'Publishing...';
+    statusEl.style.color = '#64748b';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId + '/publish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (res.ok) {
+            statusEl.textContent = '✓ Survey published successfully!';
+            statusEl.style.color = '#166534';
+            setTimeout(() => {
+                closeEditSurveyModal();
+                loadSurveys();
+            }, 1000);
+        } else {
+            statusEl.textContent = '✗ Error: ' + (data.error || 'Failed to publish');
+            statusEl.style.color = '#dc2626';
+        }
+    } catch (err) {
+        statusEl.textContent = '✗ Network error: ' + err.message;
+        statusEl.style.color = '#dc2626';
+    }
+}
+
 // Archive Survey
 async function archiveSurvey(surveyId) {
     if (!confirm('Archive this survey? It can be restored from View Archived.')) {
@@ -1942,6 +1983,9 @@ document.addEventListener('click', function(e) {
             <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
                 <button class="btn btn-secondary" onclick="closeEditSurveyModal()">Cancel</button>
                 <button class="btn btn-primary" onclick="submitEditSurveyForm()">Update Survey</button>
+                <button class="btn btn-success" id="publishSurveyBtn" onclick="publishSurveyFromEdit()" style="background:#10b981; color:white; display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-paper-plane"></i> Publish Survey
+                </button>
             </div>
             <div id="editSurveyStatus" style="margin-top:12px;"></div>
             
