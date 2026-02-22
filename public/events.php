@@ -1217,7 +1217,7 @@ async function loadEvents() {
                 <td>${date}</td>
                 <td>${time}</td>
                 <td>${e.venue || e.location || '-'}</td>
-                <td>${e.campaign_title ? '[#' + (e.linked_campaign_id || e.campaign_id) + '] ' + e.campaign_title : (e.linked_campaign_id || e.campaign_id || '-')}</td>
+                <td>${e.campaign_title ? '[#' + e.linked_campaign_id + '] ' + e.campaign_title : (e.linked_campaign_id ? '#' + e.linked_campaign_id : '-')}</td>
                 <td><span style="background:${statusStyle.bg}; color:${statusStyle.color}; padding:2px 8px; border-radius:4px; font-size:11px;">${status}</span></td>
                 <td>
                     <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin: 2px;" onclick="openViewEventModal(${e.event_id || e.id})">👁️ View</button>
@@ -1592,8 +1592,8 @@ async function renderCalendar(containerId = null) {
                 try {
                     console.log('Fetching events for calendar...');
                     
-                    // Fetch events from API
-                    const res = await fetch(apiBase + '/api/v1/events?include_archived=false', {
+                    // Use the same direct endpoint as Events List for consistency
+                    const res = await fetch('/public/test-events-direct.php', {
                         headers: { 'Authorization': 'Bearer ' + token }
                     });
                     const data = await res.json();
@@ -1601,7 +1601,7 @@ async function renderCalendar(containerId = null) {
                     const events = data.data || data.events || [];
                     allEvents = events;
                     
-                    console.log('Events loaded for calendar:', events.length);
+                    console.log('Events loaded for calendar:', events.length, events);
                     
                     // Convert to FullCalendar format
                     let calendarEvents = events.map(event => {

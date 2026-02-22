@@ -3368,8 +3368,19 @@ async function showArchivedContent() {
             tableRows = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #64748b;">No archived content found.</td></tr>';
         } else {
             archivedContent.forEach(item => {
-                // Get content type - check multiple possible field names
+                // Get content type - check multiple possible field names and mime_type
                 let contentType = item.content_type || item.type || '';
+                
+                // If content_type is empty, try to determine from mime_type
+                if (!contentType && item.mime_type) {
+                    if (item.mime_type.startsWith('image/')) contentType = 'image';
+                    else if (item.mime_type.startsWith('video/')) contentType = 'video';
+                    else if (item.mime_type.startsWith('audio/')) contentType = 'audio';
+                    else if (item.mime_type.includes('pdf')) contentType = 'document';
+                    else if (item.mime_type.includes('presentation') || item.mime_type.includes('powerpoint')) contentType = 'presentation';
+                    else if (item.mime_type.includes('document') || item.mime_type.includes('word')) contentType = 'document';
+                }
+                
                 // Map content types to display names
                 const typeMap = {
                     'infographic': 'Infographic',
@@ -3385,7 +3396,7 @@ async function showArchivedContent() {
                     'template': 'Template',
                     'text': 'Text'
                 };
-                const displayType = typeMap[contentType.toLowerCase()] || (contentType ? contentType.charAt(0).toUpperCase() + contentType.slice(1) : 'Unknown');
+                const displayType = typeMap[(contentType || '').toLowerCase()] || (contentType ? contentType.charAt(0).toUpperCase() + contentType.slice(1) : 'Not Set');
                 
                 // Get hazard category
                 const hazardCategory = item.hazard_category || item.hazard || '';
@@ -3466,6 +3477,8 @@ async function restoreContent(contentId) {
     }
     
     try {
+        console.log('Restoring content ID:', contentId);
+        
         // Use pending_review status since the API only allows: pending_review, approved, rejected, archived
         const res = await fetch(apiBase + '/api/v1/content/' + contentId + '/approval', {
             method: 'POST',
@@ -3480,19 +3493,28 @@ async function restoreContent(contentId) {
         });
         
         const data = await res.json();
+        console.log('Restore response:', res.status, data);
+        
         if (!res.ok) {
             alert('Error: ' + (data.error || 'Failed to restore content'));
             return;
         }
         
         alert('Content restored successfully! It is now in Pending Review status.');
-        document.getElementById('archivedContentModal').remove();
-        loadAllContent().then(() => {
-            loadContent();
-            loadTemplates();
-            loadMediaGallery();
-        });
+        
+        // Close the archived modal
+        const archivedModal = document.getElementById('archivedContentModal');
+        if (archivedModal) archivedModal.remove();
+        
+        // Reload all content to refresh the library
+        console.log('Reloading content after restore...');
+        await loadAllContent();
+        loadContent();
+        loadTemplates();
+        loadMediaGallery();
+        
     } catch (err) {
+        console.error('Restore error:', err);
         alert('Failed to restore content: ' + err.message);
     }
 }

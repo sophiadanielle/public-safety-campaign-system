@@ -836,8 +836,16 @@ class ContentController
             return ['error' => 'Viewer role is read-only. You cannot modify content approval status.'];
         }
         
+        // Allow restoring from archived to pending_review (Admin/Captain only)
+        if ($currentStatus === 'archived' && $status === 'pending_review') {
+            if (!$isAdmin && !$isCaptain) {
+                http_response_code(403);
+                return ['error' => 'Only Administrators and Captain can restore archived content.'];
+            }
+            // Allow this transition - skip other workflow validations
+        }
         // Staff can submit for review (draft → pending_review)
-        if ($currentStatus === 'draft' && $status === 'pending_review') {
+        elseif ($currentStatus === 'draft' && $status === 'pending_review') {
             // Allow staff and secretary to submit for review
             if (!$isStaff && !$isSecretary && !$isAdmin) {
                 http_response_code(403);
