@@ -415,13 +415,15 @@ class EventController
         // Start transaction
         $this->pdo->beginTransaction();
         try {
-            // Insert event - only use columns that exist in database schema
+            // Insert event - include all fields from migration 025
             $stmt = $this->pdo->prepare('
                 INSERT INTO `campaign_department_events` (
                     campaign_id, linked_campaign_id, name, event_type, description,
+                    hazard_focus, target_audience_profile_id,
                     event_date, event_time, venue, location, status, starts_at, ends_at
                 ) VALUES (
                     :campaign_id, :linked_campaign_id, :name, :event_type, :description,
+                    :hazard_focus, :target_audience_profile_id,
                     :event_date, :event_time, :venue, :location, :status, :starts_at, :ends_at
                 )
             ');
@@ -431,6 +433,8 @@ class EventController
                 'name' => $eventTitle,
                 'event_type' => $eventType,
                 'description' => $eventDescription,
+                'hazard_focus' => $hazardFocus,
+                'target_audience_profile_id' => $targetAudienceProfileId ?: null,
                 'event_date' => $date,
                 'event_time' => $startTime,
                 'venue' => $venue,

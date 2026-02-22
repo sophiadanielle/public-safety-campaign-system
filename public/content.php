@@ -2640,13 +2640,13 @@ async function loadAllContent() {
 }
 
 // Load content library (with filters) - filters from contents array
-async function loadContent() {
+async function loadContent(forceRefresh = false) {
     const container = document.getElementById('library');
     container.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#64748b; padding:40px;">Loading content...</p>';
     
     try {
-        // Ensure contents array is populated
-        if (contents.length === 0) {
+        // Ensure contents array is populated - force refresh to get latest data from API
+        if (contents.length === 0 || forceRefresh) {
             await loadAllContent();
         }
         
@@ -3548,10 +3548,10 @@ async function restoreContent(contentId) {
         const archivedModal = document.getElementById('archivedContentModal');
         if (archivedModal) archivedModal.remove();
         
-        // Reload all content to refresh the library
+        // Reload all content to refresh the library with force refresh
         console.log('Reloading content after restore...');
         await loadAllContent();
-        loadContent();
+        loadContent(true);  // Force refresh to get latest content_type from API
         loadTemplates();
         loadMediaGallery();
         

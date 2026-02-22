@@ -3214,9 +3214,6 @@ async function openEditEventModal(eventId) {
             // Store event data for later use
             const eventData = e;
             
-            // Populate dropdowns FIRST, then set all values
-            await populateModalDropdowns();
-            
             // Store values we need to set after dropdowns load
             const campaignId = eventData.linked_campaign_id || eventData.campaign_id || '';
             const audienceId = eventData.target_audience_profile_id || eventData.target_audience_id || eventData.audience_segment_id || '';
@@ -3229,7 +3226,7 @@ async function openEditEventModal(eventId) {
                 fullData: eventData
             });
             
-            // Now populate all fields after dropdowns are ready
+            // Now populate all fields BEFORE dropdowns (text fields first)
             document.getElementById('edit_event_title').value = eventData.event_title || eventData.name || '';
             document.getElementById('edit_event_type').value = eventData.event_type || 'seminar';
             document.getElementById('edit_event_status').value = eventData.event_status || eventData.status || 'scheduled';
@@ -3239,10 +3236,13 @@ async function openEditEventModal(eventId) {
             
             // Set hazard focus immediately (it's a text input, not dropdown)
             const hazardInput = document.getElementById('edit_hazard_focus');
-            if (hazardInput && hazardFocus) {
-                hazardInput.value = hazardFocus;
-                console.log('Hazard focus set immediately to:', hazardFocus);
+            if (hazardInput) {
+                hazardInput.value = hazardFocus || '';
+                console.log('Hazard focus set to:', hazardFocus);
             }
+            
+            // Populate dropdowns AFTER setting text fields, then set dropdown values
+            await populateModalDropdowns();
             
             // Set datetime fields - handle different time formats
             const eventDate = eventData.date || eventData.event_date || '';
