@@ -1509,25 +1509,41 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             </div>
         </div>
         
-        <!-- Budget Table -->
+        <!-- View Archived Budgets Button -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+            <button type="button" class="btn btn-secondary" onclick="toggleArchivedBudgets()" id="viewArchivedBudgetsBtn" style="padding: 8px 16px; font-size: 13px;">
+                <i class="fas fa-archive"></i> View Archived
+            </button>
+        </div>
+        
+        <!-- Budget Table - Grouped by Campaign -->
         <div class="table-wrapper">
             <table class="data-table">
                 <thead>
                     <tr>
                         <th>Campaign</th>
-                        <th>Item</th>
-                        <th>Type</th>
-                        <th>Qty</th>
-                        <th>Unit Cost</th>
-                        <th>Total</th>
+                        <th>Items</th>
+                        <th>Total Budget</th>
                         <th>Funding</th>
+                        <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="budgetTable">
-                    <tr><td colspan="8" style="text-align:center; padding:24px; color: #64748b;">No budget items yet. Add items using the form above.</td></tr>
+                    <tr><td colspan="6" style="text-align:center; padding:24px; color: #64748b;">No budget items yet. Add items using the form above.</td></tr>
                 </tbody>
             </table>
+        </div>
+        
+        <!-- Archived Budgets Modal -->
+        <div id="archivedBudgetsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 12px; max-width: 900px; width: 90%; max-height: 80vh; overflow: auto; padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-archive"></i> Archived Budget Items</h3>
+                    <button onclick="closeArchivedBudgetsModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+                </div>
+                <div id="archivedBudgetsList"></div>
+            </div>
         </div>
     </section>
     <?php endif; ?>
@@ -5193,39 +5209,367 @@ async function deleteBudgetItem(id) {
     }
 }
 
-// Render budget table
+// Render budget table - grouped by campaign
 function renderBudgetTable() {
     const tbody = document.getElementById('budgetTable');
     if (!tbody) return;
     
-    if (!allBudgetItems || allBudgetItems.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:24px; color: #64748b;">No budget items yet. Add items using the form above.</td></tr>';
+    // Filter out archived items for main view
+    const activeItems = (allBudgetItems || []).filter(item => !item.is_archived);
+    
+    if (!activeItems || activeItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color: #64748b;">No budget items yet. Add items using the form above.</td></tr>';
         return;
     }
     
+    // Group items by campaign_id
+    const groupedByCampaign = {};
+    activeItems.forEach(item => {
+        const campaignId = item.campaign_id || 0;
+        if (!groupedByCampaign[campaignId]) {
+            groupedByCampaign[campaignId] = {
+                campaign_id: campaignId,
+                campaign_title: item.campaign_title || 'Campaign #' + campaignId,
+                items: [],
+                total_budget: 0,
+                government_total: 0,
+                reimbursable_total: 0
+            };
+        }
+        const itemTotal = (item.quantity || 0) * (item.unit_cost || 0);
+        groupedByCampaign[campaignId].items.push(item);
+        groupedByCampaign[campaignId].total_budget += itemTotal;
+        if (item.funding_source === 'government_allocated') {
+            groupedByCampaign[campaignId].government_total += itemTotal;
+        } else {
+            groupedByCampaign[campaignId].reimbursable_total += itemTotal;
+        }
+    });
+    
     tbody.innerHTML = '';
-    allBudgetItems.forEach(item => {
-        const totalCost = (item.quantity || 0) * (item.unit_cost || 0);
-        const fundingLabel = item.funding_source === 'government_allocated' ? 'Government' : 'Reimbursable';
-        const fundingClass = item.funding_source === 'government_allocated' ? 'approved' : 'pending';
+    Object.values(groupedByCampaign).forEach(group => {
+        const fundingBreakdown = [];
+        if (group.government_total > 0) fundingBreakdown.push(`Gov: ₱${group.government_total.toLocaleString('en-PH', {minimumFractionDigits: 2})}`);
+        if (group.reimbursable_total > 0) fundingBreakdown.push(`Reimb: ₱${group.reimbursable_total.toLocaleString('en-PH', {minimumFractionDigits: 2})}`);
         
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;" title="${item.campaign_title || ''}">${item.campaign_title || 'Campaign #' + item.campaign_id}</td>
-            <td>${item.item_name || '-'}</td>
-            <td><span class="badge ${item.item_type === 'material' ? 'scheduled' : 'draft'}">${item.item_type || 'consumable'}</span></td>
-            <td>${item.quantity || 0}</td>
-            <td>₱${parseFloat(item.unit_cost || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
-            <td style="font-weight: 600;">₱${totalCost.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
-            <td><span class="badge ${fundingClass}">${fundingLabel}</span></td>
-            <td>
-                <button class="btn btn-danger" onclick="deleteBudgetItem(${item.id})" style="padding: 3px 8px; font-size: 11px; background: #ef4444; color: white; border: none;">
-                    <i class="fas fa-trash"></i>
+            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; font-weight: 600;" title="${group.campaign_title}">${group.campaign_title}</td>
+            <td><span class="badge draft">${group.items.length} item${group.items.length > 1 ? 's' : ''}</span></td>
+            <td style="font-weight: 700; color: #059669;">₱${group.total_budget.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+            <td style="font-size: 12px; color: #64748b;">${fundingBreakdown.join('<br>') || '-'}</td>
+            <td><span class="badge approved">Active</span></td>
+            <td style="white-space: nowrap;">
+                <button class="btn btn-secondary" onclick="viewBudgetDetails(${group.campaign_id})" style="padding: 4px 10px; font-size: 11px; margin: 1px;" title="View budget breakdown">
+                    <i class="fas fa-eye"></i> View
+                </button>
+                <button class="btn btn-secondary" onclick="editBudgetItems(${group.campaign_id})" style="padding: 4px 10px; font-size: 11px; margin: 1px;" title="Edit budget items">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn btn-warning" onclick="archiveBudgetItems(${group.campaign_id})" style="padding: 4px 10px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;" title="Archive budget items">
+                    <i class="fas fa-archive"></i>
                 </button>
             </td>
         `;
         tbody.appendChild(tr);
     });
+}
+
+// View budget details modal
+function viewBudgetDetails(campaignId) {
+    const items = (allBudgetItems || []).filter(item => item.campaign_id === campaignId && !item.is_archived);
+    if (items.length === 0) {
+        alert('No budget items found for this campaign.');
+        return;
+    }
+    
+    const campaignTitle = items[0].campaign_title || 'Campaign #' + campaignId;
+    let totalBudget = 0;
+    
+    let itemsHtml = items.map(item => {
+        const itemTotal = (item.quantity || 0) * (item.unit_cost || 0);
+        totalBudget += itemTotal;
+        const fundingLabel = item.funding_source === 'government_allocated' ? 'Government' : 'Reimbursable';
+        const fundingClass = item.funding_source === 'government_allocated' ? 'approved' : 'pending';
+        return `
+            <tr>
+                <td>${item.item_name || '-'}</td>
+                <td><span class="badge ${item.item_type === 'material' ? 'scheduled' : 'draft'}">${item.item_type || 'consumable'}</span></td>
+                <td style="text-align: center;">${item.quantity || 0}</td>
+                <td style="text-align: right;">₱${parseFloat(item.unit_cost || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+                <td style="text-align: right; font-weight: 600;">₱${itemTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+                <td><span class="badge ${fundingClass}">${fundingLabel}</span></td>
+            </tr>
+        `;
+    }).join('');
+    
+    const modal = document.createElement('div');
+    modal.id = 'budgetDetailsModal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 12px; max-width: 800px; width: 90%; max-height: 80vh; overflow: auto; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-receipt"></i> Budget Breakdown: ${campaignTitle}</h3>
+                <button onclick="document.getElementById('budgetDetailsModal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+            </div>
+            <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 8px; padding: 16px; margin-bottom: 20px; text-align: center;">
+                <div style="font-size: 12px; color: #166534; font-weight: 600; text-transform: uppercase;">Total Budget</div>
+                <div style="font-size: 28px; font-weight: 700; color: #166534;">₱${totalBudget.toLocaleString('en-PH', {minimumFractionDigits: 2})}</div>
+            </div>
+            <table class="data-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Type</th>
+                        <th style="text-align: center;">Qty</th>
+                        <th style="text-align: right;">Unit Cost</th>
+                        <th style="text-align: right;">Total</th>
+                        <th>Funding</th>
+                    </tr>
+                </thead>
+                <tbody>${itemsHtml}</tbody>
+            </table>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="document.getElementById('budgetDetailsModal').remove()" class="btn btn-secondary" style="padding: 10px 20px;">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Edit budget items for a campaign
+function editBudgetItems(campaignId) {
+    const items = (allBudgetItems || []).filter(item => item.campaign_id === campaignId && !item.is_archived);
+    if (items.length === 0) {
+        alert('No budget items found for this campaign.');
+        return;
+    }
+    
+    const campaignTitle = items[0].campaign_title || 'Campaign #' + campaignId;
+    
+    let itemsHtml = items.map(item => {
+        const itemTotal = (item.quantity || 0) * (item.unit_cost || 0);
+        return `
+            <tr data-item-id="${item.id}">
+                <td><input type="text" value="${item.item_name || ''}" class="edit-item-name" style="width: 100%; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px;"></td>
+                <td>
+                    <select class="edit-item-type" style="padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px;">
+                        <option value="consumable" ${item.item_type === 'consumable' ? 'selected' : ''}>Consumable</option>
+                        <option value="material" ${item.item_type === 'material' ? 'selected' : ''}>Material</option>
+                        <option value="equipment" ${item.item_type === 'equipment' ? 'selected' : ''}>Equipment</option>
+                        <option value="service" ${item.item_type === 'service' ? 'selected' : ''}>Service</option>
+                    </select>
+                </td>
+                <td><input type="number" value="${item.quantity || 1}" class="edit-item-qty" min="1" style="width: 60px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;"></td>
+                <td><input type="number" value="${item.unit_cost || 0}" class="edit-item-cost" min="0" step="0.01" style="width: 100px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: right;"></td>
+                <td>
+                    <select class="edit-item-funding" style="padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px;">
+                        <option value="government_allocated" ${item.funding_source === 'government_allocated' ? 'selected' : ''}>Government</option>
+                        <option value="reimbursable" ${item.funding_source === 'reimbursable' ? 'selected' : ''}>Reimbursable</option>
+                    </select>
+                </td>
+                <td>
+                    <button onclick="deleteBudgetItem(${item.id})" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; background: #ef4444; color: white; border: none;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    const modal = document.createElement('div');
+    modal.id = 'editBudgetModal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 12px; max-width: 900px; width: 95%; max-height: 85vh; overflow: auto; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-edit"></i> Edit Budget: ${campaignTitle}</h3>
+                <button onclick="document.getElementById('editBudgetModal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+            </div>
+            <table class="data-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Type</th>
+                        <th style="text-align: center;">Qty</th>
+                        <th style="text-align: right;">Unit Cost</th>
+                        <th>Funding</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody id="editBudgetItemsBody">${itemsHtml}</tbody>
+            </table>
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
+                <button onclick="document.getElementById('editBudgetModal').remove()" class="btn btn-secondary" style="padding: 10px 20px;">Cancel</button>
+                <button onclick="saveEditedBudgetItems(${campaignId})" class="btn btn-primary" style="padding: 10px 20px; background: #10b981; color: white; border: none;">Save Changes</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Save edited budget items
+async function saveEditedBudgetItems(campaignId) {
+    const rows = document.querySelectorAll('#editBudgetItemsBody tr');
+    let savedCount = 0;
+    let errorCount = 0;
+    
+    for (const row of rows) {
+        const itemId = row.dataset.itemId;
+        const itemName = row.querySelector('.edit-item-name').value;
+        const itemType = row.querySelector('.edit-item-type').value;
+        const quantity = parseInt(row.querySelector('.edit-item-qty').value) || 1;
+        const unitCost = parseFloat(row.querySelector('.edit-item-cost').value) || 0;
+        const fundingSource = row.querySelector('.edit-item-funding').value;
+        
+        try {
+            const res = await fetch(apiBase + '/api/v1/budgets/' + itemId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + getToken()
+                },
+                body: JSON.stringify({
+                    item_name: itemName,
+                    item_type: itemType,
+                    quantity: quantity,
+                    unit_cost: unitCost,
+                    funding_source: fundingSource
+                })
+            });
+            
+            if (res.ok) {
+                savedCount++;
+            } else {
+                errorCount++;
+            }
+        } catch (err) {
+            errorCount++;
+        }
+    }
+    
+    document.getElementById('editBudgetModal').remove();
+    
+    if (errorCount === 0) {
+        showSuccessToast(`Successfully updated ${savedCount} budget item(s)!`);
+    } else {
+        showWarningToast(`Updated ${savedCount} item(s), ${errorCount} failed`);
+    }
+    
+    loadBudgetData();
+}
+
+// Archive budget items for a campaign
+async function archiveBudgetItems(campaignId) {
+    if (!confirm('Archive all budget items for this campaign? They can be restored from View Archived.')) {
+        return;
+    }
+    
+    const items = (allBudgetItems || []).filter(item => item.campaign_id === campaignId && !item.is_archived);
+    let archivedCount = 0;
+    
+    for (const item of items) {
+        try {
+            const res = await fetch(apiBase + '/api/v1/budgets/' + item.id, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + getToken()
+                },
+                body: JSON.stringify({ is_archived: true })
+            });
+            if (res.ok) archivedCount++;
+        } catch (err) {
+            console.error('Failed to archive budget item:', err);
+        }
+    }
+    
+    showSuccessToast(`Archived ${archivedCount} budget item(s)`);
+    loadBudgetData();
+}
+
+// Toggle archived budgets modal
+function toggleArchivedBudgets() {
+    const modal = document.getElementById('archivedBudgetsModal');
+    modal.style.display = 'flex';
+    loadArchivedBudgets();
+}
+
+function closeArchivedBudgetsModal() {
+    document.getElementById('archivedBudgetsModal').style.display = 'none';
+}
+
+// Load archived budgets
+async function loadArchivedBudgets() {
+    const container = document.getElementById('archivedBudgetsList');
+    container.innerHTML = '<p style="text-align: center; color: #64748b;">Loading...</p>';
+    
+    const archivedItems = (allBudgetItems || []).filter(item => item.is_archived);
+    
+    if (archivedItems.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 24px;">No archived budget items.</p>';
+        return;
+    }
+    
+    // Group by campaign
+    const grouped = {};
+    archivedItems.forEach(item => {
+        const cid = item.campaign_id || 0;
+        if (!grouped[cid]) {
+            grouped[cid] = {
+                campaign_title: item.campaign_title || 'Campaign #' + cid,
+                items: [],
+                total: 0
+            };
+        }
+        grouped[cid].items.push(item);
+        grouped[cid].total += (item.quantity || 0) * (item.unit_cost || 0);
+    });
+    
+    let html = '';
+    Object.entries(grouped).forEach(([campaignId, group]) => {
+        html += `
+            <div style="border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 16px; overflow: hidden;">
+                <div style="background: #f8fafc; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${group.campaign_title}</strong>
+                        <span style="color: #64748b; font-size: 12px; margin-left: 8px;">${group.items.length} item(s) - ₱${group.total.toLocaleString('en-PH', {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <button onclick="restoreBudgetItems(${campaignId})" class="btn btn-success" style="padding: 6px 12px; font-size: 12px; background: #10b981; color: white; border: none;">
+                        <i class="fas fa-undo"></i> Restore
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Restore archived budget items
+async function restoreBudgetItems(campaignId) {
+    const items = (allBudgetItems || []).filter(item => item.campaign_id === campaignId && item.is_archived);
+    let restoredCount = 0;
+    
+    for (const item of items) {
+        try {
+            const res = await fetch(apiBase + '/api/v1/budgets/' + item.id, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + getToken()
+                },
+                body: JSON.stringify({ is_archived: false })
+            });
+            if (res.ok) restoredCount++;
+        } catch (err) {
+            console.error('Failed to restore budget item:', err);
+        }
+    }
+    
+    showSuccessToast(`Restored ${restoredCount} budget item(s)`);
+    loadBudgetData();
+    loadArchivedBudgets();
 }
 
 // Update budget summary cards

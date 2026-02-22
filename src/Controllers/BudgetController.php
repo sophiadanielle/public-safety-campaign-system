@@ -33,13 +33,22 @@ class BudgetController
                 unit_cost DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
                 funding_source VARCHAR(50) NOT NULL DEFAULT 'government_allocated',
                 notes TEXT,
+                is_archived TINYINT(1) NOT NULL DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 created_by INT,
                 INDEX idx_campaign_id (campaign_id),
-                INDEX idx_funding_source (funding_source)
+                INDEX idx_funding_source (funding_source),
+                INDEX idx_is_archived (is_archived)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ");
+        
+        // Add is_archived column if it doesn't exist (for existing tables)
+        try {
+            $this->pdo->exec("ALTER TABLE campaign_budgets ADD COLUMN is_archived TINYINT(1) NOT NULL DEFAULT 0");
+        } catch (\PDOException $e) {
+            // Column already exists, ignore
+        }
     }
 
     public function index(?array $user, array $params): array
@@ -161,7 +170,7 @@ class BudgetController
         $updates = [];
         $values = [];
         
-        $allowedFields = ['item_name', 'item_type', 'quantity', 'unit_cost', 'funding_source', 'notes'];
+        $allowedFields = ['item_name', 'item_type', 'quantity', 'unit_cost', 'funding_source', 'notes', 'is_archived'];
         
         foreach ($allowedFields as $field) {
             if (isset($input[$field])) {

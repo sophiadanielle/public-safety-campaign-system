@@ -1413,11 +1413,13 @@ class CampaignController
         $id = (int) ($params['id'] ?? 0);
         $campaign = $this->findCampaign($id);
         
-        // Check if campaign can be deleted (not completed or archived)
+        // Check if campaign can be deleted
+        // Archived campaigns CAN be deleted (they're already removed from active view)
+        // Completed campaigns should be archived first before deletion
         $status = strtolower($campaign['status'] ?? '');
-        if (in_array($status, ['completed', 'archived'], true)) {
+        if ($status === 'completed') {
             http_response_code(422);
-            return ['error' => 'Cannot delete completed or archived campaigns. Please archive them instead.'];
+            return ['error' => 'Cannot delete completed campaigns directly. Please archive them first.'];
         }
         
         // Delete related records first (foreign key constraints)

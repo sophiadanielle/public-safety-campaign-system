@@ -26,9 +26,17 @@ if (!$isViewer && isset($_COOKIE['user_role_id'])) {
     $roleIdFromCookie = (int)($_COOKIE['user_role_id'] ?? 0);
     if ($roleIdFromCookie > 0) {
         try {
-            // Suppress errors during include to prevent 502 errors
+            // Suppress errors and catch exceptions during include to prevent 502 errors
             $oldErrorReporting = error_reporting(0);
-            @require_once __DIR__ . '/../../src/Config/db_connect.php';
+            try {
+                @require_once __DIR__ . '/../../src/Config/db_connect.php';
+            } catch (Exception $dbEx) {
+                error_log('RBAC block_viewer_access: db_connect.php threw exception: ' . $dbEx->getMessage());
+                $pdo = null;
+            } catch (Error $dbErr) {
+                error_log('RBAC block_viewer_access: db_connect.php threw error: ' . $dbErr->getMessage());
+                $pdo = null;
+            }
             error_reporting($oldErrorReporting);
             if (isset($pdo) && $pdo instanceof PDO) {
                 $stmt = $pdo->prepare('SELECT name FROM campaign_department_roles WHERE id = :id LIMIT 1');

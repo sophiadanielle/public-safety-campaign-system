@@ -58,7 +58,10 @@
                                 $jwtToken = $_COOKIE['jwt_token'] ?? null;
                                 if ($jwtToken) {
                                     try {
-                                        require_once __DIR__ . '/../../vendor/autoload.php';
+                                        // Suppress errors to prevent 502 Bad Gateway
+                                        $oldErrorReporting = error_reporting(0);
+                                        @require_once __DIR__ . '/../../vendor/autoload.php';
+                                        error_reporting($oldErrorReporting);
                                         $envPath = __DIR__ . '/../../.env';
                                         $jwtSecret = 'your-secret-key-change-in-production';
                                         $jwtIssuer = 'public-safety-campaign-system';
@@ -83,7 +86,18 @@
                                         if (($decoded->aud ?? null) === $jwtAudience && ($decoded->iss ?? null) === $jwtIssuer) {
                                             $roleId = (int) ($decoded->role_id ?? 0);
                                             if ($roleId > 0) {
-                                                require_once __DIR__ . '/../../src/Config/db_connect.php';
+                                                // Suppress errors and catch exceptions to prevent 502 Bad Gateway
+                                                $oldErrorReporting2 = error_reporting(0);
+                                                try {
+                                                    @require_once __DIR__ . '/../../src/Config/db_connect.php';
+                                                } catch (Exception $dbEx) {
+                                                    error_log('RBAC SIDEBAR: db_connect.php threw exception: ' . $dbEx->getMessage());
+                                                    $pdo = null;
+                                                } catch (Error $dbErr) {
+                                                    error_log('RBAC SIDEBAR: db_connect.php threw error: ' . $dbErr->getMessage());
+                                                    $pdo = null;
+                                                }
+                                                error_reporting($oldErrorReporting2);
                                                 if (isset($pdo) && $pdo instanceof PDO) {
                                                     $stmt = $pdo->prepare('SELECT r.name FROM campaign_department_roles r WHERE r.id = :role_id LIMIT 1');
                                                     $stmt->execute(['role_id' => $roleId]);
