@@ -133,14 +133,21 @@ class ContentController
             // Filter by approval status
             // By default, exclude archived content unless specifically requested
             $includeArchived = isset($_GET['include_archived']) && $_GET['include_archived'] === 'true';
+            
+            // Normalize approval_status parameter (handle case variations)
+            if ($approvalStatus) {
+                $approvalStatus = strtolower(trim($approvalStatus));
+            }
+            
             if ($approvalStatus && in_array($approvalStatus, ['draft', 'pending_review', 'approved', 'rejected', 'archived'], true)) {
-                $where[] = 'ci.approval_status = :approval_status';
+                // Use LOWER() for case-insensitive comparison
+                $where[] = 'LOWER(ci.approval_status) = :approval_status';
                 $bind['approval_status'] = $approvalStatus;
             } elseif ($onlyApproved) {
-                $where[] = 'ci.approval_status = "approved"';
+                $where[] = 'LOWER(ci.approval_status) = "approved"';
             } elseif (!$includeArchived) {
                 // Exclude archived content by default
-                $where[] = 'ci.approval_status != "archived"';
+                $where[] = 'LOWER(ci.approval_status) != "archived"';
             }
 
             // Filter by visibility

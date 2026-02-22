@@ -276,8 +276,10 @@ try {
         gap: 4px;
     }
     .status-draft { background: #f1f5f9; color: #475569; }
+    .status-pending-review { background: #fef3c7; color: #92400e; }
     .status-pending_review { background: #fef3c7; color: #92400e; }
     .status-pending { background: #fef3c7; color: #92400e; }
+    .status-under-review { background: #fef3c7; color: #92400e; }
     .status-under_review { background: #fef3c7; color: #92400e; }
     .status-approved { background: #d1fae5; color: #065f46; }
     .status-rejected { background: #fee2e2; color: #991b1b; }
@@ -2059,8 +2061,14 @@ async function deleteContent(contentId) {
 // Show content details modal
 async function showContentDetails(contentId) {
     try {
-        const res = await fetch(apiBase + '/api/v1/content/' + contentId, {
-            headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+        // Add timestamp to prevent caching
+        const timestamp = new Date().getTime();
+        const res = await fetch(apiBase + '/api/v1/content/' + contentId + '?_t=' + timestamp, {
+            headers: { 
+                'Authorization': 'Bearer ' + token, 
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            }
         });
         
         if (!res.ok) {
@@ -2120,15 +2128,13 @@ async function showContentDetails(contentId) {
         const modalContent = document.createElement('div');
         modalContent.style.cssText = 'background: white; padding: 0; border-radius: 12px; max-width: 800px; width: 100%; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative;';
         
-        // Function to close modal and refresh grid if status changed
+        // Function to close modal and refresh grid
         const closeModal = () => {
             modal.remove();
-            // Re-render the content grid to show updated status
-            if (statusChanged) {
-                console.log('Refreshing content grid after modal close due to status change');
-                // Call loadContent to properly re-render with pagination
-                loadContent();
-            }
+            // Always refresh the content grid to ensure it shows the latest status
+            // This handles cases where status was updated elsewhere (e.g., by another user or API)
+            console.log('Refreshing content grid after modal close');
+            loadContent(true);
         };
         
         modalContent.innerHTML = `
@@ -2755,12 +2761,12 @@ async function loadContent(forceRefresh = false) {
         
         const approvalStatus = document.getElementById('filterApprovalStatus').value;
         if (approvalStatus) {
-            filtered = filtered.filter(item => item.approval_status === approvalStatus);
+            filtered = filtered.filter(item => normalizeStatus(item.approval_status) === normalizeStatus(approvalStatus));
         }
         
         const onlyApproved = document.getElementById('filterOnlyApproved').checked;
         if (onlyApproved) {
-            filtered = filtered.filter(item => (item.approval_status || '').toUpperCase() === 'APPROVED');
+            filtered = filtered.filter(item => normalizeStatus(item.approval_status) === 'approved');
         }
         
         container.innerHTML = '';
@@ -2876,7 +2882,7 @@ function renderContentGrid(container, items, isTemplate = false) {
         const div = document.createElement('div');
         div.className = 'content-card';
         
-        const statusClass = 'status-' + status.replace('_', '-');
+        const statusClass = 'status-' + status.replace(/_/g, '-');
         let statusText = status.replace(/_/g, ' ');
         // Normalize status text for display
         if (statusText === 'pending review' || statusText === 'pending') {
@@ -3406,8 +3412,14 @@ function openEditContentModal(contentId) {
 async function showArchivedContent() {
     try {
         // Fetch archived content directly from API - this has the most accurate data
-        const res = await fetch(apiBase + '/api/v1/content?approval_status=archived&include_archived=true', {
-            headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+        // Add timestamp to prevent caching and per_page=200 to get all items
+        const timestamp = new Date().getTime();
+        const res = await fetch(apiBase + '/api/v1/content?approval_status=archived&include_archived=true&per_page=200&_t=' + timestamp, {
+            headers: { 
+                'Authorization': 'Bearer ' + token, 
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            }
         });
         
         let archivedContent = [];
