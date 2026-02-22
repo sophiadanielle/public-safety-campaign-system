@@ -1,6 +1,28 @@
 <?php
+// Suppress all errors at the top level to prevent 502
+error_reporting(0);
+ini_set('display_errors', '0');
+
 $pageTitle = 'Partner Management';
-require_once __DIR__ . '/../header/includes/path_helper.php';
+
+// Wrap path_helper in try-catch
+try {
+    @require_once __DIR__ . '/../header/includes/path_helper.php';
+} catch (\Throwable $e) {
+    $basePath = '';
+    $apiPath = '/index.php';
+    $cssPath = '/header/css';
+    $imgPath = '/header/images';
+    $publicPath = '/public';
+    error_log('partners.php: path_helper failed: ' . $e->getMessage());
+}
+
+// Ensure variables are set
+if (!isset($basePath)) $basePath = '';
+if (!isset($apiPath)) $apiPath = '/index.php';
+if (!isset($cssPath)) $cssPath = '/header/css';
+if (!isset($imgPath)) $imgPath = '/header/images';
+if (!isset($publicPath)) $publicPath = '/public';
 
 // RBAC: Block Viewer role from accessing operational pages (contains forms/workflows)
 // Wrapped in try-catch to prevent 502 errors

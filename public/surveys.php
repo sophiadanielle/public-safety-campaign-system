@@ -1649,11 +1649,10 @@ async function loadArchivedSurveys() {
     container.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">Loading...</p>';
     
     try {
-        const res = await fetch(apiBase + '/api/v1/surveys', { headers: { 'Authorization': 'Bearer ' + token } });
+        // Request archived surveys specifically
+        const res = await fetch(apiBase + '/api/v1/surveys?status=archived', { headers: { 'Authorization': 'Bearer ' + token } });
         const data = await res.json();
-        const surveys = data.data || [];
-        
-        const archivedSurveys = surveys.filter(s => (s.status || '').toLowerCase() === 'archived');
+        const archivedSurveys = data.data || [];
         
         if (archivedSurveys.length === 0) {
             container.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">No archived surveys found.</p>';
@@ -2082,11 +2081,10 @@ async function loadLogoAsPNG() {
 // Generate Survey PDF with professional template
 async function generateSurveyPDF(surveyId) {
     try {
-        // Fetch survey data, results, and logo in parallel
-        const [surveyRes, resultsRes, logoDataUrl] = await Promise.all([
+        // Fetch survey data and results
+        const [surveyRes, resultsRes] = await Promise.all([
             fetch(apiBase + '/api/v1/surveys/' + surveyId, { headers: { 'Authorization': 'Bearer ' + token } }),
-            fetch(apiBase + '/api/v1/surveys/' + surveyId + '/results', { headers: { 'Authorization': 'Bearer ' + token } }),
-            loadLogoAsPNG()
+            fetch(apiBase + '/api/v1/surveys/' + surveyId + '/results', { headers: { 'Authorization': 'Bearer ' + token } })
         ]);
         
         const surveyData = await surveyRes.json();
@@ -2113,32 +2111,11 @@ async function generateSurveyPDF(surveyId) {
         doc.setFillColor(...primaryColor);
         doc.rect(0, 0, 210, 45, 'F');
         
-        // Add logo image if available
-        if (logoDataUrl) {
-            try {
-                doc.addImage(logoDataUrl, 'PNG', 10, 8, 30, 18);
-            } catch (imgErr) {
-                doc.setFillColor(255, 255, 255);
-                doc.circle(25, 17, 10, 'F');
-                doc.setTextColor(...primaryColor);
-                doc.setFontSize(12);
-                doc.setFont('helvetica', 'bold');
-                doc.text('PSC', 25, 20, { align: 'center' });
-            }
-        } else {
-            doc.setFillColor(255, 255, 255);
-            doc.circle(25, 17, 10, 'F');
-            doc.setTextColor(...primaryColor);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('PSC', 25, 20, { align: 'center' });
-        }
-        
-        // Header text
+        // Header text (centered, no logo)
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(20);
+        doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('SURVEY REPORT', 120, 18, { align: 'center' });
+        doc.text('SURVEY REPORT', 105, 18, { align: 'center' });
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text('Public Safety Campaign System', 105, 26, { align: 'center' });

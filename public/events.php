@@ -1895,13 +1895,10 @@ async function generateEventReportPDF() {
     const eventId = document.getElementById('report_event_select').value;
     
     try {
-        // Fetch event data and logo in parallel
-        const [res, logoDataUrl] = await Promise.all([
-            fetch(apiBase + '/api/v1/events/' + eventId, {
-                headers: { 'Authorization': 'Bearer ' + token }
-            }),
-            loadLogoAsPNG()
-        ]);
+        // Fetch event data
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
         const data = await res.json();
         
         if (!res.ok || !data.event) {
@@ -1925,35 +1922,11 @@ async function generateEventReportPDF() {
         doc.setFillColor(...primaryColor);
         doc.rect(0, 0, 210, 45, 'F');
         
-        // Add logo image if available, otherwise use text placeholder
-        if (logoDataUrl) {
-            try {
-                doc.addImage(logoDataUrl, 'PNG', 10, 8, 30, 18);
-            } catch (imgErr) {
-                console.warn('Failed to add logo image:', imgErr);
-                // Fallback to text
-                doc.setFillColor(255, 255, 255);
-                doc.circle(25, 17, 10, 'F');
-                doc.setTextColor(...primaryColor);
-                doc.setFontSize(12);
-                doc.setFont('helvetica', 'bold');
-                doc.text('PSC', 25, 20, { align: 'center' });
-            }
-        } else {
-            // Fallback to text placeholder
-            doc.setFillColor(255, 255, 255);
-            doc.circle(25, 17, 10, 'F');
-            doc.setTextColor(...primaryColor);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('PSC', 25, 20, { align: 'center' });
-        }
-        
-        // Header text
+        // Header text (centered, no logo)
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(20);
+        doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('EVENT REPORT', 120, 18, { align: 'center' });
+        doc.text('EVENT REPORT', 105, 18, { align: 'center' });
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text('Public Safety Campaign System', 105, 26, { align: 'center' });
@@ -2094,11 +2067,10 @@ async function generateAttendancePDF() {
     const eventId = document.getElementById('attendance_event_select').value;
     
     try {
-        // Fetch event, attendance data, and logo in parallel
-        const [eventRes, attendanceRes, logoDataUrl] = await Promise.all([
+        // Fetch event and attendance data
+        const [eventRes, attendanceRes] = await Promise.all([
             fetch(apiBase + '/api/v1/events/' + eventId, { headers: { 'Authorization': 'Bearer ' + token } }),
-            fetch(apiBase + '/api/v1/events/' + eventId + '/attendance', { headers: { 'Authorization': 'Bearer ' + token } }),
-            loadLogoAsPNG()
+            fetch(apiBase + '/api/v1/events/' + eventId + '/attendance', { headers: { 'Authorization': 'Bearer ' + token } })
         ]);
         
         const eventData = await eventRes.json();
@@ -2123,31 +2095,11 @@ async function generateAttendancePDF() {
         doc.setFillColor(...primaryColor);
         doc.rect(0, 0, 210, 40, 'F');
         
-        // Add logo image if available
-        if (logoDataUrl) {
-            try {
-                doc.addImage(logoDataUrl, 'PNG', 10, 6, 28, 16);
-            } catch (imgErr) {
-                doc.setFillColor(255, 255, 255);
-                doc.circle(25, 20, 10, 'F');
-                doc.setTextColor(...primaryColor);
-                doc.setFontSize(12);
-                doc.setFont('helvetica', 'bold');
-                doc.text('PSC', 25, 23, { align: 'center' });
-            }
-        } else {
-            doc.setFillColor(255, 255, 255);
-            doc.circle(25, 20, 10, 'F');
-            doc.setTextColor(...primaryColor);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('PSC', 25, 23, { align: 'center' });
-        }
-        
+        // Header text (centered, no logo)
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(18);
+        doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
-        doc.text('ATTENDANCE REPORT', 120, 16, { align: 'center' });
+        doc.text('ATTENDANCE REPORT', 105, 16, { align: 'center' });
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text(event.event_title || event.event_name || 'Event', 105, 24, { align: 'center' });
