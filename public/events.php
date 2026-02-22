@@ -657,7 +657,7 @@ try {
 </div>
 
 <!-- View Event Modal -->
-<div id="viewEventModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
+<div id="viewEventModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:10001; overflow-y:auto;">
     <div class="modal-container" style="background:white; border-radius:16px; max-width:800px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
         <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
             <h2 style="margin:0; color:white; font-size:20px;"><i class="fas fa-eye"></i> Event Details</h2>
@@ -1835,15 +1835,73 @@ async function verifyPasswordAndExport() {
     }
 }
 
+// Helper function to load logo as base64
+async function loadLogoAsBase64() {
+    try {
+        const logoUrl = '/header/images/logo.svg';
+        const response = await fetch(logoUrl);
+        const svgText = await response.text();
+        
+        // Convert SVG to base64 data URL
+        const base64 = btoa(unescape(encodeURIComponent(svgText)));
+        return 'data:image/svg+xml;base64,' + base64;
+    } catch (e) {
+        console.warn('Failed to load logo:', e);
+        return null;
+    }
+}
+
+// Helper function to convert SVG to PNG for jsPDF (SVG not directly supported)
+async function loadLogoAsPNG() {
+    try {
+        const logoUrl = '/header/images/logo.svg';
+        const response = await fetch(logoUrl);
+        const svgText = await response.text();
+        
+        // Create an image from SVG
+        return new Promise((resolve) => {
+            const img = new Image();
+            const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                // Create canvas and draw image
+                const canvas = document.createElement('canvas');
+                canvas.width = 100;
+                canvas.height = 60;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 5, 5, 90, 50);
+                URL.revokeObjectURL(url);
+                resolve(canvas.toDataURL('image/png'));
+            };
+            
+            img.onerror = function() {
+                URL.revokeObjectURL(url);
+                resolve(null);
+            };
+            
+            img.src = url;
+        });
+    } catch (e) {
+        console.warn('Failed to load logo as PNG:', e);
+        return null;
+    }
+}
+
 // Generate Event Report PDF with professional template
 async function generateEventReportPDF() {
     const eventId = document.getElementById('report_event_select').value;
     
     try {
-        // Fetch event data
-        const res = await fetch(apiBase + '/api/v1/events/' + eventId, {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
+        // Fetch event data and logo in parallel
+        const [res, logoDataUrl] = await Promise.all([
+            fetch(apiBase + '/api/v1/events/' + eventId, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            }),
+            loadLogoAsPNG()
+        ]);
         const data = await res.json();
         
         if (!res.ok || !data.event) {
@@ -1867,19 +1925,35 @@ async function generateEventReportPDF() {
         doc.setFillColor(...primaryColor);
         doc.rect(0, 0, 210, 45, 'F');
         
-        // Logo placeholder (circle with initials)
-        doc.setFillColor(255, 255, 255);
-        doc.circle(25, 22, 12, 'F');
-        doc.setTextColor(...primaryColor);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('PSC', 25, 25, { align: 'center' });
+        // Add logo image if available, otherwise use text placeholder
+        if (logoDataUrl) {
+            try {
+                doc.addImage(logoDataUrl, 'PNG', 10, 8, 30, 18);
+            } catch (imgErr) {
+                console.warn('Failed to add logo image:', imgErr);
+                // Fallback to text
+                doc.setFillColor(255, 255, 255);
+                doc.circle(25, 17, 10, 'F');
+                doc.setTextColor(...primaryColor);
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PSC', 25, 20, { align: 'center' });
+            }
+        } else {
+            // Fallback to text placeholder
+            doc.setFillColor(255, 255, 255);
+            doc.circle(25, 17, 10, 'F');
+            doc.setTextColor(...primaryColor);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('PSC', 25, 20, { align: 'center' });
+        }
         
         // Header text
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
-        doc.text('EVENT REPORT', 105, 18, { align: 'center' });
+        doc.text('EVENT REPORT', 120, 18, { align: 'center' });
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text('Public Safety Campaign System', 105, 26, { align: 'center' });
@@ -2020,10 +2094,11 @@ async function generateAttendancePDF() {
     const eventId = document.getElementById('attendance_event_select').value;
     
     try {
-        // Fetch event and attendance data
-        const [eventRes, attendanceRes] = await Promise.all([
+        // Fetch event, attendance data, and logo in parallel
+        const [eventRes, attendanceRes, logoDataUrl] = await Promise.all([
             fetch(apiBase + '/api/v1/events/' + eventId, { headers: { 'Authorization': 'Bearer ' + token } }),
-            fetch(apiBase + '/api/v1/events/' + eventId + '/attendance', { headers: { 'Authorization': 'Bearer ' + token } })
+            fetch(apiBase + '/api/v1/events/' + eventId + '/attendance', { headers: { 'Authorization': 'Bearer ' + token } }),
+            loadLogoAsPNG()
         ]);
         
         const eventData = await eventRes.json();
@@ -2048,17 +2123,31 @@ async function generateAttendancePDF() {
         doc.setFillColor(...primaryColor);
         doc.rect(0, 0, 210, 40, 'F');
         
-        doc.setFillColor(255, 255, 255);
-        doc.circle(25, 20, 10, 'F');
-        doc.setTextColor(...primaryColor);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('PSC', 25, 23, { align: 'center' });
+        // Add logo image if available
+        if (logoDataUrl) {
+            try {
+                doc.addImage(logoDataUrl, 'PNG', 10, 6, 28, 16);
+            } catch (imgErr) {
+                doc.setFillColor(255, 255, 255);
+                doc.circle(25, 20, 10, 'F');
+                doc.setTextColor(...primaryColor);
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PSC', 25, 23, { align: 'center' });
+            }
+        } else {
+            doc.setFillColor(255, 255, 255);
+            doc.circle(25, 20, 10, 'F');
+            doc.setTextColor(...primaryColor);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('PSC', 25, 23, { align: 'center' });
+        }
         
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
-        doc.text('ATTENDANCE REPORT', 105, 16, { align: 'center' });
+        doc.text('ATTENDANCE REPORT', 120, 16, { align: 'center' });
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text(event.event_title || event.event_name || 'Event', 105, 24, { align: 'center' });
@@ -2999,11 +3088,10 @@ async function loadArchivedEvents() {
     container.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">Loading...</p>';
     
     try {
-        const res = await fetch(apiBase + '/api/v1/events', { headers: { 'Authorization': 'Bearer ' + token } });
+        // Request archived events specifically
+        const res = await fetch(apiBase + '/api/v1/events?event_status=archived', { headers: { 'Authorization': 'Bearer ' + token } });
         const data = await res.json();
-        const events = data.data || data.events || [];
-        
-        const archivedEvents = events.filter(e => (e.event_status || '').toLowerCase() === 'archived');
+        const archivedEvents = data.data || data.events || [];
         
         if (archivedEvents.length === 0) {
             container.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">No archived events found.</p>';

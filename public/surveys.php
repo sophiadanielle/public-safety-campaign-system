@@ -1811,7 +1811,7 @@ document.addEventListener('click', function(e) {
 </div>
 
 <!-- View Survey Modal -->
-<div id="viewSurveyModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
+<div id="viewSurveyModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:10001; overflow-y:auto;">
     <div class="modal-container" style="background:white; border-radius:16px; max-width:800px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
         <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
             <h2 style="margin:0; color:white; font-size:20px;"><i class="fas fa-eye"></i> Survey Details</h2>
@@ -2042,13 +2042,51 @@ async function verifySurveyPasswordAndExport() {
     }
 }
 
+// Helper function to convert SVG to PNG for jsPDF
+async function loadLogoAsPNG() {
+    try {
+        const logoUrl = '/header/images/logo.svg';
+        const response = await fetch(logoUrl);
+        const svgText = await response.text();
+        
+        return new Promise((resolve) => {
+            const img = new Image();
+            const svgBlob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 100;
+                canvas.height = 60;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 5, 5, 90, 50);
+                URL.revokeObjectURL(url);
+                resolve(canvas.toDataURL('image/png'));
+            };
+            
+            img.onerror = function() {
+                URL.revokeObjectURL(url);
+                resolve(null);
+            };
+            
+            img.src = url;
+        });
+    } catch (e) {
+        console.warn('Failed to load logo as PNG:', e);
+        return null;
+    }
+}
+
 // Generate Survey PDF with professional template
 async function generateSurveyPDF(surveyId) {
     try {
-        // Fetch survey data and results
-        const [surveyRes, resultsRes] = await Promise.all([
+        // Fetch survey data, results, and logo in parallel
+        const [surveyRes, resultsRes, logoDataUrl] = await Promise.all([
             fetch(apiBase + '/api/v1/surveys/' + surveyId, { headers: { 'Authorization': 'Bearer ' + token } }),
-            fetch(apiBase + '/api/v1/surveys/' + surveyId + '/results', { headers: { 'Authorization': 'Bearer ' + token } })
+            fetch(apiBase + '/api/v1/surveys/' + surveyId + '/results', { headers: { 'Authorization': 'Bearer ' + token } }),
+            loadLogoAsPNG()
         ]);
         
         const surveyData = await surveyRes.json();
@@ -2075,19 +2113,32 @@ async function generateSurveyPDF(surveyId) {
         doc.setFillColor(...primaryColor);
         doc.rect(0, 0, 210, 45, 'F');
         
-        // Logo placeholder (circle with initials)
-        doc.setFillColor(255, 255, 255);
-        doc.circle(25, 22, 12, 'F');
-        doc.setTextColor(...primaryColor);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('PSC', 25, 25, { align: 'center' });
+        // Add logo image if available
+        if (logoDataUrl) {
+            try {
+                doc.addImage(logoDataUrl, 'PNG', 10, 8, 30, 18);
+            } catch (imgErr) {
+                doc.setFillColor(255, 255, 255);
+                doc.circle(25, 17, 10, 'F');
+                doc.setTextColor(...primaryColor);
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PSC', 25, 20, { align: 'center' });
+            }
+        } else {
+            doc.setFillColor(255, 255, 255);
+            doc.circle(25, 17, 10, 'F');
+            doc.setTextColor(...primaryColor);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('PSC', 25, 20, { align: 'center' });
+        }
         
         // Header text
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
-        doc.text('SURVEY REPORT', 105, 18, { align: 'center' });
+        doc.text('SURVEY REPORT', 120, 18, { align: 'center' });
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text('Public Safety Campaign System', 105, 26, { align: 'center' });

@@ -982,14 +982,41 @@ class SurveyController
         $id = (int) ($params['id'] ?? 0);
         $survey = $this->findSurvey($id, allowDraft: true, allowPublic: false);
         
-        // Only allow updating draft surveys
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        
+        // Check if this is a status-only update (for archiving/restoring)
+        $isStatusOnlyUpdate = isset($input['status']) && count($input) === 1;
+        
+        // Allow status changes for archiving/restoring regardless of current status
+        if ($isStatusOnlyUpdate) {
+            $newStatus = strtolower(trim($input['status']));
+            $allowedStatuses = ['draft', 'published', 'closed', 'archived'];
+            
+            if (!in_array($newStatus, $allowedStatuses)) {
+                http_response_code(422);
+                return ['error' => 'Invalid status. Allowed: ' . implode(', ', $allowedStatuses)];
+            }
+            
+            $stmt = $this->pdo->prepare('
+                UPDATE `campaign_department_surveys` SET
+                    status = :status,
+                    updated_at = NOW()
+                WHERE id = :id
+            ');
+            $stmt->execute([
+                'id' => $id,
+                'status' => $newStatus
+            ]);
+            
+            return ['id' => $id, 'message' => 'Survey status updated to ' . $newStatus];
+        }
+        
+        // For non-status updates, only allow updating draft surveys
         if ($survey['status'] !== 'draft') {
             error_log('SurveyController: Cannot update survey ID ' . $id . ' - status is "' . $survey['status'] . '" (expected "draft")');
             http_response_code(422);
             return ['error' => 'Only draft surveys can be updated. Current status: ' . $survey['status']];
         }
-        
-        $input = json_decode(file_get_contents('php://input'), true) ?? [];
         
         $title = trim($input['title'] ?? $survey['title']);
         $description = isset($input['description']) ? trim($input['description']) : $survey['description'];

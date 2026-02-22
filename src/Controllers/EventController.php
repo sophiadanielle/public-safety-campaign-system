@@ -118,9 +118,12 @@ class EventController
                 $where[] = 'e.event_type = :filter_event_type';
                 $queryParams['filter_event_type'] = $_GET['event_type'];
             }
-            if (isset($_GET['event_status'])) {
+            if (isset($_GET['event_status']) && $_GET['event_status'] !== '') {
                 $where[] = 'e.status = :filter_event_status';
                 $queryParams['filter_event_status'] = $_GET['event_status'];
+            } else {
+                // By default, exclude archived events unless specifically requested
+                $where[] = "e.status != 'archived'";
             }
             if (isset($_GET['hazard_focus'])) {
                 $where[] = 'e.hazard_focus = :filter_hazard_focus';

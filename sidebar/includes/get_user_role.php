@@ -201,7 +201,7 @@ function getCurrentUserRole(): ?string {
                     }
                 }
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             error_log('getCurrentUserRole() JWT decode error: ' . $e->getMessage());
         }
     }

@@ -40,11 +40,15 @@
                         
                         // Get current user role for module filtering
                         // CRITICAL: This must work consistently across ALL pages
-                        // Wrapped in try-catch to prevent 502 errors from database connection issues
+                        // Wrapped in try-catch with error suppression to prevent 502 errors
                         $currentUserRole = null;
                         try {
-                            require_once __DIR__ . '/get_user_role.php';
-                            $currentUserRole = getCurrentUserRole();
+                            $oldErr = error_reporting(0);
+                            @require_once __DIR__ . '/get_user_role.php';
+                            error_reporting($oldErr);
+                            if (function_exists('getCurrentUserRole')) {
+                                $currentUserRole = @getCurrentUserRole();
+                            }
                         } catch (\Throwable $roleErr) {
                             error_log('RBAC SIDEBAR: get_user_role failed: ' . $roleErr->getMessage());
                             $currentUserRole = null;

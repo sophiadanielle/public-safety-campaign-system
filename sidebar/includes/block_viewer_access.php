@@ -14,9 +14,13 @@ $isViewer = false;
 $currentUserRole = null;
 
 try {
-    // Get user role - wrapped in try-catch to prevent fatal errors
-    require_once __DIR__ . '/get_user_role.php';
-    $currentUserRole = getCurrentUserRole();
+    // Get user role - wrapped in try-catch with error suppression to prevent fatal errors
+    $oldErrorReporting = error_reporting(0);
+    @require_once __DIR__ . '/get_user_role.php';
+    error_reporting($oldErrorReporting);
+    if (function_exists('getCurrentUserRole')) {
+        $currentUserRole = @getCurrentUserRole();
+    }
 } catch (\Throwable $e) {
     error_log('RBAC block_viewer_access: Failed to get user role: ' . $e->getMessage());
     $currentUserRole = null;
