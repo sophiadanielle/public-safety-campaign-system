@@ -88,7 +88,7 @@ class ContentController
             $sql = "SELECT DISTINCT ci.id, ci.title, ci.body, ci.content_type, ci.visibility, ci.created_at, 
                            ci.hazard_category, ci.{$audienceColumn} as intended_audience_segment, ci.source, 
                            ci.approval_status, ci.version_number, ci.approved_by, ci.approval_notes,
-                           ci.date_uploaded, ci.file_reference, ci.last_updated,
+                           ci.date_uploaded, ci.file_reference, ci.updated_at,
                            a.file_path, a.mime_type, ci.campaign_id,
                            camp.title as campaign_title,
                            u1.name as uploaded_by_name, u2.name as approved_by_name
@@ -754,8 +754,7 @@ class ContentController
                     approval_status = CASE 
                         WHEN approval_status = 'approved' THEN 'pending_review'
                         ELSE approval_status
-                    END,
-                    last_updated = NOW()
+                    END
                 WHERE id = :id
             ");
             
