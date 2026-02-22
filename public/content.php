@@ -1909,9 +1909,11 @@ async function editContent(contentId) {
         }
         
         // Check if content can be edited (draft, pending_review, under_review, or approved)
-        const status = (item.approval_status || '').toLowerCase();
-        if (!['draft', 'pending_review', 'under_review', 'approved'].includes(status)) {
-            await customAlert('Only draft, pending review, or approved content can be edited.', 'Notice');
+        const status = (item.approval_status || '').toLowerCase().trim();
+        const editableStatuses = ['draft', 'pending_review', 'under_review', 'approved', 'pending review', 'under review'];
+        console.log('Edit content - status:', status, 'item:', item);
+        if (!editableStatuses.includes(status)) {
+            await customAlert('Only draft, pending review, or approved content can be edited. Current status: ' + (item.approval_status || 'unknown'), 'Notice');
             return;
         }
         
@@ -2563,8 +2565,9 @@ async function loadAllContent() {
     const uploaded = JSON.parse(localStorage.getItem("content_repository_uploaded") || "[]");
     
     try {
-        // Fetch ALL content (no filters) to populate contents array
-        const res = await fetch(apiBase + '/api/v1/content?per_page=1000', {
+        // Fetch ALL content including archived to populate contents array
+        // The include_archived=true parameter tells the API to include archived content
+        const res = await fetch(apiBase + '/api/v1/content?per_page=1000&include_archived=true', {
             method: 'GET',
             headers: { 
                 'Authorization': 'Bearer ' + token,
@@ -3053,6 +3056,9 @@ async function loadMediaGallery() {
         const mediaType = document.getElementById('mediaTypeFilter').value;
         
         // Filter from combined data: approval_status === "APPROVED" AND has media content
+        console.log('Media Gallery - Total contents:', contents.length);
+        console.log('Media Gallery - Approved items:', contents.filter(i => (i.approval_status || '').toUpperCase() === 'APPROVED').length);
+        
         let mediaItems = contents.filter(item => {
             const approvalStatus = (item.approval_status || '').toUpperCase();
             if (approvalStatus !== 'APPROVED') return false;
@@ -3075,12 +3081,20 @@ async function loadMediaGallery() {
             const hasImageExt = imageExts.some(ext => lowerPath.endsWith(ext));
             const hasVideoExt = videoExts.some(ext => lowerPath.endsWith(ext));
             
-            // Also check if file_reference contains 'uploads/' which indicates an uploaded file
+            // Check if file_reference contains 'uploads/' which indicates an uploaded file
             const hasUploadedFile = filePath && (filePath.includes('uploads/') || filePath.includes('uploads\\'));
             
-            // Return true if any media indicator is present OR if it has an uploaded file with media extension
-            return isImageMime || isVideoMime || isMediaContentType || hasImageExt || hasVideoExt || (hasUploadedFile && (hasImageExt || hasVideoExt));
+            // Check if there's any file at all (some content might have files without proper type indicators)
+            const hasAnyFile = filePath && filePath.length > 0;
+            
+            // Return true if any media indicator is present
+            const isMedia = isImageMime || isVideoMime || isMediaContentType || hasImageExt || hasVideoExt;
+            
+            // Also include if it has an uploaded file (even without explicit media type)
+            return isMedia || (hasUploadedFile && hasAnyFile);
         });
+        
+        console.log('Media Gallery - Media items found:', mediaItems.length, mediaItems);
         
         // Apply additional media type filter if specified
         if (mediaType === 'image') {

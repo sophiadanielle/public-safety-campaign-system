@@ -1072,12 +1072,29 @@ class EventController
 
     private function createIntegrationCheckpoint(int $eventId, string $subsystemType): void
     {
-        $stmt = $this->pdo->prepare('
-            INSERT INTO `campaign_department_event_integration_checkpoints` (event_id, subsystem_type, integration_status)
-            VALUES (:event_id, :subsystem_type, "pending")
-            ON DUPLICATE KEY UPDATE integration_status = "pending"
-        ');
-        $stmt->execute(['event_id' => $eventId, 'subsystem_type' => $subsystemType]);
+        try {
+            // Check if table exists first
+            $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_event_integration_checkpoints'");
+            if (!$tableCheck || $tableCheck->rowCount() === 0) {
+                return; // Table doesn't exist, skip
+            }
+            
+            // Check if subsystem_type column exists
+            $colCheck = $this->pdo->query("SHOW COLUMNS FROM `campaign_department_event_integration_checkpoints` LIKE 'subsystem_type'");
+            if (!$colCheck || $colCheck->rowCount() === 0) {
+                return; // Column doesn't exist, skip
+            }
+            
+            $stmt = $this->pdo->prepare('
+                INSERT INTO `campaign_department_event_integration_checkpoints` (event_id, subsystem_type, integration_status)
+                VALUES (:event_id, :subsystem_type, "pending")
+                ON DUPLICATE KEY UPDATE integration_status = "pending"
+            ');
+            $stmt->execute(['event_id' => $eventId, 'subsystem_type' => $subsystemType]);
+        } catch (\Throwable $e) {
+            // Log error but don't fail the main operation
+            error_log('EventController::createIntegrationCheckpoint - Error: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -1249,17 +1266,26 @@ class EventController
         // Delete related records first (foreign key constraints)
         $this->pdo->beginTransaction();
         try {
-            // Delete attendance records
-            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_event_attendance` WHERE event_id = :id');
-            $stmt->execute(['id' => $id]);
+            // Delete attendance records (check if table exists first)
+            $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_event_attendance'");
+            if ($tableCheck && $tableCheck->rowCount() > 0) {
+                $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_event_attendance` WHERE event_id = :id');
+                $stmt->execute(['id' => $id]);
+            }
             
-            // Delete agency coordination
-            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_event_agency_coordination` WHERE event_id = :id');
-            $stmt->execute(['id' => $id]);
+            // Delete agency coordination (check if table exists first)
+            $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_event_agency_coordination'");
+            if ($tableCheck && $tableCheck->rowCount() > 0) {
+                $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_event_agency_coordination` WHERE event_id = :id');
+                $stmt->execute(['id' => $id]);
+            }
             
-            // Delete facilitators
-            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_event_facilitators` WHERE event_id = :id');
-            $stmt->execute(['id' => $id]);
+            // Delete facilitators (check if table exists first)
+            $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_event_facilitators'");
+            if ($tableCheck && $tableCheck->rowCount() > 0) {
+                $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_event_facilitators` WHERE event_id = :id');
+                $stmt->execute(['id' => $id]);
+            }
             
             // Delete the event
             $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_events` WHERE id = :id');

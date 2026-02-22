@@ -2054,11 +2054,11 @@ async function generateEventReportPDF() {
         const fileName = `Event_Report_${event.event_title || eventId}_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
         
-        customConfirm('PDF report exported successfully!');
+        showToast('PDF report exported successfully!', 'success');
         
     } catch (error) {
         console.error('PDF generation error:', error);
-        customConfirm('Failed to generate PDF: ' + error.message);
+        showToast('Failed to generate PDF: ' + error.message, 'error');
     }
 }
 
@@ -2146,11 +2146,11 @@ async function generateAttendancePDF() {
         const fileName = `Attendance_${event.event_title || eventId}_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(fileName);
         
-        customConfirm('Attendance PDF exported successfully!');
+        showToast('Attendance PDF exported successfully!', 'success');
         
     } catch (error) {
         console.error('PDF generation error:', error);
-        customConfirm('Failed to generate PDF: ' + error.message);
+        showToast('Failed to generate PDF: ' + error.message, 'error');
     }
 }
 
@@ -2900,32 +2900,45 @@ async function openEditEventModal(eventId) {
     document.body.style.overflow = 'hidden';
     document.getElementById('edit_event_id').value = eventId;
     
-    // Populate dropdowns first
-    await populateModalDropdowns();
-    
     try {
+        // Fetch event data first
         const res = await fetch(apiBase + '/api/v1/events/' + eventId, { headers: { 'Authorization': 'Bearer ' + token } });
         const data = await res.json();
         
         if (res.ok && data.event) {
             const e = data.event;
-            document.getElementById('edit_event_title').value = e.event_title || '';
+            console.log('Edit event data:', e);
+            
+            // Populate basic fields first
+            document.getElementById('edit_event_title').value = e.event_title || e.name || '';
             document.getElementById('edit_event_type').value = e.event_type || 'seminar';
-            document.getElementById('edit_event_status').value = e.event_status || 'scheduled';
-            document.getElementById('edit_linked_campaign_id').value = e.linked_campaign_id || '';
-            document.getElementById('edit_target_audience_profile_id').value = e.target_audience_profile_id || '';
-            document.getElementById('edit_hazard_focus').value = e.hazard_focus || '';
+            document.getElementById('edit_event_status').value = e.event_status || e.status || 'scheduled';
+            document.getElementById('edit_hazard_focus').value = e.hazard_focus || e.hazard_category || '';
             document.getElementById('edit_venue').value = e.venue || '';
             document.getElementById('edit_location').value = e.location || '';
-            document.getElementById('edit_event_description').value = e.event_description || '';
+            document.getElementById('edit_event_description').value = e.event_description || e.description || '';
             
             // Set datetime fields
-            if (e.date && e.start_time) {
-                document.getElementById('edit_start_datetime').value = `${e.date}T${e.start_time}`;
+            const eventDate = e.date || e.event_date || '';
+            if (eventDate && e.start_time) {
+                document.getElementById('edit_start_datetime').value = `${eventDate}T${e.start_time}`;
             }
-            if (e.date && e.end_time) {
-                document.getElementById('edit_end_datetime').value = `${e.date}T${e.end_time}`;
+            if (eventDate && e.end_time) {
+                document.getElementById('edit_end_datetime').value = `${eventDate}T${e.end_time}`;
             }
+            
+            // Populate dropdowns and then set values
+            await populateModalDropdowns();
+            
+            // Set dropdown values AFTER populating (with delay to ensure DOM is updated)
+            setTimeout(() => {
+                if (e.linked_campaign_id) {
+                    document.getElementById('edit_linked_campaign_id').value = e.linked_campaign_id;
+                }
+                if (e.target_audience_profile_id || e.target_audience_id) {
+                    document.getElementById('edit_target_audience_profile_id').value = e.target_audience_profile_id || e.target_audience_id || '';
+                }
+            }, 100);
         }
     } catch (err) {
         console.error('Error loading event for edit:', err);
@@ -3210,6 +3223,43 @@ function initializeEventsPage() {
     loadCampaigns().catch(err => console.error('Failed to load campaigns:', err));
     loadAudienceSegments().catch(err => console.error('Failed to load segments:', err));
     loadEvents().catch(err => console.error('Failed to load events:', err));
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const existingToast = document.getElementById('toastNotification');
+    if (existingToast) existingToast.remove();
+    
+    const toast = document.createElement('div');
+    toast.id = 'toastNotification';
+    const bgColor = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6';
+    const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+    
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: ${bgColor};
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        font-weight: 500;
+    `;
+    
+    toast.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
 }
 </script>
     </div>

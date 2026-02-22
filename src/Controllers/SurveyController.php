@@ -416,7 +416,27 @@ class SurveyController
         $questionOrder = isset($input['question_order']) ? (int) $input['question_order'] : 0;
         $requiredFlag = isset($input['required_flag']) ? (bool) $input['required_flag'] : false;
 
-        $allowed = ['rating', 'multiple_choice', 'yes_no', 'open_ended', 'text', 'single_choice'];
+        // Map frontend values to database ENUM values
+        $typeMapping = [
+            'open_ended' => 'text',
+            'open-ended' => 'text',
+            'text' => 'text',
+            'rating' => 'rating',
+            'multiple_choice' => 'multiple_choice',
+            'multiple-choice' => 'multiple_choice',
+            'yes_no' => 'single_choice',
+            'yes-no' => 'single_choice',
+            'single_choice' => 'single_choice',
+            'single-choice' => 'single_choice'
+        ];
+        
+        // Normalize the question type
+        $normalizedType = strtolower(trim($questionType));
+        if (isset($typeMapping[$normalizedType])) {
+            $questionType = $typeMapping[$normalizedType];
+        }
+        
+        $allowed = ['rating', 'multiple_choice', 'single_choice', 'text'];
         if (!in_array($questionType, $allowed, true)) {
             http_response_code(422);
             return ['error' => 'Invalid question_type. Allowed: ' . implode(', ', $allowed)];
