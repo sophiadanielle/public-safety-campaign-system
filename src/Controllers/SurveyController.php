@@ -264,6 +264,9 @@ class SurveyController
         if (isset($_GET['status']) && $_GET['status'] !== '') {
             $whereClause[] = 's.status = :status';
             $params_bind['status'] = $_GET['status'];
+        } else {
+            // By default, exclude archived surveys unless specifically requested
+            $whereClause[] = "s.status != 'archived'";
         }
         
         $where = $whereClause ? 'WHERE ' . implode(' AND ', $whereClause) : '';

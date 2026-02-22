@@ -325,37 +325,50 @@ try {
         $pdo = null;
         error_log('Auth request detected - allowing null PDO for demo login fallback');
     } else {
-        // For ALL other API requests (including dashboard), we MUST have a working connection
-        // Try one more time with direct connection to the database
-        // If this fails, throw the exception so we can see the real error
-        try {
-            error_log('DB CONFIG: Retrying database connection...');
-            $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $dbHost, $dbPort, $dbName);
-            error_log("DB CONFIG: Retry DSN: $dsn");
-            $pdo = new PDO($dsn, $dbUser, $pdoPassword, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_TIMEOUT => 5,
-            ]);
-            // Verify connection works with a test query
-            error_log('DB DEBUG: Testing connection with SELECT 1...');
-            $testResult = $pdo->query('SELECT 1 as test')->fetch();
-            if ($testResult && $testResult['test'] == 1) {
-                error_log('DB DEBUG: Database connection retry successful and verified (SELECT 1 returned 1)');
-            } else {
-                error_log('DB DEBUG: WARNING - SELECT 1 test returned unexpected result: ' . var_export($testResult, true));
+        // Check if this is a page context (sidebar/RBAC) - don't throw, just set $pdo = null
+        $isPageContext = PHP_SAPI !== 'cli' && 
+                         isset($_SERVER['REQUEST_URI']) && 
+                         (strpos($_SERVER['REQUEST_URI'], '/public/') !== false || 
+                          strpos($_SERVER['REQUEST_URI'], '.php') !== false) &&
+                         strpos($_SERVER['REQUEST_URI'], '/api/') === false;
+        
+        if ($isPageContext) {
+            // For page context, don't throw - just set $pdo = null and log
+            $pdo = null;
+            error_log('DB DEBUG: Page context detected - setting PDO to null instead of throwing');
+        } else {
+            // For ALL other API requests (including dashboard), we MUST have a working connection
+            // Try one more time with direct connection to the database
+            // If this fails, throw the exception so we can see the real error
+            try {
+                error_log('DB CONFIG: Retrying database connection...');
+                $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $dbHost, $dbPort, $dbName);
+                error_log("DB CONFIG: Retry DSN: $dsn");
+                $pdo = new PDO($dsn, $dbUser, $pdoPassword, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_TIMEOUT => 5,
+                ]);
+                // Verify connection works with a test query
+                error_log('DB DEBUG: Testing connection with SELECT 1...');
+                $testResult = $pdo->query('SELECT 1 as test')->fetch();
+                if ($testResult && $testResult['test'] == 1) {
+                    error_log('DB DEBUG: Database connection retry successful and verified (SELECT 1 returned 1)');
+                } else {
+                    error_log('DB DEBUG: WARNING - SELECT 1 test returned unexpected result: ' . var_export($testResult, true));
+                }
+            } catch (PDOException $retryException) {
+                error_log('DB DEBUG: Retry also failed: ' . $retryException->getMessage());
+                error_log('DB DEBUG: Retry error code: ' . $retryException->getCode());
+                // Re-throw the original exception so the real error is visible
+                // Do NOT hide it by setting $pdo = null
+                throw new PDOException(
+                    'Database connection failed: ' . $retryException->getMessage() . 
+                    ' (Host: ' . $dbHost . ', Port: ' . $dbPort . ', Database: ' . $dbName . ', User: ' . $dbUser . ')',
+                    (int)$retryException->getCode(),
+                    $retryException
+                );
             }
-        } catch (PDOException $retryException) {
-            error_log('DB DEBUG: Retry also failed: ' . $retryException->getMessage());
-            error_log('DB DEBUG: Retry error code: ' . $retryException->getCode());
-            // Re-throw the original exception so the real error is visible
-            // Do NOT hide it by setting $pdo = null
-            throw new PDOException(
-                'Database connection failed: ' . $retryException->getMessage() . 
-                ' (Host: ' . $dbHost . ', Port: ' . $dbPort . ', Database: ' . $dbName . ', User: ' . $dbUser . ')',
-                (int)$retryException->getCode(),
-                $retryException
-            );
         }
     }
 }

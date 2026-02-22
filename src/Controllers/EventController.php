@@ -17,8 +17,9 @@ class EventController
         private string $jwtAudience,
         private int $jwtExpirySeconds
     ) {
-        // Auto-migration: Ensure status ENUM includes 'archived'
+        // Auto-migration: Ensure status ENUM includes 'archived' and audit log table exists
         $this->ensureArchivedStatus();
+        $this->ensureAuditLogTable();
     }
     
     private function ensureArchivedStatus(): void
@@ -37,6 +38,47 @@ class EventController
             }
         } catch (\Throwable $e) {
             error_log('EventController::ensureArchivedStatus error: ' . $e->getMessage());
+        }
+    }
+    
+    private function ensureAuditLogTable(): void
+    {
+        try {
+            // Check if audit log table exists
+            $checkTable = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_event_audit_log'");
+            if ($checkTable->rowCount() === 0) {
+                error_log('EventController: Creating event_audit_log table');
+                $this->pdo->exec("
+                    CREATE TABLE IF NOT EXISTS `campaign_department_event_audit_log` (
+                        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                        event_id INT UNSIGNED NOT NULL,
+                        user_id INT UNSIGNED NULL,
+                        action_type VARCHAR(50) NOT NULL,
+                        field_name VARCHAR(100) NULL,
+                        old_value TEXT NULL,
+                        new_value TEXT NULL,
+                        change_details TEXT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_event_audit_event (event_id),
+                        INDEX idx_event_audit_action (action_type)
+                    ) ENGINE=InnoDB
+                ");
+            } else {
+                // Check if action_type column exists
+                $checkCol = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                    WHERE TABLE_SCHEMA = DATABASE() 
+                    AND TABLE_NAME = 'campaign_department_event_audit_log' 
+                    AND COLUMN_NAME = 'action_type'");
+                $hasCol = $checkCol->fetch(\PDO::FETCH_ASSOC)['cnt'] > 0;
+                
+                if (!$hasCol) {
+                    error_log('EventController: Adding action_type column to audit_log');
+                    $this->pdo->exec("ALTER TABLE `campaign_department_event_audit_log` 
+                        ADD COLUMN `action_type` VARCHAR(50) NOT NULL DEFAULT 'updated' AFTER `user_id`");
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('EventController::ensureAuditLogTable error: ' . $e->getMessage());
         }
     }
 
@@ -989,23 +1031,28 @@ class EventController
 
     private function logAudit(int $eventId, int $userId, string $actionType, ?string $fieldName, ?string $oldValue, ?string $newValue): void
     {
-        $stmt = $this->pdo->prepare('
-            INSERT INTO `campaign_department_event_audit_log` (
-                event_id, user_id, action_type, field_name, old_value, new_value, change_details
-            ) VALUES (
-                :event_id, :user_id, :action_type, :field_name, :old_value, :new_value, :change_details
-            )
-        ');
-        $changeDetails = $fieldName ? "Field {$fieldName} changed from '{$oldValue}' to '{$newValue}'" : null;
-        $stmt->execute([
-            'event_id' => $eventId,
-            'user_id' => $userId,
-            'action_type' => $actionType,
-            'field_name' => $fieldName,
-            'old_value' => $oldValue,
-            'new_value' => $newValue,
-            'change_details' => $changeDetails
-        ]);
+        try {
+            $stmt = $this->pdo->prepare('
+                INSERT INTO `campaign_department_event_audit_log` (
+                    event_id, user_id, action_type, field_name, old_value, new_value, change_details
+                ) VALUES (
+                    :event_id, :user_id, :action_type, :field_name, :old_value, :new_value, :change_details
+                )
+            ');
+            $changeDetails = $fieldName ? "Field {$fieldName} changed from '{$oldValue}' to '{$newValue}'" : null;
+            $stmt->execute([
+                'event_id' => $eventId,
+                'user_id' => $userId,
+                'action_type' => $actionType,
+                'field_name' => $fieldName,
+                'old_value' => $oldValue,
+                'new_value' => $newValue,
+                'change_details' => $changeDetails
+            ]);
+        } catch (\Throwable $e) {
+            // Log error but don't break the main operation
+            error_log('EventController::logAudit error: ' . $e->getMessage());
+        }
     }
 
     private function createIntegrationCheckpoints(int $eventId): void
