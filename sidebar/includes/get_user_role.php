@@ -25,12 +25,9 @@ function getCurrentUserRole(): ?string {
             $oldErrorReporting = error_reporting(0);
             try {
                 @require_once __DIR__ . '/../../src/Config/db_connect.php';
-            } catch (Exception $dbEx) {
-                error_log('RBAC get_user_role: db_connect.php threw exception: ' . $dbEx->getMessage());
+            } catch (\Throwable $dbEx) {
+                error_log('RBAC get_user_role: db_connect.php threw throwable: ' . $dbEx->getMessage());
                 $pdo = null; // Ensure $pdo is null if connection failed
-            } catch (Error $dbErr) {
-                error_log('RBAC get_user_role: db_connect.php threw error: ' . $dbErr->getMessage());
-                $pdo = null;
             }
             error_reporting($oldErrorReporting);
             

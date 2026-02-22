@@ -175,7 +175,12 @@ class BudgetController
         foreach ($allowedFields as $field) {
             if (isset($input[$field])) {
                 $updates[] = "$field = ?";
-                $values[] = $input[$field];
+                // Convert boolean to integer for is_archived field
+                if ($field === 'is_archived') {
+                    $values[] = $input[$field] ? 1 : 0;
+                } else {
+                    $values[] = $input[$field];
+                }
             }
         }
         

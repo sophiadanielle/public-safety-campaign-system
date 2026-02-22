@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+// Check if this is a sidebar/page context - don't throw exceptions, just set $pdo = null
+$_DB_CONNECT_IS_PAGE_CONTEXT = PHP_SAPI !== 'cli' && 
+                                isset($_SERVER['REQUEST_URI']) && 
+                                (strpos($_SERVER['REQUEST_URI'], '/public/') !== false || 
+                                 strpos($_SERVER['REQUEST_URI'], '.php') !== false) &&
+                                strpos($_SERVER['REQUEST_URI'], '/api/') === false;
+
 // Load .env file - try multiple paths
 $envPaths = [
     dirname(__DIR__, 2) . '/.env',
@@ -115,30 +122,53 @@ $appEnv = strtolower(trim($appEnv));
 error_log("DB CONFIG: APP_ENV = '$appEnv'");
 
 // Load database credentials based on APP_ENV
+// In page context, don't throw exceptions - just set $pdo = null and return gracefully
+$_DB_CONNECT_CONFIG_ERROR = null;
+
 if ($appEnv === 'production') {
     // Production: Use ONLY PROD_DB_* variables
     if (!array_key_exists('PROD_DB_HOST', $_ENV) && getenv('PROD_DB_HOST') === false) {
-        throw new RuntimeException('PROD_DB_HOST is required when APP_ENV=production');
+        $_DB_CONNECT_CONFIG_ERROR = 'PROD_DB_HOST is required when APP_ENV=production';
+        if (!$_DB_CONNECT_IS_PAGE_CONTEXT) throw new RuntimeException($_DB_CONNECT_CONFIG_ERROR);
+        error_log('DB CONFIG ERROR: ' . $_DB_CONNECT_CONFIG_ERROR);
+        $pdo = null;
+        return;
     }
     $dbHost = array_key_exists('PROD_DB_HOST', $_ENV) ? $_ENV['PROD_DB_HOST'] : getenv('PROD_DB_HOST');
     
     if (!array_key_exists('PROD_DB_NAME', $_ENV) && getenv('PROD_DB_NAME') === false) {
-        throw new RuntimeException('PROD_DB_NAME is required when APP_ENV=production');
+        $_DB_CONNECT_CONFIG_ERROR = 'PROD_DB_NAME is required when APP_ENV=production';
+        if (!$_DB_CONNECT_IS_PAGE_CONTEXT) throw new RuntimeException($_DB_CONNECT_CONFIG_ERROR);
+        error_log('DB CONFIG ERROR: ' . $_DB_CONNECT_CONFIG_ERROR);
+        $pdo = null;
+        return;
     }
     $dbName = array_key_exists('PROD_DB_NAME', $_ENV) ? $_ENV['PROD_DB_NAME'] : getenv('PROD_DB_NAME');
     
     if (!array_key_exists('PROD_DB_USER', $_ENV) && getenv('PROD_DB_USER') === false) {
-        throw new RuntimeException('PROD_DB_USER is required when APP_ENV=production');
+        $_DB_CONNECT_CONFIG_ERROR = 'PROD_DB_USER is required when APP_ENV=production';
+        if (!$_DB_CONNECT_IS_PAGE_CONTEXT) throw new RuntimeException($_DB_CONNECT_CONFIG_ERROR);
+        error_log('DB CONFIG ERROR: ' . $_DB_CONNECT_CONFIG_ERROR);
+        $pdo = null;
+        return;
     }
     $dbUser = array_key_exists('PROD_DB_USER', $_ENV) ? $_ENV['PROD_DB_USER'] : getenv('PROD_DB_USER');
     
     if (!array_key_exists('PROD_DB_PASS', $_ENV) && getenv('PROD_DB_PASS') === false) {
-        throw new RuntimeException('PROD_DB_PASS is required when APP_ENV=production');
+        $_DB_CONNECT_CONFIG_ERROR = 'PROD_DB_PASS is required when APP_ENV=production';
+        if (!$_DB_CONNECT_IS_PAGE_CONTEXT) throw new RuntimeException($_DB_CONNECT_CONFIG_ERROR);
+        error_log('DB CONFIG ERROR: ' . $_DB_CONNECT_CONFIG_ERROR);
+        $pdo = null;
+        return;
     }
     $dbPass = array_key_exists('PROD_DB_PASS', $_ENV) ? $_ENV['PROD_DB_PASS'] : getenv('PROD_DB_PASS');
     
     if (!array_key_exists('PROD_DB_PORT', $_ENV) && getenv('PROD_DB_PORT') === false) {
-        throw new RuntimeException('PROD_DB_PORT is required when APP_ENV=production');
+        $_DB_CONNECT_CONFIG_ERROR = 'PROD_DB_PORT is required when APP_ENV=production';
+        if (!$_DB_CONNECT_IS_PAGE_CONTEXT) throw new RuntimeException($_DB_CONNECT_CONFIG_ERROR);
+        error_log('DB CONFIG ERROR: ' . $_DB_CONNECT_CONFIG_ERROR);
+        $pdo = null;
+        return;
     }
     $dbPort = array_key_exists('PROD_DB_PORT', $_ENV) ? $_ENV['PROD_DB_PORT'] : getenv('PROD_DB_PORT');
     
@@ -146,7 +176,11 @@ if ($appEnv === 'production') {
 } else {
     // Local: Use ONLY DB_* variables (not PROD_DB_* or LOCAL_DB_*)
     if (!array_key_exists('DB_HOST', $_ENV) && getenv('DB_HOST') === false) {
-        throw new RuntimeException('DB_HOST is required when APP_ENV=local');
+        $_DB_CONNECT_CONFIG_ERROR = 'DB_HOST is required when APP_ENV=local';
+        if (!$_DB_CONNECT_IS_PAGE_CONTEXT) throw new RuntimeException($_DB_CONNECT_CONFIG_ERROR);
+        error_log('DB CONFIG ERROR: ' . $_DB_CONNECT_CONFIG_ERROR);
+        $pdo = null;
+        return;
     }
     $dbHost = array_key_exists('DB_HOST', $_ENV) ? $_ENV['DB_HOST'] : getenv('DB_HOST');
     
@@ -160,7 +194,11 @@ if ($appEnv === 'production') {
     } elseif (getenv('DB_DATABASE') !== false) {
         $dbName = getenv('DB_DATABASE');
     } else {
-        throw new RuntimeException('DB_NAME or DB_DATABASE is required when APP_ENV=local');
+        $_DB_CONNECT_CONFIG_ERROR = 'DB_NAME or DB_DATABASE is required when APP_ENV=local';
+        if (!$_DB_CONNECT_IS_PAGE_CONTEXT) throw new RuntimeException($_DB_CONNECT_CONFIG_ERROR);
+        error_log('DB CONFIG ERROR: ' . $_DB_CONNECT_CONFIG_ERROR);
+        $pdo = null;
+        return;
     }
     
     // Check both DB_USER and DB_USERNAME (common variations)
@@ -173,7 +211,11 @@ if ($appEnv === 'production') {
     } elseif (getenv('DB_USERNAME') !== false) {
         $dbUser = getenv('DB_USERNAME');
     } else {
-        throw new RuntimeException('DB_USER or DB_USERNAME is required when APP_ENV=local');
+        $_DB_CONNECT_CONFIG_ERROR = 'DB_USER or DB_USERNAME is required when APP_ENV=local';
+        if (!$_DB_CONNECT_IS_PAGE_CONTEXT) throw new RuntimeException($_DB_CONNECT_CONFIG_ERROR);
+        error_log('DB CONFIG ERROR: ' . $_DB_CONNECT_CONFIG_ERROR);
+        $pdo = null;
+        return;
     }
     
     // Check both DB_PASSWORD and DB_PASS (common variations)
@@ -186,11 +228,19 @@ if ($appEnv === 'production') {
     } elseif (getenv('DB_PASS') !== false) {
         $dbPass = getenv('DB_PASS');
     } else {
-        throw new RuntimeException('DB_PASSWORD or DB_PASS is required when APP_ENV=local');
+        $_DB_CONNECT_CONFIG_ERROR = 'DB_PASSWORD or DB_PASS is required when APP_ENV=local';
+        if (!$_DB_CONNECT_IS_PAGE_CONTEXT) throw new RuntimeException($_DB_CONNECT_CONFIG_ERROR);
+        error_log('DB CONFIG ERROR: ' . $_DB_CONNECT_CONFIG_ERROR);
+        $pdo = null;
+        return;
     }
     
     if (!array_key_exists('DB_PORT', $_ENV) && getenv('DB_PORT') === false) {
-        throw new RuntimeException('DB_PORT is required when APP_ENV=local');
+        $_DB_CONNECT_CONFIG_ERROR = 'DB_PORT is required when APP_ENV=local';
+        if (!$_DB_CONNECT_IS_PAGE_CONTEXT) throw new RuntimeException($_DB_CONNECT_CONFIG_ERROR);
+        error_log('DB CONFIG ERROR: ' . $_DB_CONNECT_CONFIG_ERROR);
+        $pdo = null;
+        return;
     }
     $dbPort = array_key_exists('DB_PORT', $_ENV) ? $_ENV['DB_PORT'] : getenv('DB_PORT');
     
@@ -316,8 +366,15 @@ $isAuthRequest = PHP_SAPI !== 'cli' &&
                  (strpos($_SERVER['REQUEST_URI'], '/api/v1/auth/login') !== false || 
                   strpos($_SERVER['REQUEST_URI'], '/api/v1/auth/register') !== false);
 
-if (!$isAuthRequest) {
-    // For non-auth requests, PDO must be set and valid
+// Check if this is a sidebar/RBAC context (should not throw exceptions)
+$isSidebarContext = PHP_SAPI !== 'cli' && 
+                    isset($_SERVER['REQUEST_URI']) && 
+                    (strpos($_SERVER['REQUEST_URI'], '/public/') !== false || 
+                     strpos($_SERVER['REQUEST_URI'], '.php') !== false) &&
+                    strpos($_SERVER['REQUEST_URI'], '/api/') === false;
+
+if (!$isAuthRequest && !$isSidebarContext) {
+    // For API requests (non-auth), PDO must be set and valid
     if (!isset($pdo) || $pdo === null) {
         throw new RuntimeException('Database connection is required but PDO is null');
     }
@@ -339,6 +396,11 @@ if (!$isAuthRequest) {
         error_log('DB DEBUG: SELECT 1 test query failed: ' . $testException->getMessage());
         error_log('DB DEBUG: Test query error code: ' . $testException->getCode());
         throw new PDOException('Database connection verification failed: ' . $testException->getMessage(), (int)$testException->getCode(), $testException);
+    }
+} else if ($isSidebarContext) {
+    // For sidebar/page context, don't throw - just log and allow $pdo to be null
+    if (!isset($pdo) || $pdo === null) {
+        error_log('DB DEBUG: PDO is null in sidebar context - RBAC will use fallback');
     }
 } else {
     // For auth requests, PDO can be null (demo login fallback)

@@ -61,8 +61,20 @@ try {
     </script>
 </head>
 <body class="module-events" data-module="events">
-    <?php include __DIR__ . '/../sidebar/includes/sidebar.php'; ?>
-    <?php include __DIR__ . '/../sidebar/includes/admin-header.php'; ?>
+    <?php 
+    try {
+        include __DIR__ . '/../sidebar/includes/sidebar.php'; 
+    } catch (\Throwable $e) {
+        error_log('events.php: sidebar.php failed: ' . $e->getMessage());
+    }
+    ?>
+    <?php 
+    try {
+        include __DIR__ . '/../sidebar/includes/admin-header.php'; 
+    } catch (\Throwable $e) {
+        error_log('events.php: admin-header.php failed: ' . $e->getMessage());
+    }
+    ?>
     <?php 
     // Removed redundant "Event Management" panel
     // $moduleName = 'events';

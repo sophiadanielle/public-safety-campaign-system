@@ -666,42 +666,34 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             </div>
             <div class="form-field">
                 <label>Intended Audience</label>
-                <div class="audience-dropdown-container" style="position: relative;">
-                    <div class="multi-select-tags" id="intended_audience_tags" style="margin-bottom: 8px;"></div>
-                    <div class="audience-dropdown-trigger" id="audienceDropdownTrigger" style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px; background: #fafbfc; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #64748b; transition: all 0.2s;">
-                        <span id="audienceDropdownText">Select audiences...</span>
-                        <i class="fas fa-chevron-down" style="transition: transform 0.2s;"></i>
-                    </div>
-                    <div class="audience-dropdown-menu" id="audienceDropdownMenu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-radius: 12px; margin-top: 4px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 10px 40px rgba(0,0,0,0.15);">
-                        <div style="padding: 8px;">
-                            <div class="audience-option" data-value="general public"><input type="checkbox" name="intended_audience_segment[]" value="general public"> General Public</div>
-                            <div class="audience-option" data-value="households"><input type="checkbox" name="intended_audience_segment[]" value="households"> Households</div>
-                            <div class="audience-option" data-value="residential areas"><input type="checkbox" name="intended_audience_segment[]" value="residential areas"> Residential Areas</div>
-                            <div class="audience-option" data-value="youth"><input type="checkbox" name="intended_audience_segment[]" value="youth"> Youth</div>
-                            <div class="audience-option" data-value="teenagers"><input type="checkbox" name="intended_audience_segment[]" value="teenagers"> Teenagers</div>
-                            <div class="audience-option" data-value="students"><input type="checkbox" name="intended_audience_segment[]" value="students"> Students</div>
-                            <div class="audience-option" data-value="schools"><input type="checkbox" name="intended_audience_segment[]" value="schools"> Schools</div>
-                            <div class="audience-option" data-value="teachers"><input type="checkbox" name="intended_audience_segment[]" value="teachers"> Teachers</div>
-                            <div class="audience-option" data-value="senior citizens"><input type="checkbox" name="intended_audience_segment[]" value="senior citizens"> Senior Citizens</div>
-                            <div class="audience-option" data-value="elderly"><input type="checkbox" name="intended_audience_segment[]" value="elderly"> Elderly</div>
-                            <div class="audience-option" data-value="caregivers"><input type="checkbox" name="intended_audience_segment[]" value="caregivers"> Caregivers</div>
-                            <div class="audience-option" data-value="families"><input type="checkbox" name="intended_audience_segment[]" value="families"> Families</div>
-                            <div class="audience-option" data-value="flood-prone areas"><input type="checkbox" name="intended_audience_segment[]" value="flood-prone areas"> Flood-prone Areas</div>
-                            <div class="audience-option" data-value="coastal communities"><input type="checkbox" name="intended_audience_segment[]" value="coastal communities"> Coastal Communities</div>
-                            <div class="audience-option" data-value="commercial districts"><input type="checkbox" name="intended_audience_segment[]" value="commercial districts"> Commercial Districts</div>
-                            <div class="audience-option" data-value="workplaces"><input type="checkbox" name="intended_audience_segment[]" value="workplaces"> Workplaces</div>
-                            <div class="audience-option" data-value="community volunteers"><input type="checkbox" name="intended_audience_segment[]" value="community volunteers"> Community Volunteers</div>
-                            <div class="audience-option" data-value="barangay health workers"><input type="checkbox" name="intended_audience_segment[]" value="barangay health workers"> Barangay Health Workers</div>
-                            <div class="audience-option" data-value="building administrators"><input type="checkbox" name="intended_audience_segment[]" value="building administrators"> Building Administrators</div>
-                            <div class="audience-option" data-value="trainers"><input type="checkbox" name="intended_audience_segment[]" value="trainers"> Trainers</div>
-                            <div class="audience-option" data-value="facilitators"><input type="checkbox" name="intended_audience_segment[]" value="facilitators"> Facilitators</div>
-                            <div class="audience-option" data-value="barangay officials"><input type="checkbox" name="intended_audience_segment[]" value="barangay officials"> Barangay Officials</div>
-                            <div class="audience-option" data-value="residential buildings"><input type="checkbox" name="intended_audience_segment[]" value="residential buildings"> Residential Buildings</div>
-                            <div class="audience-option" data-value="commercial buildings"><input type="checkbox" name="intended_audience_segment[]" value="commercial buildings"> Commercial Buildings</div>
-                        </div>
-                    </div>
-                </div>
-                <small style="color: #94a3b8; font-size: 12px; margin-top: 4px; display: block;">Click to select multiple audiences. Selected items will appear as tags above.</small>
+                <select name="intended_audience_segment" id="intendedAudienceSelect" style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 12px; background: #fafbfc; font-size: 14px;">
+                    <option value="">Select audience...</option>
+                    <option value="general public">General Public</option>
+                    <option value="households">Households</option>
+                    <option value="residential areas">Residential Areas</option>
+                    <option value="youth">Youth</option>
+                    <option value="teenagers">Teenagers</option>
+                    <option value="students">Students</option>
+                    <option value="schools">Schools</option>
+                    <option value="teachers">Teachers</option>
+                    <option value="senior citizens">Senior Citizens</option>
+                    <option value="elderly">Elderly</option>
+                    <option value="caregivers">Caregivers</option>
+                    <option value="families">Families</option>
+                    <option value="flood-prone areas">Flood-prone Areas</option>
+                    <option value="coastal communities">Coastal Communities</option>
+                    <option value="commercial districts">Commercial Districts</option>
+                    <option value="workplaces">Workplaces</option>
+                    <option value="community volunteers">Community Volunteers</option>
+                    <option value="barangay health workers">Barangay Health Workers</option>
+                    <option value="building administrators">Building Administrators</option>
+                    <option value="trainers">Trainers</option>
+                    <option value="facilitators">Facilitators</option>
+                    <option value="barangay officials">Barangay Officials</option>
+                    <option value="residential buildings">Residential Buildings</option>
+                    <option value="commercial buildings">Commercial Buildings</option>
+                </select>
+                <small style="color: #94a3b8; font-size: 12px; margin-top: 4px; display: block;">Select the primary target audience for this material.</small>
             </div>
             <div class="form-field">
                 <label>Linked Campaign *</label>
@@ -1287,7 +1279,7 @@ async function loadCampaigns() {
             campaigns.forEach(campaign => {
                 const option = document.createElement('option');
                 option.value = campaign.id;
-                option.textContent = campaign.title || `Campaign #${campaign.id}`;
+                option.textContent = `[#${campaign.id}] ${campaign.title || 'Untitled Campaign'}`;
                 option.setAttribute('data-category', campaign.category || '');
                 option.setAttribute('data-title', campaign.title || '');
                 campaignSelect.appendChild(option);

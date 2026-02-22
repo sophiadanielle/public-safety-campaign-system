@@ -1080,6 +1080,11 @@ async function loadAssignments() {
         statusEl.style.color = '#dc2626';
     }
 }
+
+// Auto-load partners on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllPartners();
+});
 </script>
     
     <?php include __DIR__ . '/../header/includes/footer.php'; ?>
