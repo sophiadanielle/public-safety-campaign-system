@@ -1761,15 +1761,24 @@ async function updateApproval(contentId, status, notes = '') {
             }
             
         if (res.ok) {
-                currentTemplatesPage = 1;
-            loadContent(true);
+            console.log('Approval status updated successfully, refreshing content...');
+            currentTemplatesPage = 1;
+            
+            // Force clear the contents array to ensure fresh data
+            contents = [];
+            
+            // Reload content to reflect status change
+            await loadAllContent();
+            await loadContent(true);
             loadTemplates();
             loadMediaGallery();
+            
+            console.log('Content refreshed after status update');
             alert('Content status updated to: ' + status);
         } else {
-                const errorMsg = data.error || data.message || 'Failed to update approval status';
-                alert('Error: ' + errorMsg);
-            }
+            const errorMsg = data.error || data.message || 'Failed to update approval status';
+            alert('Error: ' + errorMsg);
+        }
         }
     } catch (err) {
         console.error('Network/parse error:', err);
@@ -2595,13 +2604,15 @@ async function loadAllContent() {
     
     try {
         // Fetch ALL content including archived to populate contents array
-        // The include_archived=true parameter tells the API to include archived content
-        const res = await fetch(apiBase + '/api/v1/content?per_page=1000&include_archived=true', {
+        // Add timestamp to prevent caching
+        const timestamp = new Date().getTime();
+        const res = await fetch(apiBase + '/api/v1/content?per_page=1000&include_archived=true&_t=' + timestamp, {
             method: 'GET',
             headers: { 
                 'Authorization': 'Bearer ' + token,
                 'Accept': 'application/json',
-                'Cache-Control': 'no-cache, no-store, must-revalidate'
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
             },
             cache: 'no-store'
         });
@@ -3565,10 +3576,16 @@ async function restoreContent(contentId) {
         
         // Reload all content to refresh the library with force refresh
         console.log('Reloading content after restore...');
+        
+        // Force clear the contents array to ensure fresh data
+        contents = [];
+        
         await loadAllContent();
-        loadContent(true);  // Force refresh to get latest content_type from API
+        await loadContent(true);  // Force refresh to get latest content_type from API
         loadTemplates();
         loadMediaGallery();
+        
+        console.log('Content refreshed after restore');
         
     } catch (err) {
         console.error('Restore error:', err);
