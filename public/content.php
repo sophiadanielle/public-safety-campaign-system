@@ -2072,6 +2072,17 @@ async function showContentDetails(contentId) {
         const data = await res.json();
         const item = data.data;
         
+        // Update the local contents array with fresh data from API
+        // This ensures the card will show the correct status after viewing
+        const contentIndex = contents.findIndex(c => String(c.id) === String(contentId));
+        let statusChanged = false;
+        if (contentIndex !== -1) {
+            const previousStatus = contents[contentIndex].approval_status;
+            contents[contentIndex] = { ...contents[contentIndex], ...item };
+            statusChanged = previousStatus !== item.approval_status;
+            console.log(`Updated content #${contentId} in local array: ${previousStatus} → ${item.approval_status}`, statusChanged ? '(CHANGED)' : '(same)');
+        }
+        
         // Format dates
         const formatDate = (dateStr) => {
             if (!dateStr) return 'N/A';
@@ -2109,9 +2120,15 @@ async function showContentDetails(contentId) {
         const modalContent = document.createElement('div');
         modalContent.style.cssText = 'background: white; padding: 0; border-radius: 12px; max-width: 800px; width: 100%; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); position: relative;';
         
-        // Function to close modal
+        // Function to close modal and refresh grid if status changed
         const closeModal = () => {
             modal.remove();
+            // Re-render the content grid to show updated status
+            if (statusChanged) {
+                console.log('Refreshing content grid after modal close due to status change');
+                // Call loadContent to properly re-render with pagination
+                loadContent();
+            }
         };
         
         modalContent.innerHTML = `
@@ -2632,17 +2649,24 @@ async function loadAllContent() {
         }
         
         // API data takes priority - merge with sample and uploaded, avoiding duplicates
-        // Create a map of API items by ID for quick lookup
-        const apiMap = new Map(apiData.map(item => [item.id, item]));
+        // Create a map of API items by ID (convert to string for consistent comparison)
+        const apiMap = new Map(apiData.map(item => [String(item.id), item]));
         
         // Filter out sample/uploaded items that exist in API (API has latest data)
-        const filteredSample = sampleSeedData.filter(item => !apiMap.has(item.id));
-        const filteredUploaded = uploaded.filter(item => !apiMap.has(item.id));
+        // Convert IDs to string for consistent comparison
+        const filteredSample = sampleSeedData.filter(item => !apiMap.has(String(item.id)));
+        const filteredUploaded = uploaded.filter(item => !apiMap.has(String(item.id)));
         
-        // Combine: API data first (most accurate), then filtered sample/uploaded
-        const combined = [...apiData, ...filteredSample, ...filteredUploaded];
-        contents = combined;
-        console.log('✓ Loaded', apiData.length, 'API +', filteredSample.length, 'sample +', filteredUploaded.length, 'uploaded =', contents.length, 'total');
+        // Debug: Log any localStorage items that were filtered out
+        const skippedUploaded = uploaded.filter(item => apiMap.has(String(item.id)));
+        if (skippedUploaded.length > 0) {
+            console.log('Skipped localStorage items (using API data instead):', skippedUploaded.map(i => ({id: i.id, status: i.approval_status})));
+        }
+        
+        // Combine: API data ONLY - ignore localStorage/sample to ensure fresh data
+        // This prevents stale localStorage data from overriding API data
+        contents = [...apiData];
+        console.log('✓ Loaded', apiData.length, 'items from API (localStorage/sample data ignored to ensure fresh status)');
     } catch (err) {
         console.error('Error loading content:', err);
         // On error, merge sample data with uploaded data
@@ -2657,10 +2681,9 @@ async function loadContent(forceRefresh = false) {
     container.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#64748b; padding:40px;">Loading content...</p>';
     
     try {
-        // Ensure contents array is populated - force refresh to get latest data from API
-        if (contents.length === 0 || forceRefresh) {
-            await loadAllContent();
-        }
+        // ALWAYS refresh from API to ensure we have the latest status
+        // This prevents stale data from being displayed
+        await loadAllContent();
         
         // Apply filters client-side to contents array
         // First, filter out archived items (they should only appear in View Archived)
@@ -3715,15 +3738,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load campaigns and content
     console.log('Loading campaigns and content...');
     loadCampaigns();
-    // Load all content first to populate contents array, then render views
-    loadAllContent().then(() => {
-    loadContent();
-    loadTemplates();
-    loadMediaGallery();
+    // Load content views - loadContent() will call loadAllContent() internally
+    loadContent().then(() => {
+        loadTemplates();
+        loadMediaGallery();
     }).catch(err => {
         console.error('Error loading content:', err);
-        // Still try to load views even if loadAllContent fails
-        loadContent();
+        // Still try to load other views even if loadContent fails
         loadTemplates();
         loadMediaGallery();
     });
