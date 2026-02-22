@@ -1,28 +1,6 @@
 <?php
-// Suppress all errors at the top level to prevent 502
-error_reporting(0);
-ini_set('display_errors', '0');
-
 $pageTitle = 'Partner Management';
-
-// Wrap path_helper in try-catch
-try {
-    @require_once __DIR__ . '/../header/includes/path_helper.php';
-} catch (\Throwable $e) {
-    $basePath = '';
-    $apiPath = '/index.php';
-    $cssPath = '/header/css';
-    $imgPath = '/header/images';
-    $publicPath = '/public';
-    error_log('partners.php: path_helper failed: ' . $e->getMessage());
-}
-
-// Ensure variables are set
-if (!isset($basePath)) $basePath = '';
-if (!isset($apiPath)) $apiPath = '/index.php';
-if (!isset($cssPath)) $cssPath = '/header/css';
-if (!isset($imgPath)) $imgPath = '/header/images';
-if (!isset($publicPath)) $publicPath = '/public';
+require_once __DIR__ . '/../header/includes/path_helper.php';
 
 // RBAC: Block Viewer role from accessing operational pages (contains forms/workflows)
 // Wrapped in try-catch to prevent 502 errors
@@ -80,36 +58,16 @@ try {
     </script>
 </head>
 <body class="module-partners" data-module="partners">
-    <?php
-    // RBAC: Page-level protection - Viewer cannot access Partners module
-    try {
-        @require_once __DIR__ . '/../sidebar/includes/get_user_role.php';
-        $currentUserRole = getCurrentUserRole();
-        $isViewer = false;
-        if ($currentUserRole) {
-            $roleLower = strtolower(trim($currentUserRole));
-            $isViewer = ($roleLower === 'viewer' || $roleLower === 'partner' || 
-                        strpos($roleLower, 'partner') !== false || strpos($roleLower, 'viewer') !== false);
-        }
-        if ($isViewer) {
-            http_response_code(403);
-            header('Location: ' . $publicPath . '/dashboard.php');
-            exit;
-        }
-    } catch (\Throwable $e) {
-        error_log('partners.php: RBAC check failed: ' . $e->getMessage());
-    }
-    ?>
     <?php 
     try {
-        @include __DIR__ . '/../sidebar/includes/sidebar.php'; 
+        include __DIR__ . '/../sidebar/includes/sidebar.php'; 
     } catch (\Throwable $e) {
         error_log('partners.php: sidebar.php failed: ' . $e->getMessage());
     }
     ?>
     <?php 
     try {
-        @include __DIR__ . '/../sidebar/includes/admin-header.php'; 
+        include __DIR__ . '/../sidebar/includes/admin-header.php'; 
     } catch (\Throwable $e) {
         error_log('partners.php: admin-header.php failed: ' . $e->getMessage());
     }
