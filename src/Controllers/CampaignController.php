@@ -1137,12 +1137,13 @@ class CampaignController
         $campaignConflicts = $stmt->fetchAll();
 
         // Check for conflicts with events and seminars
-        // Use correct column names: name (aliased as event_name), date, start_time/end_time, event_status
+        // Use correct column names from events table
         $stmt = $this->pdo->prepare('
-            SELECT e.id, e.name as event_name, e.name as event_title, e.event_type, e.date, e.start_time, e.end_time, e.venue, e.location
+            SELECT e.id, COALESCE(e.event_title, e.event_name) as event_name, COALESCE(e.event_title, e.event_name) as event_title, 
+                   e.event_type, e.date, e.start_time, e.end_time, e.venue
             FROM `campaign_department_events` e
             WHERE e.date = :proposed_date
-              AND e.event_status IN ("planned", "ongoing")
+              AND e.status IN ("scheduled", "ongoing")
         ');
         $stmt->execute(['proposed_date' => $proposedDate]);
         $eventConflicts = $stmt->fetchAll();

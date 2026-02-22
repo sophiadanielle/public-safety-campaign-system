@@ -17,6 +17,27 @@ class PartnerController
         private string $jwtAudience,
         private int $jwtExpirySeconds
     ) {
+        // Auto-migration: Ensure status column exists
+        $this->ensureStatusColumn();
+    }
+    
+    private function ensureStatusColumn(): void
+    {
+        try {
+            $checkStmt = $this->pdo->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_partners' 
+                AND COLUMN_NAME = 'status'");
+            $exists = $checkStmt->fetchColumn();
+            
+            if (!$exists) {
+                error_log('PartnerController: Adding status column to partners table');
+                $this->pdo->exec("ALTER TABLE `campaign_department_partners` 
+                    ADD COLUMN `status` ENUM('active','archived') NOT NULL DEFAULT 'active' AFTER `contact_phone`");
+            }
+        } catch (\Throwable $e) {
+            error_log('PartnerController::ensureStatusColumn error: ' . $e->getMessage());
+        }
     }
 
     public function index(?array $user, array $params = []): array
@@ -27,7 +48,32 @@ class PartnerController
             return ['error' => 'Authentication required'];
         }
         
-        $stmt = $this->pdo->query('SELECT id, name, organization_type, contact_person, contact_email, contact_phone, created_at FROM `campaign_department_partners` ORDER BY created_at DESC');
+        // Filter by status - exclude archived by default unless specifically requested
+        $status = $_GET['status'] ?? null;
+        $where = [];
+        $bind = [];
+        
+        if ($status === 'archived') {
+            $where[] = 'status = :status';
+            $bind['status'] = 'archived';
+        } elseif ($status === 'active') {
+            $where[] = 'status = :status';
+            $bind['status'] = 'active';
+        } else {
+            // Default: exclude archived
+            $where[] = "(status IS NULL OR status != 'archived')";
+        }
+        
+        $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+        
+        $sql = "SELECT id, name, organization_type, contact_person, contact_email, contact_phone, 
+                       COALESCE(status, 'active') as status, created_at 
+                FROM `campaign_department_partners` 
+                {$whereClause}
+                ORDER BY created_at DESC";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($bind);
         return ['data' => $stmt->fetchAll()];
     }
 
@@ -314,11 +360,74 @@ class PartnerController
         }
     }
 
+    /**
+     * Archive a partner
+     */
+    public function archive(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot archive partners.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
+        $partnerId = (int) ($params['id'] ?? 0);
+        $this->findPartner($partnerId);
+        
+        $stmt = $this->pdo->prepare('UPDATE `campaign_department_partners` SET status = :status WHERE id = :id');
+        $stmt->execute(['id' => $partnerId, 'status' => 'archived']);
+        
+        return ['message' => 'Partner archived successfully', 'id' => $partnerId];
+    }
+    
+    /**
+     * Restore an archived partner
+     */
+    public function restore(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot restore partners.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
+        $partnerId = (int) ($params['id'] ?? 0);
+        
+        $stmt = $this->pdo->prepare('UPDATE `campaign_department_partners` SET status = :status WHERE id = :id');
+        $stmt->execute(['id' => $partnerId, 'status' => 'active']);
+        
+        return ['message' => 'Partner restored successfully', 'id' => $partnerId];
+    }
+
     private function findPartner(int $id): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, name, organization_type, contact_person, contact_email, contact_phone, created_at FROM `campaign_department_partners` WHERE id = :id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT * FROM `campaign_department_partners` WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $id]);
-        $partner = $stmt->fetch();
+        $partner = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$partner) {
             http_response_code(404);
             throw new RuntimeException('Partner not found');

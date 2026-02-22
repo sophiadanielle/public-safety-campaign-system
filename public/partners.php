@@ -848,10 +848,9 @@ async function archivePartner(partnerId) {
     if (!confirmed) return;
     
     try {
-        const res = await fetch(apiBase + '/api/v1/partners/' + partnerId, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ is_archived: true })
+        const res = await fetch(apiBase + '/api/v1/partners/' + partnerId + '/archive', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
         
@@ -873,7 +872,8 @@ async function showArchivedPartners() {
     container.innerHTML = '<p style="text-align: center; color: #64748b;">Loading archived partners...</p>';
     
     try {
-        const res = await fetch(apiBase + '/api/v1/partners?include_archived=true', {
+        // Request archived partners specifically
+        const res = await fetch(apiBase + '/api/v1/partners?status=archived', {
             headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
@@ -883,7 +883,7 @@ async function showArchivedPartners() {
             return;
         }
         
-        const archivedPartners = (data.data || []).filter(p => p.is_archived);
+        const archivedPartners = data.data || [];
         
         if (archivedPartners.length === 0) {
             container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 24px;">No archived partners.</p>';

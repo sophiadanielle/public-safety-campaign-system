@@ -49,6 +49,18 @@ return [
         'handler' => [PartnerController::class, 'destroy'],
         'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/partners/{id}/archive',
+        'handler' => [PartnerController::class, 'archive'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/partners/{id}/restore',
+        'handler' => [PartnerController::class, 'restore'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
 ];
 
 

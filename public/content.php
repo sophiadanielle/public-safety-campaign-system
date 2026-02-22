@@ -1867,8 +1867,10 @@ async function archiveContent(contentId) {
         });
         const data = await res.json();
         if (res.ok) {
-            currentTemplatesPage = 1; // Reset to first page when content is approved/rejected
+            currentTemplatesPage = 1; // Reset to first page when content is archived
             await customAlert('Content archived successfully!', 'Success');
+            // Reload all content to refresh the contents array, then reload views
+            await loadAllContent();
             loadContent();
             loadTemplates();
             loadMediaGallery();
@@ -1899,20 +1901,30 @@ async function editContent(contentId) {
         }
         
         const data = await res.json();
-        const item = data.data;
+        const item = data.data || data;
+        
+        if (!item || !item.id) {
+            await customAlert('Failed to load content: Content not found', 'Error');
+            return;
+        }
         
         // Check if content can be edited (only draft or pending_review)
         const status = (item.approval_status || '').toLowerCase();
         if (!['draft', 'pending_review', 'under_review'].includes(status)) {
-            alert('Only draft or pending review content can be edited.');
+            await customAlert('Only draft or pending review content can be edited.', 'Notice');
             return;
         }
         
-        // Populate form with content data
-        document.getElementById('contentTitle').value = item.title || '';
-        document.getElementById('contentDescription').value = item.body || '';
-        document.getElementById('contentType').value = item.content_type || 'text';
-        document.getElementById('hazardCategory').value = item.hazard_category || '';
+        // Populate form with content data (with null checks)
+        const titleEl = document.getElementById('contentTitle');
+        const descEl = document.getElementById('contentDescription');
+        const typeEl = document.getElementById('contentType');
+        const hazardEl = document.getElementById('hazardCategory');
+        
+        if (titleEl) titleEl.value = item.title || '';
+        if (descEl) descEl.value = item.body || '';
+        if (typeEl) typeEl.value = item.content_type || 'text';
+        if (hazardEl) hazardEl.value = item.hazard_category || '';
         
         // Handle multi-select fields
         if (item.intended_audience_segment) {
@@ -2236,11 +2248,16 @@ async function showContentDetails(contentId) {
 function useTemplate(contentId) {
     // Show loading state
     const statusEl = document.getElementById('uploadStatus');
-    statusEl.textContent = 'Loading approved reusable material...';
-    statusEl.style.color = '#64748b';
+    if (statusEl) {
+        statusEl.textContent = 'Loading approved reusable material...';
+        statusEl.style.color = '#64748b';
+    }
     
-    // Scroll to create content section
-    document.getElementById('create-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Scroll to create content section (with null check)
+    const createSection = document.getElementById('create-content') || document.getElementById('uploadForm')?.closest('section');
+    if (createSection) {
+        createSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
     
     // Fetch content details and populate form
     fetch(apiBase + '/api/v1/content/' + contentId, {

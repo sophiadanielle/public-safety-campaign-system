@@ -1083,10 +1083,10 @@ class SurveyController
         $id = (int) ($params['id'] ?? 0);
         $survey = $this->findSurvey($id, allowDraft: true, allowPublic: false);
         
-        // Only allow deletion of draft or closed surveys
-        if (!in_array($survey['status'], ['draft', 'closed'], true)) {
+        // Only allow deletion of draft, closed, or archived surveys
+        if (!in_array($survey['status'], ['draft', 'closed', 'archived'], true)) {
             http_response_code(422);
-            return ['error' => 'Cannot delete surveys that are not in draft or closed status.'];
+            return ['error' => 'Cannot delete surveys that are not in draft, closed, or archived status.'];
         }
         
         // Delete related records first (foreign key constraints)
