@@ -3,7 +3,14 @@ $pageTitle = 'Events & Seminars';
 require_once __DIR__ . '/../header/includes/path_helper.php';
 
 // RBAC: Block Viewer role from accessing operational pages (contains forms/workflows)
-require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
+// Wrapped in try-catch to prevent 502 errors
+$isViewer = false;
+$currentUserRole = null;
+try {
+    @require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
+} catch (\Throwable $e) {
+    error_log('events.php: block_viewer_access failed: ' . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

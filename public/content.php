@@ -2586,7 +2586,11 @@ async function loadContent() {
         }
         
         // Apply filters client-side to contents array
-        let filtered = [...contents];
+        // First, filter out archived items (they should only appear in View Archived)
+        let filtered = contents.filter(item => {
+            const status = normalizeStatus(item.approval_status);
+            return status !== 'archived';
+        });
         
         const search = document.getElementById('filterSearch').value.trim().toLowerCase();
         if (search) {
@@ -2823,9 +2827,12 @@ function renderContentGrid(container, items, isTemplate = false) {
                 : '';
             
             if (status === 'approved') {
-                // APPROVED: Show View + Archive
+                // APPROVED: Show View + Edit + Archive
                 actionButtons = `
                     ${viewButton}
+                    <button class="btn btn-secondary" onclick="editContent(${item.id})" style="margin: 2px;">
+                        <i class="fas fa-edit"></i> <span>Edit</span>
+                    </button>
                     <button class="btn btn-secondary" onclick="archiveContent(${item.id})" style="background: #64748b; color: white; margin: 2px;" title="Archive">
                         <i class="fas fa-archive"></i> <span>Archive</span>
                     </button>

@@ -1535,56 +1535,19 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             </table>
         </div>
         
-        <!-- Archived Budgets Modal -->
-        <div id="archivedBudgetsModal" class="archived-budget-modal-overlay" style="display: none;">
-            <div class="archived-budget-modal-content">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
-                    <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-archive"></i> Archived Budget Items</h3>
-                    <button onclick="closeArchivedBudgetsModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; line-height: 1;">&times;</button>
-                </div>
-                <div id="archivedBudgetsList"></div>
-            </div>
-        </div>
-        <style>
-            #archivedBudgetsModal {
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
-                bottom: 0 !important;
-                width: 100vw !important;
-                height: 100vh !important;
-                background: rgba(0, 0, 0, 0.7) !important;
-                z-index: 999999 !important;
-                display: none;
-                align-items: center !important;
-                justify-content: center !important;
-                overflow: hidden !important;
-                backdrop-filter: blur(4px);
-                -webkit-backdrop-filter: blur(4px);
-            }
-            #archivedBudgetsModal[style*="display: flex"] {
-                display: flex !important;
-            }
-            #archivedBudgetsModal > div {
-                background: white !important;
-                border-radius: 12px;
-                max-width: 900px;
-                width: 90%;
-                max-height: 80vh;
-                overflow-y: auto;
-                padding: 24px;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
-                position: relative !important;
-                z-index: 1000000 !important;
-            }
-            /* Prevent body scroll when modal is open */
-            body.archived-modal-open {
-                overflow: hidden !important;
-            }
-        </style>
     </section>
     <?php endif; ?>
+
+    <!-- Archived Budgets Modal - Outside all sections for proper overlay -->
+    <div id="archivedBudgetsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); z-index: 999999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div style="background: white; border-radius: 12px; max-width: 900px; width: 90%; max-height: 80vh; overflow-y: auto; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+                <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-archive"></i> Archived Budget Items</h3>
+                <button onclick="closeArchivedBudgetsModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; line-height: 1;">&times;</button>
+            </div>
+            <div id="archivedBudgetsList"></div>
+        </div>
+    </div>
 
     <!-- AutoML Panel -->
     <?php if (!$isViewer): // RBAC: Hide AutoML section for Viewer (management tool) ?>

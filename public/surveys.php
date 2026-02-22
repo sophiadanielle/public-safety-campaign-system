@@ -3,13 +3,19 @@ $pageTitle = 'Surveys & Feedback';
 require_once __DIR__ . '/../header/includes/path_helper.php';
 
 // RBAC: Get user role to conditionally show/hide sections
-require_once __DIR__ . '/../sidebar/includes/get_user_role.php';
-$currentUserRole = getCurrentUserRole();
+// Wrapped in try-catch to prevent 502 errors
 $isViewer = false;
-if ($currentUserRole) {
-    $roleLower = strtolower(trim($currentUserRole));
-    $isViewer = ($roleLower === 'viewer' || $roleLower === 'partner' || 
-                strpos($roleLower, 'partner') !== false || strpos($roleLower, 'viewer') !== false);
+$currentUserRole = null;
+try {
+    @require_once __DIR__ . '/../sidebar/includes/get_user_role.php';
+    $currentUserRole = getCurrentUserRole();
+    if ($currentUserRole) {
+        $roleLower = strtolower(trim($currentUserRole));
+        $isViewer = ($roleLower === 'viewer' || $roleLower === 'partner' || 
+                    strpos($roleLower, 'partner') !== false || strpos($roleLower, 'viewer') !== false);
+    }
+} catch (\Throwable $e) {
+    error_log('surveys.php: get_user_role failed: ' . $e->getMessage());
 }
 ?>
 <!DOCTYPE html>

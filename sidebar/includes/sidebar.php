@@ -261,7 +261,6 @@
                                 'icon' => 'fa-handshake',
                                 'features' => [
                                     ['label' => 'All Partners', 'href' => '#partners-list', 'icon' => 'fa-list'],
-                                    ['label' => 'Add Partner', 'href' => '#add-partner', 'icon' => 'fa-plus-circle'],
                                     ['label' => 'Partner Portal', 'href' => '#partner-portal', 'icon' => 'fa-door-open'],
                                     ['label' => 'Engagement History', 'href' => '#engagement-history', 'icon' => 'fa-history'],
                                     ['label' => 'Assignments', 'href' => '#assignments', 'icon' => 'fa-tasks'],

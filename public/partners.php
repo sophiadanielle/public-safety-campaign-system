@@ -253,14 +253,22 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 
     <!-- All Partners -->
     <section class="card" id="partners-list" style="margin-bottom:32px;">
-        <h2 class="section-title">All Partners</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 class="section-title" style="margin: 0; border: none; padding: 0;">All Partners</h2>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn btn-primary" onclick="openAddPartnerModal()" style="padding: 10px 16px; font-size: 14px; font-weight: 600;">
+                    <i class="fas fa-plus-circle" style="margin-right: 6px;"></i>Add Partner
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="showArchivedPartners()" style="padding: 10px 16px; font-size: 14px;">
+                    <i class="fas fa-archive" style="margin-right: 6px;"></i>View Archived
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="loadAllPartners()" style="padding: 10px 16px; font-size: 14px;">
+                    <i class="fas fa-sync-alt" style="margin-right: 6px;"></i>Refresh
+                </button>
+            </div>
+        </div>
         <div class="section-description">
             <strong>What this shows:</strong> View all partner organizations registered in the system. This includes schools, NGOs, government agencies, and private organizations that collaborate with your barangay on public safety campaigns.
-        </div>
-        <div class="form-field" style="margin-bottom:16px;">
-            <button type="button" class="btn btn-primary" onclick="loadAllPartners()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
-                <i class="fas fa-list" style="margin-right:8px;"></i>View All Partners
-            </button>
         </div>
         <div class="empty-state" id="partnersListEmptyState" style="display:none;">
             <div class="empty-state-icon"><i class="fas fa-handshake"></i></div>
@@ -286,13 +294,18 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         <div class="status" id="partnersListStatus" style="margin-top:12px;"></div>
     </section>
 
-    <!-- Add Partner -->
-    <section class="card" id="add-partner" style="margin-bottom:32px;">
-        <h2 class="section-title">Add Partner</h2>
-        <div class="section-description">
-            <strong>What this does:</strong> Register a new partner organization (school, NGO, government agency, or private organization) that will collaborate with your barangay on public safety campaigns. You'll need their organization name and contact information.
-        </div>
-        <form id="partnerForm" class="form-grid">
+    <!-- Add Partner Modal -->
+    <div id="addPartnerModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 999999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div style="background: white; border-radius: 12px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);">
+            <div style="background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; padding: 20px 24px; border-radius: 12px 12px 0 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; font-size: 20px; font-weight: 700;" id="addPartnerModalTitle"><i class="fas fa-plus-circle"></i> Add Partner</h3>
+                    <button onclick="closeAddPartnerModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: white; line-height: 1;">&times;</button>
+                </div>
+            </div>
+            <div style="padding: 24px;">
+                <p style="color: #64748b; margin: 0 0 20px 0; font-size: 14px;">Register a new partner organization that will collaborate with your barangay on public safety campaigns.</p>
+                <form id="partnerForm" class="form-grid" style="gap: 16px;">
             <div class="form-field" style="grid-column: 1 / -1;">
                 <label>Organization Name <span style="color:#dc2626;">*</span></label>
                 <input id="p_name" type="text" placeholder="Example: Red Cross Quezon City, Barangay Elementary School, Local NGO Name" required style="font-size:15px; padding:12px 16px;">
@@ -331,7 +344,36 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             </button>
         </div>
         <div class="status" id="partnerStatus" style="margin-top:12px;"></div>
-    </section>
+            </div>
+        </div>
+    </div>
+    <!-- End Add Partner Modal -->
+
+    <!-- View Partner Modal -->
+    <div id="viewPartnerModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 999999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div style="background: white; border-radius: 12px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);">
+            <div style="background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; padding: 20px 24px; border-radius: 12px 12px 0 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; font-size: 20px; font-weight: 700;"><i class="fas fa-building"></i> Partner Details</h3>
+                    <button onclick="closeViewPartnerModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: white; line-height: 1;">&times;</button>
+                </div>
+            </div>
+            <div id="viewPartnerContent" style="padding: 24px;"></div>
+        </div>
+    </div>
+
+    <!-- Archived Partners Modal -->
+    <div id="archivedPartnersModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 999999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div style="background: white; border-radius: 12px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);">
+            <div style="background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; padding: 20px 24px; border-radius: 12px 12px 0 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; font-size: 20px; font-weight: 700;"><i class="fas fa-archive"></i> Archived Partners</h3>
+                    <button onclick="closeArchivedPartnersModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: white; line-height: 1;">&times;</button>
+                </div>
+            </div>
+            <div id="archivedPartnersList" style="padding: 24px;"></div>
+        </div>
+    </div>
 
     <!-- Engagement History -->
     <section class="card" id="engagement-history" style="margin-bottom:32px;">
@@ -493,9 +535,9 @@ async function loadAllPartners() {
                     <td>${partner.contact_phone || '-'}</td>
                     <td>${date}</td>
                     <td>
-                        <button class="btn btn-secondary" onclick="viewPartner(${partner.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">👁️ View</button>
-                        <button class="btn btn-secondary" onclick="editPartner(${partner.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">✏️ Edit</button>
-                        <button class="btn btn-danger" onclick="deletePartner(${partner.id})" style="padding:4px 8px; font-size:12px; background: #ef4444; color: white; margin: 2px;">🗑️ Delete</button>
+                        <button class="btn btn-secondary" onclick="viewPartner(${partner.id})" style="padding:4px 8px; font-size:12px; margin: 2px;"><i class="fas fa-eye"></i> View</button>
+                        <button class="btn btn-secondary" onclick="editPartner(${partner.id})" style="padding:4px 8px; font-size:12px; margin: 2px;"><i class="fas fa-edit"></i> Edit</button>
+                        <button class="btn btn-warning" onclick="archivePartner(${partner.id})" style="padding:4px 8px; font-size:12px; background: #f59e0b; color: white; margin: 2px;"><i class="fas fa-archive"></i> Archive</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -699,7 +741,29 @@ async function loadEngagementHistory() {
     }
 }
 
-// View Partner Details
+// Add Partner Modal functions
+function openAddPartnerModal() {
+    document.getElementById('addPartnerModal').style.display = 'flex';
+    document.getElementById('addPartnerModalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Add Partner';
+    document.getElementById('partnerForm').reset();
+    const form = document.getElementById('partnerForm');
+    if (form) delete form.dataset.partnerId;
+    document.getElementById('partnerStatus').textContent = '';
+}
+
+function closeAddPartnerModal() {
+    document.getElementById('addPartnerModal').style.display = 'none';
+}
+
+function closeViewPartnerModal() {
+    document.getElementById('viewPartnerModal').style.display = 'none';
+}
+
+function closeArchivedPartnersModal() {
+    document.getElementById('archivedPartnersModal').style.display = 'none';
+}
+
+// View Partner Details - Modern Modal
 async function viewPartner(partnerId) {
     try {
         const res = await fetch(apiBase + '/api/v1/partners/' + partnerId, {
@@ -709,12 +773,188 @@ async function viewPartner(partnerId) {
         
         if (res.ok && data.data) {
             const partner = data.data;
-            alert(`Partner Details:\n\nName: ${partner.name}\nType: ${partner.organization_type || '-'}\nContact Person: ${partner.contact_person || '-'}\nEmail: ${partner.contact_email || '-'}\nPhone: ${partner.contact_phone || '-'}\nCreated: ${partner.created_at ? new Date(partner.created_at).toLocaleDateString() : '-'}`);
+            const date = partner.created_at ? new Date(partner.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '-';
+            const typeLabels = {
+                'school': 'School',
+                'ngo': 'NGO (Non-Government Organization)',
+                'government': 'Government Agency',
+                'private': 'Private Organization',
+                'other': 'Other'
+            };
+            const typeLabel = typeLabels[partner.organization_type] || partner.organization_type || '-';
+            
+            const content = `
+                <div style="display: grid; gap: 20px;">
+                    <div style="text-align: center; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0;">
+                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            <i class="fas fa-building" style="font-size: 32px; color: white;"></i>
+                        </div>
+                        <h4 style="margin: 0 0 8px 0; font-size: 22px; color: #0f172a;">${partner.name || 'Unknown Partner'}</h4>
+                        <span style="background: #e0f2fe; color: #0369a1; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">${typeLabel}</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                        <div style="padding: 16px; background: #f8fafc; border-radius: 8px;">
+                            <div style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">
+                                <i class="fas fa-user" style="margin-right: 6px;"></i>Contact Person
+                            </div>
+                            <div style="color: #0f172a; font-size: 15px; font-weight: 500;">${partner.contact_person || 'Not specified'}</div>
+                        </div>
+                        <div style="padding: 16px; background: #f8fafc; border-radius: 8px;">
+                            <div style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">
+                                <i class="fas fa-envelope" style="margin-right: 6px;"></i>Email
+                            </div>
+                            <div style="color: #0f172a; font-size: 15px; font-weight: 500;">${partner.contact_email || 'Not specified'}</div>
+                        </div>
+                        <div style="padding: 16px; background: #f8fafc; border-radius: 8px;">
+                            <div style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">
+                                <i class="fas fa-phone" style="margin-right: 6px;"></i>Phone
+                            </div>
+                            <div style="color: #0f172a; font-size: 15px; font-weight: 500;">${partner.contact_phone || 'Not specified'}</div>
+                        </div>
+                        <div style="padding: 16px; background: #f8fafc; border-radius: 8px;">
+                            <div style="color: #64748b; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">
+                                <i class="fas fa-calendar" style="margin-right: 6px;"></i>Date Added
+                            </div>
+                            <div style="color: #0f172a; font-size: 15px; font-weight: 500;">${date}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px; justify-content: center; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                        <button onclick="closeViewPartnerModal(); editPartner(${partner.id});" class="btn btn-secondary" style="padding: 10px 20px;">
+                            <i class="fas fa-edit" style="margin-right: 6px;"></i>Edit Partner
+                        </button>
+                        <button onclick="closeViewPartnerModal();" class="btn btn-primary" style="padding: 10px 20px; background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; border: none;">
+                            <i class="fas fa-check" style="margin-right: 6px;"></i>Close
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('viewPartnerContent').innerHTML = content;
+            document.getElementById('viewPartnerModal').style.display = 'flex';
         } else {
-            alert('Error: Unable to load partner details');
+            await customAlert('Unable to load partner details', 'Error');
         }
     } catch (err) {
-        alert('Error: ' + err.message);
+        await customAlert('Error: ' + err.message, 'Error');
+    }
+}
+
+// Archive Partner
+async function archivePartner(partnerId) {
+    const confirmed = await customConfirm('Are you sure you want to archive this partner? You can restore it later from View Archived.', 'Archive Partner');
+    if (!confirmed) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/partners/' + partnerId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ is_archived: true })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            await customAlert('Partner archived successfully!', 'Success');
+            loadAllPartners();
+        } else {
+            await customAlert('Error: ' + (data.error || 'Unable to archive partner'), 'Error');
+        }
+    } catch (err) {
+        await customAlert('Error: ' + err.message, 'Error');
+    }
+}
+
+// Show Archived Partners
+async function showArchivedPartners() {
+    document.getElementById('archivedPartnersModal').style.display = 'flex';
+    const container = document.getElementById('archivedPartnersList');
+    container.innerHTML = '<p style="text-align: center; color: #64748b;">Loading archived partners...</p>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/partners?include_archived=true', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+            container.innerHTML = '<p style="text-align: center; color: #ef4444;">Failed to load archived partners</p>';
+            return;
+        }
+        
+        const archivedPartners = (data.data || []).filter(p => p.is_archived);
+        
+        if (archivedPartners.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 24px;">No archived partners.</p>';
+            return;
+        }
+        
+        let html = '';
+        archivedPartners.forEach(partner => {
+            html += `
+                <div style="border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong style="color: #0f172a;">${partner.name || 'Unknown'}</strong>
+                        <span style="color: #64748b; font-size: 12px; margin-left: 8px;">${partner.organization_type || ''}</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="restorePartner(${partner.id})" class="btn btn-success" style="padding: 6px 12px; font-size: 12px; background: #10b981; color: white; border: none;">
+                            <i class="fas fa-undo"></i> Restore
+                        </button>
+                        <button onclick="deletePartnerPermanently(${partner.id})" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px; background: #ef4444; color: white; border: none;">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    } catch (err) {
+        container.innerHTML = '<p style="text-align: center; color: #ef4444;">Error loading archived partners</p>';
+    }
+}
+
+// Restore Partner
+async function restorePartner(partnerId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/partners/' + partnerId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ is_archived: false })
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            closeArchivedPartnersModal();
+            await customAlert('Partner restored successfully!', 'Success');
+            loadAllPartners();
+        } else {
+            await customAlert('Error: ' + (data.error || 'Unable to restore partner'), 'Error');
+        }
+    } catch (err) {
+        await customAlert('Error: ' + err.message, 'Error');
+    }
+}
+
+// Delete Partner Permanently
+async function deletePartnerPermanently(partnerId) {
+    const confirmed = await customConfirm('Are you sure you want to permanently delete this partner? This action cannot be undone.', 'Delete Partner');
+    if (!confirmed) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/partners/' + partnerId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (res.ok) {
+            await customAlert('Partner deleted permanently!', 'Success');
+            showArchivedPartners();
+        } else {
+            await customAlert('Error: ' + (data.error || 'Unable to delete partner'), 'Error');
+        }
+    } catch (err) {
+        await customAlert('Error: ' + err.message, 'Error');
     }
 }
 
@@ -728,6 +968,10 @@ async function editPartner(partnerId) {
         
         if (res.ok && data.data) {
             const partner = data.data;
+            // Open modal
+            document.getElementById('addPartnerModal').style.display = 'flex';
+            document.getElementById('addPartnerModalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Partner';
+            
             // Populate form fields
             document.getElementById('p_name').value = partner.name || '';
             document.getElementById('p_type').value = partner.organization_type || 'school';
@@ -739,22 +983,15 @@ async function editPartner(partnerId) {
             const form = document.getElementById('partnerForm');
             if (form) form.dataset.partnerId = partnerId;
             
-            // Change button text
-            const submitBtn = document.querySelector('#add-partner button.btn-primary');
-            if (submitBtn) submitBtn.textContent = 'Update Partner Organization';
-            
-            // Scroll to form
-            document.getElementById('add-partner').scrollIntoView({ behavior: 'smooth' });
-            
             // Show status
             const statusEl = document.getElementById('partnerStatus');
             statusEl.textContent = '✏️ Editing partner: ' + partner.name;
             statusEl.style.color = '#1e40af';
         } else {
-            alert('Error: Unable to load partner details for editing');
+            await customAlert('Unable to load partner details for editing', 'Error');
         }
     } catch (err) {
-        alert('Error: ' + err.message);
+        await customAlert('Error: ' + err.message, 'Error');
     }
 }
 
