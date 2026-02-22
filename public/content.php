@@ -3368,13 +3368,34 @@ async function showArchivedContent() {
             tableRows = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #64748b;">No archived content found.</td></tr>';
         } else {
             archivedContent.forEach(item => {
-                const contentType = (item.content_type || 'text').charAt(0).toUpperCase() + (item.content_type || 'text').slice(1);
+                // Get content type - check multiple possible field names
+                let contentType = item.content_type || item.type || '';
+                // Map content types to display names
+                const typeMap = {
+                    'infographic': 'Infographic',
+                    'video': 'Video',
+                    'poster': 'Poster',
+                    'flyer': 'Flyer',
+                    'social_media': 'Social Media',
+                    'article': 'Article',
+                    'document': 'Document',
+                    'image': 'Image',
+                    'audio': 'Audio',
+                    'presentation': 'Presentation',
+                    'template': 'Template',
+                    'text': 'Text'
+                };
+                const displayType = typeMap[contentType.toLowerCase()] || (contentType ? contentType.charAt(0).toUpperCase() + contentType.slice(1) : 'Unknown');
+                
+                // Get hazard category
+                const hazardCategory = item.hazard_category || item.hazard || '';
+                
                 tableRows += `
                     <tr>
                         <td>#${item.id}</td>
                         <td><strong>${item.title || 'Untitled'}</strong></td>
-                        <td><span style="background: #e0f2fe; color: #1d4ed8; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${contentType}</span></td>
-                        <td>${item.hazard_category || '—'}</td>
+                        <td><span style="background: #e0f2fe; color: #1d4ed8; padding: 4px 8px; border-radius: 4px; font-size: 12px;">${displayType}</span></td>
+                        <td>${hazardCategory || '—'}</td>
                         <td>
                             <button onclick="viewContent(${item.id})" style="padding: 4px 8px; background: #6366f1; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px; font-size: 11px;">
                                 <i class="fas fa-eye"></i> View
@@ -3440,11 +3461,12 @@ async function showArchivedContent() {
 
 // Restore Content from Archive
 async function restoreContent(contentId) {
-    if (!confirm('Restore this content from archive?')) {
+    if (!confirm('Restore this content from archive? It will be set to Pending Review status.')) {
         return;
     }
     
     try {
+        // Use pending_review status since the API only allows: pending_review, approved, rejected, archived
         const res = await fetch(apiBase + '/api/v1/content/' + contentId + '/approval', {
             method: 'POST',
             headers: { 
@@ -3452,8 +3474,8 @@ async function restoreContent(contentId) {
                 'Authorization': 'Bearer ' + token 
             },
             body: JSON.stringify({
-                approval_status: 'draft',
-                approval_notes: 'Restored from archive'
+                approval_status: 'pending_review',
+                approval_notes: 'Restored from archive - needs review'
             })
         });
         
@@ -3463,7 +3485,7 @@ async function restoreContent(contentId) {
             return;
         }
         
-        alert('Content restored successfully!');
+        alert('Content restored successfully! It is now in Pending Review status.');
         document.getElementById('archivedContentModal').remove();
         loadAllContent().then(() => {
             loadContent();
@@ -3482,7 +3504,8 @@ async function deleteContentPermanent(contentId) {
     }
     
     try {
-        const res = await fetch(apiBase + '/api/v1/content/' + contentId, {
+        // Use force_delete parameter to allow deletion of archived content
+        const res = await fetch(apiBase + '/api/v1/content/' + contentId + '?force_delete=true', {
             method: 'DELETE',
             headers: {
                 'Authorization': 'Bearer ' + token

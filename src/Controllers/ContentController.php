@@ -1267,9 +1267,14 @@ class ContentController
             return ['error' => 'Content not found'];
         }
         
-        // Only allow deletion of draft or rejected content
+        // Only allow deletion of draft, rejected, or archived content (with force_delete for archived)
         $status = strtolower($content['approval_status'] ?? '');
-        if (!in_array($status, ['draft', 'rejected'], true)) {
+        $forceDelete = isset($_GET['force_delete']) && $_GET['force_delete'] === 'true';
+        
+        // Allow deletion of archived content with force_delete parameter
+        if ($status === 'archived' && $forceDelete) {
+            // Allow deletion of archived content
+        } elseif (!in_array($status, ['draft', 'rejected'], true)) {
             http_response_code(422);
             return ['error' => 'Cannot delete content that is not in draft or rejected status. Please archive approved content instead.'];
         }

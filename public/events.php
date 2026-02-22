@@ -30,6 +30,74 @@ try {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <style>
+        /* Event Calendar Styling - Match Campaign Calendar */
+        #fullCalendarEl .fc-event {
+            border-radius: 4px;
+            padding: 2px 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        #fullCalendarEl .fc-event:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        #fullCalendarEl .fc-daygrid-event {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #fullCalendarEl .fc-toolbar-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        #fullCalendarEl .fc-button {
+            background-color: #4c8a89 !important;
+            border-color: #4c8a89 !important;
+            font-weight: 500;
+        }
+        #fullCalendarEl .fc-button:hover {
+            background-color: #3d7170 !important;
+            border-color: #3d7170 !important;
+        }
+        #fullCalendarEl .fc-button-active {
+            background-color: #2d5a59 !important;
+            border-color: #2d5a59 !important;
+        }
+        #fullCalendarEl .fc-day-today {
+            background-color: #f0fdfa !important;
+        }
+        #fullCalendarEl .fc-daygrid-day-number {
+            font-weight: 500;
+            color: #374151;
+        }
+        #fullCalendarEl .fc-col-header-cell-cushion {
+            font-weight: 600;
+            color: #4b5563;
+        }
+        /* Status Legend styling */
+        .calendar-legend {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 13px;
+        }
+        .calendar-legend span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .calendar-legend .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            display: inline-block;
+        }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="<?php echo htmlspecialchars($publicPath . '/js/custom-modals.js'); ?>"></script>
@@ -1149,7 +1217,7 @@ async function loadEvents() {
                 <td>${date}</td>
                 <td>${time}</td>
                 <td>${e.venue || e.location || '-'}</td>
-                <td>${e.linked_campaign_id || e.campaign_id || '-'}</td>
+                <td>${e.campaign_title ? '[#' + (e.linked_campaign_id || e.campaign_id) + '] ' + e.campaign_title : (e.linked_campaign_id || e.campaign_id || '-')}</td>
                 <td><span style="background:${statusStyle.bg}; color:${statusStyle.color}; padding:2px 8px; border-radius:4px; font-size:11px;">${status}</span></td>
                 <td>
                     <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin: 2px;" onclick="openViewEventModal(${e.event_id || e.id})">👁️ View</button>
@@ -1514,6 +1582,12 @@ async function renderCalendar(containerId = null) {
             firstDay: 1,
             height: 'auto',
             aspectRatio: 1.8,
+            eventDisplay: 'block',
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                meridiem: 'short'
+            },
             events: async function(fetchInfo, successCallback, failureCallback) {
                 try {
                     console.log('Fetching events for calendar...');
@@ -1532,31 +1606,41 @@ async function renderCalendar(containerId = null) {
                     // Convert to FullCalendar format
                     let calendarEvents = events.map(event => {
                         const eventDate = event.date || event.event_date || '';
-                        const startTime = event.start_time || '09:00';
-                        const endTime = event.end_time || startTime; // Use start time if no end time
+                        const startTime = event.start_time || '09:00:00';
+                        const endTime = event.end_time || startTime;
                         
                         const status = (event.event_status || event.status || 'scheduled').toLowerCase();
                         const bgColor = eventStatusColors[status] || '#4c8a89';
                         
+                        // Ensure we have a valid numeric ID
+                        const numericId = parseInt(event.id, 10);
+                        if (isNaN(numericId)) {
+                            console.warn('Invalid event ID:', event.id);
+                            return null;
+                        }
+                        
                         return {
-                            id: String(event.id), // Ensure ID is a string
-                            title: event.event_title || event.name || 'Untitled',
+                            id: String(numericId),
+                            title: '#' + numericId + ' ' + (event.event_title || event.name || 'Untitled'),
                             start: eventDate ? `${eventDate}T${startTime}` : null,
                             end: eventDate ? `${eventDate}T${endTime}` : null,
                             backgroundColor: bgColor,
                             borderColor: bgColor,
                             textColor: '#ffffff',
+                            allDay: false,
                             extendedProps: {
-                                eventId: event.id, // Store numeric ID separately
+                                eventId: numericId,
                                 venue: event.venue || '',
                                 status: status,
                                 hazard_focus: event.hazard_focus || '',
                                 event_type: event.event_type || '',
                                 description: event.event_description || event.description || '',
-                                end_time: event.end_time || ''
+                                start_time: event.start_time || '',
+                                end_time: event.end_time || '',
+                                campaign_id: event.linked_campaign_id || event.campaign_id || null
                             }
                         };
-                    }).filter(e => e.start); // Only include events with valid dates
+                    }).filter(e => e && e.start); // Only include valid events with dates
                     
                     // Apply status filter
                     if (calendarStatusFilter !== 'all') {
@@ -1574,18 +1658,46 @@ async function renderCalendar(containerId = null) {
                 // Show event details on click
                 const event = info.event;
                 const props = event.extendedProps;
-                const eventId = props.eventId; // Use the stored numeric ID
+                const eventId = props.eventId;
                 
-                // Format time properly
-                const startTimeStr = event.start ? event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A';
-                const endTimeStr = props.end_time ? (event.end ? event.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : props.end_time) : startTimeStr;
+                // Validate eventId
+                if (!eventId || isNaN(eventId)) {
+                    console.error('Invalid eventId in calendar click:', eventId, props);
+                    alert('Error: Could not get event ID');
+                    return;
+                }
+                
+                // Format time with AM/PM
+                const formatTime = (timeStr) => {
+                    if (!timeStr) return 'N/A';
+                    // If it's a Date object
+                    if (timeStr instanceof Date) {
+                        return timeStr.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true});
+                    }
+                    // If it's a string like "08:51:00" or "08:51"
+                    const parts = timeStr.split(':');
+                    if (parts.length >= 2) {
+                        let hours = parseInt(parts[0], 10);
+                        const mins = parts[1];
+                        const ampm = hours >= 12 ? 'PM' : 'AM';
+                        hours = hours % 12 || 12;
+                        return hours + ':' + mins + ' ' + ampm;
+                    }
+                    return timeStr;
+                };
+                
+                const startTimeStr = event.start ? event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true}) : formatTime(props.start_time);
+                const endTimeStr = props.end_time ? formatTime(props.end_time) : startTimeStr;
+                
+                // Get event title without the ID prefix we added
+                const eventTitle = event.title.replace(/^#\d+\s+/, '');
                 
                 // Create a custom modal with higher z-index
                 const modalHtml = `
                     <div id="calendarEventModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100000; display:flex; align-items:center; justify-content:center;">
                         <div style="background:white; border-radius:12px; max-width:500px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);">
                             <div style="background:linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color:white; padding:16px 20px; border-radius:12px 12px 0 0; display:flex; justify-content:space-between; align-items:center;">
-                                <h3 style="margin:0; font-size:16px;">[#${eventId}] ${event.title}</h3>
+                                <h3 style="margin:0; font-size:16px;">[#${eventId}] ${eventTitle}</h3>
                                 <button onclick="document.getElementById('calendarEventModal').remove()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:16px;">&times;</button>
                             </div>
                             <div style="padding:20px;">
@@ -3114,41 +3226,72 @@ async function openEditEventModal(eventId) {
             document.getElementById('edit_location').value = eventData.location || '';
             document.getElementById('edit_event_description').value = eventData.event_description || eventData.description || '';
             
-            // Set datetime fields
+            // Set datetime fields - handle different time formats
             const eventDate = eventData.date || eventData.event_date || '';
-            if (eventDate && eventData.start_time) {
-                document.getElementById('edit_start_datetime').value = `${eventDate}T${eventData.start_time}`;
+            let startTime = eventData.start_time || eventData.event_time || '';
+            let endTime = eventData.end_time || '';
+            
+            // Ensure time is in HH:MM format for datetime-local input
+            if (startTime && startTime.length === 8) startTime = startTime.substring(0, 5); // Remove seconds
+            if (endTime && endTime.length === 8) endTime = endTime.substring(0, 5);
+            
+            if (eventDate && startTime) {
+                document.getElementById('edit_start_datetime').value = `${eventDate}T${startTime}`;
             }
-            if (eventDate && eventData.end_time) {
-                document.getElementById('edit_end_datetime').value = `${eventDate}T${eventData.end_time}`;
+            if (eventDate && endTime) {
+                document.getElementById('edit_end_datetime').value = `${eventDate}T${endTime}`;
             }
             
             // Set dropdown values - use multiple attempts to ensure they're set
             const setDropdownValues = () => {
                 const campaignId = eventData.linked_campaign_id || eventData.campaign_id || '';
                 const audienceId = eventData.target_audience_profile_id || eventData.target_audience_id || eventData.audience_segment_id || '';
+                const hazardFocus = eventData.hazard_focus || eventData.hazard_category || '';
                 
-                console.log('Setting dropdown values - Campaign:', campaignId, 'Audience:', audienceId);
+                console.log('Setting dropdown values - Campaign:', campaignId, 'Audience:', audienceId, 'Hazard:', hazardFocus);
+                console.log('Full event data:', eventData);
                 
+                // Set campaign dropdown
                 if (campaignId) {
                     const campaignSelect = document.getElementById('edit_linked_campaign_id');
                     if (campaignSelect) {
                         campaignSelect.value = campaignId;
-                        console.log('Campaign dropdown set to:', campaignSelect.value);
+                        console.log('Campaign dropdown set to:', campaignSelect.value, 'Options:', campaignSelect.options.length);
                     }
                 }
+                
+                // Set audience dropdown
                 if (audienceId) {
                     const audienceSelect = document.getElementById('edit_target_audience_profile_id');
                     if (audienceSelect) {
                         audienceSelect.value = audienceId;
-                        console.log('Audience dropdown set to:', audienceSelect.value);
+                        console.log('Audience dropdown set to:', audienceSelect.value, 'Options:', audienceSelect.options.length);
+                        // If value didn't set, try to find matching option
+                        if (audienceSelect.value != audienceId) {
+                            for (let i = 0; i < audienceSelect.options.length; i++) {
+                                if (audienceSelect.options[i].value == audienceId) {
+                                    audienceSelect.selectedIndex = i;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Set hazard focus field
+                if (hazardFocus) {
+                    const hazardInput = document.getElementById('edit_hazard_focus');
+                    if (hazardInput) {
+                        hazardInput.value = hazardFocus;
+                        console.log('Hazard focus set to:', hazardInput.value);
                     }
                 }
             };
             
-            // Try setting values immediately and after a delay
+            // Try setting values immediately and after delays to ensure dropdowns are populated
             setDropdownValues();
-            setTimeout(setDropdownValues, 200);
+            setTimeout(setDropdownValues, 300);
+            setTimeout(setDropdownValues, 600);
         }
     } catch (err) {
         console.error('Error loading event for edit:', err);
