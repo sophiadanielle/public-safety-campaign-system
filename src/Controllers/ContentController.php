@@ -55,7 +55,7 @@ class ContentController
             
             // Pagination
             $page = max(1, (int)($_GET['page'] ?? 1));
-            $perPage = min(50, max(6, (int)($_GET['per_page'] ?? 6))); // Default 6, min 6, max 50
+            $perPage = min(200, max(6, (int)($_GET['per_page'] ?? 6))); // Default 6, min 6, max 200
             $offset = ($page - 1) * $perPage;
             
             // Sorting

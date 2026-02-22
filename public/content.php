@@ -2611,9 +2611,10 @@ async function loadAllContent() {
     
     try {
         // Fetch ALL content including archived to populate contents array
+        // Note: API max per_page is 200
         // Add timestamp to prevent caching
         const timestamp = new Date().getTime();
-        const res = await fetch(apiBase + '/api/v1/content?per_page=1000&include_archived=true&_t=' + timestamp, {
+        const res = await fetch(apiBase + '/api/v1/content?per_page=200&include_archived=true&_t=' + timestamp, {
             method: 'GET',
             headers: { 
                 'Authorization': 'Bearer ' + token,
@@ -2624,9 +2625,17 @@ async function loadAllContent() {
             cache: 'no-store'
         });
         
+        // Check if token is missing or invalid
+        if (!token) {
+            console.warn('No JWT token found - user may need to log in');
+        }
+        
         let apiData = [];
+        console.log('API response status:', res.status, res.statusText);
+        
         if (res.ok) {
             const data = await res.json();
+            console.log('API response data structure:', Object.keys(data));
             
             // Extract content array from response
             if (Array.isArray(data)) {
@@ -2637,15 +2646,24 @@ async function loadAllContent() {
                 apiData = data.content;
             }
             
+            console.log('Extracted', apiData.length, 'items from API');
+            
             // Debug: Log first few items to check content_type
             if (apiData.length > 0) {
                 console.log('API content sample (first 3):', apiData.slice(0, 3).map(item => ({
                     id: item.id,
                     title: item.title,
                     content_type: item.content_type,
+                    approval_status: item.approval_status,
                     hazard_category: item.hazard_category
                 })));
+            } else {
+                console.warn('API returned 0 items - check if database has content or if there is an auth issue');
             }
+        } else {
+            console.error('API request failed:', res.status, res.statusText);
+            const errorText = await res.text();
+            console.error('API error response:', errorText.substring(0, 500));
         }
         
         // API data takes priority - merge with sample and uploaded, avoiding duplicates
@@ -2663,10 +2681,11 @@ async function loadAllContent() {
             console.log('Skipped localStorage items (using API data instead):', skippedUploaded.map(i => ({id: i.id, status: i.approval_status})));
         }
         
-        // Combine: API data ONLY - ignore localStorage/sample to ensure fresh data
-        // This prevents stale localStorage data from overriding API data
-        contents = [...apiData];
-        console.log('✓ Loaded', apiData.length, 'items from API (localStorage/sample data ignored to ensure fresh status)');
+        // Combine: API data first (most accurate), then filtered sample/uploaded for items not in API
+        // This ensures API data takes priority while still showing localStorage items that aren't in DB yet
+        const combined = [...apiData, ...filteredSample, ...filteredUploaded];
+        contents = combined;
+        console.log('✓ Loaded', apiData.length, 'API +', filteredSample.length, 'sample +', filteredUploaded.length, 'uploaded =', contents.length, 'total');
     } catch (err) {
         console.error('Error loading content:', err);
         // On error, merge sample data with uploaded data
