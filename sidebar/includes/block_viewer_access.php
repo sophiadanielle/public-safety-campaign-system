@@ -9,12 +9,20 @@
  * Call this at the TOP of any public PHP page that needs role-aware rendering
  */
 
-// Get user role
-require_once __DIR__ . '/get_user_role.php';
-$currentUserRole = getCurrentUserRole();
+// Initialize default values to prevent 502 errors
+$isViewer = false;
+$currentUserRole = null;
+
+try {
+    // Get user role - wrapped in try-catch to prevent fatal errors
+    require_once __DIR__ . '/get_user_role.php';
+    $currentUserRole = getCurrentUserRole();
+} catch (\Throwable $e) {
+    error_log('RBAC block_viewer_access: Failed to get user role: ' . $e->getMessage());
+    $currentUserRole = null;
+}
 
 // Check if viewer
-$isViewer = false;
 if ($currentUserRole) {
     $roleLower = strtolower(trim($currentUserRole));
     $isViewer = ($roleLower === 'viewer' || $roleLower === 'partner' || 
@@ -49,7 +57,7 @@ if (!$isViewer && isset($_COOKIE['user_role_id'])) {
                                 $roleIdFromCookie === 6);
                 }
             }
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             error_log('RBAC block_viewer_access: Error checking role from cookie: ' . $e->getMessage());
         }
     }

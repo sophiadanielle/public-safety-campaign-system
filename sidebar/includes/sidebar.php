@@ -206,7 +206,6 @@
                                 'label' => 'Content',
                                 'icon' => 'fa-file-alt',
                                 'features' => [
-                                    ['label' => 'All Content', 'href' => '#content-list', 'icon' => 'fa-list'],
                                     ['label' => 'Content Library', 'href' => '#content-library', 'icon' => 'fa-book'],
                                     ['label' => 'Templates', 'href' => '#templates', 'icon' => 'fa-file-alt'],
                                     ['label' => 'Media Gallery', 'href' => '#media-gallery', 'icon' => 'fa-images'],

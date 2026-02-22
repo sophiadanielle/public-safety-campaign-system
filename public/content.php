@@ -598,18 +598,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 <h3 style="margin: 0; color: #0f172a;" id="uploadContentModalTitle"><i class="fas fa-upload"></i> Upload Campaign Material</h3>
                 <button onclick="closeUploadContentModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; line-height: 1;">&times;</button>
             </div>
-    
-    <!-- Hidden original section for backward compatibility -->
-    <section id="create-content" class="card" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
-            <div>
-                <h2 class="section-title" style="margin: 0 0 4px 0;">Upload Campaign Material</h2>
-                <p style="color: #64748b; margin: 0; font-size: 14px;">Upload campaign materials for internal LGU review and approval workflow</p>
-            </div>
-            <button type="button" onclick="showContentHelp()" class="btn btn-secondary" style="padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fas fa-question-circle"></i> How It Works
-            </button>
-        </div>
+            <p style="color: #64748b; margin: 0 0 16px 0; font-size: 14px;">Upload campaign materials for internal LGU review and approval workflow</p>
         <form id="uploadForm" class="form-grid" enctype="multipart/form-data">
             <div class="form-field">
                 <label>File *</label>
@@ -750,7 +739,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             <i class="fas fa-upload"></i> Upload Campaign Material
         </button>
         <div class="status" id="uploadStatus" style="margin-top:12px;"></div>
-    </section>
         </div>
     </div>
     <!-- End Upload Content Modal -->
@@ -1869,7 +1857,8 @@ async function approveContent(contentId) {
 
 // Archive content
 async function archiveContent(contentId) {
-    if (!confirm('Are you sure you want to archive this content? Archived content will be hidden by default.')) {
+    const confirmed = await customConfirm('Are you sure you want to archive this content? Archived content will be hidden by default.', 'Archive Content');
+    if (!confirmed) {
         return;
     }
     
@@ -1884,14 +1873,15 @@ async function archiveContent(contentId) {
         const data = await res.json();
         if (res.ok) {
             currentTemplatesPage = 1; // Reset to first page when content is approved/rejected
+            await customAlert('Content archived successfully!', 'Success');
             loadContent();
             loadTemplates();
             loadMediaGallery();
         } else {
-            alert('Error: ' + (data.error || 'Failed to archive content'));
+            await customAlert('Error: ' + (data.error || 'Failed to archive content'), 'Error');
         }
     } catch (err) {
-        alert('Network error: ' + err.message);
+        await customAlert('Network error: ' + err.message, 'Error');
     }
 }
 

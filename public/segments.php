@@ -1003,9 +1003,17 @@ async function loadArchivedSegments() {
                         <strong>${seg.segment_name || seg.name}</strong>
                         <span style="color: #64748b; font-size: 12px; margin-left: 8px;">${seg.geographic_scope || ''} - ${seg.sector_type || ''}</span>
                     </div>
-                    <button onclick="restoreSegment(${segmentId})" class="btn btn-success" style="padding: 6px 12px; font-size: 12px; background: #10b981; color: white; border: none;">
-                        <i class="fas fa-undo"></i> Restore
-                    </button>
+                    <div style="display: flex; gap: 6px;">
+                        <button onclick="viewSegmentFromArchived(${segmentId})" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; border: 1px solid #e2e8f0; background: white;">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button onclick="restoreSegment(${segmentId})" class="btn btn-success" style="padding: 6px 12px; font-size: 12px; background: #10b981; color: white; border: none;">
+                            <i class="fas fa-undo"></i> Restore
+                        </button>
+                        <button onclick="deleteArchivedSegment(${segmentId})" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px; background: #ef4444; color: white; border: none;">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
                 </div>
             `;
         });
@@ -1026,15 +1034,62 @@ async function restoreSegment(segmentId) {
         
         const data = await res.json();
         if (res.ok) {
-            await customAlert('Segment restored successfully!', 'Success');
-            loadArchivedSegments();
+            // Close modal first, then show success
+            closeArchivedSegmentsModal();
+            showSuccessToast('Segment restored successfully!');
             loadSegments();
         } else {
-            await customAlert('Error: ' + (data.error || 'Failed to restore segment'), 'Error');
+            showErrorToast('Error: ' + (data.error || 'Failed to restore segment'));
         }
     } catch (err) {
-        await customAlert('Failed to restore segment: ' + err.message, 'Error');
+        showErrorToast('Failed to restore segment: ' + err.message);
     }
+}
+
+// View segment from archived modal
+function viewSegmentFromArchived(segmentId) {
+    closeArchivedSegmentsModal();
+    viewSegment(segmentId);
+}
+
+// Delete archived segment permanently
+async function deleteArchivedSegment(segmentId) {
+    const confirmed = await customConfirm('Are you sure you want to permanently delete this segment? This action cannot be undone.', 'Delete Segment');
+    if (!confirmed) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/segments/' + segmentId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        
+        const data = await res.json();
+        if (res.ok) {
+            showSuccessToast('Segment deleted permanently!');
+            loadArchivedSegments();
+        } else {
+            showErrorToast('Error: ' + (data.error || 'Failed to delete segment'));
+        }
+    } catch (err) {
+        showErrorToast('Failed to delete segment: ' + err.message);
+    }
+}
+
+// Toast notification functions
+function showSuccessToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 16px 24px; border-radius: 8px; z-index: 9999999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: 500;';
+    toast.innerHTML = '<i class="fas fa-check-circle" style="margin-right: 8px;"></i>' + message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+function showErrorToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 16px 24px; border-radius: 8px; z-index: 9999999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-weight: 500;';
+    toast.innerHTML = '<i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>' + message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
 }
 
 // Create Segment Modal functions

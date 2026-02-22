@@ -1546,7 +1546,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             </div>
         </div>
         <style>
-            .archived-budget-modal-overlay {
+            #archivedBudgetsModal {
                 position: fixed !important;
                 top: 0 !important;
                 left: 0 !important;
@@ -1556,19 +1556,17 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 height: 100vh !important;
                 background: rgba(0, 0, 0, 0.7) !important;
                 z-index: 999999 !important;
+                display: none;
                 align-items: center !important;
                 justify-content: center !important;
                 overflow: hidden !important;
                 backdrop-filter: blur(4px);
                 -webkit-backdrop-filter: blur(4px);
             }
-            .archived-budget-modal-overlay[style*="display: none"] {
-                display: none !important;
-            }
-            .archived-budget-modal-overlay[style*="display: flex"] {
+            #archivedBudgetsModal[style*="display: flex"] {
                 display: flex !important;
             }
-            .archived-budget-modal-content {
+            #archivedBudgetsModal > div {
                 background: white !important;
                 border-radius: 12px;
                 max-width: 900px;
@@ -1579,7 +1577,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
                 position: relative !important;
                 z-index: 1000000 !important;
-                transform: translateZ(0);
             }
             /* Prevent body scroll when modal is open */
             body.archived-modal-open {
