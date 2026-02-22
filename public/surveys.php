@@ -33,9 +33,10 @@ try {
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/sidebar.css'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($basePath . '/sidebar/css/admin-header.css'); ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="<?php echo htmlspecialchars($publicPath . '/js/custom-modals.js'); ?>"></script>
     <script src="<?php echo htmlspecialchars($publicPath . '/js/modal-replacer.js'); ?>"></script>
-    <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
     <script src="<?php echo htmlspecialchars($basePath . '/public/js/viewer-restrictions.js'); ?>"></script>
     <script>
         document.documentElement.setAttribute('data-theme', 'light');
@@ -556,7 +557,7 @@ function renderSurveysList(surveys) {
                 <button class="btn btn-secondary" onclick="openViewSurveyModal(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">👁️ View</button>
                 ${survey.status === 'draft' ? `<button class="btn btn-secondary" onclick="openEditSurveyModal(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">✏️ Edit</button>` : ''}
                 <button class="btn btn-secondary" onclick="viewResults(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">📊 Results</button>
-                <button class="btn btn-secondary" onclick="exportResponses(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">📥 Export</button>
+                <button class="btn btn-secondary" onclick="showSurveyExportModal(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">📥 Export PDF</button>
                 ${survey.status === 'published' ? `<button class="btn btn-secondary" onclick="closeSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">🔒 Close</button>` : ''}
                 ${survey.status !== 'archived' ? `<button class="btn btn-warning" onclick="archiveSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; background: #f59e0b; color: white; margin: 2px;">📦 Archive</button>` : ''}
             </td>`;
@@ -1882,6 +1883,350 @@ document.addEventListener('click', function(e) {
         </div>
     </div>
 </div>
+
+<!-- Survey Export Password Verification Modal -->
+<div id="surveyExportPasswordModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:10000; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:450px; margin:100px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.3);">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:18px;"><i class="fas fa-lock"></i> Verify Password to Export</h2>
+            <button onclick="closeSurveyExportModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <p style="color:#64748b; margin-bottom:16px;">Please enter your password to confirm the export. This ensures data security.</p>
+            <input type="hidden" id="surveyExportId" value="">
+            <div class="form-field" style="margin-bottom:20px;">
+                <label style="font-weight:600; color:#334155;">Password</label>
+                <div style="position:relative;">
+                    <input type="password" id="surveyExportPassword" placeholder="Enter your password" style="width:100%; padding:12px 40px 12px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px;">
+                    <button type="button" onclick="toggleSurveyPasswordVisibility()" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#64748b;">
+                        <i class="fas fa-eye" id="surveyPasswordToggleIcon"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="surveyExportPasswordError" style="display:none; color:#dc2626; background:#fee2e2; padding:10px; border-radius:6px; margin-bottom:16px; font-size:13px;"></div>
+            <div style="display:flex; gap:12px; justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="closeSurveyExportModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="verifySurveyPasswordAndExport()" id="surveyExportConfirmBtn" style="background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%);">
+                    <i class="fas fa-download"></i> Export PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================
+// SURVEY PDF EXPORT WITH PASSWORD VERIFICATION
+// ============================================
+
+function showSurveyExportModal(surveyId) {
+    document.getElementById('surveyExportId').value = surveyId;
+    document.getElementById('surveyExportPassword').value = '';
+    document.getElementById('surveyExportPasswordError').style.display = 'none';
+    document.getElementById('surveyExportPasswordModal').style.display = 'block';
+    document.getElementById('surveyExportPassword').focus();
+}
+
+function closeSurveyExportModal() {
+    document.getElementById('surveyExportPasswordModal').style.display = 'none';
+    document.getElementById('surveyExportPassword').value = '';
+    document.getElementById('surveyExportPasswordError').style.display = 'none';
+}
+
+function toggleSurveyPasswordVisibility() {
+    const input = document.getElementById('surveyExportPassword');
+    const icon = document.getElementById('surveyPasswordToggleIcon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+async function verifySurveyPasswordAndExport() {
+    const password = document.getElementById('surveyExportPassword').value;
+    const surveyId = document.getElementById('surveyExportId').value;
+    const errorDiv = document.getElementById('surveyExportPasswordError');
+    const confirmBtn = document.getElementById('surveyExportConfirmBtn');
+    
+    if (!password) {
+        errorDiv.textContent = 'Please enter your password';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    // Get user email from JWT token
+    let userEmail = '';
+    try {
+        const parts = token.split('.');
+        const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+        userEmail = payload.email || payload.sub || '';
+    } catch (e) {
+        errorDiv.textContent = 'Session error. Please log in again.';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+    
+    try {
+        // Verify password via login API
+        const response = await fetch(apiBase + '/api/v1/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail, password: password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.token) {
+            // Password verified - proceed with export
+            closeSurveyExportModal();
+            await generateSurveyPDF(surveyId);
+        } else {
+            errorDiv.textContent = 'Incorrect password. Please try again.';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Verification failed: ' + error.message;
+        errorDiv.style.display = 'block';
+    } finally {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-download"></i> Export PDF';
+    }
+}
+
+// Generate Survey PDF with professional template
+async function generateSurveyPDF(surveyId) {
+    try {
+        // Fetch survey data and results
+        const [surveyRes, resultsRes] = await Promise.all([
+            fetch(apiBase + '/api/v1/surveys/' + surveyId, { headers: { 'Authorization': 'Bearer ' + token } }),
+            fetch(apiBase + '/api/v1/surveys/' + surveyId + '/results', { headers: { 'Authorization': 'Bearer ' + token } })
+        ]);
+        
+        const surveyData = await surveyRes.json();
+        const resultsData = await resultsRes.json();
+        
+        if (!surveyRes.ok || !surveyData.data) {
+            throw new Error('Failed to load survey data');
+        }
+        
+        const survey = surveyData.data;
+        const questions = survey.questions || [];
+        const results = resultsData.data || resultsData;
+        const totalResponses = results.total_responses || survey.total_responses || 0;
+        
+        // Initialize jsPDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Colors
+        const primaryColor = [76, 138, 137]; // #4c8a89
+        const darkColor = [15, 23, 42]; // #0f172a
+        
+        // Header with gradient-like background
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, 0, 210, 45, 'F');
+        
+        // Logo placeholder (circle with initials)
+        doc.setFillColor(255, 255, 255);
+        doc.circle(25, 22, 12, 'F');
+        doc.setTextColor(...primaryColor);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PSC', 25, 25, { align: 'center' });
+        
+        // Header text
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('SURVEY REPORT', 105, 18, { align: 'center' });
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Public Safety Campaign System', 105, 26, { align: 'center' });
+        doc.text('Barangay Alertaraqc', 105, 32, { align: 'center' });
+        doc.text('Generated: ' + new Date().toLocaleString(), 105, 40, { align: 'center' });
+        
+        // Survey Title
+        doc.setTextColor(...darkColor);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        const titleText = survey.title || 'Untitled Survey';
+        doc.text(titleText, 14, 58);
+        
+        // Divider line
+        doc.setDrawColor(...primaryColor);
+        doc.setLineWidth(0.5);
+        doc.line(14, 62, 196, 62);
+        
+        // Survey Details Section
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text('Survey Details', 14, 72);
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...darkColor);
+        
+        const details = [
+            ['Status:', (survey.status || 'draft').toUpperCase()],
+            ['Total Questions:', String(questions.length)],
+            ['Total Responses:', String(totalResponses)],
+            ['Created:', survey.created_at ? new Date(survey.created_at).toLocaleDateString() : 'N/A'],
+            ['Campaign:', survey.campaign_title || 'N/A']
+        ];
+        
+        let yPos = 80;
+        details.forEach(([label, value]) => {
+            doc.setFont('helvetica', 'bold');
+            doc.text(label, 14, yPos);
+            doc.setFont('helvetica', 'normal');
+            doc.text(String(value), 55, yPos);
+            yPos += 7;
+        });
+        
+        // Description
+        if (survey.description) {
+            yPos += 5;
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...primaryColor);
+            doc.text('Description', 14, yPos);
+            
+            yPos += 8;
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...darkColor);
+            const splitDesc = doc.splitTextToSize(survey.description, 180);
+            doc.text(splitDesc, 14, yPos);
+            yPos += splitDesc.length * 5 + 5;
+        }
+        
+        // Questions Summary
+        if (questions.length > 0) {
+            yPos += 10;
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...primaryColor);
+            doc.text('Questions', 14, yPos);
+            
+            yPos += 5;
+            const questionData = questions.map((q, i) => [
+                i + 1,
+                q.question_text || q.text || 'N/A',
+                q.question_type || q.type || 'text',
+                q.is_required ? 'Yes' : 'No'
+            ]);
+            
+            doc.autoTable({
+                startY: yPos,
+                head: [['#', 'Question', 'Type', 'Required']],
+                body: questionData,
+                theme: 'striped',
+                headStyles: { fillColor: primaryColor },
+                styles: { fontSize: 9, cellPadding: 3 },
+                columnStyles: {
+                    0: { cellWidth: 10 },
+                    1: { cellWidth: 120 },
+                    2: { cellWidth: 30 },
+                    3: { cellWidth: 20 }
+                },
+                margin: { left: 14, right: 14 }
+            });
+            
+            yPos = doc.lastAutoTable.finalY + 10;
+        }
+        
+        // Response Summary (if available)
+        if (results.questions && results.questions.length > 0) {
+            // Check if we need a new page
+            if (yPos > 240) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...primaryColor);
+            doc.text('Response Summary', 14, yPos);
+            
+            yPos += 10;
+            
+            results.questions.forEach((q, idx) => {
+                if (yPos > 260) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(...darkColor);
+                const qText = (idx + 1) + '. ' + (q.question_text || q.text || 'Question');
+                const splitQ = doc.splitTextToSize(qText, 180);
+                doc.text(splitQ, 14, yPos);
+                yPos += splitQ.length * 5 + 3;
+                
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+                
+                if (q.aggregated_responses && q.aggregated_responses.length > 0) {
+                    q.aggregated_responses.forEach(ar => {
+                        const respText = '• ' + (ar.response_value || ar.value || 'N/A') + ': ' + (ar.count || 0) + ' responses';
+                        doc.text(respText, 20, yPos);
+                        yPos += 5;
+                    });
+                } else if (q.responses && q.responses.length > 0) {
+                    const sampleResponses = q.responses.slice(0, 3);
+                    sampleResponses.forEach(r => {
+                        const respText = '• ' + (r.response_value || r.value || 'N/A');
+                        const splitResp = doc.splitTextToSize(respText, 170);
+                        doc.text(splitResp, 20, yPos);
+                        yPos += splitResp.length * 4;
+                    });
+                    if (q.responses.length > 3) {
+                        doc.text('... and ' + (q.responses.length - 3) + ' more responses', 20, yPos);
+                        yPos += 5;
+                    }
+                } else {
+                    doc.text('• No responses yet', 20, yPos);
+                    yPos += 5;
+                }
+                
+                yPos += 5;
+            });
+        }
+        
+        // Footer on last page
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            const pageHeight = doc.internal.pageSize.height;
+            doc.setFillColor(...primaryColor);
+            doc.rect(0, pageHeight - 12, 210, 12, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(8);
+            doc.text('Public Safety Campaign System - Survey Report | Page ' + i + ' of ' + pageCount, 105, pageHeight - 5, { align: 'center' });
+        }
+        
+        // Save PDF
+        const fileName = `Survey_Report_${survey.title || surveyId}_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+        
+        customConfirm('Survey PDF exported successfully!');
+        
+    } catch (error) {
+        console.error('PDF generation error:', error);
+        customConfirm('Failed to generate PDF: ' + error.message);
+    }
+}
+</script>
     
     <?php include __DIR__ . '/../header/includes/footer.php'; ?>
     </main>

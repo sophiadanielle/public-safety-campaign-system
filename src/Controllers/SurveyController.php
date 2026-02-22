@@ -35,19 +35,32 @@ class SurveyController
             if (!$hasStatus) {
                 error_log('SurveyController: Adding status column');
                 $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
-                    ADD COLUMN `status` ENUM('draft','published','closed') NOT NULL DEFAULT 'draft' AFTER `description`");
+                    ADD COLUMN `status` ENUM('draft','published','closed','archived') NOT NULL DEFAULT 'draft' AFTER `description`");
             } else {
-                // Check if status column has 'closed' value
+                // Check if status column has 'archived' value
                 $checkStmt = $this->pdo->query("SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS 
                     WHERE TABLE_SCHEMA = DATABASE() 
                     AND TABLE_NAME = 'campaign_department_surveys' 
                     AND COLUMN_NAME = 'status'");
                 $columnType = $checkStmt->fetchColumn();
-                if ($columnType && strpos($columnType, 'closed') === false) {
-                    error_log('SurveyController: Updating status column to include closed');
+                if ($columnType && strpos($columnType, 'archived') === false) {
+                    error_log('SurveyController: Updating status column to include archived');
                     $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
-                        MODIFY COLUMN `status` ENUM('draft','published','closed') NOT NULL DEFAULT 'draft'");
+                        MODIFY COLUMN `status` ENUM('draft','published','closed','archived') NOT NULL DEFAULT 'draft'");
                 }
+            }
+            
+            // Check and add updated_at column
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_surveys' 
+                AND COLUMN_NAME = 'updated_at'");
+            $hasUpdatedAt = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasUpdatedAt) {
+                error_log('SurveyController: Adding updated_at column');
+                $this->pdo->exec("ALTER TABLE `campaign_department_surveys` 
+                    ADD COLUMN `updated_at` TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP AFTER `created_at`");
             }
             
             // Check and add event_id column

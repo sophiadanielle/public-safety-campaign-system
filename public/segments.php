@@ -7,7 +7,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
 $isViewer = false;
 $currentUserRole = null;
 try {
-    require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
+    @require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 } catch (\Throwable $e) {
     error_log('segments.php: block_viewer_access failed: ' . $e->getMessage());
 }
@@ -60,7 +60,7 @@ try {
     <?php
     // RBAC: Page-level protection - Viewer cannot access Segments module
     try {
-        require_once __DIR__ . '/../sidebar/includes/get_user_role.php';
+        @require_once __DIR__ . '/../sidebar/includes/get_user_role.php';
         $currentUserRole = getCurrentUserRole();
         $isViewer = false;
         if ($currentUserRole) {
@@ -79,14 +79,14 @@ try {
     ?>
     <?php 
     try {
-        include __DIR__ . '/../sidebar/includes/sidebar.php'; 
+        @include __DIR__ . '/../sidebar/includes/sidebar.php'; 
     } catch (\Throwable $e) {
         error_log('segments.php: sidebar.php failed: ' . $e->getMessage());
     }
     ?>
     <?php 
     try {
-        include __DIR__ . '/../sidebar/includes/admin-header.php'; 
+        @include __DIR__ . '/../sidebar/includes/admin-header.php'; 
     } catch (\Throwable $e) {
         error_log('segments.php: admin-header.php failed: ' . $e->getMessage());
     }

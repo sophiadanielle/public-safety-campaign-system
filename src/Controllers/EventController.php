@@ -17,6 +17,27 @@ class EventController
         private string $jwtAudience,
         private int $jwtExpirySeconds
     ) {
+        // Auto-migration: Ensure status ENUM includes 'archived'
+        $this->ensureArchivedStatus();
+    }
+    
+    private function ensureArchivedStatus(): void
+    {
+        try {
+            $checkStmt = $this->pdo->query("SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_events' 
+                AND COLUMN_NAME = 'status'");
+            $columnType = $checkStmt->fetchColumn();
+            
+            if ($columnType && strpos($columnType, 'archived') === false) {
+                error_log('EventController: Updating status column to include archived');
+                $this->pdo->exec("ALTER TABLE `campaign_department_events` 
+                    MODIFY COLUMN `status` ENUM('scheduled','ongoing','completed','cancelled','archived') NOT NULL DEFAULT 'scheduled'");
+            }
+        } catch (\Throwable $e) {
+            error_log('EventController::ensureArchivedStatus error: ' . $e->getMessage());
+        }
     }
 
     /**
