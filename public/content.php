@@ -1908,10 +1908,10 @@ async function editContent(contentId) {
             return;
         }
         
-        // Check if content can be edited (only draft or pending_review)
+        // Check if content can be edited (draft, pending_review, under_review, or approved)
         const status = (item.approval_status || '').toLowerCase();
-        if (!['draft', 'pending_review', 'under_review'].includes(status)) {
-            await customAlert('Only draft or pending review content can be edited.', 'Notice');
+        if (!['draft', 'pending_review', 'under_review', 'approved'].includes(status)) {
+            await customAlert('Only draft, pending review, or approved content can be edited.', 'Notice');
             return;
         }
         
@@ -3062,20 +3062,24 @@ async function loadMediaGallery() {
             const filePath = item.file_reference || item.file_path || '';
             
             // Check if it's an image or video by mime type
-            const isImageMime = fileType.startsWith('image/');
-            const isVideoMime = fileType.startsWith('video/');
+            const isImageMime = fileType && (fileType.startsWith('image/') || fileType.includes('image'));
+            const isVideoMime = fileType && (fileType.startsWith('video/') || fileType.includes('video'));
             
-            // Check by content_type field
-            const isMediaContentType = ['image', 'video', 'poster', 'infographic'].includes(contentType);
+            // Check by content_type field - expanded list
+            const isMediaContentType = ['image', 'video', 'poster', 'infographic', 'graphic', 'photo', 'banner', 'flyer'].includes(contentType);
             
-            // Check by file extension
-            const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
-            const videoExts = ['.mp4', '.webm', '.mov', '.avi', '.mkv'];
-            const hasImageExt = imageExts.some(ext => filePath.toLowerCase().endsWith(ext));
-            const hasVideoExt = videoExts.some(ext => filePath.toLowerCase().endsWith(ext));
+            // Check by file extension - expanded list
+            const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.ico', '.tiff', '.heic'];
+            const videoExts = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.wmv', '.flv', '.m4v'];
+            const lowerPath = filePath.toLowerCase();
+            const hasImageExt = imageExts.some(ext => lowerPath.endsWith(ext));
+            const hasVideoExt = videoExts.some(ext => lowerPath.endsWith(ext));
             
-            // Return true if any media indicator is present
-            return isImageMime || isVideoMime || isMediaContentType || hasImageExt || hasVideoExt;
+            // Also check if file_reference contains 'uploads/' which indicates an uploaded file
+            const hasUploadedFile = filePath && (filePath.includes('uploads/') || filePath.includes('uploads\\'));
+            
+            // Return true if any media indicator is present OR if it has an uploaded file with media extension
+            return isImageMime || isVideoMime || isMediaContentType || hasImageExt || hasVideoExt || (hasUploadedFile && (hasImageExt || hasVideoExt));
         });
         
         // Apply additional media type filter if specified

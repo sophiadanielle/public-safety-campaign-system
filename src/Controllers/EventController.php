@@ -1239,11 +1239,11 @@ class EventController
             return ['error' => 'Event not found'];
         }
         
-        // Only allow deletion of draft or cancelled events
+        // Only allow deletion of draft, cancelled, or archived events
         $status = strtolower($event['event_status'] ?? '');
-        if (!in_array($status, ['draft', 'cancelled'], true)) {
+        if (!in_array($status, ['draft', 'cancelled', 'archived'], true)) {
             http_response_code(422);
-            return ['error' => 'Cannot delete events that are not in draft or cancelled status.'];
+            return ['error' => 'Cannot delete events that are not in draft, cancelled, or archived status.'];
         }
         
         // Delete related records first (foreign key constraints)

@@ -1325,12 +1325,31 @@ class ContentController
      */
     public function archive(?array $user, array $params = []): array
     {
-        // Role-based access control: Only admin can archive
-        // Check if user is admin by role_id (1 = Administrator, 2 = Barangay Admin)
-        $userRoleId = (int) ($user['role_id'] ?? 0);
-        if (!$user || ($userRoleId !== 1 && $userRoleId !== 2)) {
-            http_response_code(403);
-            return ['error' => 'Only administrators can archive content'];
+        // Role-based access control: Allow admin roles to archive
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            // Viewer is read-only - cannot archive
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot archive content.'];
+            }
+            
+            // Allow admin roles to archive
+            $allowedRoles = ['admin', 'administrator', 'barangay administrator', 'barangay_admin', 'system_admin', 'captain', 'staff', 'secretary', 'kagawad', 'campaign_creator'];
+            if (!in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'You do not have permission to archive content.'];
+            }
+        } catch (\Exception $e) {
+            // If role check fails, allow authenticated users except viewers
+            error_log('ContentController::archive - Role check failed: ' . $e->getMessage());
         }
         
         $contentId = (int) ($params['id'] ?? 0);

@@ -1700,9 +1700,23 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <section class="card" id="timeline-section">
         <div class="section-header" style="margin-bottom: 16px;">
             <h3 class="section-title analytics-accent">Campaign Calendar</h3>
-            <button class="btn btn-secondary" onclick="if(calendar) calendar.refetchEvents();" style="display: flex; align-items: center; gap: 6px;">
-                <i class="fas fa-sync-alt"></i> Refresh
-            </button>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="calendarStatusFilter" onchange="if(calendar) calendar.refetchEvents();" style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; background: white;">
+                    <option value="">All Statuses</option>
+                    <option value="draft">Draft</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="active">Active</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
+                    <option value="archived">Archived</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+                <button class="btn btn-secondary" onclick="if(calendar) calendar.refetchEvents();" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
         </div>
         <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
             Calendar view of campaign schedules. Click on any campaign event to view details. Events from the <strong>Events module</strong> are integrated to show potential conflicts.
@@ -4224,7 +4238,18 @@ function initCalendar() {
                 const startDate = new Date(start);
                 const endDate = new Date(end);
                 
+                // Get status filter value
+                const statusFilter = document.getElementById('calendarStatusFilter')?.value || '';
+                
                 const filteredCampaigns = campaigns.filter(c => {
+                    // Apply status filter if selected
+                    if (statusFilter) {
+                        const campaignStatus = (c.status || '').toLowerCase();
+                        if (campaignStatus !== statusFilter.toLowerCase()) {
+                            return false;
+                        }
+                    }
+                    
                     // Include if campaign has any date information
                     if (!c.start_date && !c.end_date && !c.draft_schedule_datetime && !c.ai_recommended_datetime && !c.final_schedule_datetime) {
                         return false;
@@ -4275,7 +4300,7 @@ function initCalendar() {
                     if (c.start_date) {
                         const eventObj = {
                             id: 'campaign-' + c.id,
-                            title: (c.title || 'Untitled Campaign') + ' (Campaign)',
+                            title: '#' + c.id + ' ' + (c.title || 'Untitled Campaign'),
                             start: c.start_date,
                             end: c.end_date ? new Date(new Date(c.end_date).getTime() + 86400000).toISOString().split('T')[0] : new Date(new Date(c.start_date).getTime() + 86400000).toISOString().split('T')[0],
                             backgroundColor: getStatusColor(c.status),
@@ -5255,7 +5280,7 @@ function renderBudgetTable() {
         
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; font-weight: 600;" title="${group.campaign_title}">${group.campaign_title}</td>
+            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; font-weight: 600;" title="${group.campaign_title}"><span style="color: #6366f1; font-weight: 700;">#${group.campaign_id}</span> ${group.campaign_title}</td>
             <td><span class="badge draft">${group.items.length} item${group.items.length > 1 ? 's' : ''}</span></td>
             <td style="font-weight: 700; color: #059669;">₱${group.total_budget.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
             <td style="font-size: 12px; color: #64748b;">${fundingBreakdown.join('<br>') || '-'}</td>
