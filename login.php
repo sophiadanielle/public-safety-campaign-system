@@ -1437,10 +1437,30 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                     body: JSON.stringify({ email })
                 });
 
-                const data = await response.json();
+                // Handle non-JSON responses (e.g., 502 Bad Gateway returns HTML)
+                const contentType = response.headers.get('content-type');
+                let data;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    // Server returned non-JSON (likely HTML error page)
+                    // If status is 502/503/504, the email might still have been sent
+                    if (response.status >= 500) {
+                        // Assume email was sent since this is a server-side issue after processing
+                        console.warn('Server returned non-JSON response with status:', response.status);
+                        data = { success: true, message: 'Reset code may have been sent. Please check your email.' };
+                    } else {
+                        const text = await response.text();
+                        throw new Error('Server error. Please try again later.');
+                    }
+                }
 
-                if (!response.ok || data.error) {
-                    throw new Error(data.error || 'Failed to send reset code');
+                if (!response.ok && !data.success) {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    throw new Error('Failed to send reset code');
                 }
 
                 forgotEmail = email;
@@ -1458,7 +1478,20 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                 }, 3000);
 
             } catch (error) {
-                showForgotStatus(1, error.message, 'error');
+                // Check if error is JSON parsing error (indicates email might have been sent)
+                if (error.message && error.message.includes('not valid JSON')) {
+                    // Likely a 502 error but email was sent - proceed optimistically
+                    forgotEmail = email;
+                    document.getElementById('forgotEmailDisplay').textContent = email;
+                    document.getElementById('forgotStep1').style.display = 'none';
+                    document.getElementById('forgotStep2').style.display = 'block';
+                    clearForgotOtpInputs();
+                    startForgotOtpTimer(300);
+                    document.querySelector('.forgot-otp-input[data-index="0"]').focus();
+                    showForgotStatus(2, 'Reset code may have been sent. Please check your email.', 'success');
+                } else {
+                    showForgotStatus(1, error.message, 'error');
+                }
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reset Code';

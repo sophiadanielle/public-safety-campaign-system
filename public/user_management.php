@@ -673,7 +673,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     <img src="<?php echo htmlspecialchars($imgPath . '/logo.svg'); ?>" alt="Logo">
                     <span id="modalTitle">Add New User</span>
                 </h3>
-                <button type="button" class="modal-close" id="modalCloseBtn" onclick="closeModal()">
+                <button type="button" class="modal-close" id="modalCloseBtn" onclick="closeUserModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -730,7 +730,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="modalCancelBtn" onclick="closeModal()">Cancel</button>
+                <button type="button" class="btn btn-secondary" id="modalCancelBtn" onclick="closeUserModal()">Cancel</button>
                 <button type="submit" class="btn btn-primary" form="userForm" id="submitBtn">
                     <i class="fas fa-save"></i>
                     Save User
@@ -924,7 +924,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             }
         }
 
-        function closeModal() {
+        function closeUserModal() {
             const modal = document.getElementById('userModal');
             if (!modal) return;
             
@@ -1116,7 +1116,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('Close button clicked');
-                    closeModal();
+                    closeUserModal();
                 }, true); // Use capture phase
             } else {
                 console.error('modalCloseBtn not found');
@@ -1127,7 +1127,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('Cancel button clicked');
-                    closeModal();
+                    closeUserModal();
                 }, true); // Use capture phase
             } else {
                 console.error('modalCancelBtn not found');
@@ -1140,14 +1140,14 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         // Close modal on escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                closeModal();
+                closeUserModal();
             }
         });
 
         // Close modal on overlay click
         document.getElementById('userModal').addEventListener('click', function(e) {
             if (e.target === this) {
-                closeModal();
+                closeUserModal();
             }
         });
     </script>

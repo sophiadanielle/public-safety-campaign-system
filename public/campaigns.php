@@ -4932,12 +4932,24 @@ async function loadBudgetData() {
         const res = await fetch(apiBase + '/api/v1/budgets', {
             headers: { 'Authorization': 'Bearer ' + getToken() }
         });
+        
+        // Handle non-JSON responses
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            console.error('Budget load API returned non-JSON response:', res.status);
+            return;
+        }
+        
         const data = await res.json();
+        console.log('Budget data loaded:', data);
         
         if (data.success) {
             allBudgetItems = data.data || [];
+            console.log('Budget items count:', allBudgetItems.length);
             renderBudgetTable();
             updateBudgetSummary(data.summary);
+        } else {
+            console.error('Budget load failed:', data.error || 'Unknown error');
         }
     } catch (err) {
         console.error('Failed to load budget data:', err);
@@ -5116,13 +5128,27 @@ async function saveAllBudgetItems() {
                 })
             });
             
-            const data = await res.json();
-            if (data.success) {
+            // Handle non-JSON responses
+            const contentType = res.headers.get('content-type');
+            let data;
+            
+            if (contentType && contentType.includes('application/json')) {
+                data = await res.json();
+            } else {
+                console.error('Budget API returned non-JSON response:', res.status);
+                errorCount++;
+                continue;
+            }
+            
+            // Check for success - API returns 201 status and success: true
+            if (res.ok && data.success) {
                 savedCount++;
             } else {
+                console.error('Budget save failed:', data.error || 'Unknown error');
                 errorCount++;
             }
         } catch (err) {
+            console.error('Budget save exception:', err);
             errorCount++;
         }
     }
@@ -5132,9 +5158,15 @@ async function saveAllBudgetItems() {
         clearBudgetRows();
         closeBudgetModal();
         loadBudgetData();
-    } else {
+        // Show global toast notification (visible after modal closes)
+        showSuccessToast(`Successfully saved ${savedCount} budget item(s)!`);
+    } else if (savedCount > 0) {
         showBudgetStatus(`Saved ${savedCount} item(s), ${errorCount} failed`, 'error');
         loadBudgetData();
+        showWarningToast(`Saved ${savedCount} item(s), ${errorCount} failed`);
+    } else {
+        showBudgetStatus(`Failed to save items. Please try again.`, 'error');
+        showErrorToast(`Failed to save budget items. Check console for details.`);
     }
 }
 
@@ -5736,11 +5768,18 @@ async function viewCampaign(campaignId) {
         
         const c = data.data;
         
-        // Format dates
-        const formatDate = (dateStr) => {
+        // Format dates with optional time
+        const formatDate = (dateStr, timeStr = null) => {
             if (!dateStr) return 'Not set';
             try {
-                return new Date(dateStr).toLocaleString('en-US', {dateStyle: 'long', timeStyle: 'short'});
+                // Combine date and time if time is provided
+                let dateTimeStr = dateStr;
+                if (timeStr) {
+                    // Ensure time is in HH:MM format
+                    const timePart = timeStr.substring(0, 5);
+                    dateTimeStr = dateStr + 'T' + timePart;
+                }
+                return new Date(dateTimeStr).toLocaleString('en-US', {dateStyle: 'long', timeStyle: 'short'});
             } catch (e) {
                 return dateStr;
             }
@@ -5822,11 +5861,11 @@ async function viewCampaign(campaignId) {
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
                             <div style="background: white; border: 2px solid #e2e8f0; padding: 16px; border-radius: 10px;">
                                 <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Start Date</div>
-                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">${formatDate(c.start_date)}</div>
+                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">${formatDate(c.start_date, c.start_time)}</div>
                             </div>
                             <div style="background: white; border: 2px solid #e2e8f0; padding: 16px; border-radius: 10px;">
                                 <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">End Date</div>
-                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">${formatDate(c.end_date)}</div>
+                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">${formatDate(c.end_date, c.end_time)}</div>
                             </div>
                             ${c.final_schedule_datetime ? `
                                 <div style="background: white; border: 2px solid #14b8a6; padding: 16px; border-radius: 10px;">
