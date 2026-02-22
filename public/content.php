@@ -1958,19 +1958,29 @@ async function editContent(contentId) {
         }
         
         // Store content ID for update
-        document.getElementById('contentForm').dataset.contentId = contentId;
+        const formEl = document.getElementById('uploadForm');
+        if (formEl) {
+            formEl.dataset.contentId = contentId;
+        }
         
         // Change submit button text
-        const submitBtn = document.querySelector('#contentForm button[type="submit"]');
+        const submitBtn = document.querySelector('#uploadForm button[type="submit"]');
         if (submitBtn) {
             submitBtn.textContent = 'Update Content';
         }
         
-        // Scroll to form
-        document.getElementById('create-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Scroll to form and open modal
+        const createSection = document.getElementById('create-content');
+        const uploadModal = document.getElementById('uploadContentModal');
+        if (uploadModal) {
+            uploadModal.style.display = 'flex';
+        }
+        if (createSection) {
+            createSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         
     } catch (err) {
-        alert('Failed to load content: ' + err.message);
+        await customAlert('Failed to load content: ' + err.message, 'Error');
     }
 }
 
@@ -2246,17 +2256,17 @@ async function showContentDetails(contentId) {
 
 // Use template
 function useTemplate(contentId) {
+    // Open the upload modal first
+    const uploadModal = document.getElementById('uploadContentModal');
+    if (uploadModal) {
+        uploadModal.style.display = 'flex';
+    }
+    
     // Show loading state
     const statusEl = document.getElementById('uploadStatus');
     if (statusEl) {
         statusEl.textContent = 'Loading approved reusable material...';
         statusEl.style.color = '#64748b';
-    }
-    
-    // Scroll to create content section (with null check)
-    const createSection = document.getElementById('create-content') || document.getElementById('uploadForm')?.closest('section');
-    if (createSection) {
-        createSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     
     // Fetch content details and populate form
@@ -2275,6 +2285,10 @@ function useTemplate(contentId) {
         
         if (item && item.id) {
             const form = document.getElementById('uploadForm');
+            if (!form) {
+                console.error('Upload form not found');
+                return;
+            }
             if (form.elements['title']) form.elements['title'].value = 'Copy of ' + (item.title || '');
             if (form.elements['description']) form.elements['description'].value = item.body || '';
             if (form.elements['content_type']) form.elements['content_type'].value = item.content_type || '';
@@ -2831,54 +2845,60 @@ function renderContentGrid(container, items, isTemplate = false) {
                 </button>` 
                 : '';
             
-            // Delete button (only for draft or rejected)
-            const deleteButton = (status === 'draft' || status === 'rejected') 
-                ? `<button class="btn btn-danger" onclick="deleteContent(${item.id})" style="background: #ef4444; color: white; margin: 2px;">
-                    <i class="fas fa-trash"></i> <span>Delete</span>
-                </button>` 
-                : '';
+            // Archive button for all non-archived content
+            const archiveButton = `<button class="btn btn-secondary" onclick="archiveContent(${item.id})" style="background: #64748b; color: white; margin: 2px;" title="Archive">
+                <i class="fas fa-archive"></i> <span>Archive</span>
+            </button>`;
             
             if (status === 'approved') {
-                // APPROVED: Show View + Edit + Archive
+                // APPROVED: Show View + Edit + Archive (row layout)
                 actionButtons = `
-                    ${viewButton}
-                    <button class="btn btn-secondary" onclick="editContent(${item.id})" style="margin: 2px;">
-                        <i class="fas fa-edit"></i> <span>Edit</span>
-                    </button>
-                    <button class="btn btn-secondary" onclick="archiveContent(${item.id})" style="background: #64748b; color: white; margin: 2px;" title="Archive">
-                        <i class="fas fa-archive"></i> <span>Archive</span>
-                    </button>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                        ${viewButton}
+                        <button class="btn btn-secondary" onclick="editContent(${item.id})" style="margin: 2px;">
+                            <i class="fas fa-edit"></i> <span>Edit</span>
+                        </button>
+                        ${archiveButton}
+                    </div>
                 `;
             } else if (status === 'draft') {
-                // DRAFT: Show View + Edit + Approve + Submit for Review + Delete
+                // DRAFT: Show View + Edit + Archive (row 1), Approve + Submit for Review (row 2)
                 actionButtons = `
-                    ${viewButton}
-                    ${editButton}
-                    <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white; margin: 2px;">
-                        <i class="fas fa-check-circle"></i> <span>Approve</span>
-                    </button>
-                    <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'pending_review')" style="margin: 2px;">
-                        <i class="fas fa-paper-plane"></i> <span>Submit for Review</span>
-                    </button>
-                    ${deleteButton}
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px;">
+                        ${viewButton}
+                        ${editButton}
+                        ${archiveButton}
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                        <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white; margin: 2px; font-size: 11px; padding: 4px 8px;">
+                            <i class="fas fa-check-circle"></i> <span>Approve</span>
+                        </button>
+                        <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'pending_review')" style="margin: 2px; font-size: 11px; padding: 4px 8px;">
+                            <i class="fas fa-paper-plane"></i> <span>Submit</span>
+                        </button>
+                    </div>
                 `;
             } else if (status === 'under_review' || status === 'pending_review') {
-                // UNDER_REVIEW: Show View + Edit + Approve + Reject
+                // UNDER_REVIEW: Show View + Edit + Approve + Reject + Archive
                 actionButtons = `
-                    ${viewButton}
-                    ${editButton}
-                    <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white; margin: 2px;">
-                        <i class="fas fa-check-circle"></i> <span>Approve</span>
-                    </button>
-                    <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'rejected')" style="background: #dc2626; color: white; margin: 2px;">
-                        <i class="fas fa-times-circle"></i> <span>Reject</span>
-                    </button>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                        ${viewButton}
+                        ${editButton}
+                        <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white; margin: 2px;">
+                            <i class="fas fa-check-circle"></i> <span>Approve</span>
+                        </button>
+                        <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'rejected')" style="background: #dc2626; color: white; margin: 2px;">
+                            <i class="fas fa-times-circle"></i> <span>Reject</span>
+                        </button>
+                    </div>
                 `;
             } else if (status === 'rejected') {
-                // REJECTED: Show View + Delete
+                // REJECTED: Show View + Archive
                 actionButtons = `
-                    ${viewButton}
-                    ${deleteButton}
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                        ${viewButton}
+                        ${archiveButton}
+                    </div>
                 `;
             } else {
                 // ANY UNKNOWN STATUS: Fallback to View only
@@ -3032,23 +3052,30 @@ async function loadMediaGallery() {
         
         const mediaType = document.getElementById('mediaTypeFilter').value;
         
-        // Filter from combined data: approval_status === "APPROVED" AND file_type is image or video
+        // Filter from combined data: approval_status === "APPROVED" AND has media content
         let mediaItems = contents.filter(item => {
             const approvalStatus = (item.approval_status || '').toUpperCase();
             if (approvalStatus !== 'APPROVED') return false;
             
             const fileType = item.file_type || item.mime_type || '';
-            const isImage = fileType.startsWith('image/');
-            const isVideo = fileType.startsWith('video/');
+            const contentType = (item.content_type || '').toLowerCase();
+            const filePath = item.file_reference || item.file_path || '';
             
-            // Fallback: check content_type if file_type not available
-            if (!fileType && item.content_type) {
-                const contentType = item.content_type.toLowerCase();
-                return contentType === 'image' || contentType === 'video' || 
-                       contentType === 'poster' || contentType === 'infographic';
-            }
+            // Check if it's an image or video by mime type
+            const isImageMime = fileType.startsWith('image/');
+            const isVideoMime = fileType.startsWith('video/');
             
-            return isImage || isVideo;
+            // Check by content_type field
+            const isMediaContentType = ['image', 'video', 'poster', 'infographic'].includes(contentType);
+            
+            // Check by file extension
+            const imageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
+            const videoExts = ['.mp4', '.webm', '.mov', '.avi', '.mkv'];
+            const hasImageExt = imageExts.some(ext => filePath.toLowerCase().endsWith(ext));
+            const hasVideoExt = videoExts.some(ext => filePath.toLowerCase().endsWith(ext));
+            
+            // Return true if any media indicator is present
+            return isImageMime || isVideoMime || isMediaContentType || hasImageExt || hasVideoExt;
         });
         
         // Apply additional media type filter if specified
@@ -3249,11 +3276,16 @@ function openEditContentModal(contentId) {
 // Show Archived Content Modal
 async function showArchivedContent() {
     try {
-        // Filter archived content from the contents array
-        const archivedContent = contents.filter(item => {
-            const status = normalizeStatus(item.approval_status);
-            return status === 'archived';
+        // Fetch archived content directly from API (not from contents array which excludes archived)
+        const res = await fetch(apiBase + '/api/v1/content?approval_status=archived', {
+            headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
         });
+        
+        let archivedContent = [];
+        if (res.ok) {
+            const data = await res.json();
+            archivedContent = data.data || [];
+        }
         
         // Create modal
         const modal = document.createElement('div');

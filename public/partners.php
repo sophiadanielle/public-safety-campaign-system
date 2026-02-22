@@ -899,6 +899,9 @@ async function showArchivedPartners() {
                         <span style="color: #64748b; font-size: 12px; margin-left: 8px;">${partner.organization_type || ''}</span>
                     </div>
                     <div style="display: flex; gap: 8px;">
+                        <button onclick="viewPartner(${partner.id})" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px; background: #6366f1; color: white; border: none;">
+                            <i class="fas fa-eye"></i> View
+                        </button>
                         <button onclick="restorePartner(${partner.id})" class="btn btn-success" style="padding: 6px 12px; font-size: 12px; background: #10b981; color: white; border: none;">
                             <i class="fas fa-undo"></i> Restore
                         </button>
@@ -919,10 +922,9 @@ async function showArchivedPartners() {
 // Restore Partner
 async function restorePartner(partnerId) {
     try {
-        const res = await fetch(apiBase + '/api/v1/partners/' + partnerId, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ is_archived: false })
+        const res = await fetch(apiBase + '/api/v1/partners/' + partnerId + '/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
         

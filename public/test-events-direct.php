@@ -25,6 +25,7 @@ try {
             c.title as campaign_title
         FROM `campaign_department_events` e
         LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
+        WHERE e.status != 'archived' OR e.status IS NULL
         ORDER BY e.event_date DESC, e.event_time DESC
         LIMIT 100
     ";
