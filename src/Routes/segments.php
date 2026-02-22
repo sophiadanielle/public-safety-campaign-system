@@ -67,4 +67,16 @@ return [
         'handler' => [SegmentController::class, 'destroy'],
         'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/segments/{id}/archive',
+        'handler' => [SegmentController::class, 'archive'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/segments/{id}/restore',
+        'handler' => [SegmentController::class, 'restore'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
 ];

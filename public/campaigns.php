@@ -1547,30 +1547,38 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         </div>
         <style>
             .archived-budget-modal-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                width: 100vw;
-                height: 100vh;
-                background: rgba(0, 0, 0, 0.6);
-                z-index: 99999;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                overflow: hidden;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                background: rgba(0, 0, 0, 0.7) !important;
+                z-index: 999999 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                overflow: hidden !important;
+                backdrop-filter: blur(4px);
+                -webkit-backdrop-filter: blur(4px);
             }
             .archived-budget-modal-content {
-                background: white;
+                background: white !important;
                 border-radius: 12px;
                 max-width: 900px;
                 width: 90%;
                 max-height: 80vh;
                 overflow-y: auto;
                 padding: 24px;
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-                position: relative;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+                position: relative !important;
+                z-index: 1000000 !important;
+                transform: translateZ(0);
+            }
+            /* Prevent body scroll when modal is open */
+            body.archived-modal-open {
+                overflow: hidden !important;
             }
         </style>
     </section>
@@ -5589,11 +5597,13 @@ async function archiveBudgetItems(campaignId) {
 function toggleArchivedBudgets() {
     const modal = document.getElementById('archivedBudgetsModal');
     modal.style.display = 'flex';
+    document.body.classList.add('archived-modal-open');
     loadArchivedBudgets();
 }
 
 function closeArchivedBudgetsModal() {
     document.getElementById('archivedBudgetsModal').style.display = 'none';
+    document.body.classList.remove('archived-modal-open');
 }
 
 // Load archived budgets
@@ -5650,7 +5660,17 @@ async function loadArchivedBudgets() {
 
 // Restore archived budget items
 async function restoreBudgetItems(campaignId) {
-    const items = (allBudgetItems || []).filter(item => item.campaign_id === campaignId && item.is_archived);
+    // Convert campaignId to number for comparison (it comes as string from onclick)
+    const cid = parseInt(campaignId);
+    const items = (allBudgetItems || []).filter(item => parseInt(item.campaign_id) === cid && item.is_archived);
+    
+    console.log('Restoring items for campaign:', cid, 'Found items:', items.length);
+    
+    if (items.length === 0) {
+        showWarningToast('No archived items found for this campaign');
+        return;
+    }
+    
     let restoredCount = 0;
     
     for (const item of items) {
@@ -5663,17 +5683,22 @@ async function restoreBudgetItems(campaignId) {
                 },
                 body: JSON.stringify({ is_archived: false })
             });
-            if (res.ok) restoredCount++;
+            if (res.ok) {
+                restoredCount++;
+                console.log('Restored item:', item.id);
+            } else {
+                console.error('Failed to restore item:', item.id, await res.text());
+            }
         } catch (err) {
             console.error('Failed to restore budget item:', err);
         }
     }
     
     showSuccessToast(`Restored ${restoredCount} budget item(s)`);
-    // Reload budget data to refresh allBudgetItems
+    // Reload budget data to refresh allBudgetItems - must await to ensure data is fresh
     await loadBudgetData();
-    // Reload archived list
-    loadArchivedBudgets();
+    // Reload archived list after data is refreshed
+    await loadArchivedBudgets();
 }
 
 // Delete archived budget items permanently
@@ -5682,7 +5707,9 @@ async function deleteArchivedBudgetItems(campaignId) {
         return;
     }
     
-    const items = (allBudgetItems || []).filter(item => item.campaign_id === campaignId && item.is_archived);
+    // Convert campaignId to number for comparison
+    const cid = parseInt(campaignId);
+    const items = (allBudgetItems || []).filter(item => parseInt(item.campaign_id) === cid && item.is_archived);
     let deletedCount = 0;
     
     for (const item of items) {

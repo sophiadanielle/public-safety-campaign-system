@@ -587,13 +587,35 @@ class SegmentController
         // Delete related records first (foreign key constraints)
         $this->pdo->beginTransaction();
         try {
-            // Delete segment members
-            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_audience_segment_members` WHERE segment_id = :id');
-            $stmt->execute(['id' => $id]);
+            // Check if audience_members table exists and delete from it
+            try {
+                $stmt = $this->pdo->prepare('DELETE FROM `audience_members` WHERE segment_id = :id');
+                $stmt->execute(['id' => $id]);
+            } catch (\PDOException $e) {
+                // Table may not exist, ignore
+            }
             
-            // Delete campaign-segment associations
-            $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_campaign_audience` WHERE segment_id = :id');
-            $stmt->execute(['id' => $id]);
+            // Check if campaign_department_audience_segment_members table exists
+            try {
+                $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_audience_segment_members` WHERE segment_id = :id');
+                $stmt->execute(['id' => $id]);
+            } catch (\PDOException $e) {
+                // Table may not exist, ignore
+            }
+            
+            // Delete campaign-segment associations (try both table names)
+            try {
+                $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_campaign_audience` WHERE segment_id = :id');
+                $stmt->execute(['id' => $id]);
+            } catch (\PDOException $e) {
+                // Table may not exist, try alternative name
+                try {
+                    $stmt = $this->pdo->prepare('DELETE FROM `campaign_audience` WHERE segment_id = :id');
+                    $stmt->execute(['id' => $id]);
+                } catch (\PDOException $e2) {
+                    // Neither table exists, ignore
+                }
+            }
             
             // Delete the segment
             $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_audience_segments` WHERE id = :id');
@@ -608,6 +630,72 @@ class SegmentController
             http_response_code(500);
             return ['error' => 'Failed to delete segment: ' . $e->getMessage()];
         }
+    }
+
+    /**
+     * Archive a segment (soft delete)
+     */
+    public function archive(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        try {
+            $userRole = RoleMiddleware::getUserRole($user, $this->pdo);
+            $userRoleName = $userRole ? strtolower($userRole) : '';
+            
+            if ($userRoleName === 'viewer') {
+                http_response_code(403);
+                return ['error' => 'Viewer role is read-only. You cannot archive segments.'];
+            }
+            
+            $allowedRoles = ['admin', 'captain', 'barangay administrator', 'system_admin', 'barangay_admin'];
+            if (!$userRole || !in_array($userRoleName, $allowedRoles, true)) {
+                http_response_code(403);
+                return ['error' => 'Insufficient permissions. Only administrators and captains can archive segments.'];
+            }
+        } catch (\Exception $e) {
+            http_response_code(403);
+            return ['error' => 'Access denied: ' . $e->getMessage()];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        $segment = $this->findSegment($id);
+        
+        // Check if is_archived column exists, if not add it
+        try {
+            $colCheck = $this->pdo->query("SHOW COLUMNS FROM `campaign_department_audience_segments` LIKE 'is_archived'")->fetch();
+            if (!$colCheck) {
+                $this->pdo->exec("ALTER TABLE `campaign_department_audience_segments` ADD COLUMN `is_archived` TINYINT(1) DEFAULT 0");
+            }
+        } catch (\PDOException $e) {
+            // Column might already exist
+        }
+        
+        $stmt = $this->pdo->prepare('UPDATE `campaign_department_audience_segments` SET is_archived = 1 WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        
+        return ['message' => 'Segment archived successfully'];
+    }
+    
+    /**
+     * Restore an archived segment
+     */
+    public function restore(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        
+        $stmt = $this->pdo->prepare('UPDATE `campaign_department_audience_segments` SET is_archived = 0 WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        
+        return ['message' => 'Segment restored successfully'];
     }
 
     private function findSegment(int $id): array

@@ -214,7 +214,6 @@
                                 'icon' => 'fa-users',
                                 'features' => [
                                     ['label' => 'All Segments', 'href' => '#segments-list', 'icon' => 'fa-list'],
-                                    ['label' => 'Create Segment', 'href' => '#create-segment', 'icon' => 'fa-plus-circle'],
                                     ['label' => 'Audience Members', 'href' => '#audience-members', 'icon' => 'fa-users'],
                                     ['label' => 'Segment Analytics', 'href' => '#segment-analytics', 'icon' => 'fa-chart-bar'],
                                     ['label' => 'Import/Export', 'href' => '#import-export', 'icon' => 'fa-file-import'],
@@ -338,7 +337,18 @@
                                     if (($decoded->aud ?? null) === $jwtAudience && ($decoded->iss ?? null) === $jwtIssuer) {
                                         $roleId = (int) ($decoded->role_id ?? 0);
                                         if ($roleId > 0) {
-                                            require_once __DIR__ . '/../../src/Config/db_connect.php';
+                                            // Suppress errors and catch exceptions to prevent 502 errors
+                                            $oldErrorReporting4 = error_reporting(0);
+                                            try {
+                                                @require_once __DIR__ . '/../../src/Config/db_connect.php';
+                                            } catch (Exception $dbEx4) {
+                                                error_log('RBAC SIDEBAR JWT fallback: db_connect.php threw exception: ' . $dbEx4->getMessage());
+                                                $pdo = null;
+                                            } catch (Error $dbErr4) {
+                                                error_log('RBAC SIDEBAR JWT fallback: db_connect.php threw error: ' . $dbErr4->getMessage());
+                                                $pdo = null;
+                                            }
+                                            error_reporting($oldErrorReporting4);
                                             if (isset($pdo) && $pdo instanceof PDO) {
                                                 $stmt = $pdo->prepare('SELECT r.name FROM campaign_department_roles r WHERE r.id = :role_id LIMIT 1');
                                                 $stmt->execute(['role_id' => $roleId]);

@@ -2684,8 +2684,8 @@ async function loadContent() {
             return;
         }
         
-        // Paginate client-side
-        const itemsPerPage = 6;
+        // Paginate client-side - 10 items per page
+        const itemsPerPage = 10;
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         const paginatedItems = filtered.slice(startIndex, endIndex);

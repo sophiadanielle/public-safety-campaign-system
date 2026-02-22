@@ -271,37 +271,193 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 
     <!-- All Segments List -->
     <section id="segments-list" class="card" style="margin-bottom:32px;">
-        <h2 class="section-title">
-            <span class="section-step">Step 1</span>
-            All Segments
-        </h2>
-        <div class="section-description">
-            <strong>What this shows:</strong> This is the system's master list of targeting groups. Each segment is a persistent, reusable entity that can be used by Campaign Management, Content Distribution, Scheduling/Events, and Reporting & Analytics modules. Segments represent groups of residents (e.g., senior citizens in Payatas, high-risk households in Zone 5) that serve as targeting entities across the entire system—not just temporary filters, but reusable targeting groups for campaigns, content, events, and analysis.
-            <br><br>
-            <strong>When to use:</strong> Use this list to find existing segments for campaign creation, content targeting, event participation, and reporting. Each segment can be reused across multiple modules, ensuring consistent targeting throughout the system.
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 class="section-title" style="margin: 0; border: none; padding: 0;">
+                All Segments
+            </h2>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary" onclick="openCreateSegmentModal()" style="padding: 10px 16px; font-size: 14px;">
+                    <i class="fas fa-plus"></i> Create Segment
+                </button>
+                <button class="btn btn-secondary" onclick="toggleArchivedSegments()" style="padding: 10px 16px; font-size: 14px;">
+                    <i class="fas fa-archive"></i> View Archived
+                </button>
+                <button class="btn btn-secondary" onclick="loadSegments()" style="padding: 10px 16px; font-size: 14px;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
         </div>
-        <div class="form-field" style="margin-bottom:16px;">
-            <button class="btn btn-primary" onclick="loadSegments()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
-                <i class="fas fa-list" style="margin-right:8px;"></i>View All Segments
-            </button>
+        
+        <!-- Search and Filters -->
+        <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #64748b; display: block; margin-bottom: 4px;">Search</label>
+                    <input type="text" id="segmentSearchInput" placeholder="Search segments..." onkeyup="filterSegments()" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #64748b; display: block; margin-bottom: 4px;">Geographic Scope</label>
+                    <select id="filterGeographicScope" onchange="filterSegments()" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                        <option value="">All Scopes</option>
+                        <option value="Barangay">Barangay</option>
+                        <option value="Zone">Zone</option>
+                        <option value="Purok">Purok</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #64748b; display: block; margin-bottom: 4px;">Location</label>
+                    <select id="filterLocation" onchange="filterSegments()" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                        <option value="">All Locations</option>
+                        <option value="Barangay Batasan Hills">Batasan Hills</option>
+                        <option value="Barangay Commonwealth">Commonwealth</option>
+                        <option value="Barangay Holy Spirit">Holy Spirit</option>
+                        <option value="Barangay Payatas">Payatas</option>
+                        <option value="Barangay Bagong Silangan">Bagong Silangan</option>
+                        <option value="Barangay Tandang Sora">Tandang Sora</option>
+                        <option value="Barangay Fairview">Fairview</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #64748b; display: block; margin-bottom: 4px;">Sector Type</label>
+                    <select id="filterSectorType" onchange="filterSegments()" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                        <option value="">All Sectors</option>
+                        <option value="Households">Households</option>
+                        <option value="Youth">Youth</option>
+                        <option value="Senior Citizens">Senior Citizens</option>
+                        <option value="Schools">Schools</option>
+                        <option value="NGOs">NGOs</option>
+                        <option value="Person with Disabilities">PWD</option>
+                        <option value="Pregnant Women">Pregnant Women</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #64748b; display: block; margin-bottom: 4px;">Risk Level</label>
+                    <select id="filterRiskLevel" onchange="filterSegments()" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                        <option value="">All Levels</option>
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: 600; color: #64748b; display: block; margin-bottom: 4px;">Basis</label>
+                    <select id="filterBasis" onchange="filterSegments()" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                        <option value="">All Basis</option>
+                        <option value="Historical trend">Historical trend</option>
+                        <option value="Inspection results">Inspection results</option>
+                        <option value="Attendance records">Attendance records</option>
+                        <option value="Incident pattern reference">Incident pattern</option>
+                    </select>
+                </div>
+            </div>
         </div>
+        
         <div class="empty-state" id="segmentsListEmptyState" style="display:none;">
             <div class="empty-state-icon"><i class="fas fa-users"></i></div>
-            <p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">No segments created yet</p>
-            <p style="margin:0; font-size:14px; line-height:1.6;">You haven't created any audience segments yet. Use the "Create Segment" section below to define your first segment. Segments are reusable targeting entities that integrate with Campaign Management, Content Distribution, Scheduling/Events, and Reporting & Analytics modules.</p>
+            <p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">No segments found</p>
+            <p style="margin:0; font-size:14px; line-height:1.6;">No segments match your filters. Try adjusting your search criteria or create a new segment.</p>
         </div>
         <div id="segmentsListContainer" style="margin-top: 16px;">
-            <p style="text-align: center; color: #64748b; padding: 20px;">Click "View All Segments" above to load your segments</p>
+            <p style="text-align: center; color: #64748b; padding: 20px;">Loading segments...</p>
         </div>
+        
+        <!-- Pagination -->
+        <div id="segmentsPagination" style="display: none; justify-content: center; align-items: center; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;"></div>
     </section>
+    
+    <!-- Archived Segments Modal -->
+    <div id="archivedSegmentsModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 999999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; max-width: 900px; width: 90%; max-height: 80vh; overflow-y: auto; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+                <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-archive"></i> Archived Segments</h3>
+                <button onclick="closeArchivedSegmentsModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; line-height: 1;">&times;</button>
+            </div>
+            <div id="archivedSegmentsList"></div>
+        </div>
+    </div>
 
-    <!-- Create Segment -->
-    <section id="create-segment" class="card" style="margin-bottom:32px;">
+    <!-- Create Segment Modal -->
+    <div id="createSegmentModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 999999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+                <h3 style="margin: 0; color: #0f172a;" id="createSegmentModalTitle"><i class="fas fa-plus-circle"></i> Create Segment</h3>
+                <button onclick="closeCreateSegmentModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; line-height: 1;">&times;</button>
+            </div>
+            <form id="createForm" class="form-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">Segment Name *</label>
+                    <input type="text" id="modal_segment_name" placeholder="Enter segment name..." required style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                </div>
+                <div class="form-field">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">Geographic Scope</label>
+                    <select id="modal_geographic_scope" style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="">Select...</option>
+                        <option value="Barangay">Barangay</option>
+                        <option value="Zone">Zone</option>
+                        <option value="Purok">Purok</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">Location Reference</label>
+                    <select id="modal_location_reference" style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="">Select Barangay...</option>
+                        <option value="Barangay Batasan Hills">Barangay Batasan Hills</option>
+                        <option value="Barangay Commonwealth">Barangay Commonwealth</option>
+                        <option value="Barangay Holy Spirit">Barangay Holy Spirit</option>
+                        <option value="Barangay Payatas">Barangay Payatas</option>
+                        <option value="Barangay Bagong Silangan">Barangay Bagong Silangan</option>
+                        <option value="Barangay Tandang Sora">Barangay Tandang Sora</option>
+                        <option value="Barangay Fairview">Barangay Fairview</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">Sector Type</label>
+                    <select id="modal_sector_type" style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="">Select...</option>
+                        <option value="Households">Households</option>
+                        <option value="Youth">Youth</option>
+                        <option value="Senior Citizens">Senior Citizens</option>
+                        <option value="Schools">Schools</option>
+                        <option value="NGOs">NGOs</option>
+                        <option value="Person with Disabilities">Person with Disabilities</option>
+                        <option value="Pregnant Women">Pregnant Women</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">Risk Level *</label>
+                    <select id="modal_risk_level" required style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="">Select...</option>
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                    </select>
+                </div>
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">Basis of Segmentation</label>
+                    <select id="modal_basis_of_segmentation" style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="">Select...</option>
+                        <option value="Historical trend">Historical trend</option>
+                        <option value="Inspection results">Inspection results</option>
+                        <option value="Attendance records">Attendance records</option>
+                        <option value="Incident pattern reference">Incident pattern reference</option>
+                    </select>
+                </div>
+            </form>
+            <div id="modalCreateStatus" style="margin-top: 12px; padding: 8px; border-radius: 6px;"></div>
+            <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeCreateSegmentModal()" style="padding: 10px 20px;">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveSegmentFromModal()" id="saveSegmentBtn" style="padding: 10px 20px;">Create Segment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Create Segment Section (kept for backward compatibility) -->
+    <section id="create-segment" class="card" style="display: none; margin-bottom:32px;">
         <h2 class="section-title">
             <span class="section-step">Step 2</span>
             Create Segment
         </h2>
-        <form id="createForm" class="form-grid">
+        <form id="createFormOld" class="form-grid">
             <div class="form-field" style="grid-column: 1 / -1;">
                 <label>Segment Name *</label>
                 <select id="segment_name" required onchange="handleSegmentNameChange()" style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 15px; background: white;">
@@ -618,6 +774,11 @@ function populateSegmentDropdowns(segments) {
     }
 }
 
+// Pagination variables
+let currentSegmentsPage = 1;
+const segmentsPerPage = 10;
+let filteredSegments = [];
+
 // Load segments list and populate dropdowns
 async function loadSegments() {
     const container = document.getElementById('segmentsListContainer');
@@ -649,80 +810,337 @@ async function loadSegments() {
                 handleTokenExpiration();
                 return;
             }
-            // Hide technical errors
-            if (errorMsg.toLowerCase().includes('sqlstate') || errorMsg.toLowerCase().includes('table') || errorMsg.toLowerCase().includes('database')) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Unable to load segments</p><p style="margin:0; font-size:14px;">We couldn\'t load segments right now. Please try again or contact the administrator if the problem persists.</p></div>';
-            } else {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Unable to load segments</p><p style="margin:0; font-size:14px;">' + (errorMsg || 'Please try again or contact the administrator.') + '</p></div>';
-            }
+            container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-exclamation-circle"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Unable to load segments</p><p style="margin:0; font-size:14px;">Please try again or contact the administrator.</p></div>';
             emptyState.style.display = 'none';
             return;
         }
         
         const segments = data.data || [];
-        allSegmentsCache = segments; // Cache for dropdowns
+        // Filter out archived segments
+        allSegmentsCache = segments.filter(s => !s.is_archived);
         
         // Populate dropdowns
-        populateSegmentDropdowns(segments);
+        populateSegmentDropdowns(allSegmentsCache);
         
-        if (segments.length === 0) {
-            container.innerHTML = '';
-            emptyState.style.display = 'block';
-            return;
-        }
-        
-        let html = `
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Segment Name</th>
-                        <th>Geographic Scope</th>
-                        <th>Location</th>
-                        <th>Sector Type</th>
-                        <th>Risk Level</th>
-                        <th>Basis</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        segments.forEach(seg => {
-            const riskClass = seg.risk_level ? seg.risk_level.toLowerCase() : '';
-            const segmentId = seg.segment_id || seg.id;
-            const segmentName = seg.segment_name || seg.name || 'N/A';
-            html += `
-                <tr>
-                    <td>#${segmentId || 'undefined'}</td>
-                    <td><strong>${segmentName}</strong></td>
-                    <td>${seg.geographic_scope || '—'}</td>
-                    <td>${seg.location_reference || '—'}</td>
-                    <td>${seg.sector_type || '—'}</td>
-                    <td>${seg.risk_level ? `<span class="badge ${riskClass}">${seg.risk_level}</span>` : '—'}</td>
-                    <td>${seg.basis_of_segmentation || '—'}</td>
-                    <td>
-                        <button onclick="viewSegment(${segmentId})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; margin: 2px;">👁️ View</button>
-                        <button onclick="editSegment(${segmentId})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; margin: 2px;">✏️ Edit</button>
-                        <button onclick="deleteSegment(${segmentId})" class="btn btn-danger" style="padding: 4px 8px; font-size: 12px; background: #ef4444; color: white; margin: 2px;">🗑️ Delete</button>
-                    </td>
-                </tr>
-            `;
-        });
-        
-        html += `
-                </tbody>
-            </table>
-        `;
-        
-        container.innerHTML = html;
-        emptyState.style.display = 'none';
+        // Apply filters and render
+        filterSegments();
     } catch (err) {
         container.innerHTML = '<div class="empty-state"><div class="empty-state-icon"><i class="fas fa-wifi"></i></div><p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">Connection problem</p><p style="margin:0; font-size:14px;">We couldn\'t connect to the server. Please check your internet connection and try again.</p></div>';
         emptyState.style.display = 'none';
     }
 }
 
+// Filter segments based on search and filter inputs
+function filterSegments() {
+    const search = (document.getElementById('segmentSearchInput')?.value || '').toLowerCase().trim();
+    const geoScope = document.getElementById('filterGeographicScope')?.value || '';
+    const location = document.getElementById('filterLocation')?.value || '';
+    const sectorType = document.getElementById('filterSectorType')?.value || '';
+    const riskLevel = document.getElementById('filterRiskLevel')?.value || '';
+    const basis = document.getElementById('filterBasis')?.value || '';
+    
+    filteredSegments = allSegmentsCache.filter(seg => {
+        const name = (seg.segment_name || seg.name || '').toLowerCase();
+        if (search && !name.includes(search)) return false;
+        if (geoScope && seg.geographic_scope !== geoScope) return false;
+        if (location && seg.location_reference !== location) return false;
+        if (sectorType && seg.sector_type !== sectorType) return false;
+        if (riskLevel && seg.risk_level !== riskLevel) return false;
+        if (basis && seg.basis_of_segmentation !== basis) return false;
+        return true;
+    });
+    
+    currentSegmentsPage = 1;
+    renderSegmentsTable();
+}
+
+// Render segments table with pagination
+function renderSegmentsTable() {
+    const container = document.getElementById('segmentsListContainer');
+    const emptyState = document.getElementById('segmentsListEmptyState');
+    const paginationEl = document.getElementById('segmentsPagination');
+    
+    if (filteredSegments.length === 0) {
+        container.innerHTML = '';
+        emptyState.style.display = 'block';
+        paginationEl.style.display = 'none';
+        return;
+    }
+    
+    emptyState.style.display = 'none';
+    
+    // Pagination
+    const totalPages = Math.ceil(filteredSegments.length / segmentsPerPage);
+    const startIdx = (currentSegmentsPage - 1) * segmentsPerPage;
+    const endIdx = startIdx + segmentsPerPage;
+    const pageSegments = filteredSegments.slice(startIdx, endIdx);
+    
+    let html = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Segment Name</th>
+                    <th>Geographic Scope</th>
+                    <th>Location</th>
+                    <th>Sector Type</th>
+                    <th>Risk Level</th>
+                    <th>Basis</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    pageSegments.forEach(seg => {
+        const riskClass = seg.risk_level ? seg.risk_level.toLowerCase() : '';
+        const segmentId = seg.segment_id || seg.id;
+        const segmentName = seg.segment_name || seg.name || 'N/A';
+        html += `
+            <tr>
+                <td>#${segmentId}</td>
+                <td><strong>${segmentName}</strong></td>
+                <td>${seg.geographic_scope || '—'}</td>
+                <td>${seg.location_reference || '—'}</td>
+                <td>${seg.sector_type || '—'}</td>
+                <td>${seg.risk_level ? `<span class="badge ${riskClass}">${seg.risk_level}</span>` : '—'}</td>
+                <td>${seg.basis_of_segmentation || '—'}</td>
+                <td>
+                    <button onclick="viewSegment(${segmentId})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; margin: 1px;">View</button>
+                    <button onclick="openEditSegmentModal(${segmentId})" class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; margin: 1px;">Edit</button>
+                    <button onclick="archiveSegment(${segmentId})" class="btn btn-warning" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;">Archive</button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+    
+    // Render pagination
+    if (totalPages > 1) {
+        paginationEl.style.display = 'flex';
+        paginationEl.innerHTML = `
+            <button onclick="goToSegmentsPage(${currentSegmentsPage - 1})" ${currentSegmentsPage === 1 ? 'disabled' : ''} style="padding: 6px 12px; border: 1px solid #e2e8f0; background: white; border-radius: 4px; cursor: pointer;">Previous</button>
+            <span style="padding: 6px 12px; color: #64748b;">Page ${currentSegmentsPage} of ${totalPages} (${filteredSegments.length} segments)</span>
+            <button onclick="goToSegmentsPage(${currentSegmentsPage + 1})" ${currentSegmentsPage === totalPages ? 'disabled' : ''} style="padding: 6px 12px; border: 1px solid #e2e8f0; background: white; border-radius: 4px; cursor: pointer;">Next</button>
+        `;
+    } else {
+        paginationEl.style.display = 'none';
+    }
+}
+
+function goToSegmentsPage(page) {
+    const totalPages = Math.ceil(filteredSegments.length / segmentsPerPage);
+    if (page < 1 || page > totalPages) return;
+    currentSegmentsPage = page;
+    renderSegmentsTable();
+}
+
+// Archive segment
+async function archiveSegment(segmentId) {
+    const confirmed = await customConfirm('Are you sure you want to archive this segment? You can restore it later from View Archived.', 'Archive Segment');
+    if (!confirmed) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/segments/' + segmentId + '/archive', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        
+        const data = await res.json();
+        if (res.ok) {
+            await customAlert('Segment archived successfully!', 'Success');
+            loadSegments();
+        } else {
+            await customAlert('Error: ' + (data.error || 'Failed to archive segment'), 'Error');
+        }
+    } catch (err) {
+        await customAlert('Failed to archive segment: ' + err.message, 'Error');
+    }
+}
+
+// Toggle archived segments modal
+function toggleArchivedSegments() {
+    const modal = document.getElementById('archivedSegmentsModal');
+    modal.style.display = 'flex';
+    loadArchivedSegments();
+}
+
+function closeArchivedSegmentsModal() {
+    document.getElementById('archivedSegmentsModal').style.display = 'none';
+}
+
+// Load archived segments
+async function loadArchivedSegments() {
+    const container = document.getElementById('archivedSegmentsList');
+    container.innerHTML = '<p style="text-align: center; color: #64748b;">Loading...</p>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/segments', {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+            container.innerHTML = '<p style="text-align: center; color: #ef4444;">Failed to load archived segments</p>';
+            return;
+        }
+        
+        const archivedSegments = (data.data || []).filter(s => s.is_archived);
+        
+        if (archivedSegments.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #64748b; padding: 24px;">No archived segments.</p>';
+            return;
+        }
+        
+        let html = '';
+        archivedSegments.forEach(seg => {
+            const segmentId = seg.segment_id || seg.id;
+            html += `
+                <div style="border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${seg.segment_name || seg.name}</strong>
+                        <span style="color: #64748b; font-size: 12px; margin-left: 8px;">${seg.geographic_scope || ''} - ${seg.sector_type || ''}</span>
+                    </div>
+                    <button onclick="restoreSegment(${segmentId})" class="btn btn-success" style="padding: 6px 12px; font-size: 12px; background: #10b981; color: white; border: none;">
+                        <i class="fas fa-undo"></i> Restore
+                    </button>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    } catch (err) {
+        container.innerHTML = '<p style="text-align: center; color: #ef4444;">Error loading archived segments</p>';
+    }
+}
+
+// Restore segment
+async function restoreSegment(segmentId) {
+    try {
+        const res = await fetch(apiBase + '/api/v1/segments/' + segmentId + '/restore', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        
+        const data = await res.json();
+        if (res.ok) {
+            await customAlert('Segment restored successfully!', 'Success');
+            loadArchivedSegments();
+            loadSegments();
+        } else {
+            await customAlert('Error: ' + (data.error || 'Failed to restore segment'), 'Error');
+        }
+    } catch (err) {
+        await customAlert('Failed to restore segment: ' + err.message, 'Error');
+    }
+}
+
+// Create Segment Modal functions
+let editingSegmentId = null;
+
+function openCreateSegmentModal() {
+    editingSegmentId = null;
+    document.getElementById('createSegmentModalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Create Segment';
+    document.getElementById('saveSegmentBtn').textContent = 'Create Segment';
+    document.getElementById('modal_segment_name').value = '';
+    document.getElementById('modal_geographic_scope').value = '';
+    document.getElementById('modal_location_reference').value = '';
+    document.getElementById('modal_sector_type').value = '';
+    document.getElementById('modal_risk_level').value = '';
+    document.getElementById('modal_basis_of_segmentation').value = '';
+    document.getElementById('modalCreateStatus').textContent = '';
+    document.getElementById('createSegmentModal').style.display = 'flex';
+}
+
+function openEditSegmentModal(segmentId) {
+    editingSegmentId = segmentId;
+    const seg = allSegmentsCache.find(s => (s.segment_id || s.id) == segmentId);
+    if (!seg) {
+        customAlert('Segment not found', 'Error');
+        return;
+    }
+    
+    document.getElementById('createSegmentModalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Segment';
+    document.getElementById('saveSegmentBtn').textContent = 'Update Segment';
+    document.getElementById('modal_segment_name').value = seg.segment_name || seg.name || '';
+    document.getElementById('modal_geographic_scope').value = seg.geographic_scope || '';
+    document.getElementById('modal_location_reference').value = seg.location_reference || '';
+    document.getElementById('modal_sector_type').value = seg.sector_type || '';
+    document.getElementById('modal_risk_level').value = seg.risk_level || '';
+    document.getElementById('modal_basis_of_segmentation').value = seg.basis_of_segmentation || '';
+    document.getElementById('modalCreateStatus').textContent = '';
+    document.getElementById('createSegmentModal').style.display = 'flex';
+}
+
+function closeCreateSegmentModal() {
+    document.getElementById('createSegmentModal').style.display = 'none';
+    editingSegmentId = null;
+}
+
+async function saveSegmentFromModal() {
+    const statusEl = document.getElementById('modalCreateStatus');
+    const segmentName = document.getElementById('modal_segment_name').value.trim();
+    const riskLevel = document.getElementById('modal_risk_level').value;
+    
+    if (!segmentName) {
+        statusEl.textContent = 'Error: Segment Name is required';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+    
+    if (!riskLevel) {
+        statusEl.textContent = 'Error: Risk Level is required';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+    
+    const payload = {
+        segment_name: segmentName,
+        geographic_scope: document.getElementById('modal_geographic_scope').value || null,
+        location_reference: document.getElementById('modal_location_reference').value || null,
+        sector_type: document.getElementById('modal_sector_type').value || null,
+        risk_level: riskLevel,
+        basis_of_segmentation: document.getElementById('modal_basis_of_segmentation').value || null
+    };
+    
+    statusEl.textContent = editingSegmentId ? 'Updating...' : 'Creating...';
+    statusEl.style.color = '#64748b';
+    
+    try {
+        const url = editingSegmentId 
+            ? apiBase + '/api/v1/segments/' + editingSegmentId 
+            : apiBase + '/api/v1/segments';
+        const method = editingSegmentId ? 'PUT' : 'POST';
+        
+        const res = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            statusEl.textContent = editingSegmentId ? 'Segment updated!' : 'Segment created!';
+            statusEl.style.color = '#166534';
+            setTimeout(() => {
+                closeCreateSegmentModal();
+                loadSegments();
+            }, 1000);
+        } else {
+            statusEl.textContent = 'Error: ' + (data.error || 'Failed to save segment');
+            statusEl.style.color = '#dc2626';
+        }
+    } catch (err) {
+        statusEl.textContent = 'Error: ' + err.message;
+        statusEl.style.color = '#dc2626';
+    }
+}
 
 // Update form dependencies
 function updateFormDependencies() {

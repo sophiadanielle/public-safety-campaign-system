@@ -1344,13 +1344,24 @@ class ContentController
             throw new RuntimeException('Content not found');
         }
         
-        // Update to archived status
-        $updateStmt = $this->pdo->prepare('
-            UPDATE campaign_department_content_items SET
-                approval_status = "archived",
-                last_updated = NOW()
-            WHERE id = :id
-        ');
+        // Update to archived status - check if last_updated column exists
+        $lastUpdatedCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'last_updated'")->fetch();
+        $hasLastUpdated = !empty($lastUpdatedCheck);
+        
+        if ($hasLastUpdated) {
+            $updateStmt = $this->pdo->prepare('
+                UPDATE campaign_department_content_items SET
+                    approval_status = "archived",
+                    last_updated = NOW()
+                WHERE id = :id
+            ');
+        } else {
+            $updateStmt = $this->pdo->prepare('
+                UPDATE campaign_department_content_items SET
+                    approval_status = "archived"
+                WHERE id = :id
+            ');
+        }
         $updateStmt->execute(['id' => $contentId]);
         
         // Log audit entry
