@@ -399,10 +399,7 @@ try {
         </div>
     </section>
 
-    <section id="event-calendar" class="card" style="margin-bottom:24px; display:none;">
-        <h2 class="section-title">Event Calendar</h2>
-        <div id="fullCalendarContainer" style="min-height:600px;"></div>
-    </section>
+    <!-- Removed duplicate event-calendar section - calendar is now in calendarView -->
     
     <section id="event-detail" class="card" style="margin-bottom:24px; display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
@@ -1425,16 +1422,23 @@ function switchView(view) {
 // FullCalendar instance
 let eventCalendar = null;
 let allEvents = [];
+let calendarStatusFilter = 'all';
+
+// Status colors for calendar
+const eventStatusColors = {
+    'draft': '#9ca3af',
+    'scheduled': '#3b82f6',
+    'ongoing': '#f59e0b',
+    'completed': '#10b981',
+    'cancelled': '#ef4444',
+    'archived': '#6b7280'
+};
 
 // Render calendar view with FullCalendar
 async function renderCalendar(containerId = null) {
     const container = containerId ? document.getElementById(containerId) : document.getElementById('calendarContainer');
-    const fullCalendarContainer = document.getElementById('fullCalendarContainer');
     
-    // Use the first available container
-    const calendarEl = container || fullCalendarContainer;
-    
-    if (!calendarEl) {
+    if (!container) {
         console.error('No calendar container found');
         return;
     }
@@ -1442,7 +1446,7 @@ async function renderCalendar(containerId = null) {
     // Check if FullCalendar is loaded
     if (typeof FullCalendar === 'undefined') {
         console.error('FullCalendar library not loaded');
-        calendarEl.innerHTML = '<p style="text-align:center; color:#dc2626; padding:40px;">Error: Calendar library not loaded. Please refresh the page.</p>';
+        container.innerHTML = '<p style="text-align:center; color:#dc2626; padding:40px;">Error: Calendar library not loaded. Please refresh the page.</p>';
         return;
     }
     
@@ -1452,8 +1456,33 @@ async function renderCalendar(containerId = null) {
         return;
     }
     
-    // Clear container
-    calendarEl.innerHTML = '';
+    // Clear container and add filter/legend
+    container.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-weight:600; color:#374151;">Filter by Status:</label>
+                <select id="calendarStatusFilter" onchange="filterCalendarByStatus(this.value)" style="padding:6px 12px; border:1px solid #d1d5db; border-radius:6px;">
+                    <option value="all">All Statuses</option>
+                    <option value="draft">Draft</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <span style="font-weight:600; color:#374151;">Legend:</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#9ca3af; border-radius:2px;"></span> Draft</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#3b82f6; border-radius:2px;"></span> Scheduled</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#f59e0b; border-radius:2px;"></span> Ongoing</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#10b981; border-radius:2px;"></span> Completed</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#ef4444; border-radius:2px;"></span> Cancelled</span>
+            </div>
+        </div>
+        <div id="fullCalendarEl" style="min-height:500px;"></div>
+    `;
+    
+    const calendarEl = document.getElementById('fullCalendarEl');
     
     try {
         // Initialize FullCalendar
@@ -1487,10 +1516,7 @@ async function renderCalendar(containerId = null) {
             aspectRatio: 1.8,
             events: async function(fetchInfo, successCallback, failureCallback) {
                 try {
-                    const start = fetchInfo.startStr.split('T')[0];
-                    const end = fetchInfo.endStr.split('T')[0];
-                    
-                    console.log('Fetching events for calendar:', start, 'to', end);
+                    console.log('Fetching events for calendar...');
                     
                     // Fetch events from API
                     const res = await fetch(apiBase + '/api/v1/events?include_archived=false', {
@@ -1504,41 +1530,38 @@ async function renderCalendar(containerId = null) {
                     console.log('Events loaded for calendar:', events.length);
                     
                     // Convert to FullCalendar format
-                    const calendarEvents = events.map(event => {
+                    let calendarEvents = events.map(event => {
                         const eventDate = event.date || event.event_date || '';
                         const startTime = event.start_time || '09:00';
-                        const endTime = event.end_time || '17:00';
-                        
-                        // Get color based on status
-                        const statusColors = {
-                            'draft': '#9ca3af',
-                            'scheduled': '#3b82f6',
-                            'ongoing': '#f59e0b',
-                            'completed': '#10b981',
-                            'cancelled': '#ef4444',
-                            'archived': '#6b7280'
-                        };
+                        const endTime = event.end_time || startTime; // Use start time if no end time
                         
                         const status = (event.event_status || event.status || 'scheduled').toLowerCase();
-                        const bgColor = statusColors[status] || '#4c8a89';
+                        const bgColor = eventStatusColors[status] || '#4c8a89';
                         
                         return {
-                            id: event.id,
-                            title: `[#${event.id}] ${event.event_title || event.name || 'Untitled'}`,
+                            id: String(event.id), // Ensure ID is a string
+                            title: event.event_title || event.name || 'Untitled',
                             start: eventDate ? `${eventDate}T${startTime}` : null,
                             end: eventDate ? `${eventDate}T${endTime}` : null,
                             backgroundColor: bgColor,
                             borderColor: bgColor,
                             textColor: '#ffffff',
                             extendedProps: {
+                                eventId: event.id, // Store numeric ID separately
                                 venue: event.venue || '',
                                 status: status,
                                 hazard_focus: event.hazard_focus || '',
                                 event_type: event.event_type || '',
-                                description: event.event_description || event.description || ''
+                                description: event.event_description || event.description || '',
+                                end_time: event.end_time || ''
                             }
                         };
                     }).filter(e => e.start); // Only include events with valid dates
+                    
+                    // Apply status filter
+                    if (calendarStatusFilter !== 'all') {
+                        calendarEvents = calendarEvents.filter(e => e.extendedProps.status === calendarStatusFilter);
+                    }
                     
                     console.log('Calendar events formatted:', calendarEvents.length);
                     successCallback(calendarEvents);
@@ -1551,29 +1574,43 @@ async function renderCalendar(containerId = null) {
                 // Show event details on click
                 const event = info.event;
                 const props = event.extendedProps;
+                const eventId = props.eventId; // Use the stored numeric ID
                 
-                const detailHtml = `
-                    <div style="padding:16px;">
-                        <h3 style="margin:0 0 12px 0; color:#1e293b;">${event.title}</h3>
-                        <p style="margin:4px 0; color:#64748b;"><strong>Date:</strong> ${event.start ? event.start.toLocaleDateString() : 'N/A'}</p>
-                        <p style="margin:4px 0; color:#64748b;"><strong>Time:</strong> ${event.start ? event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'} - ${event.end ? event.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}</p>
-                        <p style="margin:4px 0; color:#64748b;"><strong>Venue:</strong> ${props.venue || 'TBD'}</p>
-                        <p style="margin:4px 0; color:#64748b;"><strong>Status:</strong> <span style="background:${event.backgroundColor}; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">${props.status}</span></p>
-                        ${props.hazard_focus ? `<p style="margin:4px 0; color:#64748b;"><strong>Hazard Focus:</strong> ${props.hazard_focus}</p>` : ''}
-                        ${props.description ? `<p style="margin:8px 0 0 0; color:#475569; font-size:13px;">${props.description}</p>` : ''}
-                        <div style="margin-top:16px; display:flex; gap:8px;">
-                            <button class="btn btn-primary" onclick="openViewEventModal(${event.id.replace('[#', '').split(']')[0]})" style="padding:6px 12px; font-size:12px;">View Details</button>
-                            <button class="btn btn-secondary" onclick="openEditEventModal(${event.id.replace('[#', '').split(']')[0]})" style="padding:6px 12px; font-size:12px;">Edit</button>
+                // Format time properly
+                const startTimeStr = event.start ? event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A';
+                const endTimeStr = props.end_time ? (event.end ? event.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : props.end_time) : startTimeStr;
+                
+                // Create a custom modal with higher z-index
+                const modalHtml = `
+                    <div id="calendarEventModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100000; display:flex; align-items:center; justify-content:center;">
+                        <div style="background:white; border-radius:12px; max-width:500px; width:90%; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);">
+                            <div style="background:linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color:white; padding:16px 20px; border-radius:12px 12px 0 0; display:flex; justify-content:space-between; align-items:center;">
+                                <h3 style="margin:0; font-size:16px;">[#${eventId}] ${event.title}</h3>
+                                <button onclick="document.getElementById('calendarEventModal').remove()" style="background:rgba(255,255,255,0.2); border:none; color:white; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:16px;">&times;</button>
+                            </div>
+                            <div style="padding:20px;">
+                                <p style="margin:8px 0; color:#374151;"><strong>Date:</strong> ${event.start ? event.start.toLocaleDateString() : 'N/A'}</p>
+                                <p style="margin:8px 0; color:#374151;"><strong>Time:</strong> ${startTimeStr} - ${endTimeStr}</p>
+                                <p style="margin:8px 0; color:#374151;"><strong>Venue:</strong> ${props.venue || 'TBD'}</p>
+                                <p style="margin:8px 0; color:#374151;"><strong>Status:</strong> <span style="background:${event.backgroundColor}; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">${props.status}</span></p>
+                                ${props.hazard_focus ? `<p style="margin:8px 0; color:#374151;"><strong>Hazard Focus:</strong> ${props.hazard_focus}</p>` : ''}
+                                ${props.description ? `<p style="margin:12px 0 0 0; color:#475569; font-size:13px; padding:12px; background:#f8fafc; border-radius:6px;">${props.description}</p>` : ''}
+                                <div style="margin-top:20px; display:flex; gap:8px; justify-content:flex-end;">
+                                    <button class="btn btn-primary" onclick="document.getElementById('calendarEventModal').remove(); openViewEventModal(${eventId});" style="padding:8px 16px;">View Details</button>
+                                    <button class="btn btn-secondary" onclick="document.getElementById('calendarEventModal').remove(); openEditEventModal(${eventId});" style="padding:8px 16px;">Edit</button>
+                                    <button class="btn btn-secondary" onclick="document.getElementById('calendarEventModal').remove();" style="padding:8px 16px;">Close</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `;
                 
-                // Show in a tooltip or modal
-                if (typeof customAlert === 'function') {
-                    customAlert(detailHtml, event.title);
-                } else {
-                    alert(`Event: ${event.title}\nVenue: ${props.venue}\nStatus: ${props.status}`);
-                }
+                // Remove any existing modal
+                const existingModal = document.getElementById('calendarEventModal');
+                if (existingModal) existingModal.remove();
+                
+                // Add modal to body
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
             },
             eventDidMount: function(info) {
                 // Add tooltip
@@ -1586,7 +1623,15 @@ async function renderCalendar(containerId = null) {
         
     } catch (err) {
         console.error('Error initializing calendar:', err);
-        calendarEl.innerHTML = '<p style="text-align:center; color:#dc2626; padding:40px;">Error loading calendar: ' + err.message + '</p>';
+        container.innerHTML = '<p style="text-align:center; color:#dc2626; padding:40px;">Error loading calendar: ' + err.message + '</p>';
+    }
+}
+
+// Filter calendar by status
+function filterCalendarByStatus(status) {
+    calendarStatusFilter = status;
+    if (eventCalendar) {
+        eventCalendar.refetchEvents();
     }
 }
 
@@ -2652,11 +2697,14 @@ function closeCreateEventModal() {
 }
 
 async function populateModalDropdowns() {
+    console.log('Populating modal dropdowns...');
+    
     // Populate campaigns dropdown
     try {
         const res = await fetch(apiBase + '/api/v1/campaigns', { headers: { 'Authorization': 'Bearer ' + token } });
         const data = await res.json();
         const campaigns = data.data || [];
+        console.log('Campaigns loaded:', campaigns.length);
         
         ['modal_linked_campaign_id', 'edit_linked_campaign_id'].forEach(id => {
             const select = document.getElementById(id);
@@ -2676,25 +2724,59 @@ async function populateModalDropdowns() {
         console.error('Error loading campaigns for modal:', err);
     }
     
-    // Populate segments dropdown
+    // Populate segments dropdown - try multiple endpoints
     try {
-        const res = await fetch(apiBase + '/api/v1/segments', { headers: { 'Authorization': 'Bearer ' + token } });
-        const data = await res.json();
-        const segments = data.data || data.segments || [];
+        let segments = [];
+        
+        // Try /api/v1/segments first
+        try {
+            const res = await fetch(apiBase + '/api/v1/segments', { headers: { 'Authorization': 'Bearer ' + token } });
+            if (res.ok) {
+                const data = await res.json();
+                segments = data.data || data.segments || [];
+            }
+        } catch (e) {
+            console.log('Segments endpoint failed, trying audience-segments...');
+        }
+        
+        // If no segments, try /api/v1/audience-segments
+        if (segments.length === 0) {
+            try {
+                const res = await fetch(apiBase + '/api/v1/audience-segments', { headers: { 'Authorization': 'Bearer ' + token } });
+                if (res.ok) {
+                    const data = await res.json();
+                    segments = data.data || data.segments || [];
+                }
+            } catch (e) {
+                console.log('Audience-segments endpoint also failed');
+            }
+        }
+        
+        console.log('Segments loaded:', segments.length, segments);
         
         ['modal_target_audience_profile_id', 'edit_target_audience_profile_id'].forEach(id => {
             const select = document.getElementById(id);
             if (select) {
                 const currentVal = select.value;
                 select.innerHTML = '<option value="">-- Select Audience Segment --</option>';
-                segments.forEach(s => {
-                    if (s && s.id && s.name) {
-                        const option = document.createElement('option');
-                        option.value = s.id;
-                        option.textContent = `${s.name} - ${s.risk_level || 'N/A'}`;
-                        select.appendChild(option);
-                    }
-                });
+                
+                if (segments.length === 0) {
+                    // Add a placeholder option if no segments available
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'No segments available';
+                    opt.disabled = true;
+                    select.appendChild(opt);
+                } else {
+                    segments.forEach(s => {
+                        if (s && s.id) {
+                            const option = document.createElement('option');
+                            option.value = s.id;
+                            option.textContent = `${s.name || s.segment_name || 'Segment ' + s.id} - ${s.risk_level || 'N/A'}`;
+                            select.appendChild(option);
+                        }
+                    });
+                }
                 if (currentVal) select.value = currentVal;
             }
         });
@@ -2894,14 +2976,31 @@ async function submitModalAgencyCoordination() {
 
 // View Event Modal
 async function openViewEventModal(eventId) {
+    // Validate eventId
+    if (!eventId || eventId === 'undefined' || eventId === 'null') {
+        console.error('Invalid event ID:', eventId);
+        alert('Error: Invalid event ID');
+        return;
+    }
+    
+    // Ensure eventId is a number
+    const numericEventId = parseInt(eventId, 10);
+    if (isNaN(numericEventId)) {
+        console.error('Event ID is not a number:', eventId);
+        alert('Error: Invalid event ID format');
+        return;
+    }
+    
     document.getElementById('viewEventModal').style.display = 'block';
     document.body.style.overflow = 'hidden';
     const contentDiv = document.getElementById('viewEventContent');
     contentDiv.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">Loading...</p>';
     
     try {
-        const res = await fetch(apiBase + '/api/v1/events/' + eventId, { headers: { 'Authorization': 'Bearer ' + token } });
+        console.log('Fetching event details for ID:', numericEventId);
+        const res = await fetch(apiBase + '/api/v1/events/' + numericEventId, { headers: { 'Authorization': 'Bearer ' + token } });
         const data = await res.json();
+        console.log('Event API response:', res.status, data);
         
         if (res.ok && data.event) {
             const e = data.event;
@@ -2970,14 +3069,31 @@ function closeViewEventModal() {
 
 // Edit Event Modal
 async function openEditEventModal(eventId) {
+    // Validate eventId
+    if (!eventId || eventId === 'undefined' || eventId === 'null') {
+        console.error('Invalid event ID for edit:', eventId);
+        alert('Error: Invalid event ID');
+        return;
+    }
+    
+    // Ensure eventId is a number
+    const numericEventId = parseInt(eventId, 10);
+    if (isNaN(numericEventId)) {
+        console.error('Event ID is not a number:', eventId);
+        alert('Error: Invalid event ID format');
+        return;
+    }
+    
     document.getElementById('editEventModal').style.display = 'block';
     document.body.style.overflow = 'hidden';
-    document.getElementById('edit_event_id').value = eventId;
+    document.getElementById('edit_event_id').value = numericEventId;
     
     try {
         // Fetch event data first
-        const res = await fetch(apiBase + '/api/v1/events/' + eventId, { headers: { 'Authorization': 'Bearer ' + token } });
+        console.log('Fetching event for edit, ID:', numericEventId);
+        const res = await fetch(apiBase + '/api/v1/events/' + numericEventId, { headers: { 'Authorization': 'Bearer ' + token } });
         const data = await res.json();
+        console.log('Edit event API response:', res.status, data);
         
         if (res.ok && data.event) {
             const e = data.event;

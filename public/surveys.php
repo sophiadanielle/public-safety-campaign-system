@@ -1086,12 +1086,30 @@ async function loadSurveyForResponse() {
                 input.style.width = '100%';
                 input.style.padding = '8px';
                 
-                if (questionType === 'multiple_choice') {
-                    input.multiple = true;
-                    input.size = Math.min(5, (JSON.parse(q.options_json || '[]').length || 1));
+                // Parse options safely - handle both string and array formats
+                let options = [];
+                try {
+                    if (typeof q.options_json === 'string') {
+                        options = JSON.parse(q.options_json || '[]');
+                    } else if (Array.isArray(q.options_json)) {
+                        options = q.options_json;
+                    } else if (q.options_json && typeof q.options_json === 'object') {
+                        options = Object.values(q.options_json);
+                    }
+                    // Ensure options is an array
+                    if (!Array.isArray(options)) {
+                        options = [];
+                    }
+                } catch (parseErr) {
+                    console.error('Error parsing options_json:', parseErr, q.options_json);
+                    options = [];
                 }
                 
-                const options = JSON.parse(q.options_json || '[]');
+                if (questionType === 'multiple_choice') {
+                    input.multiple = true;
+                    input.size = Math.min(5, options.length || 1);
+                }
+                
                 if (options.length === 0) {
                     const opt = document.createElement('option');
                     opt.value = '';

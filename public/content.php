@@ -3329,16 +3329,34 @@ function openEditContentModal(contentId) {
 // Show Archived Content Modal
 async function showArchivedContent() {
     try {
-        // Fetch archived content directly from API (not from contents array which excludes archived)
-        const res = await fetch(apiBase + '/api/v1/content?approval_status=archived', {
+        // First check local contents array for archived items
+        const normalizeStatus = (raw) => {
+            if (!raw) return "draft";
+            return raw.toString().trim().toLowerCase().replace(/\s+/g, "_");
+        };
+        
+        let archivedContent = contents.filter(item => normalizeStatus(item.approval_status) === 'archived');
+        console.log('Archived content from local array:', archivedContent.length);
+        
+        // Also fetch from API to get any we might have missed
+        const res = await fetch(apiBase + '/api/v1/content?approval_status=archived&include_archived=true', {
             headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
         });
         
-        let archivedContent = [];
         if (res.ok) {
             const data = await res.json();
-            archivedContent = data.data || [];
+            const apiArchived = data.data || [];
+            console.log('Archived content from API:', apiArchived.length);
+            
+            // Merge API results with local (avoid duplicates)
+            apiArchived.forEach(apiItem => {
+                if (!archivedContent.find(local => local.id === apiItem.id)) {
+                    archivedContent.push(apiItem);
+                }
+            });
         }
+        
+        console.log('Total archived content:', archivedContent.length);
         
         // Create modal
         const modal = document.createElement('div');
