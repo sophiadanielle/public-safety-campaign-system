@@ -1762,9 +1762,10 @@ async function updateApproval(contentId, status, notes = '') {
             
         if (res.ok) {
                 currentTemplatesPage = 1;
-            loadContent();
+            loadContent(true);
             loadTemplates();
             loadMediaGallery();
+            alert('Content status updated to: ' + status);
         } else {
                 const errorMsg = data.error || data.message || 'Failed to update approval status';
                 alert('Error: ' + errorMsg);
@@ -1774,6 +1775,16 @@ async function updateApproval(contentId, status, notes = '') {
         console.error('Network/parse error:', err);
         alert('Network error: ' + err.message + '\n\nPlease check the browser console for details.');
     }
+}
+
+// Reject content with confirmation
+async function rejectContent(contentId) {
+    if (!confirm('Are you sure you want to reject this content?')) {
+        return;
+    }
+    
+    const notes = prompt('Enter rejection reason (optional):') || 'Content rejected';
+    await updateApproval(contentId, 'rejected', notes);
 }
 
 // Approve content - minimal endpoint
@@ -2652,10 +2663,14 @@ async function loadContent(forceRefresh = false) {
         
         // Apply filters client-side to contents array
         // First, filter out archived items (they should only appear in View Archived)
+        console.log('Contents before filtering:', contents.length, 'items');
+        console.log('All statuses:', [...new Set(contents.map(c => c.approval_status))]);
+        
         let filtered = contents.filter(item => {
             const status = normalizeStatus(item.approval_status);
             return status !== 'archived';
         });
+        console.log('After archived filter:', filtered.length, 'items');
         
         const search = document.getElementById('filterSearch').value.trim().toLowerCase();
         if (search) {
@@ -2926,7 +2941,7 @@ function renderContentGrid(container, items, isTemplate = false) {
                         <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white; margin: 2px;">
                             <i class="fas fa-check-circle"></i> <span>Approve</span>
                         </button>
-                        <button class="btn btn-secondary" onclick="updateApproval(${item.id}, 'rejected')" style="background: #dc2626; color: white; margin: 2px;">
+                        <button class="btn btn-secondary" onclick="rejectContent(${item.id})" style="background: #dc2626; color: white; margin: 2px;">
                             <i class="fas fa-times-circle"></i> <span>Reject</span>
                         </button>
                     </div>
