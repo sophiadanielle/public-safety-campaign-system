@@ -1709,20 +1709,14 @@ async function updateApproval(contentId, status, notes = '') {
             
             if (res.ok && data.success) {
                 console.log('Successfully submitted for review');
-                // Update local data
-                const item = contents.find(c => c.id === contentId);
-                if (item) {
-                    item.approval_status = 'pending_review';
-                    // Update localStorage if it's an uploaded item
-                    const uploaded = JSON.parse(localStorage.getItem('content_repository_uploaded') || '[]');
-                    const uploadedIndex = uploaded.findIndex(c => c.id === contentId);
-                    if (uploadedIndex >= 0) {
-                        uploaded[uploadedIndex].approval_status = 'pending_review';
-                        localStorage.setItem('content_repository_uploaded', JSON.stringify(uploaded));
-                    }
-                }
+                
+                // Force clear the contents array to ensure fresh data from API
+                contents = [];
+                
                 currentTemplatesPage = 1;
-                loadContent();
+                currentPage = 1;
+                await loadAllContent();
+                await loadContent(true);
                 loadTemplates();
                 loadMediaGallery();
                 // Refresh usage dropdowns in case content was already approved
@@ -1788,17 +1782,19 @@ async function updateApproval(contentId, status, notes = '') {
 
 // Reject content with confirmation
 async function rejectContent(contentId) {
-    if (!confirm('Are you sure you want to reject this content?')) {
+    const confirmed = await customConfirm('Are you sure you want to reject this content?', 'Reject Content');
+    if (!confirmed) {
         return;
     }
     
-    const notes = prompt('Enter rejection reason (optional):') || 'Content rejected';
+    const notes = await customPrompt('Enter rejection reason (optional):', 'Content rejected') || 'Content rejected';
     await updateApproval(contentId, 'rejected', notes);
 }
 
 // Approve content - minimal endpoint
 async function approveContent(contentId) {
-    if (!confirm('Are you sure you want to approve this content? It will appear in Templates and Media Gallery.')) {
+    const confirmed = await customConfirm('Are you sure you want to approve this content? It will appear in Templates and Media Gallery.', 'Approve Content');
+    if (!confirmed) {
         return;
     }
     
@@ -1836,25 +1832,15 @@ async function approveContent(contentId) {
         }
         
         if (res.ok && (data.success || data.data)) {
-            // Update item in contents array
-            const itemIndex = contents.findIndex(item => item.id === contentId);
-            if (itemIndex !== -1) {
-                contents[itemIndex].approval_status = 'APPROVED';
-                
-                // Update in localStorage if it exists there
-                const uploaded = JSON.parse(localStorage.getItem("content_repository_uploaded") || "[]");
-                const uploadedIndex = uploaded.findIndex(item => item.id === contentId);
-                if (uploadedIndex !== -1) {
-                    uploaded[uploadedIndex].approval_status = 'APPROVED';
-                    localStorage.setItem("content_repository_uploaded", JSON.stringify(uploaded));
-                }
-            }
+            // Force clear the contents array to ensure fresh data from API
+            contents = [];
             
-            // Re-render all views
+            // Re-render all views with force refresh
             currentPage = 1;
             currentTemplatesPage = 1;
             currentMediaGalleryPage = 1;
-            loadContent();
+            await loadAllContent();
+            await loadContent(true);
             loadTemplates();
             loadMediaGallery();
             // Refresh usage dropdowns to include newly approved content
@@ -1908,8 +1894,12 @@ async function archiveContent(contentId) {
             
             await customAlert('Content archived successfully!', 'Success');
             
-            // Reload views - the filter in loadContent will now exclude archived items
-            loadContent();
+            // Force clear the contents array to ensure fresh data from API
+            contents = [];
+            
+            // Reload views with force refresh - the filter in loadContent will now exclude archived items
+            await loadAllContent();
+            await loadContent(true);
             loadTemplates();
             loadMediaGallery();
         } else {
@@ -3511,7 +3501,8 @@ async function showArchivedContent() {
 
 // Restore Content from Archive
 async function restoreContent(contentId) {
-    if (!confirm('Restore this content from archive? It will be set to Pending Review status.')) {
+    const confirmed = await customConfirm('Restore this content from archive? It will be set to Pending Review status.', 'Restore Content');
+    if (!confirmed) {
         return;
     }
     
@@ -3529,7 +3520,7 @@ async function restoreContent(contentId) {
             console.log('Current content status:', currentStatus);
             
             if (currentStatus !== 'archived') {
-                alert('This content has already been restored. Current status: ' + currentStatus.replace('_', ' ').toUpperCase());
+                await customAlert('This content has already been restored. Current status: ' + currentStatus.replace('_', ' ').toUpperCase(), 'Already Restored');
                 // Refresh the archived modal to remove this item
                 const archivedModal = document.getElementById('archivedContentModal');
                 if (archivedModal) archivedModal.remove();
@@ -3557,18 +3548,19 @@ async function restoreContent(contentId) {
         if (!res.ok) {
             // Check if the error is because it's already restored
             if (data.error && data.error.includes('Pending content')) {
-                alert('This content has already been restored and is now in Pending Review status.');
+                await customAlert('This content has already been restored and is now in Pending Review status.', 'Already Restored');
                 const archivedModal = document.getElementById('archivedContentModal');
                 if (archivedModal) archivedModal.remove();
+                contents = [];
                 await loadAllContent();
-                loadContent();
+                await loadContent(true);
                 return;
             }
-            alert('Error: ' + (data.error || 'Failed to restore content'));
+            await customAlert('Error: ' + (data.error || 'Failed to restore content'), 'Error');
             return;
         }
         
-        alert('Content restored successfully! It is now in Pending Review status.');
+        await customAlert('Content restored successfully! It is now in Pending Review status.', 'Success');
         
         // Close the archived modal
         const archivedModal = document.getElementById('archivedContentModal');
@@ -3589,13 +3581,14 @@ async function restoreContent(contentId) {
         
     } catch (err) {
         console.error('Restore error:', err);
-        alert('Failed to restore content: ' + err.message);
+        await customAlert('Failed to restore content: ' + err.message, 'Error');
     }
 }
 
 // Delete Content Permanently
 async function deleteContentPermanent(contentId) {
-    if (!confirm('Permanently delete this content? This action cannot be undone.')) {
+    const confirmed = await customConfirm('Permanently delete this content? This action cannot be undone.', 'Delete Content');
+    if (!confirmed) {
         return;
     }
     
@@ -3610,14 +3603,14 @@ async function deleteContentPermanent(contentId) {
         
         const data = await res.json();
         if (!res.ok) {
-            alert('Error: ' + (data.error || 'Failed to delete content'));
+            await customAlert('Error: ' + (data.error || 'Failed to delete content'), 'Error');
             return;
         }
         
-        alert('Content deleted permanently!');
+        await customAlert('Content deleted permanently!', 'Success');
         showArchivedContent(); // Refresh the modal
     } catch (err) {
-        alert('Failed to delete content: ' + err.message);
+        await customAlert('Failed to delete content: ' + err.message, 'Error');
     }
 }
 
