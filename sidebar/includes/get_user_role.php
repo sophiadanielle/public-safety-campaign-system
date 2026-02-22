@@ -131,7 +131,18 @@ function getCurrentUserRole(): ?string {
             
             $roleId = (int) ($decoded->role_id ?? 0);
             if ($roleId > 0) {
-                require_once __DIR__ . '/../../src/Config/db_connect.php';
+                // Suppress errors and catch exceptions to prevent 502 errors
+                $oldErrorReporting3 = error_reporting(0);
+                try {
+                    @require_once __DIR__ . '/../../src/Config/db_connect.php';
+                } catch (Exception $dbEx3) {
+                    error_log('RBAC get_user_role JWT fallback: db_connect.php threw exception: ' . $dbEx3->getMessage());
+                    $pdo = null;
+                } catch (Error $dbErr3) {
+                    error_log('RBAC get_user_role JWT fallback: db_connect.php threw error: ' . $dbErr3->getMessage());
+                    $pdo = null;
+                }
+                error_reporting($oldErrorReporting3);
                 
                 if (isset($pdo) && $pdo instanceof PDO) {
                     $stmt = $pdo->prepare('SELECT r.name FROM campaign_department_roles r WHERE r.id = :role_id LIMIT 1');
