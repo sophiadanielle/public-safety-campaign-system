@@ -1348,6 +1348,27 @@ class ContentController
         $lastUpdatedCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'last_updated'")->fetch();
         $hasLastUpdated = !empty($lastUpdatedCheck);
         
+        // Check approval_status column type and modify if needed to support 'archived' value
+        try {
+            $colInfo = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'approval_status'")->fetch(PDO::FETCH_ASSOC);
+            if ($colInfo) {
+                $colType = strtolower($colInfo['Type'] ?? '');
+                // If it's an ENUM that doesn't include 'archived', alter it
+                if (strpos($colType, 'enum') !== false && strpos($colType, 'archived') === false) {
+                    // Add 'archived' to the ENUM
+                    $this->pdo->exec("ALTER TABLE campaign_department_content_items MODIFY COLUMN approval_status VARCHAR(50) DEFAULT 'draft'");
+                } elseif (strpos($colType, 'varchar') !== false) {
+                    // Check if varchar is too short (less than 10 chars)
+                    preg_match('/varchar\((\d+)\)/', $colType, $matches);
+                    if (!empty($matches[1]) && (int)$matches[1] < 10) {
+                        $this->pdo->exec("ALTER TABLE campaign_department_content_items MODIFY COLUMN approval_status VARCHAR(50) DEFAULT 'draft'");
+                    }
+                }
+            }
+        } catch (\PDOException $e) {
+            error_log('ContentController::archive - Could not modify approval_status column: ' . $e->getMessage());
+        }
+        
         if ($hasLastUpdated) {
             $updateStmt = $this->pdo->prepare('
                 UPDATE campaign_department_content_items SET

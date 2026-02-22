@@ -58,15 +58,28 @@ class SegmentController
             return ['error' => 'Authentication required'];
         }
         
+        // Check if is_archived column exists, add it if not
+        try {
+            $colCheck = $this->pdo->query("SHOW COLUMNS FROM `campaign_department_audience_segments` LIKE 'is_archived'")->fetch();
+            if (!$colCheck) {
+                $this->pdo->exec("ALTER TABLE `campaign_department_audience_segments` ADD COLUMN `is_archived` TINYINT(1) DEFAULT 0");
+            }
+        } catch (\PDOException $e) {
+            // Column might already exist or table issue
+        }
+        
         $stmt = $this->pdo->query('
             SELECT 
                 id,
+                id AS segment_id,
+                segment_name,
                 segment_name AS name,
                 geographic_scope,
                 location_reference,
                 sector_type,
                 risk_level,
                 basis_of_segmentation,
+                COALESCE(is_archived, 0) AS is_archived,
                 created_at,
                 updated_at
             FROM `campaign_department_audience_segments` 

@@ -1556,12 +1556,17 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 height: 100vh !important;
                 background: rgba(0, 0, 0, 0.7) !important;
                 z-index: 999999 !important;
-                display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
                 overflow: hidden !important;
                 backdrop-filter: blur(4px);
                 -webkit-backdrop-filter: blur(4px);
+            }
+            .archived-budget-modal-overlay[style*="display: none"] {
+                display: none !important;
+            }
+            .archived-budget-modal-overlay[style*="display: flex"] {
+                display: flex !important;
             }
             .archived-budget-modal-content {
                 background: white !important;

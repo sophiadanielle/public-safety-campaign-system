@@ -100,7 +100,13 @@ function getCurrentUserRole(): ?string {
         try {
             // Suppress errors during include to prevent 502 errors
             $oldErrorReporting2 = error_reporting(0);
-            @require_once __DIR__ . '/../../vendor/autoload.php';
+            try {
+                @require_once __DIR__ . '/../../vendor/autoload.php';
+            } catch (\Throwable $autoloadErr) {
+                error_log('RBAC get_user_role: vendor/autoload.php threw error: ' . $autoloadErr->getMessage());
+                error_reporting($oldErrorReporting2);
+                return null;
+            }
             error_reporting($oldErrorReporting2);
             
             $envPath = __DIR__ . '/../../.env';

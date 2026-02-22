@@ -591,8 +591,16 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     </div>
 
 
-    <!-- Upload Campaign Material -->
-    <section id="create-content" class="card">
+    <!-- Upload Campaign Material Modal -->
+    <div id="uploadContentModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 999999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">
+                <h3 style="margin: 0; color: #0f172a;" id="uploadContentModalTitle"><i class="fas fa-upload"></i> Upload Campaign Material</h3>
+                <button onclick="closeUploadContentModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; line-height: 1;">&times;</button>
+            </div>
+    
+    <!-- Hidden original section for backward compatibility -->
+    <section id="create-content" class="card" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
             <div>
                 <h2 class="section-title" style="margin: 0 0 4px 0;">Upload Campaign Material</h2>
@@ -743,6 +751,9 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         </button>
         <div class="status" id="uploadStatus" style="margin-top:12px;"></div>
     </section>
+        </div>
+    </div>
+    <!-- End Upload Content Modal -->
 
     <hr class="section-divider">
     
@@ -751,6 +762,9 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h2 class="section-title" style="margin: 0;">Content Library</h2>
             <div style="display: flex; gap: 8px;">
+                <button type="button" onclick="openUploadContentModal()" class="btn btn-primary" style="padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-upload"></i> Upload Campaign Material
+                </button>
                 <button type="button" onclick="showArchivedContent()" class="btn btn-secondary" style="padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
                     <i class="fas fa-archive"></i> View Archived
                 </button>
@@ -3198,6 +3212,29 @@ async function loadUsageHistory() {
     } catch (err) {
         container.innerHTML = '<p style="text-align: center; color: #dc2626; padding: 20px;">Error: ' + err.message + '</p>';
     }
+}
+
+// Upload Content Modal functions
+function openUploadContentModal() {
+    document.getElementById('uploadContentModal').style.display = 'flex';
+    document.getElementById('uploadContentModalTitle').innerHTML = '<i class="fas fa-upload"></i> Upload Campaign Material';
+    // Reset form
+    const form = document.getElementById('uploadForm');
+    if (form) form.reset();
+    const statusEl = document.getElementById('uploadStatus');
+    if (statusEl) statusEl.textContent = '';
+}
+
+function closeUploadContentModal() {
+    document.getElementById('uploadContentModal').style.display = 'none';
+}
+
+// Open edit content in modal
+function openEditContentModal(contentId) {
+    document.getElementById('uploadContentModal').style.display = 'flex';
+    document.getElementById('uploadContentModalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Content';
+    // Load content data into form
+    editContent(contentId);
 }
 
 // Show Archived Content Modal

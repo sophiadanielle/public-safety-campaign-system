@@ -60,7 +60,13 @@
                                     try {
                                         // Suppress errors to prevent 502 Bad Gateway
                                         $oldErrorReporting = error_reporting(0);
-                                        @require_once __DIR__ . '/../../vendor/autoload.php';
+                                        try {
+                                            @require_once __DIR__ . '/../../vendor/autoload.php';
+                                        } catch (\Throwable $autoloadErr) {
+                                            error_log('RBAC SIDEBAR: vendor/autoload.php threw error: ' . $autoloadErr->getMessage());
+                                            error_reporting($oldErrorReporting);
+                                            $currentUserRole = null;
+                                        }
                                         error_reporting($oldErrorReporting);
                                         $envPath = __DIR__ . '/../../.env';
                                         $jwtSecret = 'your-secret-key-change-in-production';
@@ -201,7 +207,6 @@
                                 'icon' => 'fa-file-alt',
                                 'features' => [
                                     ['label' => 'All Content', 'href' => '#content-list', 'icon' => 'fa-list'],
-                                    ['label' => 'Create New Content', 'href' => '#create-content', 'icon' => 'fa-plus-circle'],
                                     ['label' => 'Content Library', 'href' => '#content-library', 'icon' => 'fa-book'],
                                     ['label' => 'Templates', 'href' => '#templates', 'icon' => 'fa-file-alt'],
                                     ['label' => 'Media Gallery', 'href' => '#media-gallery', 'icon' => 'fa-images'],
