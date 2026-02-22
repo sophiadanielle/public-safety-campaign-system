@@ -3217,14 +3217,32 @@ async function openEditEventModal(eventId) {
             // Populate dropdowns FIRST, then set all values
             await populateModalDropdowns();
             
+            // Store values we need to set after dropdowns load
+            const campaignId = eventData.linked_campaign_id || eventData.campaign_id || '';
+            const audienceId = eventData.target_audience_profile_id || eventData.target_audience_id || eventData.audience_segment_id || '';
+            const hazardFocus = eventData.hazard_focus || eventData.hazard_category || '';
+            
+            console.log('Event data to populate:', {
+                campaignId,
+                audienceId,
+                hazardFocus,
+                fullData: eventData
+            });
+            
             // Now populate all fields after dropdowns are ready
             document.getElementById('edit_event_title').value = eventData.event_title || eventData.name || '';
             document.getElementById('edit_event_type').value = eventData.event_type || 'seminar';
             document.getElementById('edit_event_status').value = eventData.event_status || eventData.status || 'scheduled';
-            document.getElementById('edit_hazard_focus').value = eventData.hazard_focus || eventData.hazard_category || '';
             document.getElementById('edit_venue').value = eventData.venue || '';
             document.getElementById('edit_location').value = eventData.location || '';
             document.getElementById('edit_event_description').value = eventData.event_description || eventData.description || '';
+            
+            // Set hazard focus immediately (it's a text input, not dropdown)
+            const hazardInput = document.getElementById('edit_hazard_focus');
+            if (hazardInput && hazardFocus) {
+                hazardInput.value = hazardFocus;
+                console.log('Hazard focus set immediately to:', hazardFocus);
+            }
             
             // Set datetime fields - handle different time formats
             const eventDate = eventData.date || eventData.event_date || '';
@@ -3244,12 +3262,7 @@ async function openEditEventModal(eventId) {
             
             // Set dropdown values - use multiple attempts to ensure they're set
             const setDropdownValues = () => {
-                const campaignId = eventData.linked_campaign_id || eventData.campaign_id || '';
-                const audienceId = eventData.target_audience_profile_id || eventData.target_audience_id || eventData.audience_segment_id || '';
-                const hazardFocus = eventData.hazard_focus || eventData.hazard_category || '';
-                
-                console.log('Setting dropdown values - Campaign:', campaignId, 'Audience:', audienceId, 'Hazard:', hazardFocus);
-                console.log('Full event data:', eventData);
+                console.log('Setting dropdown values - Campaign:', campaignId, 'Audience:', audienceId);
                 
                 // Set campaign dropdown
                 if (campaignId) {
@@ -3264,13 +3277,16 @@ async function openEditEventModal(eventId) {
                 if (audienceId) {
                     const audienceSelect = document.getElementById('edit_target_audience_profile_id');
                     if (audienceSelect) {
-                        audienceSelect.value = audienceId;
-                        console.log('Audience dropdown set to:', audienceSelect.value, 'Options:', audienceSelect.options.length);
-                        // If value didn't set, try to find matching option
+                        console.log('Audience dropdown options:', Array.from(audienceSelect.options).map(o => ({value: o.value, text: o.text})));
+                        audienceSelect.value = String(audienceId);
+                        console.log('Audience dropdown set to:', audienceSelect.value, 'Expected:', audienceId);
+                        
+                        // If value didn't set, try to find matching option by comparing as strings
                         if (audienceSelect.value != audienceId) {
                             for (let i = 0; i < audienceSelect.options.length; i++) {
-                                if (audienceSelect.options[i].value == audienceId) {
+                                if (String(audienceSelect.options[i].value) === String(audienceId)) {
                                     audienceSelect.selectedIndex = i;
+                                    console.log('Audience dropdown set via loop to index:', i);
                                     break;
                                 }
                             }
@@ -3278,13 +3294,9 @@ async function openEditEventModal(eventId) {
                     }
                 }
                 
-                // Set hazard focus field
-                if (hazardFocus) {
-                    const hazardInput = document.getElementById('edit_hazard_focus');
-                    if (hazardInput) {
-                        hazardInput.value = hazardFocus;
-                        console.log('Hazard focus set to:', hazardInput.value);
-                    }
+                // Re-set hazard focus in case it was cleared
+                if (hazardFocus && hazardInput) {
+                    hazardInput.value = hazardFocus;
                 }
             };
             
@@ -3292,6 +3304,7 @@ async function openEditEventModal(eventId) {
             setDropdownValues();
             setTimeout(setDropdownValues, 300);
             setTimeout(setDropdownValues, 600);
+            setTimeout(setDropdownValues, 1000);
         }
     } catch (err) {
         console.error('Error loading event for edit:', err);

@@ -2607,12 +2607,30 @@ async function loadAllContent() {
             } else if (data.content && Array.isArray(data.content)) {
                 apiData = data.content;
             }
+            
+            // Debug: Log first few items to check content_type
+            if (apiData.length > 0) {
+                console.log('API content sample (first 3):', apiData.slice(0, 3).map(item => ({
+                    id: item.id,
+                    title: item.title,
+                    content_type: item.content_type,
+                    hazard_category: item.hazard_category
+                })));
+            }
         }
         
-        // Merge sample data with uploaded data and API data
-        const combined = [...sampleSeedData, ...uploaded, ...apiData];
+        // API data takes priority - merge with sample and uploaded, avoiding duplicates
+        // Create a map of API items by ID for quick lookup
+        const apiMap = new Map(apiData.map(item => [item.id, item]));
+        
+        // Filter out sample/uploaded items that exist in API (API has latest data)
+        const filteredSample = sampleSeedData.filter(item => !apiMap.has(item.id));
+        const filteredUploaded = uploaded.filter(item => !apiMap.has(item.id));
+        
+        // Combine: API data first (most accurate), then filtered sample/uploaded
+        const combined = [...apiData, ...filteredSample, ...filteredUploaded];
         contents = combined;
-        console.log('✓ Loaded', sampleSeedData.length, 'sample +', uploaded.length, 'uploaded +', apiData.length, 'API =', contents.length, 'total');
+        console.log('✓ Loaded', apiData.length, 'API +', filteredSample.length, 'sample +', filteredUploaded.length, 'uploaded =', contents.length, 'total');
     } catch (err) {
         console.error('Error loading content:', err);
         // On error, merge sample data with uploaded data
@@ -3329,31 +3347,26 @@ function openEditContentModal(contentId) {
 // Show Archived Content Modal
 async function showArchivedContent() {
     try {
-        // First check local contents array for archived items
-        const normalizeStatus = (raw) => {
-            if (!raw) return "draft";
-            return raw.toString().trim().toLowerCase().replace(/\s+/g, "_");
-        };
-        
-        let archivedContent = contents.filter(item => normalizeStatus(item.approval_status) === 'archived');
-        console.log('Archived content from local array:', archivedContent.length);
-        
-        // Also fetch from API to get any we might have missed
+        // Fetch archived content directly from API - this has the most accurate data
         const res = await fetch(apiBase + '/api/v1/content?approval_status=archived&include_archived=true', {
             headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
         });
         
+        let archivedContent = [];
+        
         if (res.ok) {
             const data = await res.json();
-            const apiArchived = data.data || [];
-            console.log('Archived content from API:', apiArchived.length);
-            
-            // Merge API results with local (avoid duplicates)
-            apiArchived.forEach(apiItem => {
-                if (!archivedContent.find(local => local.id === apiItem.id)) {
-                    archivedContent.push(apiItem);
-                }
-            });
+            archivedContent = data.data || [];
+            console.log('Archived content from API:', archivedContent.length, archivedContent);
+        } else {
+            console.error('Failed to fetch archived content from API:', res.status);
+            // Fallback to local array
+            const normalizeStatus = (raw) => {
+                if (!raw) return "draft";
+                return raw.toString().trim().toLowerCase().replace(/\s+/g, "_");
+            };
+            archivedContent = contents.filter(item => normalizeStatus(item.approval_status) === 'archived');
+            console.log('Archived content from local array (fallback):', archivedContent.length);
         }
         
         console.log('Total archived content:', archivedContent.length);
@@ -3479,6 +3492,26 @@ async function restoreContent(contentId) {
     try {
         console.log('Restoring content ID:', contentId);
         
+        // First check the current status of the content
+        const checkRes = await fetch(apiBase + '/api/v1/content/' + contentId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (checkRes.ok) {
+            const checkData = await checkRes.json();
+            const currentStatus = (checkData.data?.approval_status || checkData.approval_status || '').toLowerCase();
+            console.log('Current content status:', currentStatus);
+            
+            if (currentStatus !== 'archived') {
+                alert('This content has already been restored. Current status: ' + currentStatus.replace('_', ' ').toUpperCase());
+                // Refresh the archived modal to remove this item
+                const archivedModal = document.getElementById('archivedContentModal');
+                if (archivedModal) archivedModal.remove();
+                showArchivedContent();
+                return;
+            }
+        }
+        
         // Use pending_review status since the API only allows: pending_review, approved, rejected, archived
         const res = await fetch(apiBase + '/api/v1/content/' + contentId + '/approval', {
             method: 'POST',
@@ -3496,6 +3529,15 @@ async function restoreContent(contentId) {
         console.log('Restore response:', res.status, data);
         
         if (!res.ok) {
+            // Check if the error is because it's already restored
+            if (data.error && data.error.includes('Pending content')) {
+                alert('This content has already been restored and is now in Pending Review status.');
+                const archivedModal = document.getElementById('archivedContentModal');
+                if (archivedModal) archivedModal.remove();
+                await loadAllContent();
+                loadContent();
+                return;
+            }
             alert('Error: ' + (data.error || 'Failed to restore content'));
             return;
         }
