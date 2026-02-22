@@ -456,7 +456,7 @@ class AutoMLController
             if ($campaignColumn) {
                 try {
                     $stmt = $this->pdo->query("
-                        SELECT e.id, e.event_name, e.date, e.start_time, e.{$campaignColumn}, c.title as campaign_title
+                        SELECT e.id, e.name as event_name, e.date, e.start_time, e.{$campaignColumn}, c.title as campaign_title
                         FROM `campaign_department_events` e LEFT JOIN `campaign_department_campaigns` c ON c.id = e.{$campaignColumn}
                         WHERE e.date >= CURDATE() AND e.event_status = 'planned'
                         ORDER BY e.date ASC, e.start_time ASC LIMIT 10
@@ -468,7 +468,7 @@ class AutoMLController
                         error_log('AutoMLController::getInsights - Column not found error, falling back to events without join. Error: ' . $errorMessage);
                         $campaignColumn = null; // Reset to prevent further errors
                         $stmt = $this->pdo->query("
-                            SELECT e.id, e.event_name, e.date, e.start_time, NULL as campaign_title
+                            SELECT e.id, e.name as event_name, e.date, e.start_time, NULL as campaign_title
                             FROM `campaign_department_events` e
                             WHERE e.date >= CURDATE() AND e.event_status = 'planned'
                             ORDER BY e.date ASC, e.start_time ASC LIMIT 10
@@ -480,7 +480,7 @@ class AutoMLController
             } else {
                 // No campaign column exists, get events without join
                 $stmt = $this->pdo->query("
-                    SELECT e.id, e.event_name, e.date, e.start_time, NULL as campaign_title
+                    SELECT e.id, e.name as event_name, e.date, e.start_time, NULL as campaign_title
                     FROM `campaign_department_events` e
                     WHERE e.date >= CURDATE() AND e.event_status = 'planned'
                     ORDER BY e.date ASC, e.start_time ASC LIMIT 10

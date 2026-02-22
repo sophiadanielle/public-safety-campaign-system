@@ -51,7 +51,7 @@ class BudgetController
                 SELECT cb.*, c.title as campaign_title,
                        (cb.quantity * cb.unit_cost) as total_cost
                 FROM campaign_budgets cb 
-                LEFT JOIN campaigns c ON cb.campaign_id = c.id 
+                LEFT JOIN campaign_department_campaigns c ON cb.campaign_id = c.id 
                 WHERE cb.campaign_id = ? 
                 ORDER BY cb.created_at DESC
             ");
@@ -61,7 +61,7 @@ class BudgetController
                 SELECT cb.*, c.title as campaign_title,
                        (cb.quantity * cb.unit_cost) as total_cost
                 FROM campaign_budgets cb 
-                LEFT JOIN campaigns c ON cb.campaign_id = c.id 
+                LEFT JOIN campaign_department_campaigns c ON cb.campaign_id = c.id 
                 ORDER BY cb.created_at DESC
             ");
         }

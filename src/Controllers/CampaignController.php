@@ -1018,13 +1018,14 @@ class CampaignController
 
         if ($useAIRecommendation) {
             // Use AI recommendation
+            // LGU Workflow: Draft -> Pending (after AI acceptance) -> Approved (by Captain) -> Scheduled (finalized)
             $stmt = $this->pdo->prepare('
                 UPDATE campaign_department_campaigns 
                 SET final_schedule_datetime = ai_recommended_datetime,
                     draft_schedule_datetime = ai_recommended_datetime,
                     status = CASE 
-                        WHEN status = "draft" THEN "scheduled"
-                        WHEN status IN ("pending", "approved") THEN "scheduled"
+                        WHEN status = "draft" THEN "pending"
+                        WHEN status = "approved" THEN "scheduled"
                         ELSE status
                     END
                 WHERE id = :id AND ai_recommended_datetime IS NOT NULL
@@ -1037,13 +1038,14 @@ class CampaignController
             }
         } elseif ($finalSchedule) {
             // Override with manual schedule
+            // LGU Workflow: Draft -> Pending (after schedule set) -> Approved (by Captain) -> Scheduled (finalized)
             $stmt = $this->pdo->prepare('
                 UPDATE campaign_department_campaigns 
                 SET final_schedule_datetime = :final_schedule_datetime,
                     draft_schedule_datetime = :final_schedule_datetime,
                     status = CASE 
-                        WHEN status = "draft" THEN "scheduled"
-                        WHEN status IN ("pending", "approved") THEN "scheduled"
+                        WHEN status = "draft" THEN "pending"
+                        WHEN status = "approved" THEN "scheduled"
                         ELSE status
                     END
                 WHERE id = :id
@@ -1135,9 +1137,9 @@ class CampaignController
         $campaignConflicts = $stmt->fetchAll();
 
         // Check for conflicts with events and seminars
-        // Use correct column names: event_name/event_title, date (not event_date), start_time/end_time (not event_time), event_status (not status)
+        // Use correct column names: name (aliased as event_name), date, start_time/end_time, event_status
         $stmt = $this->pdo->prepare('
-            SELECT e.id, e.event_name, e.event_title, e.event_type, e.date, e.start_time, e.end_time, e.venue, e.location
+            SELECT e.id, e.name as event_name, e.name as event_title, e.event_type, e.date, e.start_time, e.end_time, e.venue, e.location
             FROM `campaign_department_events` e
             WHERE e.date = :proposed_date
               AND e.event_status IN ("planned", "ongoing")

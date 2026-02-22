@@ -4672,6 +4672,7 @@ async function loadResources() {
                                 ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px;">Archived</span>' : ''}
                             </div>
                             <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
+                                ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; background: #10b981; color: white; border: none; margin: 0; white-space: nowrap;">Approve</button>` : ''}
                                 ${c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Finalize</button>` : ''}
                                 ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; background: #3b82f6; color: white; border: none; margin: 0; white-space: nowrap;">Close</button>` : ''}
                             </div>
@@ -4906,6 +4907,7 @@ function renderPaginatedCampaigns() {
             <td style="white-space: nowrap;">
                 <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">View</button>
                 ${!isViewer() ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">Edit</button>` : ''}
+                ${!isViewer() && c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Approve</button>` : ''}
                 ${!isViewer() && c.status === 'approved' && !c.final_schedule_datetime ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">Finalize</button>` : ''}
                 ${!isViewer() && (c.status === 'approved' || c.status === 'ongoing') ? `<button class="btn btn-success" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Close</button>` : ''}
                 ${!isViewer() && c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-warning" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;">Archive</button>` : ''}

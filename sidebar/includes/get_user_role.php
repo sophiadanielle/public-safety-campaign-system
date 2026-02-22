@@ -21,7 +21,10 @@ function getCurrentUserRole(): ?string {
     
     if ($roleIdFromCookie && is_numeric($roleIdFromCookie)) {
         try {
-            require_once __DIR__ . '/../../src/Config/db_connect.php';
+            // Suppress errors during include to prevent 502 errors
+            $oldErrorReporting = error_reporting(0);
+            @require_once __DIR__ . '/../../src/Config/db_connect.php';
+            error_reporting($oldErrorReporting);
             
             if (isset($pdo) && $pdo instanceof PDO) {
                 $stmt = $pdo->prepare('SELECT r.name FROM campaign_department_roles r WHERE r.id = :role_id LIMIT 1');
@@ -87,7 +90,10 @@ function getCurrentUserRole(): ?string {
     if ($token) {
         error_log('RBAC get_user_role: Role cookie missing, attempting JWT fallback. JWT token: ' . (strlen($token) > 0 ? 'PRESENT (length: ' . strlen($token) . ')' : 'EMPTY'));
         try {
-            require_once __DIR__ . '/../../vendor/autoload.php';
+            // Suppress errors during include to prevent 502 errors
+            $oldErrorReporting2 = error_reporting(0);
+            @require_once __DIR__ . '/../../vendor/autoload.php';
+            error_reporting($oldErrorReporting2);
             
             $envPath = __DIR__ . '/../../.env';
             $jwtSecret = 'your-secret-key-change-in-production';

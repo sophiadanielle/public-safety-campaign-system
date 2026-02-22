@@ -26,7 +26,10 @@ if (!$isViewer && isset($_COOKIE['user_role_id'])) {
     $roleIdFromCookie = (int)($_COOKIE['user_role_id'] ?? 0);
     if ($roleIdFromCookie > 0) {
         try {
-            require_once __DIR__ . '/../../src/Config/db_connect.php';
+            // Suppress errors during include to prevent 502 errors
+            $oldErrorReporting = error_reporting(0);
+            @require_once __DIR__ . '/../../src/Config/db_connect.php';
+            error_reporting($oldErrorReporting);
             if (isset($pdo) && $pdo instanceof PDO) {
                 $stmt = $pdo->prepare('SELECT name FROM campaign_department_roles WHERE id = :id LIMIT 1');
                 $stmt->execute(['id' => $roleIdFromCookie]);
