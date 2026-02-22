@@ -3,7 +3,14 @@ $pageTitle = 'Audience Segments';
 require_once __DIR__ . '/../header/includes/path_helper.php';
 
 // RBAC: Block Viewer role from accessing operational pages (contains forms/workflows)
-require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
+// Wrapped in try-catch to prevent 502 errors
+$isViewer = false;
+$currentUserRole = null;
+try {
+    require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
+} catch (\Throwable $e) {
+    error_log('segments.php: block_viewer_access failed: ' . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -52,22 +59,38 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 <body class="module-segments" data-module="segments">
     <?php
     // RBAC: Page-level protection - Viewer cannot access Segments module
-    require_once __DIR__ . '/../sidebar/includes/get_user_role.php';
-    $currentUserRole = getCurrentUserRole();
-    $isViewer = false;
-    if ($currentUserRole) {
-        $roleLower = strtolower(trim($currentUserRole));
-        $isViewer = ($roleLower === 'viewer' || $roleLower === 'partner' || 
-                    strpos($roleLower, 'partner') !== false || strpos($roleLower, 'viewer') !== false);
-    }
-    if ($isViewer) {
-        http_response_code(403);
-        header('Location: ' . $publicPath . '/dashboard.php');
-        exit;
+    try {
+        require_once __DIR__ . '/../sidebar/includes/get_user_role.php';
+        $currentUserRole = getCurrentUserRole();
+        $isViewer = false;
+        if ($currentUserRole) {
+            $roleLower = strtolower(trim($currentUserRole));
+            $isViewer = ($roleLower === 'viewer' || $roleLower === 'partner' || 
+                        strpos($roleLower, 'partner') !== false || strpos($roleLower, 'viewer') !== false);
+        }
+        if ($isViewer) {
+            http_response_code(403);
+            header('Location: ' . $publicPath . '/dashboard.php');
+            exit;
+        }
+    } catch (\Throwable $e) {
+        error_log('segments.php: RBAC check failed: ' . $e->getMessage());
     }
     ?>
-    <?php include __DIR__ . '/../sidebar/includes/sidebar.php'; ?>
-    <?php include __DIR__ . '/../sidebar/includes/admin-header.php'; ?>
+    <?php 
+    try {
+        include __DIR__ . '/../sidebar/includes/sidebar.php'; 
+    } catch (\Throwable $e) {
+        error_log('segments.php: sidebar.php failed: ' . $e->getMessage());
+    }
+    ?>
+    <?php 
+    try {
+        include __DIR__ . '/../sidebar/includes/admin-header.php'; 
+    } catch (\Throwable $e) {
+        error_log('segments.php: admin-header.php failed: ' . $e->getMessage());
+    }
+    ?>
     
     <main class="main-content-wrapper">
 <style>

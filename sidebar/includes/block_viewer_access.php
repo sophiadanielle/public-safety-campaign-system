@@ -38,11 +38,8 @@ if (!$isViewer && isset($_COOKIE['user_role_id'])) {
             $oldErrorReporting = error_reporting(0);
             try {
                 @require_once __DIR__ . '/../../src/Config/db_connect.php';
-            } catch (Exception $dbEx) {
-                error_log('RBAC block_viewer_access: db_connect.php threw exception: ' . $dbEx->getMessage());
-                $pdo = null;
-            } catch (Error $dbErr) {
-                error_log('RBAC block_viewer_access: db_connect.php threw error: ' . $dbErr->getMessage());
+            } catch (\Throwable $dbEx) {
+                error_log('RBAC block_viewer_access: db_connect.php threw throwable: ' . $dbEx->getMessage());
                 $pdo = null;
             }
             error_reporting($oldErrorReporting);

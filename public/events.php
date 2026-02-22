@@ -225,7 +225,8 @@ try {
     ?>
     
     <?php if (!$isViewer): ?>
-    <section id="create-event" class="card" style="margin-bottom:24px;">
+    <!-- Hidden: Create Event form is now in modal -->
+    <section id="create-event" class="card" style="margin-bottom:24px; display:none;">
         <h2 class="section-title">Create Event</h2>
         <div id="conflictWarning" style="display:none; background:#fef3c7; border:2px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:16px;">
             <strong style="color:#92400e;">⚠ Scheduling Conflicts Detected:</strong>
@@ -304,7 +305,8 @@ try {
     </section>
     <?php endif; // End RBAC: Hide create form for Viewer ?>
 
-    <section id="agency-coordination" class="card" style="margin-bottom:24px;">
+    <!-- Hidden: Agency Coordination is now in modal -->
+    <section id="agency-coordination" class="card" style="margin-bottom:24px; display:none;">
         <h2 class="section-title">Agency Coordination</h2>
         <div class="form-field" style="margin-bottom:16px;">
             <label>Select Event</label>
@@ -344,11 +346,22 @@ try {
     </section>
 
     <section id="events-list" class="card" style="margin-bottom:24px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
             <h2 class="section-title" style="margin:0;">Events List</h2>
-            <div style="display:flex; gap:8px;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <?php if (!$isViewer): ?>
+                <button class="btn btn-primary" onclick="openCreateEventModal()" style="display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-plus"></i> Create Event
+                </button>
+                <button class="btn btn-secondary" onclick="openAgencyCoordinationModal()" style="display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-building"></i> Agency Coordination
+                </button>
+                <?php endif; ?>
                 <button class="btn btn-secondary" onclick="switchView('list')" id="listViewBtn">📋 List</button>
                 <button class="btn btn-secondary" onclick="switchView('calendar')" id="calendarViewBtn">📅 Calendar</button>
+                <button class="btn btn-secondary" onclick="openArchivedEventsModal()" style="display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-archive"></i> View Archived
+                </button>
                 <button class="btn btn-secondary" onclick="loadEvents()">🔄 Refresh</button>
         </div>
         </div>
@@ -474,6 +487,254 @@ try {
             <p style="text-align:center; color:#64748b; padding:24px;">Select an event to view reports</p>
         </div>
     </section>
+
+</div><!-- End events-page -->
+
+<!-- Create Event Modal -->
+<div id="createEventModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:800px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:20px;"><i class="fas fa-calendar-plus"></i> Create Event</h2>
+            <button onclick="closeCreateEventModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <div id="modalConflictWarning" style="display:none; background:#fef3c7; border:2px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:16px;">
+                <strong style="color:#92400e;">⚠ Scheduling Conflicts Detected:</strong>
+                <ul id="modalConflictList" style="margin:8px 0 0 0; padding-left:20px; color:#92400e;"></ul>
+            </div>
+            <form id="modalCreateForm" class="form-grid">
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label>Event Title *</label>
+                    <input id="modal_event_title" type="text" placeholder="Fire Safety Seminar" required>
+                </div>
+                <div class="form-field">
+                    <label>Event Type *</label>
+                    <select id="modal_event_type" required>
+                        <option value="seminar">Seminar</option>
+                        <option value="drill">Drill</option>
+                        <option value="workshop">Workshop</option>
+                        <option value="orientation">Orientation</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Event Status</label>
+                    <select id="modal_event_status">
+                        <option value="scheduled" selected>Scheduled</option>
+                        <option value="ongoing">Ongoing</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Linked Campaign</label>
+                    <select id="modal_linked_campaign_id">
+                        <option value="">-- Select Campaign --</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Target Audience</label>
+                    <select id="modal_target_audience_profile_id">
+                        <option value="">-- Select Audience Segment --</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Hazard Focus</label>
+                    <input id="modal_hazard_focus" type="text" placeholder="e.g., fire, flood, earthquake">
+                </div>
+                <div class="form-field">
+                    <label>Start Date & Time *</label>
+                    <input id="modal_start_datetime" type="datetime-local" required>
+                </div>
+                <div class="form-field">
+                    <label>End Date & Time</label>
+                    <input id="modal_end_datetime" type="datetime-local">
+                </div>
+                <div class="form-field">
+                    <label>Venue *</label>
+                    <input id="modal_venue" type="text" placeholder="Barangay Hall" required>
+                </div>
+                <div class="form-field">
+                    <label>Location</label>
+                    <input id="modal_location" type="text" placeholder="Address or location details">
+                </div>
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label>Event Description</label>
+                    <textarea id="modal_event_description" rows="3" placeholder="Describe the event purpose, objectives, and key activities..."></textarea>
+                </div>
+            </form>
+            <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="closeCreateEventModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitModalEventForm()">Create Event</button>
+            </div>
+            <div id="modalCreateStatus" style="margin-top:12px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Agency Coordination Modal -->
+<div id="agencyCoordinationModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:700px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:20px;"><i class="fas fa-building"></i> Agency Coordination</h2>
+            <button onclick="closeAgencyCoordinationModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <div class="form-field" style="margin-bottom:16px;">
+                <label>Select Event</label>
+                <select id="modal_agency_event_select" onchange="loadModalAgencyCoordination()">
+                    <option value="">-- Select Event --</option>
+                </select>
+            </div>
+            <div id="modalAgencyCoordinationList" style="margin-bottom:16px; max-height:300px; overflow-y:auto;"></div>
+            <div id="modalAddAgencyForm" style="display:none; margin-top:16px; padding:16px; background:#f8fafc; border-radius:8px;">
+                <h4 style="margin:0 0 12px 0;">Add Agency Coordination</h4>
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label>Agency Type *</label>
+                        <select id="modal_agency_type" required>
+                            <option value="">-- Select --</option>
+                            <option value="police">Police</option>
+                            <option value="fire">Fire</option>
+                            <option value="medical">Medical</option>
+                            <option value="rescue">Rescue</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Agency Name *</label>
+                        <input id="modal_agency_name" type="text" required>
+                    </div>
+                    <div class="form-field" style="grid-column: 1 / -1;">
+                        <label>Request Details</label>
+                        <textarea id="modal_request_details" rows="2"></textarea>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:12px;">
+                    <button class="btn btn-primary" onclick="submitModalAgencyCoordination()">Submit Request</button>
+                    <button class="btn btn-secondary" onclick="hideModalAddAgencyForm()">Cancel</button>
+                </div>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button class="btn btn-secondary" onclick="showModalAddAgencyForm()">+ Add Agency</button>
+                <button class="btn btn-secondary" onclick="closeAgencyCoordinationModal()" style="margin-left:auto;">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Event Modal -->
+<div id="viewEventModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:800px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:20px;"><i class="fas fa-eye"></i> Event Details</h2>
+            <button onclick="closeViewEventModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <div id="viewEventContent">
+                <p style="text-align:center; color:#64748b; padding:24px;">Loading...</p>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="closeViewEventModal()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Event Modal -->
+<div id="editEventModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:800px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:20px;"><i class="fas fa-edit"></i> Edit Event</h2>
+            <button onclick="closeEditEventModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <form id="editEventForm" class="form-grid">
+                <input type="hidden" id="edit_event_id">
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label>Event Title *</label>
+                    <input id="edit_event_title" type="text" required>
+                </div>
+                <div class="form-field">
+                    <label>Event Type *</label>
+                    <select id="edit_event_type" required>
+                        <option value="seminar">Seminar</option>
+                        <option value="drill">Drill</option>
+                        <option value="workshop">Workshop</option>
+                        <option value="orientation">Orientation</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Event Status</label>
+                    <select id="edit_event_status">
+                        <option value="scheduled">Scheduled</option>
+                        <option value="ongoing">Ongoing</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Linked Campaign</label>
+                    <select id="edit_linked_campaign_id">
+                        <option value="">-- Select Campaign --</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Target Audience</label>
+                    <select id="edit_target_audience_profile_id">
+                        <option value="">-- Select Audience Segment --</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Hazard Focus</label>
+                    <input id="edit_hazard_focus" type="text">
+                </div>
+                <div class="form-field">
+                    <label>Start Date & Time *</label>
+                    <input id="edit_start_datetime" type="datetime-local" required>
+                </div>
+                <div class="form-field">
+                    <label>End Date & Time</label>
+                    <input id="edit_end_datetime" type="datetime-local">
+                </div>
+                <div class="form-field">
+                    <label>Venue *</label>
+                    <input id="edit_venue" type="text" required>
+                </div>
+                <div class="form-field">
+                    <label>Location</label>
+                    <input id="edit_location" type="text">
+                </div>
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label>Event Description</label>
+                    <textarea id="edit_event_description" rows="3"></textarea>
+                </div>
+            </form>
+            <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="closeEditEventModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitEditEventForm()">Update Event</button>
+            </div>
+            <div id="editEventStatus" style="margin-top:12px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Archived Events Modal -->
+<div id="archivedEventsModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:900px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:20px;"><i class="fas fa-archive"></i> Archived Events</h2>
+            <button onclick="closeArchivedEventsModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <div id="archivedEventsList" style="max-height:500px; overflow-y:auto;">
+                <p style="text-align:center; color:#64748b; padding:24px;">Loading archived events...</p>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="closeArchivedEventsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 <?php require_once __DIR__ . '/../header/includes/path_helper.php'; ?>
@@ -858,17 +1119,17 @@ async function loadEvents() {
                 <td>${e.linked_campaign_id || e.campaign_id || '-'}</td>
                 <td><span style="background:${statusStyle.bg}; color:${statusStyle.color}; padding:2px 8px; border-radius:4px; font-size:11px;">${status}</span></td>
                 <td>
-                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin: 2px;" onclick="viewEventDetails(${e.event_id || e.id})">👁️ View</button>
+                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin: 2px;" onclick="openViewEventModal(${e.event_id || e.id})">👁️ View</button>
                     ${(() => {
                         const isViewerCheck = checkIfViewer();
                         if (isViewerCheck) return '';
-                        return `<button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin: 2px;" onclick="editEvent(${e.event_id || e.id})">✏️ Edit</button>`;
+                        return `<button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin: 2px;" onclick="openEditEventModal(${e.event_id || e.id})">✏️ Edit</button>`;
                     })()}
                     ${(() => {
                         const isViewerCheck = checkIfViewer();
                         if (isViewerCheck) return '';
-                        if (e.event_status === 'draft' || e.event_status === 'cancelled') {
-                            return `<button class="btn btn-danger" style="padding:4px 8px; font-size:11px; background: #ef4444; color: white; margin: 2px;" onclick="deleteEvent(${e.event_id || e.id})">🗑️ Delete</button>`;
+                        if (status !== 'archived') {
+                            return `<button class="btn btn-warning" style="padding:4px 8px; font-size:11px; background: #f59e0b; color: white; margin: 2px;" onclick="archiveEvent(${e.event_id || e.id})">📦 Archive</button>`;
                         }
                         return '';
                     })()}
@@ -1794,6 +2055,575 @@ function setupRequirementAutocomplete(textareaId, fieldName) {
     }
     setTimeout(hideViewerForms, 200);
 })();
+
+// ==================== MODAL FUNCTIONS ====================
+
+// Store all events for filtering archived
+let allEventsData = [];
+
+// Create Event Modal
+function openCreateEventModal() {
+    document.getElementById('createEventModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    // Populate dropdowns
+    populateModalDropdowns();
+}
+
+function closeCreateEventModal() {
+    document.getElementById('createEventModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    document.getElementById('modalCreateForm').reset();
+    document.getElementById('modalCreateStatus').textContent = '';
+    document.getElementById('modalConflictWarning').style.display = 'none';
+}
+
+async function populateModalDropdowns() {
+    // Populate campaigns dropdown
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        const campaigns = data.data || [];
+        
+        ['modal_linked_campaign_id', 'edit_linked_campaign_id'].forEach(id => {
+            const select = document.getElementById(id);
+            if (select) {
+                const currentVal = select.value;
+                select.innerHTML = '<option value="">-- Select Campaign --</option>';
+                campaigns.forEach(c => {
+                    const option = document.createElement('option');
+                    option.value = c.id;
+                    option.textContent = `[#${c.id}] ${c.title || 'Untitled'}`;
+                    select.appendChild(option);
+                });
+                if (currentVal) select.value = currentVal;
+            }
+        });
+    } catch (err) {
+        console.error('Error loading campaigns for modal:', err);
+    }
+    
+    // Populate segments dropdown
+    try {
+        const res = await fetch(apiBase + '/api/v1/segments', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        const segments = data.data || data.segments || [];
+        
+        ['modal_target_audience_profile_id', 'edit_target_audience_profile_id'].forEach(id => {
+            const select = document.getElementById(id);
+            if (select) {
+                const currentVal = select.value;
+                select.innerHTML = '<option value="">-- Select Audience Segment --</option>';
+                segments.forEach(s => {
+                    if (s && s.id && s.name) {
+                        const option = document.createElement('option');
+                        option.value = s.id;
+                        option.textContent = `${s.name} - ${s.risk_level || 'N/A'}`;
+                        select.appendChild(option);
+                    }
+                });
+                if (currentVal) select.value = currentVal;
+            }
+        });
+    } catch (err) {
+        console.error('Error loading segments for modal:', err);
+    }
+}
+
+async function submitModalEventForm() {
+    const statusEl = document.getElementById('modalCreateStatus');
+    statusEl.textContent = 'Creating...';
+    statusEl.style.color = '#64748b';
+    
+    const startDatetime = document.getElementById('modal_start_datetime').value;
+    const endDatetime = document.getElementById('modal_end_datetime').value;
+    
+    // Parse datetime to date and time
+    let date = '', startTime = '', endTime = '';
+    if (startDatetime) {
+        const dt = new Date(startDatetime);
+        date = dt.toISOString().split('T')[0];
+        startTime = dt.toTimeString().substring(0, 5);
+    }
+    if (endDatetime) {
+        const dt = new Date(endDatetime);
+        endTime = dt.toTimeString().substring(0, 5);
+    }
+    
+    const payload = {
+        event_title: document.getElementById('modal_event_title').value.trim(),
+        event_type: document.getElementById('modal_event_type').value,
+        event_status: document.getElementById('modal_event_status').value,
+        linked_campaign_id: parseInt(document.getElementById('modal_linked_campaign_id').value) || null,
+        target_audience_profile_id: parseInt(document.getElementById('modal_target_audience_profile_id').value) || null,
+        hazard_focus: document.getElementById('modal_hazard_focus').value.trim() || null,
+        date: date,
+        start_time: startTime,
+        end_time: endTime || null,
+        venue: document.getElementById('modal_venue').value.trim(),
+        location: document.getElementById('modal_location').value.trim() || null,
+        event_description: document.getElementById('modal_event_description').value.trim() || null
+    };
+    
+    if (!payload.event_title || !payload.venue) {
+        statusEl.textContent = '✗ Error: Event Title and Venue are required';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            statusEl.textContent = '✓ Event created successfully!';
+            statusEl.style.color = '#166534';
+            setTimeout(() => {
+                closeCreateEventModal();
+                loadEvents();
+            }, 1000);
+        } else {
+            statusEl.textContent = '✗ Error: ' + (data.error || 'Failed to create event');
+            statusEl.style.color = '#dc2626';
+        }
+    } catch (err) {
+        statusEl.textContent = '✗ Network error: ' + err.message;
+        statusEl.style.color = '#dc2626';
+    }
+}
+
+// Agency Coordination Modal
+function openAgencyCoordinationModal() {
+    document.getElementById('agencyCoordinationModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    populateModalAgencyEventDropdown();
+}
+
+function closeAgencyCoordinationModal() {
+    document.getElementById('agencyCoordinationModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    hideModalAddAgencyForm();
+}
+
+async function populateModalAgencyEventDropdown() {
+    const select = document.getElementById('modal_agency_event_select');
+    if (!select) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        const events = data.data || data.events || [];
+        
+        select.innerHTML = '<option value="">-- Select Event --</option>';
+        events.forEach(e => {
+            const option = document.createElement('option');
+            option.value = e.event_id || e.id;
+            option.textContent = `[#${e.event_id || e.id}] ${e.event_title || e.event_name || 'Untitled'}`;
+            select.appendChild(option);
+        });
+    } catch (err) {
+        console.error('Error loading events for agency modal:', err);
+    }
+}
+
+async function loadModalAgencyCoordination() {
+    const eventId = document.getElementById('modal_agency_event_select').value;
+    const container = document.getElementById('modalAgencyCoordinationList');
+    
+    if (!eventId) {
+        container.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">Select an event to view agency coordination</p>';
+        return;
+    }
+    
+    container.innerHTML = '<p style="text-align:center; color:#64748b;">Loading...</p>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId, { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        
+        if (res.ok && data.agency_coordination && data.agency_coordination.length > 0) {
+            let html = '<table class="data-table" style="font-size:13px;"><thead><tr><th>Agency</th><th>Type</th><th>Status</th><th>Details</th></tr></thead><tbody>';
+            data.agency_coordination.forEach(ac => {
+                const statusColors = {
+                    'requested': { bg: '#fef3c7', color: '#92400e' },
+                    'confirmed': { bg: '#d1fae5', color: '#065f46' },
+                    'fulfilled': { bg: '#dbeafe', color: '#1e40af' },
+                    'cancelled': { bg: '#fee2e2', color: '#991b1b' }
+                };
+                const statusStyle = statusColors[ac.request_status] || statusColors['requested'];
+                html += `<tr><td><strong>${ac.agency_name}</strong></td><td>${ac.agency_type}</td><td><span style="background:${statusStyle.bg}; color:${statusStyle.color}; padding:2px 6px; border-radius:4px; font-size:11px;">${ac.request_status}</span></td><td>${ac.request_details || '-'}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">No agency coordination records found</p>';
+        }
+    } catch (err) {
+        container.innerHTML = '<p style="text-align:center; color:#dc2626;">Error: ' + err.message + '</p>';
+    }
+}
+
+function showModalAddAgencyForm() {
+    const eventId = document.getElementById('modal_agency_event_select').value;
+    if (!eventId) {
+        alert('Please select an event first');
+        return;
+    }
+    document.getElementById('modalAddAgencyForm').style.display = 'block';
+}
+
+function hideModalAddAgencyForm() {
+    document.getElementById('modalAddAgencyForm').style.display = 'none';
+    document.getElementById('modal_agency_type').value = '';
+    document.getElementById('modal_agency_name').value = '';
+    document.getElementById('modal_request_details').value = '';
+}
+
+async function submitModalAgencyCoordination() {
+    const eventId = document.getElementById('modal_agency_event_select').value;
+    if (!eventId) {
+        alert('Please select an event first');
+        return;
+    }
+    
+    const payload = {
+        agency_type: document.getElementById('modal_agency_type').value,
+        agency_name: document.getElementById('modal_agency_name').value.trim(),
+        request_details: document.getElementById('modal_request_details').value.trim() || null
+    };
+    
+    if (!payload.agency_type || !payload.agency_name) {
+        alert('Agency type and name are required');
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId + '/agency-coordination', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Agency coordination request created successfully');
+            hideModalAddAgencyForm();
+            loadModalAgencyCoordination();
+        } else {
+            alert('Error: ' + (data.error || 'Failed'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// View Event Modal
+async function openViewEventModal(eventId) {
+    document.getElementById('viewEventModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    const contentDiv = document.getElementById('viewEventContent');
+    contentDiv.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">Loading...</p>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId, { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        
+        if (res.ok && data.event) {
+            const e = data.event;
+            const summary = data.attendance_summary || {};
+            const statusColors = {
+                'draft': { bg: '#e5e7eb', color: '#374151' },
+                'scheduled': { bg: '#dbeafe', color: '#1e40af' },
+                'confirmed': { bg: '#d1fae5', color: '#065f46' },
+                'completed': { bg: '#d1fae5', color: '#065f46' },
+                'cancelled': { bg: '#fee2e2', color: '#991b1b' },
+                'archived': { bg: '#f3f4f6', color: '#6b7280' }
+            };
+            const status = e.event_status || 'draft';
+            const statusStyle = statusColors[status] || statusColors['draft'];
+            
+            contentDiv.innerHTML = `
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Event Title</strong>
+                        <p style="margin:4px 0 0 0; font-size:16px; font-weight:600; color:#1e293b;">${e.event_title || 'N/A'}</p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Type</strong>
+                        <p style="margin:4px 0 0 0; font-size:14px;"><span style="background:#e0f2fe; color:#1d4ed8; padding:2px 8px; border-radius:4px;">${e.event_type || 'N/A'}</span></p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Status</strong>
+                        <p style="margin:4px 0 0 0; font-size:14px;"><span style="background:${statusStyle.bg}; color:${statusStyle.color}; padding:2px 8px; border-radius:4px;">${status}</span></p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Date & Time</strong>
+                        <p style="margin:4px 0 0 0; font-size:14px;">${e.date || 'TBD'} ${e.start_time || ''} ${e.end_time ? '- ' + e.end_time : ''}</p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Venue</strong>
+                        <p style="margin:4px 0 0 0; font-size:14px;">${e.venue || 'TBD'}</p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Location</strong>
+                        <p style="margin:4px 0 0 0; font-size:14px;">${e.location || 'N/A'}</p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Campaign ID</strong>
+                        <p style="margin:4px 0 0 0; font-size:14px;">${e.linked_campaign_id || 'None'}</p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Attendance</strong>
+                        <p style="margin:4px 0 0 0; font-size:14px; font-weight:600;">${summary.total_attendance || 0}</p>
+                    </div>
+                </div>
+                ${e.event_description ? `<div style="background:#f8fafc; padding:16px; border-radius:8px; margin-bottom:16px;"><strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Description</strong><p style="margin:8px 0 0 0; color:#475569;">${e.event_description}</p></div>` : ''}
+                ${e.hazard_focus ? `<div style="margin-bottom:16px;"><strong>Hazard Focus:</strong> <span style="background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:4px;">${e.hazard_focus}</span></div>` : ''}
+            `;
+        } else {
+            contentDiv.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Error loading event details</p>';
+        }
+    } catch (err) {
+        contentDiv.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Error: ' + err.message + '</p>';
+    }
+}
+
+function closeViewEventModal() {
+    document.getElementById('viewEventModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Edit Event Modal
+async function openEditEventModal(eventId) {
+    document.getElementById('editEventModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    document.getElementById('edit_event_id').value = eventId;
+    
+    // Populate dropdowns first
+    await populateModalDropdowns();
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId, { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        
+        if (res.ok && data.event) {
+            const e = data.event;
+            document.getElementById('edit_event_title').value = e.event_title || '';
+            document.getElementById('edit_event_type').value = e.event_type || 'seminar';
+            document.getElementById('edit_event_status').value = e.event_status || 'scheduled';
+            document.getElementById('edit_linked_campaign_id').value = e.linked_campaign_id || '';
+            document.getElementById('edit_target_audience_profile_id').value = e.target_audience_profile_id || '';
+            document.getElementById('edit_hazard_focus').value = e.hazard_focus || '';
+            document.getElementById('edit_venue').value = e.venue || '';
+            document.getElementById('edit_location').value = e.location || '';
+            document.getElementById('edit_event_description').value = e.event_description || '';
+            
+            // Set datetime fields
+            if (e.date && e.start_time) {
+                document.getElementById('edit_start_datetime').value = `${e.date}T${e.start_time}`;
+            }
+            if (e.date && e.end_time) {
+                document.getElementById('edit_end_datetime').value = `${e.date}T${e.end_time}`;
+            }
+        }
+    } catch (err) {
+        console.error('Error loading event for edit:', err);
+    }
+}
+
+function closeEditEventModal() {
+    document.getElementById('editEventModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    document.getElementById('editEventForm').reset();
+    document.getElementById('editEventStatus').textContent = '';
+}
+
+async function submitEditEventForm() {
+    const statusEl = document.getElementById('editEventStatus');
+    const eventId = document.getElementById('edit_event_id').value;
+    
+    statusEl.textContent = 'Updating...';
+    statusEl.style.color = '#64748b';
+    
+    const startDatetime = document.getElementById('edit_start_datetime').value;
+    const endDatetime = document.getElementById('edit_end_datetime').value;
+    
+    let date = '', startTime = '', endTime = '';
+    if (startDatetime) {
+        const dt = new Date(startDatetime);
+        date = dt.toISOString().split('T')[0];
+        startTime = dt.toTimeString().substring(0, 5);
+    }
+    if (endDatetime) {
+        const dt = new Date(endDatetime);
+        endTime = dt.toTimeString().substring(0, 5);
+    }
+    
+    const payload = {
+        event_title: document.getElementById('edit_event_title').value.trim(),
+        event_type: document.getElementById('edit_event_type').value,
+        event_status: document.getElementById('edit_event_status').value,
+        linked_campaign_id: parseInt(document.getElementById('edit_linked_campaign_id').value) || null,
+        target_audience_profile_id: parseInt(document.getElementById('edit_target_audience_profile_id').value) || null,
+        hazard_focus: document.getElementById('edit_hazard_focus').value.trim() || null,
+        date: date,
+        start_time: startTime,
+        end_time: endTime || null,
+        venue: document.getElementById('edit_venue').value.trim(),
+        location: document.getElementById('edit_location').value.trim() || null,
+        event_description: document.getElementById('edit_event_description').value.trim() || null
+    };
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            statusEl.textContent = '✓ Event updated successfully!';
+            statusEl.style.color = '#166534';
+            setTimeout(() => {
+                closeEditEventModal();
+                loadEvents();
+            }, 1000);
+        } else {
+            statusEl.textContent = '✗ Error: ' + (data.error || 'Failed to update');
+            statusEl.style.color = '#dc2626';
+        }
+    } catch (err) {
+        statusEl.textContent = '✗ Network error: ' + err.message;
+        statusEl.style.color = '#dc2626';
+    }
+}
+
+// Archive Event
+async function archiveEvent(eventId) {
+    if (!confirm('Archive this event? It can be restored from View Archived.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ event_status: 'archived' })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Event archived successfully');
+            loadEvents();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to archive'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Archived Events Modal
+async function openArchivedEventsModal() {
+    document.getElementById('archivedEventsModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    loadArchivedEvents();
+}
+
+function closeArchivedEventsModal() {
+    document.getElementById('archivedEventsModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+async function loadArchivedEvents() {
+    const container = document.getElementById('archivedEventsList');
+    container.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">Loading...</p>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        const events = data.data || data.events || [];
+        
+        const archivedEvents = events.filter(e => (e.event_status || '').toLowerCase() === 'archived');
+        
+        if (archivedEvents.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">No archived events found.</p>';
+            return;
+        }
+        
+        let html = '<table class="data-table"><thead><tr><th>ID</th><th>Title</th><th>Type</th><th>Date</th><th>Venue</th><th>Actions</th></tr></thead><tbody>';
+        archivedEvents.forEach(e => {
+            html += `<tr>
+                <td>${e.event_id || e.id}</td>
+                <td><strong>${e.event_title || 'Untitled'}</strong></td>
+                <td>${e.event_type || 'N/A'}</td>
+                <td>${e.date || 'N/A'}</td>
+                <td>${e.venue || 'N/A'}</td>
+                <td>
+                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin:2px;" onclick="openViewEventModal(${e.event_id || e.id})">👁️ View</button>
+                    <button class="btn btn-success" style="padding:4px 8px; font-size:11px; background:#10b981; color:white; margin:2px;" onclick="restoreEvent(${e.event_id || e.id})">🔄 Restore</button>
+                    <button class="btn btn-danger" style="padding:4px 8px; font-size:11px; background:#ef4444; color:white; margin:2px;" onclick="deleteEventPermanently(${e.event_id || e.id})">🗑️ Delete</button>
+                </td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    } catch (err) {
+        container.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Error: ' + err.message + '</p>';
+    }
+}
+
+async function restoreEvent(eventId) {
+    if (!confirm('Restore this event?')) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ event_status: 'scheduled' })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Event restored successfully');
+            loadArchivedEvents();
+            loadEvents();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to restore'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+async function deleteEventPermanently(eventId) {
+    if (!confirm('Permanently delete this event? This cannot be undone.')) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/events/' + eventId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Event deleted permanently');
+            loadArchivedEvents();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to delete'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Close modals when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-overlay')) {
+        e.target.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+});
+
+// ==================== END MODAL FUNCTIONS ====================
 
 // Handle sidebar navigation for event calendar
 document.addEventListener('DOMContentLoaded', function() {

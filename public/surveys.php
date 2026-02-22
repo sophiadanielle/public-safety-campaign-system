@@ -183,7 +183,8 @@ try {
     </div>
 
     <?php if (!$isViewer): // RBAC: Hide create survey section for Viewer ?>
-    <section class="card" id="create-survey" style="margin-bottom:24px;">
+    <!-- Hidden: Create Survey form is now in modal -->
+    <section class="card" id="create-survey" style="margin-bottom:24px; display:none;">
         <h2 class="section-title">Create Survey</h2>
         <form id="createForm" class="form-grid">
             <div class="form-field">
@@ -251,7 +252,22 @@ try {
 
     <!-- Survey Dashboard -->
     <section class="card" id="surveys-list" style="margin-bottom:24px;">
-        <h2 class="section-title">Survey Dashboard</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+            <h2 class="section-title" style="margin:0; border:none; padding:0;">Survey Dashboard</h2>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <?php if (!$isViewer): ?>
+                <button class="btn btn-primary" onclick="openCreateSurveyModal()" style="display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-plus"></i> Create Survey
+                </button>
+                <?php endif; ?>
+                <button class="btn btn-secondary" onclick="openArchivedSurveysModal()" style="display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-archive"></i> View Archived
+                </button>
+                <button class="btn btn-secondary" onclick="loadSurveys()" style="display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
         <div class="form-grid" style="margin-bottom:16px;">
             <div class="form-field">
                 <label>Filter by Campaign ID</label>
@@ -537,12 +553,12 @@ function renderSurveysList(surveys) {
         
         if (!isViewer) {
             html += `<td style="padding:12px;">
-                <button class="btn btn-secondary" onclick="viewSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">👁️ View</button>
-                ${survey.status === 'draft' ? `<button class="btn btn-secondary" onclick="editSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">✏️ Edit</button>` : ''}
+                <button class="btn btn-secondary" onclick="openViewSurveyModal(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">👁️ View</button>
+                ${survey.status === 'draft' ? `<button class="btn btn-secondary" onclick="openEditSurveyModal(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">✏️ Edit</button>` : ''}
                 <button class="btn btn-secondary" onclick="viewResults(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">📊 Results</button>
                 <button class="btn btn-secondary" onclick="exportResponses(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">📥 Export</button>
                 ${survey.status === 'published' ? `<button class="btn btn-secondary" onclick="closeSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; margin: 2px;">🔒 Close</button>` : ''}
-                ${survey.status === 'draft' || survey.status === 'closed' ? `<button class="btn btn-danger" onclick="deleteSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; background: #ef4444; color: white; margin: 2px;">🗑️ Delete</button>` : ''}
+                ${survey.status !== 'archived' ? `<button class="btn btn-warning" onclick="archiveSurvey(${survey.id})" style="padding:4px 8px; font-size:12px; background: #f59e0b; color: white; margin: 2px;">📦 Archive</button>` : ''}
             </td>`;
         } else {
             // Viewer: Show only "Respond" button for published surveys
@@ -1214,7 +1230,658 @@ async function submitResponse(e) {
         statusEl.style.color = '#dc2626';
     }
 }
+
+// ==================== MODAL FUNCTIONS ====================
+
+// Create Survey Modal
+function openCreateSurveyModal() {
+    document.getElementById('createSurveyModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    loadModalCampaigns();
+}
+
+function closeCreateSurveyModal() {
+    document.getElementById('createSurveyModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    document.getElementById('modalSurveyForm').reset();
+    document.getElementById('modalSurveyStatus').textContent = '';
+    document.getElementById('modalQuestionBuilder').style.display = 'none';
+    document.getElementById('modalQuestionsList').innerHTML = '';
+    modalCurrentSurveyId = null;
+}
+
+let modalCurrentSurveyId = null;
+
+async function loadModalCampaigns() {
+    const select = document.getElementById('modal_campaign_id');
+    if (!select) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        const campaigns = data.data || [];
+        
+        select.innerHTML = '<option value="">-- Select Campaign --</option>';
+        campaigns.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = `[#${c.id}] ${c.title || 'Untitled'}`;
+            select.appendChild(option);
+        });
+    } catch (err) {
+        console.error('Error loading campaigns for modal:', err);
+    }
+}
+
+async function submitModalSurveyForm() {
+    const statusEl = document.getElementById('modalSurveyStatus');
+    statusEl.textContent = 'Creating...';
+    statusEl.style.color = '#64748b';
+    
+    const payload = {
+        title: document.getElementById('modal_title').value.trim(),
+        description: document.getElementById('modal_description').value.trim() || null,
+        campaign_id: parseInt(document.getElementById('modal_campaign_id').value) || null,
+        event_id: parseInt(document.getElementById('modal_event_id').value) || null
+    };
+    
+    if (!payload.title) {
+        statusEl.textContent = '✗ Error: Title is required';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            modalCurrentSurveyId = data.id;
+            statusEl.textContent = '✓ Survey created! ID: ' + data.id + ' - Now add questions below.';
+            statusEl.style.color = '#166534';
+            document.getElementById('modalQuestionBuilder').style.display = 'block';
+        } else {
+            statusEl.textContent = '✗ Error: ' + (data.error || 'Failed to create survey');
+            statusEl.style.color = '#dc2626';
+        }
+    } catch (err) {
+        statusEl.textContent = '✗ Network error: ' + err.message;
+        statusEl.style.color = '#dc2626';
+    }
+}
+
+async function addModalQuestion() {
+    if (!modalCurrentSurveyId) {
+        alert('Please create a survey first');
+        return;
+    }
+    
+    const optsRaw = document.getElementById('modal_q_options').value.trim();
+    const opts = optsRaw ? optsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+    
+    const payload = {
+        question_text: document.getElementById('modal_q_text').value.trim(),
+        question_type: document.getElementById('modal_q_type').value,
+        options: opts,
+        question_order: parseInt(document.getElementById('modal_q_order').value) || 0,
+        required_flag: document.getElementById('modal_q_required').checked
+    };
+    
+    if (!payload.question_text) {
+        alert('Question text is required');
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + modalCurrentSurveyId + '/questions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            document.getElementById('modalSurveyStatus').textContent = '✓ Question added!';
+            document.getElementById('modalSurveyStatus').style.color = '#166534';
+            document.getElementById('modal_q_text').value = '';
+            document.getElementById('modal_q_options').value = '';
+            document.getElementById('modal_q_order').value = '';
+            document.getElementById('modal_q_required').checked = false;
+            loadModalQuestions();
+        } else {
+            alert('Error: ' + (data.error || 'Failed'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+async function loadModalQuestions() {
+    if (!modalCurrentSurveyId) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + modalCurrentSurveyId, { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        
+        if (res.ok && data.data) {
+            const container = document.getElementById('modalQuestionsList');
+            const questions = data.data.questions || [];
+            
+            if (questions.length === 0) {
+                container.innerHTML = '<p style="color:#64748b; padding:12px; background:#f8fafc; border-radius:4px;">No questions added yet.</p>';
+            } else {
+                let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+                questions.forEach((q, idx) => {
+                    html += `<div style="padding:10px; background:#f8fafc; border-radius:6px; border-left:3px solid #4c8a89;">
+                        <strong>Q${idx + 1}:</strong> ${q.question_text}
+                        <span style="color:#64748b; font-size:11px; margin-left:8px;">(${q.question_type}${q.required_flag ? ', Required' : ''})</span>
+                    </div>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            }
+        }
+    } catch (err) {
+        console.error('Error loading questions:', err);
+    }
+}
+
+async function publishModalSurvey() {
+    if (!modalCurrentSurveyId) {
+        alert('Please create a survey first');
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + modalCurrentSurveyId + '/publish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ published_via: 'both' })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Survey published successfully!');
+            closeCreateSurveyModal();
+            loadSurveys();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to publish'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// View Survey Modal
+async function openViewSurveyModal(surveyId) {
+    document.getElementById('viewSurveyModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    const contentDiv = document.getElementById('viewSurveyContent');
+    contentDiv.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">Loading...</p>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        
+        if (res.ok && data.data) {
+            const survey = data.data;
+            const statusColors = {
+                'draft': { bg: '#e5e7eb', color: '#374151' },
+                'published': { bg: '#d1fae5', color: '#065f46' },
+                'closed': { bg: '#fee2e2', color: '#991b1b' },
+                'archived': { bg: '#f3f4f6', color: '#6b7280' }
+            };
+            const status = survey.status || 'draft';
+            const statusStyle = statusColors[status] || statusColors['draft'];
+            
+            contentDiv.innerHTML = `
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Survey ID</strong>
+                        <p style="margin:4px 0 0 0; font-size:16px; font-weight:600; color:#1e293b;">#${survey.id}</p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Title</strong>
+                        <p style="margin:4px 0 0 0; font-size:16px; font-weight:600; color:#1e293b;">${survey.title || 'N/A'}</p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Status</strong>
+                        <p style="margin:4px 0 0 0;"><span style="background:${statusStyle.bg}; color:${statusStyle.color}; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600;">${status}</span></p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Questions</strong>
+                        <p style="margin:4px 0 0 0; font-size:16px; font-weight:600; color:#1e293b;">${survey.questions ? survey.questions.length : 0}</p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Responses</strong>
+                        <p style="margin:4px 0 0 0; font-size:16px; font-weight:600; color:#1e293b;">${survey.total_responses || 0}</p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Campaign ID</strong>
+                        <p style="margin:4px 0 0 0; font-size:14px;">${survey.campaign_id || 'None'}</p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Event ID</strong>
+                        <p style="margin:4px 0 0 0; font-size:14px;">${survey.event_id || 'None'}</p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Created</strong>
+                        <p style="margin:4px 0 0 0; font-size:14px;">${survey.created_at ? new Date(survey.created_at).toLocaleDateString() : 'N/A'}</p>
+                    </div>
+                </div>
+                ${survey.description ? `<div style="background:#f8fafc; padding:16px; border-radius:8px; margin-bottom:16px;"><strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Description</strong><p style="margin:8px 0 0 0; color:#475569;">${survey.description}</p></div>` : ''}
+                ${survey.questions && survey.questions.length > 0 ? `
+                    <div style="margin-top:20px;">
+                        <h4 style="margin:0 0 12px 0; color:#1e293b; font-size:14px; text-transform:uppercase; letter-spacing:0.5px;">Questions</h4>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            ${survey.questions.map((q, idx) => `
+                                <div style="padding:14px; background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius:8px; border-left:4px solid #4c8a89;">
+                                    <div style="font-weight:600; color:#1e293b; margin-bottom:6px;">Q${idx + 1}: ${q.question_text}</div>
+                                    <div style="display:flex; gap:12px; font-size:12px; color:#64748b;">
+                                        <span><i class="fas fa-tag"></i> ${q.question_type}</span>
+                                        ${q.required_flag ? '<span style="color:#dc2626;"><i class="fas fa-asterisk"></i> Required</span>' : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : '<p style="color:#64748b; text-align:center; padding:20px;">No questions added to this survey.</p>'}
+            `;
+        } else {
+            contentDiv.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Error loading survey details</p>';
+        }
+    } catch (err) {
+        contentDiv.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Error: ' + err.message + '</p>';
+    }
+}
+
+function closeViewSurveyModal() {
+    document.getElementById('viewSurveyModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Edit Survey Modal
+async function openEditSurveyModal(surveyId) {
+    document.getElementById('editSurveyModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    document.getElementById('edit_survey_id').value = surveyId;
+    
+    // Load campaigns for dropdown
+    await loadEditModalCampaigns();
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        
+        if (res.ok && data.data) {
+            const survey = data.data;
+            
+            if (survey.status !== 'draft') {
+                alert('Only draft surveys can be edited.');
+                closeEditSurveyModal();
+                return;
+            }
+            
+            document.getElementById('edit_title').value = survey.title || '';
+            document.getElementById('edit_description').value = survey.description || '';
+            document.getElementById('edit_campaign_id').value = survey.campaign_id || '';
+            document.getElementById('edit_event_id').value = survey.event_id || '';
+        }
+    } catch (err) {
+        console.error('Error loading survey for edit:', err);
+    }
+}
+
+async function loadEditModalCampaigns() {
+    const select = document.getElementById('edit_campaign_id');
+    if (!select) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        const campaigns = data.data || [];
+        
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">-- Select Campaign --</option>';
+        campaigns.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c.id;
+            option.textContent = `[#${c.id}] ${c.title || 'Untitled'}`;
+            select.appendChild(option);
+        });
+        if (currentVal) select.value = currentVal;
+    } catch (err) {
+        console.error('Error loading campaigns for edit modal:', err);
+    }
+}
+
+function closeEditSurveyModal() {
+    document.getElementById('editSurveyModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+    document.getElementById('editSurveyForm').reset();
+    document.getElementById('editSurveyStatus').textContent = '';
+}
+
+async function submitEditSurveyForm() {
+    const statusEl = document.getElementById('editSurveyStatus');
+    const surveyId = document.getElementById('edit_survey_id').value;
+    
+    statusEl.textContent = 'Updating...';
+    statusEl.style.color = '#64748b';
+    
+    const payload = {
+        title: document.getElementById('edit_title').value.trim(),
+        description: document.getElementById('edit_description').value.trim() || null,
+        campaign_id: parseInt(document.getElementById('edit_campaign_id').value) || null,
+        event_id: parseInt(document.getElementById('edit_event_id').value) || null
+    };
+    
+    if (!payload.title) {
+        statusEl.textContent = '✗ Error: Title is required';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            statusEl.textContent = '✓ Survey updated successfully!';
+            statusEl.style.color = '#166534';
+            setTimeout(() => {
+                closeEditSurveyModal();
+                loadSurveys();
+            }, 1000);
+        } else {
+            statusEl.textContent = '✗ Error: ' + (data.error || 'Failed to update');
+            statusEl.style.color = '#dc2626';
+        }
+    } catch (err) {
+        statusEl.textContent = '✗ Network error: ' + err.message;
+        statusEl.style.color = '#dc2626';
+    }
+}
+
+// Archive Survey
+async function archiveSurvey(surveyId) {
+    if (!confirm('Archive this survey? It can be restored from View Archived.')) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ status: 'archived' })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Survey archived successfully');
+            loadSurveys();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to archive'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Archived Surveys Modal
+async function openArchivedSurveysModal() {
+    document.getElementById('archivedSurveysModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    loadArchivedSurveys();
+}
+
+function closeArchivedSurveysModal() {
+    document.getElementById('archivedSurveysModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+async function loadArchivedSurveys() {
+    const container = document.getElementById('archivedSurveysList');
+    container.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">Loading...</p>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys', { headers: { 'Authorization': 'Bearer ' + token } });
+        const data = await res.json();
+        const surveys = data.data || [];
+        
+        const archivedSurveys = surveys.filter(s => (s.status || '').toLowerCase() === 'archived');
+        
+        if (archivedSurveys.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">No archived surveys found.</p>';
+            return;
+        }
+        
+        let html = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#f8fafc;"><th style="padding:12px; text-align:left;">ID</th><th style="padding:12px; text-align:left;">Title</th><th style="padding:12px; text-align:left;">Questions</th><th style="padding:12px; text-align:left;">Responses</th><th style="padding:12px; text-align:left;">Actions</th></tr></thead><tbody>';
+        archivedSurveys.forEach(s => {
+            html += `<tr style="border-bottom:1px solid #e2e8f0;">
+                <td style="padding:12px;">${s.id}</td>
+                <td style="padding:12px;"><strong>${s.title || 'Untitled'}</strong></td>
+                <td style="padding:12px;">${s.question_count || 0}</td>
+                <td style="padding:12px;">${s.total_responses || 0}</td>
+                <td style="padding:12px;">
+                    <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; margin:2px;" onclick="openViewSurveyModal(${s.id})">👁️ View</button>
+                    <button class="btn btn-success" style="padding:4px 8px; font-size:11px; background:#10b981; color:white; margin:2px;" onclick="restoreSurvey(${s.id})">🔄 Restore</button>
+                    <button class="btn btn-danger" style="padding:4px 8px; font-size:11px; background:#ef4444; color:white; margin:2px;" onclick="deleteSurveyPermanently(${s.id})">🗑️ Delete</button>
+                </td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    } catch (err) {
+        container.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Error: ' + err.message + '</p>';
+    }
+}
+
+async function restoreSurvey(surveyId) {
+    if (!confirm('Restore this survey?')) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ status: 'draft' })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Survey restored successfully');
+            loadArchivedSurveys();
+            loadSurveys();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to restore'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+async function deleteSurveyPermanently(surveyId) {
+    if (!confirm('Permanently delete this survey? This cannot be undone and will remove all questions and responses.')) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Survey deleted permanently');
+            loadArchivedSurveys();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to delete'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Close modals when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-overlay')) {
+        e.target.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+});
+
+// ==================== END MODAL FUNCTIONS ====================
 </script>
+
+<!-- Create Survey Modal -->
+<div id="createSurveyModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:700px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:20px;"><i class="fas fa-clipboard-list"></i> Create Survey</h2>
+            <button onclick="closeCreateSurveyModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <form id="modalSurveyForm" class="form-grid">
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label>Title *</label>
+                    <input id="modal_title" type="text" placeholder="Post-event feedback" required>
+                </div>
+                <div class="form-field">
+                    <label>Link to Campaign</label>
+                    <select id="modal_campaign_id">
+                        <option value="">-- Select Campaign --</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Link to Event ID</label>
+                    <input id="modal_event_id" type="number" placeholder="Event ID">
+                </div>
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label>Description</label>
+                    <textarea id="modal_description" rows="3" placeholder="Survey description..."></textarea>
+                </div>
+            </form>
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button class="btn btn-primary" onclick="submitModalSurveyForm()">Create Survey</button>
+                <button class="btn btn-secondary" onclick="closeCreateSurveyModal()">Cancel</button>
+            </div>
+            <div id="modalSurveyStatus" style="margin-top:12px;"></div>
+            
+            <!-- Question Builder (shown after survey created) -->
+            <div id="modalQuestionBuilder" style="display:none; margin-top:24px; padding-top:24px; border-top:2px solid #f1f5f9;">
+                <h3 style="font-size:16px; font-weight:600; margin-bottom:16px;">Add Questions</h3>
+                <div class="form-grid">
+                    <div class="form-field" style="grid-column: 1 / -1;">
+                        <label>Question Text *</label>
+                        <input id="modal_q_text" type="text" placeholder="How satisfied were you?">
+                    </div>
+                    <div class="form-field">
+                        <label>Question Type</label>
+                        <select id="modal_q_type">
+                            <option value="open_ended">Open Ended</option>
+                            <option value="rating">Rating (1-5)</option>
+                            <option value="multiple_choice">Multiple Choice</option>
+                            <option value="yes_no">Yes/No</option>
+                            <option value="single_choice">Single Choice</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>Options (comma separated)</label>
+                        <input id="modal_q_options" type="text" placeholder="Option 1, Option 2, Option 3">
+                    </div>
+                    <div class="form-field">
+                        <label>Order</label>
+                        <input id="modal_q_order" type="number" placeholder="Auto" min="0">
+                    </div>
+                    <div class="form-field" style="display:flex; align-items:center; padding-top:20px;">
+                        <input type="checkbox" id="modal_q_required" style="width:auto; margin-right:8px;">
+                        <label for="modal_q_required" style="margin:0;">Required</label>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:16px;">
+                    <button class="btn btn-primary" onclick="addModalQuestion()">Add Question</button>
+                    <button class="btn btn-secondary" onclick="loadModalQuestions()">View Questions</button>
+                    <button class="btn btn-success" onclick="publishModalSurvey()" style="background:#10b981; color:white;">Publish Survey</button>
+                </div>
+                <div id="modalQuestionsList" style="margin-top:16px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Survey Modal -->
+<div id="viewSurveyModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:800px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:20px;"><i class="fas fa-eye"></i> Survey Details</h2>
+            <button onclick="closeViewSurveyModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <div id="viewSurveyContent">
+                <p style="text-align:center; color:#64748b; padding:24px;">Loading...</p>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="closeViewSurveyModal()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Survey Modal -->
+<div id="editSurveyModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:600px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:20px;"><i class="fas fa-edit"></i> Edit Survey</h2>
+            <button onclick="closeEditSurveyModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <form id="editSurveyForm" class="form-grid">
+                <input type="hidden" id="edit_survey_id">
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label>Title *</label>
+                    <input id="edit_title" type="text" required>
+                </div>
+                <div class="form-field">
+                    <label>Link to Campaign</label>
+                    <select id="edit_campaign_id">
+                        <option value="">-- Select Campaign --</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label>Link to Event ID</label>
+                    <input id="edit_event_id" type="number">
+                </div>
+                <div class="form-field" style="grid-column: 1 / -1;">
+                    <label>Description</label>
+                    <textarea id="edit_description" rows="3"></textarea>
+                </div>
+            </form>
+            <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="closeEditSurveyModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitEditSurveyForm()">Update Survey</button>
+            </div>
+            <div id="editSurveyStatus" style="margin-top:12px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Archived Surveys Modal -->
+<div id="archivedSurveysModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:900px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:20px;"><i class="fas fa-archive"></i> Archived Surveys</h2>
+            <button onclick="closeArchivedSurveysModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <div id="archivedSurveysList" style="max-height:500px; overflow-y:auto;">
+                <p style="text-align:center; color:#64748b; padding:24px;">Loading archived surveys...</p>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="closeArchivedSurveysModal()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
     
     <?php include __DIR__ . '/../header/includes/footer.php'; ?>
     </main>

@@ -235,7 +235,6 @@
                                 'icon' => 'fa-calendar',
                                 'features' => [
                                     ['label' => 'All Events', 'href' => '#events-list', 'icon' => 'fa-list'],
-                                    ['label' => 'Create Event', 'href' => '#create-event', 'icon' => 'fa-plus-circle'],
                                     ['label' => 'Event Calendar', 'href' => '#event-calendar', 'icon' => 'fa-calendar'],
                                     ['label' => 'Attendance Tracking', 'href' => '#attendance', 'icon' => 'fa-check-circle'],
                                     ['label' => 'Event Reports', 'href' => '#event-reports', 'icon' => 'fa-file-alt'],
@@ -246,8 +245,6 @@
                                 'icon' => 'fa-clipboard-list',
                                 'features' => [
                                     ['label' => 'All Surveys', 'href' => '#surveys-list', 'icon' => 'fa-list'],
-                                    ['label' => 'Create Survey', 'href' => '#create-survey', 'icon' => 'fa-plus-circle'],
-                                    ['label' => 'Survey Builder', 'href' => '#survey-builder', 'icon' => 'fa-tools'],
                                     ['label' => 'Responses', 'href' => '#responses', 'icon' => 'fa-clipboard-check'],
                                     ['label' => 'Analytics', 'href' => '#survey-analytics', 'icon' => 'fa-chart-pie'],
                                 ]
