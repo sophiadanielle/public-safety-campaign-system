@@ -302,26 +302,116 @@ try {
     </section>
     <?php endif; // End RBAC: Hide analytics section for Viewer ?>
 
-    <section class="card" id="responses">
-        <h2 class="section-title">Submit Response (Public)</h2>
-        <form id="responseForm" class="form-grid">
-            <div class="form-field">
-                <label>Survey ID *</label>
-                <input id="resp_sid" type="number" required onchange="loadSurveyForResponse()">
+    <!-- Survey Form QR Link Generator -->
+    <section class="card" id="qr-generator" style="margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+            <h2 class="section-title" style="margin:0; border:none; padding:0;">Survey Form QR Link Generator</h2>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" onclick="openArchivedLinksModal()" style="display:flex; align-items:center; gap:6px;">
+                    <i class="fas fa-archive"></i> View Archived
+                </button>
             </div>
-            <div class="form-field" style="grid-column: 1 / -1;">
-                <button type="button" class="btn btn-secondary" onclick="loadSurveyForResponse()" style="width:auto;">Load Survey</button>
-            </div>
-        </form>
-        
-        <div id="surveyResponseContainer" style="display:none; margin-top:24px; padding-top:24px; border-top:2px solid #e2e8f0;">
-            <h3 id="surveyResponseTitle" style="margin:0 0 16px 0; font-size:20px;"></h3>
-            <div id="surveyQuestionsContainer"></div>
-            <button type="button" class="btn btn-primary" style="margin-top:20px;" onclick="submitResponse(event)">Submit Response</button>
+        </div>
+        <div class="section-description" style="background:#f0fdf4; border-left:4px solid #4c8a89; padding:12px 16px; border-radius:0 8px 8px 0; margin-bottom:20px;">
+            <strong>What this does:</strong> Generate shareable links and QR codes for published surveys. When users visit the link, they can fill out their details and answer survey questions. All responses are saved and can be viewed in the Survey Responses tab.
         </div>
         
-        <div class="status" id="respStatus" style="margin-top:12px;"></div>
+        <!-- Tabs -->
+        <div style="display:flex; border-bottom:2px solid #e2e8f0; margin-bottom:20px;">
+            <button id="tabGeneratedLinks" class="tab-btn active" onclick="switchQRTab('generated')" style="padding:12px 24px; border:none; background:none; font-weight:600; color:#4c8a89; border-bottom:3px solid #4c8a89; cursor:pointer; transition:all 0.2s;">
+                <i class="fas fa-link"></i> Generated Links
+            </button>
+            <button id="tabSurveyResponses" class="tab-btn" onclick="switchQRTab('responses')" style="padding:12px 24px; border:none; background:none; font-weight:600; color:#64748b; border-bottom:3px solid transparent; cursor:pointer; transition:all 0.2s;">
+                <i class="fas fa-clipboard-list"></i> Survey Responses
+            </button>
+        </div>
+        
+        <!-- Generated Links Tab Content -->
+        <div id="generatedLinksTab">
+            <div class="form-grid" style="margin-bottom:20px;">
+                <div class="form-field">
+                    <label>Select Survey <span style="color:#dc2626;">*</span></label>
+                    <select id="qr_survey_id" required style="font-size:15px; padding:12px 16px;">
+                        <option value="">-- Select a published survey --</option>
+                    </select>
+                    <div class="helper-text" style="font-size:12px; color:#64748b; margin-top:4px;">💡 Only published surveys are shown</div>
+                </div>
+                <div class="form-field" style="display:flex; align-items:flex-end;">
+                    <button class="btn btn-primary" onclick="generateSurveyLink()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
+                        <i class="fas fa-qrcode" style="margin-right:8px;"></i>Generate Link & QR
+                    </button>
+                </div>
+            </div>
+            
+            <div class="status" id="qrStatus" style="margin-bottom:16px;"></div>
+            
+            <!-- Generated Links List -->
+            <div id="generatedLinksList"></div>
+        </div>
+        
+        <!-- Survey Responses Tab Content -->
+        <div id="surveyResponsesTab" style="display:none;">
+            <div class="form-grid" style="margin-bottom:20px;">
+                <div class="form-field">
+                    <label>Filter by Survey</label>
+                    <select id="response_filter_survey" onchange="loadSurveyResponses()" style="font-size:15px; padding:12px 16px;">
+                        <option value="">-- All Surveys --</option>
+                    </select>
+                </div>
+                <div class="form-field" style="display:flex; align-items:flex-end;">
+                    <button class="btn btn-secondary" onclick="loadSurveyResponses()" style="width:100%;">
+                        <i class="fas fa-sync-alt" style="margin-right:8px;"></i>Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div id="surveyResponsesList"></div>
+        </div>
     </section>
+
+<!-- View Generated Link Modal -->
+<div id="viewLinkModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:10000; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:600px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.3);">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:18px;"><i class="fas fa-qrcode"></i> Survey Link & QR Code</h2>
+            <button onclick="closeViewLinkModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <div id="viewLinkContent"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Archived Links Modal -->
+<div id="archivedLinksModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:900px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.25); max-height:90vh; overflow-y:auto;">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:20px;"><i class="fas fa-archive"></i> Archived Survey Links</h2>
+            <button onclick="closeArchivedLinksModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <div id="archivedLinksList" style="max-height:500px; overflow-y:auto;">
+                <p style="text-align:center; color:#64748b; padding:24px;">Loading archived links...</p>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:20px; justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="closeArchivedLinksModal()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Response Details Modal -->
+<div id="viewResponseModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:10000; overflow-y:auto;">
+    <div class="modal-container" style="background:white; border-radius:16px; max-width:700px; margin:40px auto; padding:0; box-shadow:0 25px 50px rgba(0,0,0,0.3); max-height:90vh; overflow-y:auto;">
+        <div class="modal-header" style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); border-radius:16px 16px 0 0;">
+            <h2 style="margin:0; color:white; font-size:18px;"><i class="fas fa-user"></i> Response Details</h2>
+            <button onclick="closeViewResponseModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; padding:0; line-height:1;">&times;</button>
+        </div>
+        <div class="modal-body" style="padding:24px;">
+            <div id="viewResponseContent"></div>
+        </div>
+    </div>
+</div>
 
 <script>
 <?php require_once __DIR__ . '/../header/includes/path_helper.php'; ?>
@@ -2804,6 +2894,572 @@ async function generateResultsPDF(surveyId) {
         showToast('Failed to generate PDF: ' + error.message, 'error');
     }
 }
+
+// ============================================
+// SURVEY FORM QR LINK GENERATOR FUNCTIONS
+// ============================================
+
+// Store generated links in localStorage
+let generatedLinks = JSON.parse(localStorage.getItem('surveyGeneratedLinks') || '[]');
+let archivedLinks = JSON.parse(localStorage.getItem('surveyArchivedLinks') || '[]');
+
+// Load published surveys for QR generator dropdown
+async function loadPublishedSurveysForQR() {
+    const select = document.getElementById('qr_survey_id');
+    const filterSelect = document.getElementById('response_filter_survey');
+    if (!select) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/surveys?status=published', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        const surveys = (data.data || []).filter(s => s.status === 'published');
+        
+        select.innerHTML = '<option value="">-- Select a published survey --</option>';
+        if (filterSelect) {
+            filterSelect.innerHTML = '<option value="">-- All Surveys --</option>';
+        }
+        
+        surveys.forEach(s => {
+            const option = document.createElement('option');
+            option.value = s.id;
+            option.textContent = `ID ${s.id} - ${s.title || 'Untitled'}`;
+            select.appendChild(option);
+            
+            if (filterSelect) {
+                const filterOption = option.cloneNode(true);
+                filterSelect.appendChild(filterOption);
+            }
+        });
+    } catch (err) {
+        console.error('Error loading published surveys:', err);
+    }
+}
+
+// Switch between tabs
+function switchQRTab(tab) {
+    const generatedTab = document.getElementById('generatedLinksTab');
+    const responsesTab = document.getElementById('surveyResponsesTab');
+    const tabGenerated = document.getElementById('tabGeneratedLinks');
+    const tabResponses = document.getElementById('tabSurveyResponses');
+    
+    if (tab === 'generated') {
+        generatedTab.style.display = 'block';
+        responsesTab.style.display = 'none';
+        tabGenerated.style.color = '#4c8a89';
+        tabGenerated.style.borderBottom = '3px solid #4c8a89';
+        tabResponses.style.color = '#64748b';
+        tabResponses.style.borderBottom = '3px solid transparent';
+        renderGeneratedLinks();
+    } else {
+        generatedTab.style.display = 'none';
+        responsesTab.style.display = 'block';
+        tabGenerated.style.color = '#64748b';
+        tabGenerated.style.borderBottom = '3px solid transparent';
+        tabResponses.style.color = '#4c8a89';
+        tabResponses.style.borderBottom = '3px solid #4c8a89';
+        loadSurveyResponses();
+    }
+}
+
+// Generate survey link and QR code
+async function generateSurveyLink() {
+    const surveyId = document.getElementById('qr_survey_id').value;
+    const statusEl = document.getElementById('qrStatus');
+    
+    if (!surveyId) {
+        statusEl.textContent = '⚠️ Please select a survey';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+    
+    statusEl.textContent = 'Generating link...';
+    statusEl.style.color = '#64748b';
+    
+    try {
+        // Fetch survey details
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (!res.ok || !data.data) {
+            statusEl.textContent = '✗ Error: ' + (data.error || 'Survey not found');
+            statusEl.style.color = '#dc2626';
+            return;
+        }
+        
+        const survey = data.data;
+        
+        // Generate link
+        const baseUrl = window.location.origin;
+        const surveyLink = `${baseUrl}/public/survey-form.php?id=${surveyId}`;
+        
+        // Create link record
+        const linkRecord = {
+            id: Date.now(),
+            survey_id: surveyId,
+            survey_title: survey.title || 'Untitled',
+            link: surveyLink,
+            created_at: new Date().toISOString(),
+            question_count: survey.questions ? survey.questions.length : 0,
+            status: 'active'
+        };
+        
+        // Add to generated links
+        generatedLinks.unshift(linkRecord);
+        localStorage.setItem('surveyGeneratedLinks', JSON.stringify(generatedLinks));
+        
+        statusEl.textContent = '✓ Link generated successfully!';
+        statusEl.style.color = '#166534';
+        
+        // Render the list
+        renderGeneratedLinks();
+        
+        // Show the view modal immediately
+        openViewLinkModal(linkRecord.id);
+        
+    } catch (err) {
+        statusEl.textContent = '✗ Network error: ' + err.message;
+        statusEl.style.color = '#dc2626';
+    }
+}
+
+// Render generated links list
+function renderGeneratedLinks() {
+    const container = document.getElementById('generatedLinksList');
+    const activeLinks = generatedLinks.filter(l => l.status !== 'archived');
+    
+    if (activeLinks.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:#64748b;"><i class="fas fa-link" style="font-size:40px; margin-bottom:16px; opacity:0.5;"></i><p>No generated links yet. Select a survey and click "Generate Link & QR" to create one.</p></div>';
+        return;
+    }
+    
+    let html = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;"><th style="padding:12px; text-align:left;">Survey</th><th style="padding:12px; text-align:left;">Questions</th><th style="padding:12px; text-align:left;">Created</th><th style="padding:12px; text-align:left;">Actions</th></tr></thead><tbody>';
+    
+    activeLinks.forEach(link => {
+        const date = new Date(link.created_at).toLocaleString('en-US', {
+            timeZone: 'Asia/Manila',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        html += `<tr style="border-bottom:1px solid #e2e8f0;">
+            <td style="padding:12px;"><strong>ID ${link.survey_id}</strong> - ${link.survey_title}</td>
+            <td style="padding:12px;">${link.question_count || 0}</td>
+            <td style="padding:12px; font-size:13px; color:#64748b;">${date}</td>
+            <td style="padding:12px;">
+                <button class="btn btn-primary" onclick="openViewLinkModal(${link.id})" style="padding:4px 10px; font-size:12px; margin:2px;">
+                    <i class="fas fa-eye"></i> View
+                </button>
+                <button class="btn btn-warning" onclick="archiveLink(${link.id})" style="padding:4px 10px; font-size:12px; background:#f59e0b; color:white; margin:2px;">
+                    <i class="fas fa-archive"></i> Archive
+                </button>
+            </td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+// Open view link modal with QR code
+function openViewLinkModal(linkId) {
+    const link = generatedLinks.find(l => l.id === linkId) || archivedLinks.find(l => l.id === linkId);
+    if (!link) return;
+    
+    const modal = document.getElementById('viewLinkModal');
+    const content = document.getElementById('viewLinkContent');
+    
+    // Generate QR code using Google Charts API
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link.link)}`;
+    
+    content.innerHTML = `
+        <div style="text-align:center; margin-bottom:24px;">
+            <h3 style="margin:0 0 8px 0; color:#1e293b;">${link.survey_title}</h3>
+            <p style="margin:0; color:#64748b; font-size:14px;">Survey ID: ${link.survey_id} | Questions: ${link.question_count || 0}</p>
+        </div>
+        
+        <div style="text-align:center; margin-bottom:24px;">
+            <img src="${qrCodeUrl}" alt="QR Code" style="border:4px solid #e2e8f0; border-radius:12px; padding:8px; background:white;">
+            <p style="margin:12px 0 0 0; color:#64748b; font-size:12px;">Scan this QR code to access the survey</p>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <label style="font-weight:600; color:#334155; display:block; margin-bottom:8px;">Survey Link</label>
+            <div style="display:flex; gap:8px;">
+                <input type="text" id="surveyLinkInput" value="${link.link}" readonly style="flex:1; padding:12px; border:2px solid #e2e8f0; border-radius:8px; font-size:13px; background:#f8fafc;">
+                <button onclick="copySurveyLink()" class="btn btn-primary" style="padding:12px 16px;">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <a href="${link.link}" target="_blank" class="btn btn-primary" style="text-decoration:none; padding:10px 20px;">
+                <i class="fas fa-external-link-alt"></i> Open Link
+            </a>
+            <button onclick="downloadQRCode('${qrCodeUrl}', '${link.survey_title}')" class="btn btn-secondary" style="padding:10px 20px;">
+                <i class="fas fa-download"></i> Download QR
+            </button>
+        </div>
+    `;
+    
+    modal.style.display = 'block';
+}
+
+function closeViewLinkModal() {
+    document.getElementById('viewLinkModal').style.display = 'none';
+}
+
+function copySurveyLink() {
+    const input = document.getElementById('surveyLinkInput');
+    input.select();
+    document.execCommand('copy');
+    showToast('Link copied to clipboard!', 'success');
+}
+
+function downloadQRCode(qrUrl, title) {
+    const link = document.createElement('a');
+    link.href = qrUrl;
+    link.download = `QR_${title.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Archive link
+function archiveLink(linkId) {
+    if (!confirm('Archive this link? It can be restored from View Archived.')) return;
+    
+    const linkIndex = generatedLinks.findIndex(l => l.id === linkId);
+    if (linkIndex > -1) {
+        const link = generatedLinks[linkIndex];
+        link.status = 'archived';
+        link.archived_at = new Date().toISOString();
+        archivedLinks.unshift(link);
+        generatedLinks.splice(linkIndex, 1);
+        
+        localStorage.setItem('surveyGeneratedLinks', JSON.stringify(generatedLinks));
+        localStorage.setItem('surveyArchivedLinks', JSON.stringify(archivedLinks));
+        
+        renderGeneratedLinks();
+        showToast('Link archived successfully', 'success');
+    }
+}
+
+// Archived links modal
+function openArchivedLinksModal() {
+    document.getElementById('archivedLinksModal').style.display = 'block';
+    renderArchivedLinks();
+}
+
+function closeArchivedLinksModal() {
+    document.getElementById('archivedLinksModal').style.display = 'none';
+}
+
+function renderArchivedLinks() {
+    const container = document.getElementById('archivedLinksList');
+    
+    if (archivedLinks.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;">No archived links found.</p>';
+        return;
+    }
+    
+    let html = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#f8fafc;"><th style="padding:12px; text-align:left;">Survey</th><th style="padding:12px; text-align:left;">Created</th><th style="padding:12px; text-align:left;">Archived</th><th style="padding:12px; text-align:left;">Actions</th></tr></thead><tbody>';
+    
+    archivedLinks.forEach(link => {
+        const createdDate = new Date(link.created_at).toLocaleDateString('en-US', { timeZone: 'Asia/Manila' });
+        const archivedDate = new Date(link.archived_at).toLocaleDateString('en-US', { timeZone: 'Asia/Manila' });
+        
+        html += `<tr style="border-bottom:1px solid #e2e8f0;">
+            <td style="padding:12px;"><strong>ID ${link.survey_id}</strong> - ${link.survey_title}</td>
+            <td style="padding:12px; font-size:13px;">${createdDate}</td>
+            <td style="padding:12px; font-size:13px;">${archivedDate}</td>
+            <td style="padding:12px;">
+                <button class="btn btn-secondary" onclick="openViewLinkModal(${link.id})" style="padding:4px 8px; font-size:11px; margin:2px;">👁️ View</button>
+                <button class="btn btn-success" onclick="restoreLink(${link.id})" style="padding:4px 8px; font-size:11px; background:#10b981; color:white; margin:2px;">🔄 Restore</button>
+                <button class="btn btn-danger" onclick="deleteLink(${link.id})" style="padding:4px 8px; font-size:11px; background:#ef4444; color:white; margin:2px;">🗑️ Delete</button>
+            </td>
+        </tr>`;
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function restoreLink(linkId) {
+    if (!confirm('Restore this link?')) return;
+    
+    const linkIndex = archivedLinks.findIndex(l => l.id === linkId);
+    if (linkIndex > -1) {
+        const link = archivedLinks[linkIndex];
+        link.status = 'active';
+        delete link.archived_at;
+        generatedLinks.unshift(link);
+        archivedLinks.splice(linkIndex, 1);
+        
+        localStorage.setItem('surveyGeneratedLinks', JSON.stringify(generatedLinks));
+        localStorage.setItem('surveyArchivedLinks', JSON.stringify(archivedLinks));
+        
+        renderArchivedLinks();
+        renderGeneratedLinks();
+        showToast('Link restored successfully', 'success');
+    }
+}
+
+function deleteLink(linkId) {
+    if (!confirm('Permanently delete this link? This cannot be undone.')) return;
+    
+    const linkIndex = archivedLinks.findIndex(l => l.id === linkId);
+    if (linkIndex > -1) {
+        archivedLinks.splice(linkIndex, 1);
+        localStorage.setItem('surveyArchivedLinks', JSON.stringify(archivedLinks));
+        renderArchivedLinks();
+        showToast('Link deleted permanently', 'success');
+    }
+}
+
+// Load survey responses
+async function loadSurveyResponses() {
+    const container = document.getElementById('surveyResponsesList');
+    const filterSurveyId = document.getElementById('response_filter_survey').value;
+    
+    container.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;"><i class="fas fa-spinner fa-spin"></i> Loading responses...</p>';
+    
+    try {
+        // Get all published surveys first
+        let surveysToFetch = [];
+        
+        if (filterSurveyId) {
+            surveysToFetch = [filterSurveyId];
+        } else {
+            const res = await fetch(apiBase + '/api/v1/surveys?status=published', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            surveysToFetch = (data.data || []).map(s => s.id);
+        }
+        
+        // Fetch responses for each survey
+        let allResponses = [];
+        
+        for (const surveyId of surveysToFetch) {
+            try {
+                const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId + '/responses', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                
+                if (res.ok && data.data) {
+                    // Get survey title
+                    const surveyRes = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    const surveyData = await surveyRes.json();
+                    const surveyTitle = surveyData.data?.title || 'Survey #' + surveyId;
+                    
+                    data.data.forEach(response => {
+                        allResponses.push({
+                            ...response,
+                            survey_id: surveyId,
+                            survey_title: surveyTitle
+                        });
+                    });
+                }
+            } catch (err) {
+                console.error('Error fetching responses for survey ' + surveyId + ':', err);
+            }
+        }
+        
+        // Sort by created_at descending
+        allResponses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        if (allResponses.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding:40px; color:#64748b;"><i class="fas fa-clipboard-list" style="font-size:40px; margin-bottom:16px; opacity:0.5;"></i><p>No survey responses found.</p></div>';
+            return;
+        }
+        
+        let html = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;"><th style="padding:12px; text-align:left;">Survey</th><th style="padding:12px; text-align:left;">Respondent</th><th style="padding:12px; text-align:left;">Submitted</th><th style="padding:12px; text-align:left;">Actions</th></tr></thead><tbody>';
+        
+        allResponses.forEach(response => {
+            const date = new Date(response.created_at).toLocaleString('en-US', {
+                timeZone: 'Asia/Manila',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Parse respondent data if available
+            let respondentName = 'Anonymous';
+            if (response.respondent_data) {
+                try {
+                    const respondent = typeof response.respondent_data === 'string' 
+                        ? JSON.parse(response.respondent_data) 
+                        : response.respondent_data;
+                    respondentName = respondent.full_name || 'Anonymous';
+                } catch (e) {}
+            }
+            
+            html += `<tr style="border-bottom:1px solid #e2e8f0;">
+                <td style="padding:12px;"><strong>ID ${response.survey_id}</strong> - ${response.survey_title}</td>
+                <td style="padding:12px;">${respondentName}</td>
+                <td style="padding:12px; font-size:13px; color:#64748b;">${date}</td>
+                <td style="padding:12px;">
+                    <button class="btn btn-primary" onclick="viewResponseDetails(${response.id}, ${response.survey_id})" style="padding:4px 10px; font-size:12px;">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </td>
+            </tr>`;
+        });
+        
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        
+    } catch (err) {
+        container.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Error loading responses: ' + err.message + '</p>';
+    }
+}
+
+// View response details
+async function viewResponseDetails(responseId, surveyId) {
+    const modal = document.getElementById('viewResponseModal');
+    const content = document.getElementById('viewResponseContent');
+    
+    content.innerHTML = '<p style="text-align:center; color:#64748b; padding:24px;"><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
+    modal.style.display = 'block';
+    
+    try {
+        // Fetch survey details
+        const surveyRes = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const surveyData = await surveyRes.json();
+        const survey = surveyData.data || {};
+        
+        // Fetch response details
+        const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId + '/responses', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        const response = (data.data || []).find(r => r.id === responseId);
+        
+        if (!response) {
+            content.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Response not found</p>';
+            return;
+        }
+        
+        // Parse respondent data
+        let respondent = {};
+        if (response.respondent_data) {
+            try {
+                respondent = typeof response.respondent_data === 'string' 
+                    ? JSON.parse(response.respondent_data) 
+                    : response.respondent_data;
+            } catch (e) {}
+        }
+        
+        // Parse answers
+        let answers = {};
+        if (response.answers_json) {
+            try {
+                answers = typeof response.answers_json === 'string' 
+                    ? JSON.parse(response.answers_json) 
+                    : response.answers_json;
+            } catch (e) {}
+        }
+        
+        const date = new Date(response.created_at).toLocaleString('en-US', {
+            timeZone: 'Asia/Manila',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        
+        let html = `
+            <div style="margin-bottom:24px;">
+                <h3 style="margin:0 0 8px 0; color:#1e293b;">${survey.title || 'Survey'}</h3>
+                <p style="margin:0; color:#64748b; font-size:14px;">Submitted: ${date}</p>
+            </div>
+            
+            <div style="background:#f8fafc; padding:16px; border-radius:10px; margin-bottom:20px;">
+                <h4 style="margin:0 0 12px 0; color:#4c8a89; font-size:14px; text-transform:uppercase;">Respondent Information</h4>
+                <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;">
+                    <div><strong>Full Name:</strong> ${respondent.full_name || 'N/A'}</div>
+                    <div><strong>Gender:</strong> ${respondent.gender || 'N/A'}</div>
+                    <div><strong>Age:</strong> ${respondent.age || 'N/A'}</div>
+                    <div><strong>Address:</strong> ${respondent.address || 'N/A'}</div>
+                </div>
+            </div>
+            
+            <div>
+                <h4 style="margin:0 0 12px 0; color:#4c8a89; font-size:14px; text-transform:uppercase;">Survey Answers</h4>
+        `;
+        
+        // Display answers with questions
+        const questions = survey.questions || [];
+        questions.forEach((q, idx) => {
+            const answer = answers[q.id] || 'No answer';
+            const displayAnswer = Array.isArray(answer) ? answer.join(', ') : answer;
+            
+            html += `
+                <div style="padding:12px; background:#f8fafc; border-radius:8px; margin-bottom:10px; border-left:4px solid #4c8a89;">
+                    <div style="font-weight:600; color:#1e293b; margin-bottom:4px;">Q${idx + 1}: ${q.question_text}</div>
+                    <div style="color:#475569;">${displayAnswer}</div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        content.innerHTML = html;
+        
+    } catch (err) {
+        content.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Error: ' + err.message + '</p>';
+    }
+}
+
+function closeViewResponseModal() {
+    document.getElementById('viewResponseModal').style.display = 'none';
+}
+
+// Simple toast notification
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        z-index: 99999;
+        animation: slideIn 0.3s ease;
+        ${type === 'success' ? 'background: #10b981;' : 'background: #ef4444;'}
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Initialize QR generator on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadPublishedSurveysForQR();
+    renderGeneratedLinks();
+});
 </script>
     
     <?php include __DIR__ . '/../header/includes/footer.php'; ?>

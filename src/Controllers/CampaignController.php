@@ -1018,14 +1018,14 @@ class CampaignController
 
         if ($useAIRecommendation) {
             // Use AI recommendation
-            // LGU Workflow: Draft -> Pending (after AI acceptance) -> Approved (by Captain) -> Scheduled (finalized)
+            // LGU Workflow: Draft -> Pending (after AI acceptance) -> Approved (by Captain) -> Scheduled (via Finalize button only)
+            // NOTE: Status should NOT change to "scheduled" here - only the Finalize button should do that
             $stmt = $this->pdo->prepare('
                 UPDATE campaign_department_campaigns 
                 SET final_schedule_datetime = ai_recommended_datetime,
                     draft_schedule_datetime = ai_recommended_datetime,
                     status = CASE 
                         WHEN status = "draft" THEN "pending"
-                        WHEN status = "approved" THEN "scheduled"
                         ELSE status
                     END
                 WHERE id = :id AND ai_recommended_datetime IS NOT NULL
@@ -1038,14 +1038,14 @@ class CampaignController
             }
         } elseif ($finalSchedule) {
             // Override with manual schedule
-            // LGU Workflow: Draft -> Pending (after schedule set) -> Approved (by Captain) -> Scheduled (finalized)
+            // LGU Workflow: Draft -> Pending (after schedule set) -> Approved (by Captain) -> Scheduled (via Finalize button only)
+            // NOTE: Status should NOT change to "scheduled" here - only the Finalize button should do that
             $stmt = $this->pdo->prepare('
                 UPDATE campaign_department_campaigns 
                 SET final_schedule_datetime = :final_schedule_datetime,
                     draft_schedule_datetime = :final_schedule_datetime,
                     status = CASE 
                         WHEN status = "draft" THEN "pending"
-                        WHEN status = "approved" THEN "scheduled"
                         ELSE status
                     END
                 WHERE id = :id
@@ -1137,9 +1137,9 @@ class CampaignController
         $campaignConflicts = $stmt->fetchAll();
 
         // Check for conflicts with events and seminars
-        // Use only event_name column (event_title may not exist in production)
+        // Use 'name' column (the actual column in the events table)
         $stmt = $this->pdo->prepare('
-            SELECT e.id, e.event_name, e.event_name as event_title, 
+            SELECT e.id, e.name as event_name, e.name as event_title, 
                    e.event_type, e.date, e.start_time, e.end_time, e.venue
             FROM `campaign_department_events` e
             WHERE e.date = :proposed_date

@@ -316,7 +316,7 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <section class="card" id="evaluation-reports" style="margin-bottom:32px;">
         <h2 class="section-title">Evaluation Reports</h2>
         <div class="section-description">
-            <strong>What this does:</strong> View and download official evaluation reports for your campaigns. Reports are automatically generated and include all key performance metrics in a professional PDF format.
+            <strong>What this does:</strong> Create and download official evaluation reports for your campaigns. Reports include all key performance metrics in a professional PDF format.
         </div>
         <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
             <div class="form-field">
@@ -324,7 +324,12 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
                 <select id="report_campaign_id" required style="font-size:15px; padding:12px 16px;" onchange="onReportCampaignSelect()">
                     <option value="">-- Select a campaign --</option>
                 </select>
-                <div class="helper-text">💡 <strong>Tip:</strong> Select a campaign to automatically view available reports. Click "Download as PDF" to export.</div>
+                <div class="helper-text">💡 <strong>Tip:</strong> Select a campaign to view existing reports or create a new one.</div>
+            </div>
+            <div class="form-field" style="margin-top:8px;">
+                <button class="btn btn-primary" onclick="generateReport()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
+                    <i class="fas fa-file-alt" style="margin-right:8px;"></i>Create Evaluation Report
+                </button>
             </div>
         </div>
         <div id="reportList" style="margin-top:20px;"></div>
@@ -671,6 +676,42 @@ function renderChart(m) {
 
 // Note: loadImpact() is called when user clicks "View Campaign Performance" button
 // Don't auto-load on page load - wait for user to select a campaign
+
+// Generate new evaluation report
+async function generateReport() {
+    const cid = document.getElementById('report_campaign_id').value;
+    const statusEl = document.getElementById('reportStatus');
+    
+    if (!cid) {
+        statusEl.textContent = '⚠️ Please select a campaign first';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+    
+    statusEl.textContent = 'Generating report...';
+    statusEl.style.color = '#64748b';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/reports/generate/' + cid, {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.file_path) {
+            statusEl.textContent = '✓ Report generated successfully! You can view it in the list below.';
+            statusEl.style.color = '#166534';
+            // Reload the report list
+            onReportCampaignSelect();
+        } else {
+            statusEl.textContent = '⚠️ ' + (data.error || 'Unable to generate report. Please make sure the campaign has data.');
+            statusEl.style.color = '#dc2626';
+        }
+    } catch (err) {
+        statusEl.textContent = '✗ Network error: ' + err.message;
+        statusEl.style.color = '#dc2626';
+    }
+}
 
 // Evaluation Reports - Auto-load when campaign is selected
 async function onReportCampaignSelect() {
