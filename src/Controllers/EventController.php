@@ -869,15 +869,20 @@ class EventController
             $audienceMemberId = (int) $this->pdo->lastInsertId();
         }
 
+        // Use Asia/Manila timezone for accurate local time
+        $manilaTimezone = new \DateTimeZone('Asia/Manila');
+        $checkinTime = (new \DateTime('now', $manilaTimezone))->format('Y-m-d H:i:s');
+        
         $stmt = $this->pdo->prepare('
             INSERT INTO `campaign_department_attendance` (event_id, audience_member_id, participant_identifier, checkin_method, checkin_timestamp, check_in) 
-            VALUES (:event_id, :audience_member_id, :participant_identifier, :checkin_method, NOW(), 1)
+            VALUES (:event_id, :audience_member_id, :participant_identifier, :checkin_method, :checkin_timestamp, 1)
         ');
         $stmt->execute([
             'event_id' => $event['id'],
             'audience_member_id' => $audienceMemberId,
             'participant_identifier' => $fullName,
-            'checkin_method' => $checkinMethod
+            'checkin_method' => $checkinMethod,
+            'checkin_timestamp' => $checkinTime
         ]);
 
         // Update attendance count

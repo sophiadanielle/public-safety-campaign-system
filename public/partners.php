@@ -387,8 +387,10 @@ try {
         <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
             <div class="form-field">
                 <label>Select Partner <span style="color:#dc2626;">*</span></label>
-                <input id="history_pid" type="number" placeholder="Enter the partner number to view their engagement history" min="1" style="font-size:15px; padding:12px 16px;">
-                <div class="helper-text">💡 <strong>Need help?</strong> Don't know the partner number? Go to "All Partners" section above to see all partners and their numbers.</div>
+                <select id="history_pid" required style="font-size:15px; padding:12px 16px;">
+                    <option value="">-- Select a partner --</option>
+                </select>
+                <div class="helper-text">💡 <strong>Tip:</strong> Select a partner from the dropdown to view their engagement history.</div>
             </div>
             <div class="form-field" style="margin-top:8px;">
                 <button type="button" class="btn btn-primary" onclick="loadEngagementHistory()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
@@ -428,13 +430,17 @@ try {
         <form id="engageForm" class="form-grid">
             <div class="form-field">
                 <label>Select Partner <span style="color:#dc2626;">*</span></label>
-                <input id="e_pid" type="number" placeholder="Enter the partner number" required min="1" style="font-size:15px; padding:12px 16px;">
-                <div class="helper-text">💡 <strong>Need help?</strong> Don't know the partner number? Check the "All Partners" section above to see all partners and their numbers.</div>
+                <select id="e_pid" required style="font-size:15px; padding:12px 16px;">
+                    <option value="">-- Select a partner --</option>
+                </select>
+                <div class="helper-text">💡 <strong>Tip:</strong> Select a partner from the dropdown to engage with a campaign.</div>
             </div>
             <div class="form-field">
                 <label>Select Campaign <span style="color:#dc2626;">*</span></label>
-                <input id="e_cid" type="number" placeholder="Enter the campaign number" required min="1" style="font-size:15px; padding:12px 16px;">
-                <div class="helper-text">💡 <strong>Need help?</strong> Don't know the campaign number? Go to the "Campaigns" page in the sidebar to see all campaigns and their numbers.</div>
+                <select id="e_cid" required style="font-size:15px; padding:12px 16px;">
+                    <option value="">-- Select a campaign --</option>
+                </select>
+                <div class="helper-text">💡 <strong>Tip:</strong> Select a campaign from the dropdown to link with the partner.</div>
             </div>
             <div class="form-field">
                 <label>Engagement Type</label>
@@ -471,8 +477,10 @@ try {
         <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
             <div class="form-field">
                 <label>Select Partner <span style="color:#dc2626;">*</span></label>
-                <input id="a_pid" type="number" placeholder="Enter the partner number to view their assignments" min="1" style="font-size:15px; padding:12px 16px;">
-                <div class="helper-text">💡 <strong>Need help?</strong> Don't know the partner number? Go to "All Partners" section above to see all partners and their numbers.</div>
+                <select id="a_pid" required style="font-size:15px; padding:12px 16px;">
+                    <option value="">-- Select a partner --</option>
+                </select>
+                <div class="helper-text">💡 <strong>Tip:</strong> Select a partner from the dropdown to view their assignments.</div>
             </div>
             <div class="form-field" style="margin-top:8px;">
                 <button type="button" class="btn btn-primary" onclick="loadAssignments()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
@@ -1086,9 +1094,123 @@ async function loadAssignments() {
     }
 }
 
-// Auto-load partners on page load
+// Populate partner dropdowns with data from All Partners
+function populatePartnerDropdowns(partners) {
+    const dropdownIds = ['history_pid', 'e_pid', 'a_pid'];
+    
+    dropdownIds.forEach(dropdownId => {
+        const dropdown = document.getElementById(dropdownId);
+        if (!dropdown) return;
+        
+        // Clear existing options except the first one
+        dropdown.innerHTML = '<option value="">-- Select a partner --</option>';
+        
+        if (partners && partners.length > 0) {
+            partners.forEach(partner => {
+                const option = document.createElement('option');
+                option.value = partner.id;
+                option.textContent = partner.name || `Partner #${partner.id}`;
+                dropdown.appendChild(option);
+            });
+        }
+    });
+}
+
+// Load all campaigns for the engage partner dropdown
+async function loadCampaignsForDropdown() {
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        const dropdown = document.getElementById('e_cid');
+        if (!dropdown) return;
+        
+        dropdown.innerHTML = '<option value="">-- Select a campaign --</option>';
+        
+        if (res.ok && data.data && data.data.length > 0) {
+            data.data.forEach(campaign => {
+                const option = document.createElement('option');
+                option.value = campaign.id;
+                option.textContent = `ID ${campaign.id} - ${campaign.title || 'Untitled Campaign'}`;
+                dropdown.appendChild(option);
+            });
+        }
+    } catch (err) {
+        console.error('Error loading campaigns for dropdown:', err);
+    }
+}
+
+// Store partners globally for dropdown population
+let allPartnersData = [];
+
+// Modified loadAllPartners to also populate dropdowns
+const originalLoadAllPartners = loadAllPartners;
+loadAllPartners = async function() {
+    const statusEl = document.getElementById('partnersListStatus');
+    const emptyState = document.getElementById('partnersListEmptyState');
+    const table = document.getElementById('partnersTable');
+    const tbody = document.getElementById('partnersTableBody');
+    
+    statusEl.textContent = 'Loading partners...';
+    statusEl.style.color = '#64748b';
+    emptyState.style.display = 'none';
+    table.style.display = 'none';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color:#64748b;">Loading...</td></tr>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/partners', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.data && data.data.length > 0) {
+            allPartnersData = data.data;
+            populatePartnerDropdowns(data.data);
+            
+            tbody.innerHTML = '';
+            data.data.forEach(partner => {
+                const tr = document.createElement('tr');
+                const date = partner.created_at ? new Date(partner.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '-';
+                tr.innerHTML = `
+                    <td><strong style="color:#0f172a;">${partner.name || '-'}</strong></td>
+                    <td>${partner.contact_person || '-'}</td>
+                    <td>${partner.contact_email || '-'}</td>
+                    <td>${partner.contact_phone || '-'}</td>
+                    <td>${date}</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="viewPartner(${partner.id})" style="padding:4px 8px; font-size:12px; margin: 2px;"><i class="fas fa-eye"></i> View</button>
+                        <button class="btn btn-secondary" onclick="editPartner(${partner.id})" style="padding:4px 8px; font-size:12px; margin: 2px;"><i class="fas fa-edit"></i> Edit</button>
+                        <button class="btn btn-warning" onclick="archivePartner(${partner.id})" style="padding:4px 8px; font-size:12px; background: #f59e0b; color: white; margin: 2px;"><i class="fas fa-archive"></i> Archive</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            table.style.display = 'table';
+            emptyState.style.display = 'none';
+            statusEl.textContent = '✓ Loaded ' + data.data.length + ' partner' + (data.data.length !== 1 ? 's' : '') + ' successfully';
+            statusEl.style.color = '#166534';
+        } else {
+            allPartnersData = [];
+            populatePartnerDropdowns([]);
+            table.style.display = 'none';
+            emptyState.style.display = 'block';
+            statusEl.textContent = 'ℹ️ No partners registered yet. Use "Add Partner" section below to register your first partner organization.';
+            statusEl.style.color = '#64748b';
+        }
+    } catch (err) {
+        table.style.display = 'none';
+        emptyState.style.display = 'block';
+        statusEl.textContent = '✗ Unable to load partners. Please check your internet connection and try again.';
+        statusEl.style.color = '#dc2626';
+    }
+}
+
+// Auto-load partners and campaigns on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadAllPartners();
+    loadCampaignsForDropdown();
 });
 </script>
     
