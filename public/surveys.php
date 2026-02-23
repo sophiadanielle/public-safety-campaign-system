@@ -306,13 +306,11 @@ try {
     <section class="card" id="qr-generator" style="margin-bottom:24px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
             <h2 class="section-title" style="margin:0; border:none; padding:0;">Survey Form QR Link Generator</h2>
-            <div style="display:flex; gap:8px;">
-                <button class="btn btn-secondary" onclick="openArchivedLinksModal()" style="display:flex; align-items:center; gap:6px;">
-                    <i class="fas fa-archive"></i> View Archived
-                </button>
-            </div>
+            <button class="btn btn-secondary" onclick="openArchivedLinksModal()" style="display:flex; align-items:center; gap:6px; padding:8px 16px;">
+                <i class="fas fa-archive"></i> View Archived
+            </button>
         </div>
-        <div class="section-description" style="background:#f0fdf4; border-left:4px solid #4c8a89; padding:12px 16px; border-radius:0 8px 8px 0; margin-bottom:20px;">
+        <div style="background:#f0fdf4; border-left:4px solid #4c8a89; padding:12px 16px; border-radius:0 8px 8px 0; margin-bottom:20px; font-size:14px; color:#334155;">
             <strong>What this does:</strong> Generate shareable links and QR codes for published surveys. When users visit the link, they can fill out their details and answer survey questions. All responses are saved and can be viewed in the Survey Responses tab.
         </div>
         
@@ -328,19 +326,17 @@ try {
         
         <!-- Generated Links Tab Content -->
         <div id="generatedLinksTab">
-            <div class="form-grid" style="margin-bottom:20px;">
-                <div class="form-field">
-                    <label>Select Survey <span style="color:#dc2626;">*</span></label>
-                    <select id="qr_survey_id" required style="font-size:15px; padding:12px 16px;">
+            <div style="display:grid; grid-template-columns:1fr auto; gap:16px; align-items:end; margin-bottom:20px;">
+                <div class="form-field" style="margin:0;">
+                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155;">Select Survey <span style="color:#dc2626;">*</span></label>
+                    <select id="qr_survey_id" required style="width:100%; font-size:14px; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px;">
                         <option value="">-- Select a published survey --</option>
                     </select>
-                    <div class="helper-text" style="font-size:12px; color:#64748b; margin-top:4px;">💡 Only published surveys are shown</div>
+                    <div style="font-size:12px; color:#64748b; margin-top:4px;">💡 Only published surveys are shown</div>
                 </div>
-                <div class="form-field" style="display:flex; align-items:flex-end;">
-                    <button class="btn btn-primary" onclick="generateSurveyLink()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
-                        <i class="fas fa-qrcode" style="margin-right:8px;"></i>Generate Link & QR
-                    </button>
-                </div>
+                <button class="btn btn-primary" onclick="generateSurveyLink()" style="padding:10px 24px; font-size:14px; font-weight:600; white-space:nowrap; height:42px;">
+                    <i class="fas fa-qrcode" style="margin-right:8px;"></i>Generate Link & QR
+                </button>
             </div>
             
             <div class="status" id="qrStatus" style="margin-bottom:16px;"></div>
@@ -351,18 +347,16 @@ try {
         
         <!-- Survey Responses Tab Content -->
         <div id="surveyResponsesTab" style="display:none;">
-            <div class="form-grid" style="margin-bottom:20px;">
-                <div class="form-field">
-                    <label>Filter by Survey</label>
-                    <select id="response_filter_survey" onchange="loadSurveyResponses()" style="font-size:15px; padding:12px 16px;">
+            <div style="display:grid; grid-template-columns:1fr auto; gap:16px; align-items:end; margin-bottom:20px;">
+                <div class="form-field" style="margin:0;">
+                    <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155;">Filter by Survey</label>
+                    <select id="response_filter_survey" onchange="loadSurveyResponses()" style="width:100%; font-size:14px; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px;">
                         <option value="">-- All Surveys --</option>
                     </select>
                 </div>
-                <div class="form-field" style="display:flex; align-items:flex-end;">
-                    <button class="btn btn-secondary" onclick="loadSurveyResponses()" style="width:100%;">
-                        <i class="fas fa-sync-alt" style="margin-right:8px;"></i>Refresh
-                    </button>
-                </div>
+                <button class="btn btn-secondary" onclick="loadSurveyResponses()" style="padding:10px 24px; white-space:nowrap; height:42px;">
+                    <i class="fas fa-sync-alt" style="margin-right:8px;"></i>Refresh
+                </button>
             </div>
             
             <div id="surveyResponsesList"></div>
@@ -3225,7 +3219,7 @@ function deleteLink(linkId) {
     }
 }
 
-// Load survey responses
+// Load survey responses - grouped by survey with expandable respondent list
 async function loadSurveyResponses() {
     const container = document.getElementById('surveyResponsesList');
     const filterSurveyId = document.getElementById('response_filter_survey').value;
@@ -3235,6 +3229,7 @@ async function loadSurveyResponses() {
     try {
         // Get all published surveys first
         let surveysToFetch = [];
+        let surveyDetails = {};
         
         if (filterSurveyId) {
             surveysToFetch = [filterSurveyId];
@@ -3246,85 +3241,146 @@ async function loadSurveyResponses() {
             surveysToFetch = (data.data || []).map(s => s.id);
         }
         
-        // Fetch responses for each survey
-        let allResponses = [];
+        // Fetch responses for each survey and group them
+        let surveyResponsesMap = {};
         
         for (const surveyId of surveysToFetch) {
             try {
-                const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId + '/responses', {
+                const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId + '/responses?limit=100', {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const data = await res.json();
                 
-                if (res.ok && data.data) {
-                    // Get survey title
+                if (res.ok && data.data && data.data.length > 0) {
+                    // Get survey details
                     const surveyRes = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
                         headers: { 'Authorization': 'Bearer ' + token }
                     });
                     const surveyData = await surveyRes.json();
-                    const surveyTitle = surveyData.data?.title || 'Survey #' + surveyId;
+                    const survey = surveyData.data || {};
                     
-                    data.data.forEach(response => {
-                        allResponses.push({
-                            ...response,
-                            survey_id: surveyId,
-                            survey_title: surveyTitle
-                        });
-                    });
+                    surveyResponsesMap[surveyId] = {
+                        survey_id: surveyId,
+                        survey_title: survey.title || 'Survey #' + surveyId,
+                        questions: survey.questions || [],
+                        responses: data.data
+                    };
                 }
             } catch (err) {
                 console.error('Error fetching responses for survey ' + surveyId + ':', err);
             }
         }
         
-        // Sort by created_at descending
-        allResponses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        const surveyIds = Object.keys(surveyResponsesMap);
         
-        if (allResponses.length === 0) {
+        if (surveyIds.length === 0) {
             container.innerHTML = '<div style="text-align:center; padding:40px; color:#64748b;"><i class="fas fa-clipboard-list" style="font-size:40px; margin-bottom:16px; opacity:0.5;"></i><p>No survey responses found.</p></div>';
             return;
         }
         
-        let html = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;"><th style="padding:12px; text-align:left;">Survey</th><th style="padding:12px; text-align:left;">Respondent</th><th style="padding:12px; text-align:left;">Submitted</th><th style="padding:12px; text-align:left;">Actions</th></tr></thead><tbody>';
+        // Build grouped HTML
+        let html = '';
         
-        allResponses.forEach(response => {
-            const date = new Date(response.created_at).toLocaleString('en-US', {
-                timeZone: 'Asia/Manila',
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
+        surveyIds.forEach(surveyId => {
+            const surveyGroup = surveyResponsesMap[surveyId];
+            const responseCount = surveyGroup.responses.length;
+            
+            html += `
+                <div style="background:#f8fafc; border-radius:12px; margin-bottom:16px; overflow:hidden; border:1px solid #e2e8f0;">
+                    <div style="padding:16px 20px; background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); color:white; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <h3 style="margin:0; font-size:16px;"><i class="fas fa-clipboard-list" style="margin-right:8px;"></i>${surveyGroup.survey_title}</h3>
+                            <p style="margin:4px 0 0 0; font-size:13px; opacity:0.9;">Survey ID: ${surveyId} | ${responseCount} response(s)</p>
+                        </div>
+                        <button onclick="toggleSurveyResponses(${surveyId})" class="btn" style="background:rgba(255,255,255,0.2); color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;">
+                            <i class="fas fa-chevron-down" id="toggleIcon_${surveyId}"></i> View Respondents
+                        </button>
+                    </div>
+                    <div id="respondentsList_${surveyId}" style="display:none; padding:16px;">
+                        <table style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr style="background:#e2e8f0;">
+                                    <th style="padding:10px 12px; text-align:left; font-size:13px; font-weight:600; color:#475569;">Full Name</th>
+                                    <th style="padding:10px 12px; text-align:left; font-size:13px; font-weight:600; color:#475569;">Gender</th>
+                                    <th style="padding:10px 12px; text-align:left; font-size:13px; font-weight:600; color:#475569;">Age</th>
+                                    <th style="padding:10px 12px; text-align:left; font-size:13px; font-weight:600; color:#475569;">Address</th>
+                                    <th style="padding:10px 12px; text-align:left; font-size:13px; font-weight:600; color:#475569;">Submitted</th>
+                                    <th style="padding:10px 12px; text-align:center; font-size:13px; font-weight:600; color:#475569;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+            
+            surveyGroup.responses.forEach(response => {
+                // Parse respondent data
+                let respondent = { full_name: 'Anonymous', gender: 'N/A', age: 'N/A', address: 'N/A' };
+                if (response.respondent_data) {
+                    try {
+                        const parsed = typeof response.respondent_data === 'string' 
+                            ? JSON.parse(response.respondent_data) 
+                            : response.respondent_data;
+                        respondent = { ...respondent, ...parsed };
+                    } catch (e) {}
+                }
+                
+                // Format date
+                let dateStr = 'N/A';
+                if (response.created_at) {
+                    try {
+                        dateStr = new Date(response.created_at).toLocaleString('en-US', {
+                            timeZone: 'Asia/Manila',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    } catch (e) {
+                        dateStr = response.created_at;
+                    }
+                }
+                
+                html += `
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:10px 12px; font-weight:500;">${respondent.full_name || 'Anonymous'}</td>
+                        <td style="padding:10px 12px; color:#64748b;">${respondent.gender || 'N/A'}</td>
+                        <td style="padding:10px 12px; color:#64748b;">${respondent.age || 'N/A'}</td>
+                        <td style="padding:10px 12px; color:#64748b; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${respondent.address || 'N/A'}</td>
+                        <td style="padding:10px 12px; font-size:12px; color:#64748b;">${dateStr}</td>
+                        <td style="padding:10px 12px; text-align:center;">
+                            <button class="btn btn-primary" onclick="viewResponseDetails(${response.id}, ${surveyId})" style="padding:4px 12px; font-size:12px;">
+                                <i class="fas fa-eye"></i> View Answers
+                            </button>
+                        </td>
+                    </tr>`;
             });
             
-            // Parse respondent data if available
-            let respondentName = 'Anonymous';
-            if (response.respondent_data) {
-                try {
-                    const respondent = typeof response.respondent_data === 'string' 
-                        ? JSON.parse(response.respondent_data) 
-                        : response.respondent_data;
-                    respondentName = respondent.full_name || 'Anonymous';
-                } catch (e) {}
-            }
-            
-            html += `<tr style="border-bottom:1px solid #e2e8f0;">
-                <td style="padding:12px;"><strong>ID ${response.survey_id}</strong> - ${response.survey_title}</td>
-                <td style="padding:12px;">${respondentName}</td>
-                <td style="padding:12px; font-size:13px; color:#64748b;">${date}</td>
-                <td style="padding:12px;">
-                    <button class="btn btn-primary" onclick="viewResponseDetails(${response.id}, ${response.survey_id})" style="padding:4px 10px; font-size:12px;">
-                        <i class="fas fa-eye"></i> View
-                    </button>
-                </td>
-            </tr>`;
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
         });
         
-        html += '</tbody></table>';
         container.innerHTML = html;
         
     } catch (err) {
         container.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Error loading responses: ' + err.message + '</p>';
+    }
+}
+
+// Toggle survey responses visibility
+function toggleSurveyResponses(surveyId) {
+    const list = document.getElementById('respondentsList_' + surveyId);
+    const icon = document.getElementById('toggleIcon_' + surveyId);
+    
+    if (list.style.display === 'none') {
+        list.style.display = 'block';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    } else {
+        list.style.display = 'none';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
     }
 }
 

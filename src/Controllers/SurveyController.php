@@ -525,11 +525,20 @@ class SurveyController
         $responses = $input['responses'] ?? null;
         $audienceMemberId = isset($input['audience_member_id']) ? (int) $input['audience_member_id'] : null;
         $respondentIdentifier = $input['respondent_identifier'] ?? null;
+        $respondentData = $input['respondent'] ?? null; // New: respondent details (full_name, gender, age, address)
+
+        // If respondent data is provided, use full_name as respondent_identifier
+        if ($respondentData && is_array($respondentData) && !$respondentIdentifier) {
+            $respondentIdentifier = $respondentData['full_name'] ?? null;
+        }
 
         if (!$responses || !is_array($responses)) {
             http_response_code(422);
             return ['error' => 'responses array is required'];
         }
+        
+        // Ensure respondent_data column exists
+        $this->ensureRespondentDataColumn();
 
         // Get all questions for validation
         $questions = $this->getQuestions($surveyId);
@@ -555,13 +564,20 @@ class SurveyController
             }
         }
 
-        // Insert response
-        $stmt = $this->pdo->prepare('INSERT INTO `campaign_department_survey_responses` (survey_id, audience_member_id, respondent_identifier, responses_json, submission_timestamp) VALUES (:survey_id, :audience_member_id, :respondent_identifier, :responses_json, NOW())');
+        // Insert response with respondent data
+        // Use Asia/Manila timezone for submission timestamp
+        $manilaTimezone = new \DateTimeZone('Asia/Manila');
+        $now = new \DateTime('now', $manilaTimezone);
+        $submissionTimestamp = $now->format('Y-m-d H:i:s');
+        
+        $stmt = $this->pdo->prepare('INSERT INTO `campaign_department_survey_responses` (survey_id, audience_member_id, respondent_identifier, respondent_data, responses_json, submission_timestamp) VALUES (:survey_id, :audience_member_id, :respondent_identifier, :respondent_data, :responses_json, :submission_timestamp)');
         $stmt->execute([
             'survey_id' => $surveyId,
             'audience_member_id' => $audienceMemberId ?: null,
             'respondent_identifier' => $respondentIdentifier ?: null,
+            'respondent_data' => $respondentData ? json_encode($respondentData) : null,
             'responses_json' => json_encode($responses),
+            'submission_timestamp' => $submissionTimestamp,
         ]);
 
         $responseId = (int) $this->pdo->lastInsertId();
@@ -708,12 +724,22 @@ class SurveyController
         $limit = isset($_GET['limit']) ? min(100, max(1, (int) $_GET['limit'])) : 20;
         $offset = ($page - 1) * $limit;
 
-        $stmt = $this->pdo->prepare('SELECT id, survey_id, audience_member_id, respondent_identifier, responses_json, submission_timestamp FROM `campaign_department_survey_responses` WHERE survey_id = :sid ORDER BY submission_timestamp DESC LIMIT :limit OFFSET :offset');
+        $stmt = $this->pdo->prepare('SELECT id, survey_id, audience_member_id, respondent_identifier, respondent_data, responses_json, submission_timestamp as created_at FROM `campaign_department_survey_responses` WHERE survey_id = :sid ORDER BY submission_timestamp DESC LIMIT :limit OFFSET :offset');
         $stmt->bindValue(':sid', $surveyId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
         $responses = $stmt->fetchAll();
+        
+        // Parse respondent_data and responses_json for each response
+        foreach ($responses as &$response) {
+            if (isset($response['respondent_data']) && is_string($response['respondent_data'])) {
+                $response['respondent_data'] = json_decode($response['respondent_data'], true);
+            }
+            if (isset($response['responses_json']) && is_string($response['responses_json'])) {
+                $response['answers_json'] = $response['responses_json']; // Alias for frontend compatibility
+            }
+        }
 
         // Get total count
         $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM `campaign_department_survey_responses` WHERE survey_id = :sid');
@@ -1132,6 +1158,28 @@ class SurveyController
             error_log('SurveyController::destroy - Error: ' . $e->getMessage());
             http_response_code(500);
             return ['error' => 'Failed to delete survey: ' . $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Ensure respondent_data column exists in survey_responses table
+     */
+    private function ensureRespondentDataColumn(): void
+    {
+        try {
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_survey_responses' 
+                AND COLUMN_NAME = 'respondent_data'");
+            $hasColumn = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+            
+            if (!$hasColumn) {
+                error_log('SurveyController: Adding respondent_data column to survey_responses');
+                $this->pdo->exec("ALTER TABLE `campaign_department_survey_responses` 
+                    ADD COLUMN `respondent_data` JSON NULL AFTER `respondent_identifier`");
+            }
+        } catch (\Throwable $e) {
+            error_log('SurveyController::ensureRespondentDataColumn - Error: ' . $e->getMessage());
         }
     }
 }

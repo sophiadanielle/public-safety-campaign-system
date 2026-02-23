@@ -6876,7 +6876,10 @@ async function finalizeSchedule(campaignId) {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + getToken()
             },
-            body: JSON.stringify({ final_schedule_datetime: scheduleDateTime })
+            body: JSON.stringify({ 
+                final_schedule_datetime: scheduleDateTime,
+                finalize: true  // This flag tells the API to change status to "scheduled"
+            })
         });
         
         const data = await res.json();
@@ -6885,7 +6888,7 @@ async function finalizeSchedule(campaignId) {
             return;
         }
         
-        await customAlert('Schedule finalized successfully!', 'Success');
+        await customAlert('Schedule finalized successfully! Status changed to Scheduled.', 'Success');
         // FIX: Use centralized refresh to ensure all views update
         refreshAllCampaignViews();
     } catch (err) {

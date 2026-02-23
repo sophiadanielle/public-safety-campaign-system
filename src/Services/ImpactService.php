@@ -192,11 +192,17 @@ class ImpactService
             throw new RuntimeException('Failed to write report file');
         }
 
-        $stmt = $this->pdo->prepare('INSERT INTO `campaign_department_evaluation_reports` (campaign_id, file_path, snapshot_json) VALUES (:cid, :file_path, :snapshot_json)');
+        // Use Asia/Manila timezone for created_at timestamp
+        $manilaTimezone = new \DateTimeZone('Asia/Manila');
+        $now = new \DateTime('now', $manilaTimezone);
+        $createdAt = $now->format('Y-m-d H:i:s');
+        
+        $stmt = $this->pdo->prepare('INSERT INTO `campaign_department_evaluation_reports` (campaign_id, file_path, snapshot_json, created_at) VALUES (:cid, :file_path, :snapshot_json, :created_at)');
         $stmt->execute([
             'cid' => $campaignId,
             'file_path' => $relativePath,
             'snapshot_json' => json_encode($metrics),
+            'created_at' => $createdAt,
         ]);
 
         return [

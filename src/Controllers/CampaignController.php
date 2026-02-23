@@ -1015,6 +1015,7 @@ class CampaignController
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
         $finalSchedule = $input['final_schedule_datetime'] ?? null;
         $useAIRecommendation = $input['use_ai_recommendation'] ?? false;
+        $finalize = $input['finalize'] ?? false; // Flag to actually finalize and change status to scheduled
 
         if ($useAIRecommendation) {
             // Use AI recommendation
@@ -1037,23 +1038,43 @@ class CampaignController
                 return ['error' => 'No AI recommendation available. Request one first.'];
             }
         } elseif ($finalSchedule) {
-            // Override with manual schedule
-            // LGU Workflow: Draft -> Pending (after schedule set) -> Approved (by Captain) -> Scheduled (via Finalize button only)
-            // NOTE: Status should NOT change to "scheduled" here - only the Finalize button should do that
-            $stmt = $this->pdo->prepare('
-                UPDATE campaign_department_campaigns 
-                SET final_schedule_datetime = :final_schedule_datetime,
-                    draft_schedule_datetime = :final_schedule_datetime,
-                    status = CASE 
-                        WHEN status = "draft" THEN "pending"
-                        ELSE status
-                    END
-                WHERE id = :id
-            ');
-            $stmt->execute([
-                'id' => $campaignId,
-                'final_schedule_datetime' => $finalSchedule,
-            ]);
+            if ($finalize) {
+                // FINALIZE: Change status to "scheduled" - this is the actual finalize action
+                // Only Captain/Admin should call this with finalize=true
+                $stmt = $this->pdo->prepare('
+                    UPDATE campaign_department_campaigns 
+                    SET final_schedule_datetime = :final_schedule_datetime,
+                        draft_schedule_datetime = :final_schedule_datetime,
+                        status = "scheduled"
+                    WHERE id = :id AND status = "approved"
+                ');
+                $stmt->execute([
+                    'id' => $campaignId,
+                    'final_schedule_datetime' => $finalSchedule,
+                ]);
+                
+                if ($stmt->rowCount() === 0) {
+                    http_response_code(400);
+                    return ['error' => 'Campaign must be in Approved status to finalize.'];
+                }
+            } else {
+                // Override with manual schedule (NOT finalizing - just setting the schedule)
+                // LGU Workflow: Draft -> Pending (after schedule set) -> Approved (by Captain) -> Scheduled (via Finalize button only)
+                $stmt = $this->pdo->prepare('
+                    UPDATE campaign_department_campaigns 
+                    SET final_schedule_datetime = :final_schedule_datetime,
+                        draft_schedule_datetime = :final_schedule_datetime,
+                        status = CASE 
+                            WHEN status = "draft" THEN "pending"
+                            ELSE status
+                        END
+                    WHERE id = :id
+                ');
+                $stmt->execute([
+                    'id' => $campaignId,
+                    'final_schedule_datetime' => $finalSchedule,
+                ]);
+            }
         } else {
             http_response_code(422);
             return ['error' => 'Either use_ai_recommendation or final_schedule_datetime is required'];
@@ -1137,12 +1158,12 @@ class CampaignController
         $campaignConflicts = $stmt->fetchAll();
 
         // Check for conflicts with events and seminars
-        // Use 'name' column (the actual column in the events table)
+        // Use 'event_date' and 'event_time' columns (the actual columns in the events table)
         $stmt = $this->pdo->prepare('
             SELECT e.id, e.name as event_name, e.name as event_title, 
-                   e.event_type, e.date, e.start_time, e.end_time, e.venue
+                   e.event_type, e.event_date, e.event_time, e.venue
             FROM `campaign_department_events` e
-            WHERE e.date = :proposed_date
+            WHERE e.event_date = :proposed_date
               AND e.status IN ("scheduled", "ongoing")
         ');
         $stmt->execute(['proposed_date' => $proposedDate]);
@@ -1151,8 +1172,9 @@ class CampaignController
         // Format event conflicts to include event_name as 'name' for frontend compatibility
         $eventConflicts = array_map(function($event) {
             $event['name'] = $event['event_name'] ?? $event['event_title'] ?? 'Untitled Event';
-            $event['event_date'] = $event['date'] ?? null;
-            $event['event_time'] = ($event['start_time'] ?? '') . ($event['end_time'] ? ' - ' . $event['end_time'] : '');
+            $event['date'] = $event['event_date'] ?? null;
+            $event['start_time'] = $event['event_time'] ?? null;
+            $event['event_time'] = $event['event_time'] ?? '';
             return $event;
         }, $eventConflicts);
 
