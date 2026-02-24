@@ -697,7 +697,16 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         
         function formatTimestamp(dateStr) {
             if (!dateStr) return '-';
-            const date = new Date(dateStr);
+            
+            // Parse the date string - if it doesn't have timezone info, assume it's UTC from server
+            let date;
+            if (dateStr.includes('T') || dateStr.includes('Z') || dateStr.includes('+')) {
+                date = new Date(dateStr);
+            } else {
+                // Server returns datetime without timezone - treat as UTC
+                date = new Date(dateStr.replace(' ', 'T') + 'Z');
+            }
+            
             const now = new Date();
             const diff = now - date;
             
@@ -710,13 +719,14 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             // Less than 7 days
             if (diff < 604800000) return Math.floor(diff / 86400000) + ' days ago';
             
-            // Format as date
+            // Format as date in user's local timezone
             return date.toLocaleDateString('en-PH', { 
                 year: 'numeric', 
                 month: 'short', 
                 day: 'numeric',
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
+                timeZone: 'Asia/Manila'
             });
         }
     </script>

@@ -7454,7 +7454,17 @@ async function restoreArchivedCampaign(campaignId) {
 
 // Delete archived campaign permanently
 async function deleteArchivedCampaignPermanently(campaignId) {
-    if (!confirm('Are you sure you want to PERMANENTLY delete this campaign? This action cannot be undone.')) return;
+    // Use custom confirm that returns a promise
+    const confirmed = await new Promise((resolve) => {
+        if (window.customConfirm) {
+            window.customConfirm('Are you sure you want to PERMANENTLY delete this campaign? This action cannot be undone.', 'Delete Campaign')
+                .then(result => resolve(result));
+        } else {
+            resolve(window._originalConfirm ? window._originalConfirm('Are you sure you want to PERMANENTLY delete this campaign? This action cannot be undone.') : true);
+        }
+    });
+    
+    if (!confirmed) return;
     
     try {
         const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
@@ -7464,19 +7474,18 @@ async function deleteArchivedCampaignPermanently(campaignId) {
         
         if (!res.ok) {
             const data = await res.json();
-            alert('Error: ' + (data.error || 'Failed to delete campaign'));
+            showToast('Error: ' + (data.error || 'Failed to delete campaign'), 'error');
             return;
         }
         
-        // Use non-blocking notification to avoid modal interference
+        // Use toast notification - completely non-blocking, no modal interference
         showToast('Campaign deleted permanently!', 'success');
-        // Only reload the archived list content - do NOT call refreshAllCampaignViews here
-        // as it may interfere with the modal
+        // Reload the archived list content only - update in place without recreating modal
         await loadArchivedCampaignsList();
         // Refresh main campaign list in background without affecting modal
         loadCampaigns();
     } catch (err) {
-        alert('Failed to delete campaign: ' + err.message);
+        showToast('Failed to delete campaign: ' + err.message, 'error');
     }
 }
 

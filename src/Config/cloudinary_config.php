@@ -12,8 +12,8 @@
  */
 
 // Load environment variables if not already loaded
-if (!function_exists('loadEnv')) {
-    function loadEnv($path) {
+if (!function_exists('loadEnvCloudinary')) {
+    function loadEnvCloudinary($path) {
         if (!file_exists($path)) return;
         $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($lines as $line) {
@@ -21,27 +21,42 @@ if (!function_exists('loadEnv')) {
             if ($line === '' || strpos($line, '#') === 0) continue;
             if (strpos($line, '=') === false) continue;
             list($name, $value) = explode('=', $line, 2);
-            $_ENV[trim($name)] = trim($value);
+            $name = trim($name);
+            $value = trim($value);
+            // Only set if not already set
+            if (!isset($_ENV[$name])) {
+                $_ENV[$name] = $value;
+            }
         }
     }
 }
 
 $envPath = __DIR__ . '/../../.env';
 if (file_exists($envPath)) {
-    loadEnv($envPath);
+    loadEnvCloudinary($envPath);
 }
 
-// Cloudinary configuration
-define('CLOUDINARY_CLOUD_NAME', $_ENV['CLOUDINARY_CLOUD_NAME'] ?? '');
-define('CLOUDINARY_API_KEY', $_ENV['CLOUDINARY_API_KEY'] ?? '');
-define('CLOUDINARY_API_SECRET', $_ENV['CLOUDINARY_API_SECRET'] ?? '');
-define('CLOUDINARY_UPLOAD_PRESET', $_ENV['CLOUDINARY_UPLOAD_PRESET'] ?? ''); // Optional: for unsigned uploads
+// Cloudinary configuration - use defined() check to prevent redefinition errors
+if (!defined('CLOUDINARY_CLOUD_NAME')) {
+    define('CLOUDINARY_CLOUD_NAME', $_ENV['CLOUDINARY_CLOUD_NAME'] ?? '');
+}
+if (!defined('CLOUDINARY_API_KEY')) {
+    define('CLOUDINARY_API_KEY', $_ENV['CLOUDINARY_API_KEY'] ?? '');
+}
+if (!defined('CLOUDINARY_API_SECRET')) {
+    define('CLOUDINARY_API_SECRET', $_ENV['CLOUDINARY_API_SECRET'] ?? '');
+}
+if (!defined('CLOUDINARY_UPLOAD_PRESET')) {
+    define('CLOUDINARY_UPLOAD_PRESET', $_ENV['CLOUDINARY_UPLOAD_PRESET'] ?? ''); // Optional: for unsigned uploads
+}
 
 /**
  * Check if Cloudinary is configured
  */
-function isCloudinaryConfigured(): bool {
-    return !empty(CLOUDINARY_CLOUD_NAME) && !empty(CLOUDINARY_API_KEY) && !empty(CLOUDINARY_API_SECRET);
+if (!function_exists('isCloudinaryConfigured')) {
+    function isCloudinaryConfigured(): bool {
+        return !empty(CLOUDINARY_CLOUD_NAME) && !empty(CLOUDINARY_API_KEY) && !empty(CLOUDINARY_API_SECRET);
+    }
 }
 
 /**
@@ -52,6 +67,7 @@ function isCloudinaryConfigured(): bool {
  * @param array $options Additional upload options
  * @return array|false Returns upload result or false on failure
  */
+if (!function_exists('uploadToCloudinary')) {
 function uploadToCloudinary(string $filePath, string $folder = 'campaign_materials', array $options = []) {
     if (!isCloudinaryConfigured()) {
         error_log('Cloudinary not configured');
@@ -140,6 +156,7 @@ function uploadToCloudinary(string $filePath, string $folder = 'campaign_materia
     
     return $result;
 }
+}
 
 /**
  * Delete file from Cloudinary
@@ -148,36 +165,38 @@ function uploadToCloudinary(string $filePath, string $folder = 'campaign_materia
  * @param string $resourceType The resource type (image, video, raw)
  * @return bool
  */
-function deleteFromCloudinary(string $publicId, string $resourceType = 'image'): bool {
-    if (!isCloudinaryConfigured()) {
-        return false;
+if (!function_exists('deleteFromCloudinary')) {
+    function deleteFromCloudinary(string $publicId, string $resourceType = 'image'): bool {
+        if (!isCloudinaryConfigured()) {
+            return false;
+        }
+        
+        $timestamp = time();
+        $signatureString = 'public_id=' . $publicId . '&timestamp=' . $timestamp . CLOUDINARY_API_SECRET;
+        $signature = sha1($signatureString);
+        
+        $url = 'https://api.cloudinary.com/v1_1/' . CLOUDINARY_CLOUD_NAME . '/' . $resourceType . '/destroy';
+        
+        $postData = [
+            'public_id' => $publicId,
+            'api_key' => CLOUDINARY_API_KEY,
+            'timestamp' => $timestamp,
+            'signature' => $signature
+        ];
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        
+        $response = curl_exec($ch);
+        curl_close($ch);
+        
+        $result = json_decode($response, true);
+        return isset($result['result']) && $result['result'] === 'ok';
     }
-    
-    $timestamp = time();
-    $signatureString = 'public_id=' . $publicId . '&timestamp=' . $timestamp . CLOUDINARY_API_SECRET;
-    $signature = sha1($signatureString);
-    
-    $url = 'https://api.cloudinary.com/v1_1/' . CLOUDINARY_CLOUD_NAME . '/' . $resourceType . '/destroy';
-    
-    $postData = [
-        'public_id' => $publicId,
-        'api_key' => CLOUDINARY_API_KEY,
-        'timestamp' => $timestamp,
-        'signature' => $signature
-    ];
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    
-    $response = curl_exec($ch);
-    curl_close($ch);
-    
-    $result = json_decode($response, true);
-    return isset($result['result']) && $result['result'] === 'ok';
 }
 
 /**
@@ -187,21 +206,23 @@ function deleteFromCloudinary(string $publicId, string $resourceType = 'image'):
  * @param array $transformations Optional transformations
  * @return string
  */
-function getCloudinaryUrl(string $publicId, array $transformations = []): string {
-    if (!CLOUDINARY_CLOUD_NAME) {
-        return '';
-    }
-    
-    $baseUrl = 'https://res.cloudinary.com/' . CLOUDINARY_CLOUD_NAME;
-    
-    $transformString = '';
-    if (!empty($transformations)) {
-        $parts = [];
-        foreach ($transformations as $key => $value) {
-            $parts[] = $key . '_' . $value;
+if (!function_exists('getCloudinaryUrl')) {
+    function getCloudinaryUrl(string $publicId, array $transformations = []): string {
+        if (!CLOUDINARY_CLOUD_NAME) {
+            return '';
         }
-        $transformString = '/' . implode(',', $parts);
+        
+        $baseUrl = 'https://res.cloudinary.com/' . CLOUDINARY_CLOUD_NAME;
+        
+        $transformString = '';
+        if (!empty($transformations)) {
+            $parts = [];
+            foreach ($transformations as $key => $value) {
+                $parts[] = $key . '_' . $value;
+            }
+            $transformString = '/' . implode(',', $parts);
+        }
+        
+        return $baseUrl . '/image/upload' . $transformString . '/' . $publicId;
     }
-    
-    return $baseUrl . '/image/upload' . $transformString . '/' . $publicId;
 }
