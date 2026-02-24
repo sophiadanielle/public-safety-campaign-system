@@ -326,6 +326,7 @@ if ($isApiRequest) {
         'user_management.php',
         'budgets.php',
         'audit.php',
+        'search.php',
     ];
 
     $allRoutes = [];

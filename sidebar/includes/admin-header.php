@@ -549,27 +549,198 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Search functionality
-    const searchInput = document.querySelector('.search-input');
-    const searchBtn = document.querySelector('.search-btn');
+    const searchInput = document.querySelector('.admin-header .search-input');
+    let searchTimeout = null;
+    let searchDropdown = null;
     
-    if (searchBtn) {
-        searchBtn.addEventListener('click', function() {
-            if (searchInput) {
-                const searchTerm = searchInput.value.trim();
-                if (searchTerm) {
-                    console.log('Searching for:', searchTerm);
+    // Local escapeHtml for search (defined early to avoid hoisting issues)
+    function escapeHtmlSearch(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Create search dropdown
+    function createSearchDropdown() {
+        if (searchDropdown) return searchDropdown;
+        
+        searchDropdown = document.createElement('div');
+        searchDropdown.className = 'search-dropdown';
+        searchDropdown.style.cssText = `
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            margin-top: 8px;
+            min-width: 350px;
+        `;
+        
+        const searchContainer = document.querySelector('.admin-header .search-container');
+        if (searchContainer) {
+            searchContainer.style.position = 'relative';
+            searchContainer.appendChild(searchDropdown);
+        }
+        
+        return searchDropdown;
+    }
+    
+    async function performSearch(query) {
+        if (!query || query.length < 2) {
+            hideSearchDropdown();
+            return;
+        }
+        
+        const dropdown = createSearchDropdown();
+        dropdown.innerHTML = '<div style="padding: 16px; text-align: center; color: #64748b;"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+        dropdown.style.display = 'block';
+        
+        try {
+            const token = localStorage.getItem('jwtToken') || '';
+            const apiBase = '<?php echo $apiPath; ?>';
+            
+            const res = await fetch(apiBase + '/api/v1/search?q=' + encodeURIComponent(query), {
+                headers: { 'Authorization': 'Bearer ' + token.trim() }
+            });
+            
+            if (!res.ok) {
+                throw new Error('Search failed');
+            }
+            
+            const data = await res.json();
+            const results = data.data || [];
+            
+            if (results.length === 0) {
+                dropdown.innerHTML = `
+                    <div style="padding: 24px; text-align: center; color: #64748b;">
+                        <i class="fas fa-search" style="font-size: 24px; margin-bottom: 8px; opacity: 0.5;"></i>
+                        <div>No results found for "${escapeHtmlSearch(query)}"</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div style="padding: 8px 0;">';
+            results.forEach(result => {
+                const typeColors = {
+                    'campaign': '#3b82f6',
+                    'event': '#22c55e',
+                    'content': '#8b5cf6',
+                    'survey': '#f59e0b'
+                };
+                const color = typeColors[result.type] || '#64748b';
+                
+                html += `
+                    <a href="${result.url}" class="search-result-item" style="
+                        display: flex;
+                        align-items: flex-start;
+                        gap: 12px;
+                        padding: 12px 16px;
+                        text-decoration: none;
+                        color: inherit;
+                        transition: background 0.2s;
+                        cursor: pointer;
+                    " onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                        <div style="
+                            width: 36px;
+                            height: 36px;
+                            border-radius: 8px;
+                            background: ${color}15;
+                            color: ${color};
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            flex-shrink: 0;
+                        ">
+                            <i class="fas ${result.icon}"></i>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${escapeHtmlSearch(result.title)}
+                            </div>
+                            <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
+                                ${escapeHtmlSearch(result.subtitle)}
+                            </div>
+                        </div>
+                        <span style="
+                            font-size: 10px;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            padding: 2px 6px;
+                            border-radius: 4px;
+                            background: ${color}15;
+                            color: ${color};
+                        ">${result.type}</span>
+                    </a>
+                `;
+            });
+            html += '</div>';
+            
+            dropdown.innerHTML = html;
+            
+        } catch (err) {
+            console.error('Search error:', err);
+            dropdown.innerHTML = `
+                <div style="padding: 24px; text-align: center; color: #dc2626;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 8px;"></i>
+                    <div>Search failed. Please try again.</div>
+                </div>
+            `;
+        }
+    }
+    
+    function hideSearchDropdown() {
+        if (searchDropdown) {
+            searchDropdown.style.display = 'none';
+        }
+    }
+    
+    // escapeHtml is defined later in the file
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+            
+            // Clear previous timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            // Debounce search
+            searchTimeout = setTimeout(() => {
+                performSearch(query);
+            }, 300);
+        });
+        
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = searchInput.value.trim();
+                if (query) {
+                    performSearch(query);
                 }
             }
         });
-    }
-    
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const searchTerm = searchInput.value.trim();
-                if (searchTerm) {
-                    console.log('Searching for:', searchTerm);
-                }
+        
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                hideSearchDropdown();
+            }
+        });
+        
+        // Hide dropdown on escape
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideSearchDropdown();
+                searchInput.blur();
             }
         });
     }

@@ -462,6 +462,9 @@ class EventController
 
             $this->pdo->commit();
 
+            // Log audit entry for event creation
+            $this->logAudit($eventId, $user['id'] ?? 0, 'create', null, null, "Event created: {$eventTitle}");
+
             return [
                 'id' => $eventId,
                 'event_id' => $eventId,
@@ -1055,6 +1058,23 @@ class EventController
     private function logAudit(int $eventId, int $userId, string $actionType, ?string $fieldName, ?string $oldValue, ?string $newValue): void
     {
         try {
+            // Ensure audit log table exists
+            $this->pdo->exec("
+                CREATE TABLE IF NOT EXISTS `campaign_department_event_audit_log` (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    event_id INT UNSIGNED NOT NULL,
+                    user_id INT UNSIGNED NULL,
+                    action_type VARCHAR(50) NOT NULL,
+                    field_name VARCHAR(100) NULL,
+                    old_value TEXT NULL,
+                    new_value TEXT NULL,
+                    change_details TEXT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_event_audit_event (event_id),
+                    INDEX idx_event_audit_action (action_type)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+            
             $stmt = $this->pdo->prepare('
                 INSERT INTO `campaign_department_event_audit_log` (
                     event_id, user_id, action_type, field_name, old_value, new_value, change_details
@@ -1062,7 +1082,7 @@ class EventController
                     :event_id, :user_id, :action_type, :field_name, :old_value, :new_value, :change_details
                 )
             ');
-            $changeDetails = $fieldName ? "Field {$fieldName} changed from '{$oldValue}' to '{$newValue}'" : null;
+            $changeDetails = $fieldName ? "Field {$fieldName} changed from '{$oldValue}' to '{$newValue}'" : ($newValue ?: null);
             $stmt->execute([
                 'event_id' => $eventId,
                 'user_id' => $userId,
