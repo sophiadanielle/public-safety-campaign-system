@@ -1093,13 +1093,19 @@ class ContentController
         $hasEventId = in_array('event_id', $columns);
         $hasSurveyId = in_array('survey_id', $columns);
 
+        // Use Asia/Manila timezone for created_at timestamp
+        $manilaTimezone = new \DateTimeZone('Asia/Manila');
+        $now = new \DateTime('now', $manilaTimezone);
+        $createdAt = $now->format('Y-m-d H:i:s');
+
         // Build INSERT query dynamically based on available columns
-        $insertColumns = ['content_item_id', 'tag_id', 'usage_context'];
-        $insertValues = [':cid', ':tid', ':usage_context'];
+        $insertColumns = ['content_item_id', 'tag_id', 'usage_context', 'created_at'];
+        $insertValues = [':cid', ':tid', ':usage_context', ':created_at'];
         $bindParams = [
             'cid' => $contentId,
             'tid' => $tagId,
             'usage_context' => $usageContext,
+            'created_at' => $createdAt,
         ];
 
         if ($hasCampaignId) {

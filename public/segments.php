@@ -646,6 +646,12 @@ try {
                 <li>The file should be saved as .csv format (not Excel .xlsx)</li>
                 <li><strong>Integration-ready:</strong> This format supports imports from LGU systems, census exports, barangay records, and other government datasets</li>
             </ul>
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
+                <a href="samples/sample_members_import.csv" download class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 13px; text-decoration: none;">
+                    <i class="fas fa-download"></i> Download Sample CSV File
+                </a>
+                <span style="margin-left: 8px; color: #94a3b8; font-size: 12px;">Use this as a template for your import</span>
+            </div>
         </div>
         <div class="form-field" style="margin-top:20px;">
             <button type="submit" form="importForm" class="btn btn-primary" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">

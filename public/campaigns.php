@@ -1382,12 +1382,21 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     <section class="card" id="list-section">
         <div class="section-header" style="margin-bottom: 20px;">
             <h2 class="section-title analytics-accent">All Campaigns</h2>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                 <?php if (!$isViewer): ?>
                 <button class="btn btn-primary" onclick="openPlanCampaignModal()" style="display: flex; align-items: center; gap: 6px;">
                     <i class="fas fa-plus"></i> Plan New Campaign
                 </button>
                 <?php endif; ?>
+                <button class="btn btn-secondary active" onclick="switchCampaignView('list')" id="campaignListViewBtn" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-list"></i> List
+                </button>
+                <button class="btn btn-secondary" onclick="switchCampaignView('calendar')" id="campaignCalendarViewBtn" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-calendar-alt"></i> Calendar
+                </button>
+                <button class="btn btn-secondary" onclick="switchCampaignView('resources')" id="campaignResourcesViewBtn" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-chart-pie"></i> Resources
+                </button>
                 <button class="btn btn-secondary" onclick="showArchivedCampaigns()" style="display: flex; align-items: center; gap: 6px;">
                     <i class="fas fa-archive"></i> View Archived
                 </button>
@@ -1396,6 +1405,8 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 </button>
             </div>
         </div>
+        <!-- List View Content -->
+        <div id="campaignListView" style="display: block;">
         <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
             Complete list of all campaigns. AI recommendations shown in the <strong>"AI Recommended"</strong> column are generated using engagement data from the <strong>Surveys module</strong> and historical performance metrics.
         </p>
@@ -1469,6 +1480,59 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 Next <i class="fas fa-chevron-right"></i>
             </button>
         </div>
+        </div><!-- End List View -->
+        
+        <!-- Calendar View Content -->
+        <div id="campaignCalendarView" style="display: none;">
+            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+                Calendar view of campaign schedules. Click on any campaign event to view details. Events from the <a href="events.php" style="color: #4c8a89; font-weight: 600;">Events module</a> are integrated to show potential conflicts.
+            </p>
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+                <span style="font-size: 13px; color: #64748b;"><i class="fas fa-info-circle"></i> Status Legend:</span>
+                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #9ca3af; border-radius: 2px;"></span> Draft</span>
+                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 2px;"></span> Pending</span>
+                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #3b82f6; border-radius: 2px;"></span> Approved</span>
+                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #8b5cf6; border-radius: 2px;"></span> Scheduled</span>
+                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #10b981; border-radius: 2px;"></span> Active/Ongoing</span>
+                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #059669; border-radius: 2px;"></span> Completed</span>
+                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #6b7280; border-radius: 2px;"></span> Archived</span>
+                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #ef4444; border-radius: 2px;"></span> Cancelled</span>
+            </div>
+            <div id="calendarInline" style="min-height: 500px;"></div>
+        </div><!-- End Calendar View -->
+        
+        <!-- Resources View Content -->
+        <div id="campaignResourcesView" style="display: none;">
+            <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+                Overview of allocated resources across all campaigns. Budget and staff assignments are tracked and integrated with campaign planning.
+            </p>
+            <div class="resource-grid" id="resourceGridInline" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+                <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 20px; border-radius: 12px; border: 1px solid #bbf7d0;">
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #166534; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-coins" style="color: #16a34a;"></i> TOTAL BUDGET
+                        <button onclick="toggleBudgetVisibilityInline()" style="background: none; border: none; cursor: pointer; color: #64748b; padding: 2px;"><i class="fas fa-eye" id="budgetToggleIconInline"></i></button>
+                    </h4>
+                    <div id="totalBudgetInline" style="display: none; font-size: 28px; font-weight: 700; color: #166534;">₱0.00</div>
+                    <div id="totalBudgetHiddenInline" style="font-size: 28px; font-weight: 700; color: #64748b;">••••••</div>
+                    <div style="margin-top: 8px; font-size: 12px; color: #64748b;" id="budgetBreakdownInline">All campaigns</div>
+                </div>
+                <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 20px; border-radius: 12px; border: 1px solid #bfdbfe;">
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #1e40af;"><i class="fas fa-users" style="color: #3b82f6;"></i> TOTAL STAFF</h4>
+                    <div id="totalStaffInline" style="font-size: 28px; font-weight: 700; color: #1e40af;">0</div>
+                    <div style="margin-top: 8px; font-size: 12px; color: #64748b;" id="staffBreakdownInline">0 campaigns assigned</div>
+                </div>
+                <div style="background: linear-gradient(135deg, #fdf4ff 0%, #fae8ff 100%); padding: 20px; border-radius: 12px; border: 1px solid #f5d0fe;">
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #86198f;"><i class="fas fa-rocket" style="color: #d946ef;"></i> ACTIVE CAMPAIGNS</h4>
+                    <div id="activeCampaignsInline" style="font-size: 28px; font-weight: 700; color: #86198f;">0</div>
+                    <div style="margin-top: 8px; font-size: 12px; color: #64748b;" id="activeCampaignsBreakdownInline">0 inactive</div>
+                </div>
+                <div style="background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%); padding: 20px; border-radius: 12px; border: 1px solid #99f6e4;">
+                    <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #115e59;"><i class="fas fa-box-open" style="color: #14b8a6;"></i> MATERIALS ALLOCATED</h4>
+                    <div id="materialsUsedInline" style="font-size: 16px; font-weight: 600; color: #115e59; line-height: 1.4;">Loading...</div>
+                    <div style="margin-top: 8px; font-size: 12px; color: #64748b;">Inventory summary</div>
+                </div>
+            </div>
+        </div><!-- End Resources View -->
     </section>
 
     <!-- Financial & Budgeting Section -->
@@ -4500,6 +4564,187 @@ async function loadResources() {
     }
 }
 
+// Switch Campaign View (List, Calendar, Resources)
+let inlineCalendar = null;
+
+function switchCampaignView(view) {
+    const listView = document.getElementById('campaignListView');
+    const calendarView = document.getElementById('campaignCalendarView');
+    const resourcesView = document.getElementById('campaignResourcesView');
+    const listBtn = document.getElementById('campaignListViewBtn');
+    const calendarBtn = document.getElementById('campaignCalendarViewBtn');
+    const resourcesBtn = document.getElementById('campaignResourcesViewBtn');
+    
+    // Hide all views
+    if (listView) listView.style.display = 'none';
+    if (calendarView) calendarView.style.display = 'none';
+    if (resourcesView) resourcesView.style.display = 'none';
+    
+    // Remove active class from all buttons
+    if (listBtn) listBtn.classList.remove('active');
+    if (calendarBtn) calendarBtn.classList.remove('active');
+    if (resourcesBtn) resourcesBtn.classList.remove('active');
+    
+    // Show selected view and activate button
+    if (view === 'list') {
+        if (listView) listView.style.display = 'block';
+        if (listBtn) listBtn.classList.add('active');
+        loadCampaigns();
+    } else if (view === 'calendar') {
+        if (calendarView) calendarView.style.display = 'block';
+        if (calendarBtn) calendarBtn.classList.add('active');
+        renderInlineCalendar();
+    } else if (view === 'resources') {
+        if (resourcesView) resourcesView.style.display = 'block';
+        if (resourcesBtn) resourcesBtn.classList.add('active');
+        loadResourcesInline();
+    }
+}
+
+// Render inline calendar for switch view
+async function renderInlineCalendar() {
+    const container = document.getElementById('calendarInline');
+    if (!container) return;
+    
+    container.innerHTML = '<p style="text-align:center; color:#64748b; padding:40px;"><i class="fas fa-spinner fa-spin"></i> Loading calendar...</p>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns', {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        const campaigns = data.data || [];
+        
+        const statusColors = {
+            'draft': '#9ca3af',
+            'pending': '#f59e0b',
+            'approved': '#3b82f6',
+            'scheduled': '#8b5cf6',
+            'ongoing': '#10b981',
+            'active': '#10b981',
+            'completed': '#059669',
+            'archived': '#6b7280',
+            'cancelled': '#ef4444'
+        };
+        
+        const events = campaigns.map(c => {
+            let startDate = c.final_schedule_datetime || c.draft_schedule_datetime || c.start_date;
+            let endDate = c.end_date || startDate;
+            
+            return {
+                id: c.id,
+                title: '#' + c.id + ' ' + (c.title || 'Untitled'),
+                start: startDate,
+                end: endDate,
+                backgroundColor: statusColors[c.status] || '#9ca3af',
+                borderColor: statusColors[c.status] || '#9ca3af',
+                extendedProps: { campaign: c }
+            };
+        }).filter(e => e.start);
+        
+        container.innerHTML = '';
+        
+        inlineCalendar = new FullCalendar.Calendar(container, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,listWeek'
+            },
+            events: events,
+            eventClick: function(info) {
+                const campaign = info.event.extendedProps.campaign;
+                if (campaign) viewCampaign(campaign.id);
+            },
+            height: 'auto',
+            eventDisplay: 'block'
+        });
+        
+        inlineCalendar.render();
+    } catch (err) {
+        container.innerHTML = '<p style="text-align:center; color:#dc2626; padding:40px;">Error loading calendar: ' + err.message + '</p>';
+    }
+}
+
+// Load resources for inline view
+async function loadResourcesInline() {
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns', {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        const campaigns = data.data || [];
+        
+        let totalBudget = 0;
+        let totalStaff = 0;
+        let activeCampaigns = 0;
+        let inactiveCampaigns = 0;
+        
+        campaigns.forEach(c => {
+            totalBudget += parseFloat(c.budget || 0);
+            totalStaff += parseInt(c.staff_count || 0);
+            if (['scheduled', 'ongoing', 'active'].includes(c.status)) {
+                activeCampaigns++;
+            } else {
+                inactiveCampaigns++;
+            }
+        });
+        
+        const budgetEl = document.getElementById('totalBudgetInline');
+        const staffEl = document.getElementById('totalStaffInline');
+        const activeEl = document.getElementById('activeCampaignsInline');
+        const breakdownEl = document.getElementById('budgetBreakdownInline');
+        const staffBreakdownEl = document.getElementById('staffBreakdownInline');
+        const activeBreakdownEl = document.getElementById('activeCampaignsBreakdownInline');
+        
+        if (budgetEl) budgetEl.textContent = '₱' + totalBudget.toLocaleString('en-PH', {minimumFractionDigits: 2});
+        if (staffEl) staffEl.textContent = totalStaff;
+        if (activeEl) activeEl.textContent = activeCampaigns;
+        if (breakdownEl) breakdownEl.textContent = campaigns.length + ' campaigns';
+        if (staffBreakdownEl) staffBreakdownEl.textContent = campaigns.length + ' campaigns assigned';
+        if (activeBreakdownEl) activeBreakdownEl.textContent = inactiveCampaigns + ' inactive';
+        
+        // Load materials from budget
+        try {
+            const budgetRes = await fetch(apiBase + '/api/v1/budgets', {
+                headers: { 'Authorization': 'Bearer ' + getToken() }
+            });
+            const budgetData = await budgetRes.json();
+            if (budgetData.success && budgetData.summary) {
+                const materialsEl = document.getElementById('materialsUsedInline');
+                if (materialsEl) {
+                    const items = budgetData.data || [];
+                    const materialNames = items.slice(0, 3).map(i => i.item_name).join(', ');
+                    materialsEl.innerHTML = materialNames ? materialNames + (items.length > 3 ? '...' : '') : 'No materials';
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load budget for materials:', e);
+        }
+    } catch (err) {
+        console.error('Failed to load resources inline:', err);
+    }
+}
+
+// Toggle budget visibility for inline view
+let budgetVisibleInline = false;
+function toggleBudgetVisibilityInline() {
+    budgetVisibleInline = !budgetVisibleInline;
+    const budgetEl = document.getElementById('totalBudgetInline');
+    const hiddenEl = document.getElementById('totalBudgetHiddenInline');
+    const iconEl = document.getElementById('budgetToggleIconInline');
+    
+    if (budgetVisibleInline) {
+        if (budgetEl) budgetEl.style.display = 'block';
+        if (hiddenEl) hiddenEl.style.display = 'none';
+        if (iconEl) iconEl.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        if (budgetEl) budgetEl.style.display = 'none';
+        if (hiddenEl) hiddenEl.style.display = 'block';
+        if (iconEl) iconEl.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+
 // Campaigns
     async function loadCampaigns() {
     // FIX: Refresh role detection before loading campaigns to ensure role is available
@@ -4951,7 +5196,7 @@ function renderPaginatedCampaigns() {
                 ${!isViewer() ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">Edit</button>` : ''}
                 ${!isViewer() && c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Approve</button>` : ''}
                 ${!isViewer() && c.status === 'approved' ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">Finalize</button>` : ''}
-                ${!isViewer() && (c.status === 'approved' || c.status === 'ongoing') ? `<button class="btn btn-success" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Close</button>` : ''}
+                ${!isViewer() && (c.status === 'scheduled' || c.status === 'ongoing') ? `<button class="btn btn-success" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Close</button>` : ''}
                 ${!isViewer() && c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-warning" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;">Archive</button>` : ''}
             </td>
         `;

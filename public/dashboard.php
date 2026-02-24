@@ -204,10 +204,11 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     
     <main class="main-content-wrapper">
 <style>
-                html, body {
-            margin: 13px;
-            padding: 0;
-        }
+    html, body {
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    }
 
     .main-content-wrapper {
         margin-left: 280px;
@@ -225,43 +226,72 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     .dashboard-page {
         width: 100%;
         margin: 0;
-        padding: 24px;
+        padding: 28px;
         box-sizing: border-box;
+        max-width: 1600px;
     }
     
     .dashboard-section {
-        scroll-margin-top: 90px; /* Account for fixed header */
+        scroll-margin-top: 90px;
     }
     
     .dashboard-grid .dashboard-section {
-        margin-bottom: 0; /* Remove margin for sections inside grid */
+        margin-bottom: 0;
     }
     
     .page-header {
-        margin-bottom: 32px;
+        margin-bottom: 28px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 16px;
     }
     
     .page-header h1 {
-        font-size: 32px;
-        font-weight: 700;
+        font-size: 28px;
+        font-weight: 800;
         color: #0f172a;
-        margin: 0 0 8px 0;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .page-header h1::before {
+        content: '';
+        width: 4px;
+        height: 28px;
+        background: linear-gradient(180deg, #4c8a89 0%, #3d7170 100%);
+        border-radius: 2px;
+    }
+    
+    .page-header p {
+        margin: 6px 0 0 16px;
+        color: #64748b;
+        font-size: 14px;
     }
     
     .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 16px;
-        margin-bottom: 24px;
+        margin-bottom: 28px;
     }
     
-    @media (max-width: 992px) {
+    @media (max-width: 1400px) {
+        .kpi-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+    
+    @media (max-width: 768px) {
         .kpi-grid {
             grid-template-columns: repeat(2, 1fr);
         }
     }
     
-    @media (max-width: 576px) {
+    @media (max-width: 480px) {
         .kpi-grid {
             grid-template-columns: 1fr;
         }
@@ -269,47 +299,77 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     
     .kpi-card {
         background: white;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
+        border: none;
+        border-radius: 16px;
         padding: 20px;
         text-align: center;
-        transition: all 0.2s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #4c8a89 0%, #6ba3a2 100%);
+        opacity: 0;
+        transition: opacity 0.3s;
     }
     
     .kpi-card:hover {
-        border-color: #4c8a89;
-        box-shadow: 0 4px 12px rgba(76, 138, 137, 0.1);
-        transform: translateY(-2px);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(76, 138, 137, 0.15);
+    }
+    
+    .kpi-card:hover::before {
+        opacity: 1;
     }
     
     .kpi-value {
-        font-size: 32px;
-        font-weight: 700;
-        color: #4c8a89;
+        font-size: 36px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #4c8a89 0%, #3d7170 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         margin: 8px 0;
+        line-height: 1;
     }
     
     .kpi-label {
-        font-size: 14px;
+        font-size: 12px;
         color: #64748b;
         font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
     .kpi-icon {
-        font-size: 24px;
-        color: #4c8a89;
-        margin-bottom: 8px;
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f0fdfa 0%, #e6f7f6 100%);
+        border-radius: 12px;
+        font-size: 22px;
     }
     
     .dashboard-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 24px;
-        margin-bottom: 24px;
+        gap: 20px;
+        margin-bottom: 20px;
     }
     
     .dashboard-grid .dashboard-section {
-        margin-bottom: 0; /* Remove margin for sections inside grid */
+        margin-bottom: 0;
     }
     
     .dashboard-grid .dashboard-card {
@@ -324,18 +384,31 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     
     .dashboard-card {
         background: white;
-        border: 2px solid #e2e8f0;
-        border-radius: 12px;
+        border: none;
+        border-radius: 16px;
         padding: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+        transition: all 0.3s;
+    }
+    
+    .dashboard-card:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
     }
     
     .dashboard-card h3 {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 700;
-        color: #0f172a;
+        color: #1e293b;
         margin: 0 0 16px 0;
         padding-bottom: 12px;
         border-bottom: 2px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .dashboard-card h3 i {
+        color: #4c8a89;
     }
     
     .status-list {
@@ -345,11 +418,20 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     }
     
     .status-list li {
-        padding: 12px;
-        border-bottom: 1px solid #f1f5f9;
+        padding: 12px 14px;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        background: #f8fafc;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+    }
+    
+    .status-list li:hover {
+        background: #f0fdfa;
+        border-color: #99f6e4;
     }
     
     .status-list li:last-child {
@@ -430,47 +512,88 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     }
     
     .system-overview {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #4c8a89 0%, #3d7170 50%, #2d5a59 100%);
         color: white;
-        border-radius: 12px;
-        padding: 20px 24px;
-        margin-bottom: 24px;
+        border-radius: 20px;
+        padding: 24px 28px;
+        margin-bottom: 28px;
         position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(76, 138, 137, 0.25);
+    }
+    
+    .system-overview::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    
+    .system-overview::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -10%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+        pointer-events: none;
     }
     
     .system-overview h2 {
-        margin: 0 0 8px 0;
-        font-size: 22px;
+        margin: 0 0 10px 0;
+        font-size: 20px;
         font-weight: 700;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .system-overview h2::before {
+        content: '🛡️';
+        font-size: 24px;
     }
     
     .system-overview p {
         margin: 0;
-        font-size: 14px;
-        opacity: 0.95;
-        line-height: 1.5;
+        font-size: 13px;
+        opacity: 0.92;
+        line-height: 1.6;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        position: relative;
+        z-index: 1;
+        max-width: 85%;
     }
     
     .system-overview-toggle {
         position: absolute;
-        top: 20px;
-        right: 24px;
-        background: rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        top: 24px;
+        right: 28px;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
         color: white;
-        padding: 6px 12px;
-        border-radius: 6px;
+        padding: 8px 14px;
+        border-radius: 8px;
         font-size: 12px;
+        font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.3s;
+        backdrop-filter: blur(4px);
+        z-index: 2;
     }
     
     .system-overview-toggle:hover {
-        background: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateY(-1px);
     }
     
     .system-overview.expanded p {
@@ -503,45 +626,83 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     }
     
     .quick-action-btn {
-        padding: 10px 16px;
+        padding: 12px 18px;
         background: white;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        color: #0f172a;
-        font-size: 14px;
+        border: none;
+        border-radius: 10px;
+        color: #1e293b;
+        font-size: 13px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         text-decoration: none;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
     
     .quick-action-btn:hover {
-        border-color: #4c8a89;
-        background: #f8fafc;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(76, 138, 137, 0.1);
+        background: #f0fdfa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(76, 138, 137, 0.15);
+    }
+    
+    .quick-action-btn i {
+        color: #4c8a89;
     }
     
     .quick-action-btn.primary {
-        background: #4c8a89;
+        background: linear-gradient(135deg, #4c8a89 0%, #3d7170 100%);
         color: white;
-        border-color: #4c8a89;
+        box-shadow: 0 4px 12px rgba(76, 138, 137, 0.3);
+    }
+    
+    .quick-action-btn.primary i {
+        color: white;
     }
     
     .quick-action-btn.primary:hover {
-        background: #3d6f6e;
-        border-color: #3d6f6e;
+        background: linear-gradient(135deg, #3d7170 0%, #2d5a59 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(76, 138, 137, 0.4);
     }
     
     .search-bar input {
         width: 100%;
-        padding: 12px 16px 12px 44px;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
+        padding: 14px 18px 14px 48px;
+        border: none;
+        border-radius: 12px;
         font-size: 14px;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        transition: all 0.3s;
+    }
+    
+    .search-bar input:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(76, 138, 137, 0.15), 0 4px 12px rgba(0,0,0,0.08);
+    }
+    
+    .widget-link {
+        color: #4c8a89;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 16px;
+        padding: 8px 14px;
+        background: linear-gradient(135deg, #f0fdfa 0%, #e6f7f6 100%);
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+    
+    .widget-link:hover {
+        background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%);
+        color: #115e59;
+        transform: translateX(4px);
     }
     
     .search-bar .search-icon {

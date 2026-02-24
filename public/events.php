@@ -954,6 +954,22 @@ async function loadAudienceProfilePreview() {
     }
 }
 
+// Format time to AM/PM format
+function formatTimeAMPM(timeStr) {
+    if (!timeStr) return '';
+    try {
+        const [hours, minutes] = timeStr.split(':');
+        let h = parseInt(hours, 10);
+        const m = minutes || '00';
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12;
+        h = h ? h : 12; // 0 becomes 12
+        return h + ':' + m.substring(0, 2) + ' ' + ampm;
+    } catch (e) {
+        return timeStr;
+    }
+}
+
 // Check for scheduling conflicts
 async function checkConflicts() {
     const date = document.getElementById('date').value;
@@ -3144,7 +3160,7 @@ async function openViewEventModal(eventId) {
                     </div>
                     <div style="background:#f8fafc; padding:12px; border-radius:8px;">
                         <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Date & Time</strong>
-                        <p style="margin:4px 0 0 0; font-size:14px;">${e.date || 'TBD'} ${e.start_time || ''} ${e.end_time ? '- ' + e.end_time : ''}</p>
+                        <p style="margin:4px 0 0 0; font-size:14px;">${e.date || 'TBD'} ${formatTimeAMPM(e.start_time)} ${e.end_time ? '- ' + formatTimeAMPM(e.end_time) : ''}</p>
                     </div>
                     <div style="background:#f8fafc; padding:12px; border-radius:8px;">
                         <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Venue</strong>

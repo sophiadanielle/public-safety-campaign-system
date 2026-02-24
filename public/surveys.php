@@ -326,17 +326,19 @@ try {
         
         <!-- Generated Links Tab Content -->
         <div id="generatedLinksTab">
-            <div style="display:grid; grid-template-columns:1fr auto; gap:16px; align-items:end; margin-bottom:20px;">
-                <div class="form-field" style="margin:0;">
+            <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start; margin-bottom:20px;">
+                <div style="flex:1; min-width:300px;">
                     <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155;">Select Survey <span style="color:#dc2626;">*</span></label>
-                    <select id="qr_survey_id" required style="width:100%; font-size:14px; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px;">
+                    <select id="qr_survey_id" required style="width:100%; font-size:14px; padding:12px 14px; border:2px solid #e2e8f0; border-radius:8px; background:white;">
                         <option value="">-- Select a published survey --</option>
                     </select>
-                    <div style="font-size:12px; color:#64748b; margin-top:4px;">💡 Only published surveys are shown</div>
+                    <div style="font-size:12px; color:#64748b; margin-top:6px;">💡 Only published surveys are shown</div>
                 </div>
-                <button class="btn btn-primary" onclick="generateSurveyLink()" style="padding:10px 24px; font-size:14px; font-weight:600; white-space:nowrap; height:42px;">
-                    <i class="fas fa-qrcode" style="margin-right:8px;"></i>Generate Link & QR
-                </button>
+                <div style="display:flex; align-items:flex-start; padding-top:26px;">
+                    <button class="btn btn-primary" onclick="generateSurveyLink()" style="padding:12px 24px; font-size:14px; font-weight:600; white-space:nowrap; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-qrcode"></i> Generate Link & QR
+                    </button>
+                </div>
             </div>
             
             <div class="status" id="qrStatus" style="margin-bottom:16px;"></div>
