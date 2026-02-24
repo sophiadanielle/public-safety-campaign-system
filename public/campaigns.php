@@ -6450,6 +6450,12 @@ async function editCampaign(campaignId) {
 // View Campaign Details
 async function viewCampaign(campaignId) {
     try {
+        // Remove existing modal if any to prevent duplication
+        const existingModal = document.getElementById('viewCampaignModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
         const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
             headers: { 'Authorization': 'Bearer ' + getToken() }
         });

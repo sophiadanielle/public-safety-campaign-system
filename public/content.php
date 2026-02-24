@@ -936,6 +936,9 @@ try {
                 <button class="btn btn-secondary" onclick="loadUsageHistory()" style="padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
                     <i class="fas fa-history"></i> Load History
                 </button>
+                <button class="btn btn-secondary" onclick="showArchivedUsageRecords()" style="padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-archive"></i> View Archived
+                </button>
             </div>
         </div>
         <div id="usageHistoryContainer" style="margin-top: 16px;">
@@ -3354,6 +3357,7 @@ async function loadUsageHistory() {
                         <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 600;">Tag</th>
                         <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 600;">Context</th>
                         <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 600;">Date</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 600;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -3369,6 +3373,14 @@ async function loadUsageHistory() {
                     <td style="padding: 12px;">${record.tag_name || '—'}</td>
                     <td style="padding: 12px;">${record.usage_context || '—'}</td>
                     <td style="padding: 12px;">${date}</td>
+                    <td style="padding: 12px;">
+                        <button onclick="editUsageRecord(${record.id})" style="padding: 4px 8px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px; font-size: 11px;" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="archiveUsageRecord(${record.id})" style="padding: 4px 8px; background: #64748b; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;" title="Archive">
+                            <i class="fas fa-archive"></i>
+                        </button>
+                    </td>
                 </tr>
             `;
         });
@@ -3382,6 +3394,180 @@ async function loadUsageHistory() {
         container.innerHTML = html;
     } catch (err) {
         container.innerHTML = '<p style="text-align: center; color: #dc2626; padding: 20px;">Error: ' + err.message + '</p>';
+    }
+}
+
+// Edit usage record
+async function editUsageRecord(recordId) {
+    const newContext = prompt('Enter new usage context:');
+    if (newContext === null) return; // User cancelled
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/usage/' + recordId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ usage_context: newContext })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Usage record updated successfully');
+            loadUsageHistory();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to update'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Archive usage record
+async function archiveUsageRecord(recordId) {
+    if (!confirm('Archive this usage record? It can be restored from View Archived.')) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/usage/' + recordId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ is_archived: 1 })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Usage record archived successfully');
+            loadUsageHistory();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to archive'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Show archived usage records modal
+async function showArchivedUsageRecords() {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('archivedUsageModal');
+    if (existingModal) existingModal.remove();
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/usage?is_archived=1', {
+            headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
+        });
+        
+        let archivedRecords = [];
+        if (res.ok) {
+            const data = await res.json();
+            archivedRecords = data.data || [];
+        }
+        
+        // Create modal
+        const modal = document.createElement('div');
+        modal.id = 'archivedUsageModal';
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+        
+        let tableRows = '';
+        if (archivedRecords.length === 0) {
+            tableRows = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #64748b;">No archived usage records found.</td></tr>';
+        } else {
+            archivedRecords.forEach(record => {
+                const date = record.created_at ? new Date(record.created_at).toLocaleString() : '—';
+                tableRows += `
+                    <tr>
+                        <td style="padding: 10px;">${record.content_title || '—'}</td>
+                        <td style="padding: 10px;">${record.campaign_title || '—'}</td>
+                        <td style="padding: 10px;">${record.event_id ? 'Event #' + record.event_id : '—'}</td>
+                        <td style="padding: 10px;">${record.tag_name || '—'}</td>
+                        <td style="padding: 10px;">${record.usage_context || '—'}</td>
+                        <td style="padding: 10px;">${date}</td>
+                        <td style="padding: 10px;">
+                            <button onclick="restoreUsageRecord(${record.id})" style="padding: 4px 8px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px; font-size: 11px;">
+                                <i class="fas fa-undo"></i> Restore
+                            </button>
+                            <button onclick="deleteUsageRecord(${record.id})" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+        
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 12px; max-width: 1200px; width: 100%; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); display: flex; flex-direction: column;">
+                <div style="background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; font-size: 18px;"><i class="fas fa-archive"></i> Archived Usage Records</h3>
+                    <button onclick="document.getElementById('archivedUsageModal').remove()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px;">&times;</button>
+                </div>
+                <div style="padding: 20px; overflow-y: auto; flex: 1;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f8fafc;">
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Content</th>
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Campaign</th>
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Event</th>
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Tag</th>
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Context</th>
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Date</th>
+                                <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+    } catch (err) {
+        alert('Error loading archived records: ' + err.message);
+    }
+}
+
+// Restore usage record
+async function restoreUsageRecord(recordId) {
+    if (!confirm('Restore this usage record?')) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/usage/' + recordId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ is_archived: 0 })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Usage record restored successfully');
+            showArchivedUsageRecords();
+            loadUsageHistory();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to restore'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+    }
+}
+
+// Delete usage record permanently
+async function deleteUsageRecord(recordId) {
+    if (!confirm('Permanently delete this usage record? This cannot be undone.')) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/usage/' + recordId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert('Usage record deleted permanently');
+            showArchivedUsageRecords();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to delete'));
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
     }
 }
 

@@ -1138,9 +1138,11 @@ class ContentController
         try {
             $contentId = isset($_GET['content_id']) ? (int) $_GET['content_id'] : null;
             $campaignId = isset($_GET['campaign_id']) ? (int) $_GET['campaign_id'] : null;
+            $isArchived = isset($_GET['is_archived']) ? (int) $_GET['is_archived'] : null;
             
             // Check which columns exist in the table
             $columns = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_usage")->fetchAll(PDO::FETCH_COLUMN);
+            $hasIsArchived = in_array('is_archived', $columns);
             $hasCampaignId = in_array('campaign_id', $columns);
             $hasEventId = in_array('event_id', $columns);
             $hasSurveyId = in_array('survey_id', $columns);
@@ -1190,6 +1192,17 @@ class ContentController
             if ($campaignId && $hasCampaignId) {
                 $sql .= ' AND cu.campaign_id = :campaign_id';
                 $bind['campaign_id'] = $campaignId;
+            }
+            
+            // Filter by is_archived status
+            if ($hasIsArchived) {
+                if ($isArchived !== null) {
+                    $sql .= ' AND cu.is_archived = :is_archived';
+                    $bind['is_archived'] = $isArchived;
+                } else {
+                    // By default, only show non-archived records
+                    $sql .= ' AND (cu.is_archived = 0 OR cu.is_archived IS NULL)';
+                }
             }
             
             $sql .= ' ORDER BY cu.created_at DESC';
@@ -1436,6 +1449,89 @@ class ContentController
         ]);
         
         return ['message' => 'Content archived successfully'];
+    }
+    
+    /**
+     * Update a usage record
+     */
+    public function updateUsage(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        if ($id <= 0) {
+            http_response_code(422);
+            return ['error' => 'Invalid usage record ID'];
+        }
+        
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        
+        try {
+            // Check which columns exist
+            $columns = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_usage")->fetchAll(PDO::FETCH_COLUMN);
+            
+            $updates = [];
+            $bind = ['id' => $id];
+            
+            if (isset($input['usage_context'])) {
+                $updates[] = 'usage_context = :usage_context';
+                $bind['usage_context'] = $input['usage_context'];
+            }
+            
+            if (isset($input['is_archived']) && in_array('is_archived', $columns)) {
+                $updates[] = 'is_archived = :is_archived';
+                $bind['is_archived'] = (int) $input['is_archived'];
+            }
+            
+            if (in_array('updated_at', $columns)) {
+                $updates[] = 'updated_at = NOW()';
+            }
+            
+            if (empty($updates)) {
+                return ['message' => 'No changes to apply'];
+            }
+            
+            $sql = 'UPDATE campaign_department_content_usage SET ' . implode(', ', $updates) . ' WHERE id = :id';
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($bind);
+            
+            return ['message' => 'Usage record updated successfully'];
+        } catch (\Throwable $e) {
+            error_log('ContentController::updateUsage error: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to update usage record'];
+        }
+    }
+    
+    /**
+     * Delete a usage record permanently
+     */
+    public function deleteUsage(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        $id = (int) ($params['id'] ?? 0);
+        if ($id <= 0) {
+            http_response_code(422);
+            return ['error' => 'Invalid usage record ID'];
+        }
+        
+        try {
+            $stmt = $this->pdo->prepare('DELETE FROM campaign_department_content_usage WHERE id = :id');
+            $stmt->execute(['id' => $id]);
+            
+            return ['message' => 'Usage record deleted successfully'];
+        } catch (\Throwable $e) {
+            error_log('ContentController::deleteUsage error: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Failed to delete usage record'];
+        }
     }
     
     /**

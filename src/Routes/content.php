@@ -79,6 +79,19 @@ return [
         'handler' => [ContentController::class, 'destroy'],
         'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
+    // Usage record management routes
+    [
+        'method' => 'PUT',
+        'path' => '/api/v1/content/usage/{id}',
+        'handler' => [ContentController::class, 'updateUsage'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'DELETE',
+        'path' => '/api/v1/content/usage/{id}',
+        'handler' => [ContentController::class, 'deleteUsage'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
 ];
 
 

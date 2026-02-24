@@ -1462,6 +1462,24 @@ class CampaignController
             $stmt = $this->pdo->prepare('UPDATE `campaign_department_content_items` SET campaign_id = NULL WHERE campaign_id = :id');
             $stmt->execute(['id' => $id]);
             
+            // Delete campaign budget items (Financial & Budgeting data)
+            try {
+                $stmt = $this->pdo->prepare('DELETE FROM `campaign_budgets` WHERE campaign_id = :id');
+                $stmt->execute(['id' => $id]);
+            } catch (\PDOException $e) {
+                // Table might not exist, log and continue
+                error_log('CampaignController::destroy - campaign_budgets delete failed: ' . $e->getMessage());
+            }
+            
+            // Delete campaign content usage records
+            try {
+                $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_content_usage` WHERE campaign_id = :id');
+                $stmt->execute(['id' => $id]);
+            } catch (\PDOException $e) {
+                // Table might not exist or column might not exist, log and continue
+                error_log('CampaignController::destroy - content_usage delete failed: ' . $e->getMessage());
+            }
+            
             // Delete the campaign
             $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_campaigns` WHERE id = :id');
             $stmt->execute(['id' => $id]);

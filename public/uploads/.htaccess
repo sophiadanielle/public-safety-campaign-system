@@ -1,0 +1,42 @@
+# Allow direct access to uploaded files
+# This ensures videos and other media files are served correctly
+
+# Enable MIME type handling
+AddType video/mp4 .mp4
+AddType video/webm .webm
+AddType video/ogg .ogv
+AddType video/quicktime .mov
+AddType video/x-msvideo .avi
+AddType video/x-matroska .mkv
+AddType video/x-flv .flv
+AddType video/x-ms-wmv .wmv
+AddType video/3gpp .3gp
+AddType video/3gpp2 .3g2
+
+AddType image/jpeg .jpg .jpeg
+AddType image/png .png
+AddType image/gif .gif
+AddType image/webp .webp
+AddType image/svg+xml .svg
+AddType image/x-icon .ico
+
+AddType application/pdf .pdf
+AddType application/msword .doc
+AddType application/vnd.openxmlformats-officedocument.wordprocessingml.document .docx
+
+# Disable PHP execution in uploads folder for security
+<FilesMatch "\.php$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Allow all other files to be served directly
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico|mp4|webm|mov|avi|mkv|wmv|flv|pdf|doc|docx)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+# Enable byte-range requests for video streaming
+<IfModule mod_headers.c>
+    Header set Accept-Ranges bytes
+</IfModule>

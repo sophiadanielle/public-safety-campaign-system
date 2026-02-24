@@ -49,11 +49,15 @@ class AuditController
                 $hasMetadata = in_array('metadata', $columns);
                 $detailsColumn = $hasDetails ? 'al.details' : ($hasMetadata ? 'al.metadata as details' : "'' as details");
                 
+                // Check which user name column exists in users table
+                $userColumns = $this->pdo->query("SHOW COLUMNS FROM campaign_department_users")->fetchAll(PDO::FETCH_COLUMN);
+                $userNameColumn = in_array('full_name', $userColumns) ? 'u.full_name' : (in_array('name', $userColumns) ? 'u.name' : "'System'");
+                
                 $stmt = $this->pdo->prepare("
                     SELECT 
                         al.id,
                         al.user_id,
-                        u.full_name as user_name,
+                        {$userNameColumn} as user_name,
                         r.name as user_role,
                         al.action,
                         al.entity_type,
@@ -104,12 +108,16 @@ class AuditController
         try {
             $checkTable = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_event_audit_log'");
             if ($checkTable->rowCount() > 0) {
+                // Check which user name column exists
+                $userColumns = $this->pdo->query("SHOW COLUMNS FROM campaign_department_users")->fetchAll(PDO::FETCH_COLUMN);
+                $userNameColumn = in_array('full_name', $userColumns) ? 'u.full_name' : (in_array('name', $userColumns) ? 'u.name' : "'System'");
+                
                 $stmt = $this->pdo->prepare("
                     SELECT 
                         eal.id,
                         eal.event_id as entity_id,
                         eal.user_id,
-                        u.full_name as user_name,
+                        {$userNameColumn} as user_name,
                         r.name as user_role,
                         eal.action_type as action,
                         eal.field_name,
@@ -155,12 +163,16 @@ class AuditController
         try {
             $checkTable = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_survey_audit_log'");
             if ($checkTable->rowCount() > 0) {
+                // Check which user name column exists
+                $userColumns = $this->pdo->query("SHOW COLUMNS FROM campaign_department_users")->fetchAll(PDO::FETCH_COLUMN);
+                $userNameColumn = in_array('full_name', $userColumns) ? 'u.full_name' : (in_array('name', $userColumns) ? 'u.name' : "'System'");
+                
                 $stmt = $this->pdo->prepare("
                     SELECT 
                         sal.id,
                         sal.survey_id as entity_id,
                         sal.user_id,
-                        u.full_name as user_name,
+                        {$userNameColumn} as user_name,
                         r.name as user_role,
                         sal.action_type as action,
                         sal.field_name,
