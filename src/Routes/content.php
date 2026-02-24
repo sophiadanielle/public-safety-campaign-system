@@ -25,6 +25,19 @@ return [
         'handler' => [ContentController::class, 'getUsage'],
         'middleware' => JWTMiddleware::class,
     ],
+    // Storage status endpoint - MUST be before {id} routes to avoid matching "storage-status" as an ID
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/content/storage-status',
+        'handler' => [ContentController::class, 'getStorageStatus'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/content/approved',
+        'handler' => [ContentController::class, 'getApproved'],
+        'middleware' => JWTMiddleware::class,
+    ],
     [
         'method' => 'GET',
         'path' => '/api/v1/content/{id}',
@@ -68,12 +81,6 @@ return [
         'middleware' => JWTMiddleware::class,
     ],
     [
-        'method' => 'GET',
-        'path' => '/api/v1/content/approved',
-        'handler' => [ContentController::class, 'getApproved'],
-        'middleware' => JWTMiddleware::class,
-    ],
-    [
         'method' => 'DELETE',
         'path' => '/api/v1/content/{id}',
         'handler' => [ContentController::class, 'destroy'],
@@ -91,12 +98,5 @@ return [
         'path' => '/api/v1/content/usage/{id}',
         'handler' => [ContentController::class, 'deleteUsage'],
         'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
-    ],
-    // Storage status endpoint
-    [
-        'method' => 'GET',
-        'path' => '/api/v1/content/storage-status',
-        'handler' => [ContentController::class, 'getStorageStatus'],
-        'middleware' => JWTMiddleware::class,
     ],
 ];
