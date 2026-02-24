@@ -1536,6 +1536,12 @@ class ContentController
                 $bind['content_id'] = $input['content_id'] ? (int) $input['content_id'] : null;
             }
             
+            // Support content_item_id (the actual column name in the table)
+            if (array_key_exists('content_item_id', $input) && in_array('content_item_id', $columns)) {
+                $updates[] = 'content_item_id = :content_item_id';
+                $bind['content_item_id'] = $input['content_item_id'] ? (int) $input['content_item_id'] : null;
+            }
+            
             if (array_key_exists('campaign_id', $input) && in_array('campaign_id', $columns)) {
                 $updates[] = 'campaign_id = :campaign_id';
                 $bind['campaign_id'] = $input['campaign_id'] ? (int) $input['campaign_id'] : null;

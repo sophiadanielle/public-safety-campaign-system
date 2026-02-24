@@ -3450,14 +3450,16 @@ async function editUsageRecord(recordId) {
         } catch (e) { console.error('Failed to load events for edit modal'); }
         
         try {
-            const contentRes = await fetch(apiBase + '/api/v1/content', { headers: { 'Authorization': 'Bearer ' + token } });
+            const contentRes = await fetch(apiBase + '/api/v1/content?per_page=200', { headers: { 'Authorization': 'Bearer ' + token } });
             const contentData = await contentRes.json();
             const contentItems = contentData.data || [];
+            // Usage records use content_item_id, not content_id
+            const recordContentId = record.content_item_id || record.content_id;
             contentItems.forEach(c => {
-                const selected = record.content_id == c.id ? 'selected' : '';
+                const selected = recordContentId == c.id ? 'selected' : '';
                 contentOptions += `<option value="${c.id}" ${selected}>${c.title}</option>`;
             });
-        } catch (e) { console.error('Failed to load content items for edit modal'); }
+        } catch (e) { console.error('Failed to load content items for edit modal:', e); }
         
         // Get tag value from record (it's a text field, not a dropdown)
         const tagValue = record.tag || '';
@@ -3509,7 +3511,7 @@ async function editUsageRecord(recordId) {
         document.getElementById('editUsageForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const updateData = {
-                content_id: document.getElementById('editUsageContent').value || null,
+                content_item_id: document.getElementById('editUsageContent').value || null,
                 campaign_id: document.getElementById('editUsageCampaign').value || null,
                 event_id: document.getElementById('editUsageEvent').value || null,
                 tag: document.getElementById('editUsageTag').value || null,
