@@ -116,7 +116,43 @@ async function showArchivedCampaigns() {
             return status === 'archived';
         });
         
-        // Create modal
+        // Check if modal already exists
+        const existingModal = document.getElementById('archivedCampaignsModal');
+        if (existingModal) {
+            // Modal exists, just update the table content
+            const tbody = existingModal.querySelector('tbody');
+            if (tbody) {
+                let tableRows = '';
+                if (archivedCampaigns.length === 0) {
+                    tableRows = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #64748b;">No archived campaigns found.</td></tr>';
+                } else {
+                    archivedCampaigns.forEach(c => {
+                        tableRows += `
+                            <tr>
+                                <td>${c.id}</td>
+                                <td>${c.title || 'Untitled'}</td>
+                                <td>${c.category || '-'}</td>
+                                <td>
+                                    <button onclick="viewCampaign(${c.id})" style="padding: 4px 8px; background: #6366f1; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px; font-size: 11px;">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                    <button onclick="restoreCampaign(${c.id})" style="padding: 4px 8px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px; font-size: 11px;">
+                                        <i class="fas fa-undo"></i> Restore
+                                    </button>
+                                    <button onclick="deleteCampaignPermanent(${c.id})" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 11px;">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+                tbody.innerHTML = tableRows;
+            }
+            return;
+        }
+        
+        // Create modal (only if it doesn't exist)
         const modal = document.createElement('div');
         modal.id = 'archivedCampaignsModal';
         modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
