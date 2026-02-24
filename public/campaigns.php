@@ -2969,6 +2969,17 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
         if (!res.ok) {
             console.error('Campaign creation - API error:', res.status, data);
             
+            // Handle 502 Bad Gateway - campaign might have been created despite the error
+            if (res.status === 502) {
+                console.warn('502 Bad Gateway - Campaign may have been created. Refreshing list...');
+                showToast('Campaign may have been created. Refreshing list...', 'warning');
+                clearForm();
+                closePlanCampaignModal();
+                // Refresh to check if campaign was actually created
+                setTimeout(() => refreshAllCampaignViews(), 500);
+                return;
+            }
+            
             // Handle 401 Unauthorized specifically
             if (res.status === 401) {
                 console.error('Campaign creation - 401 Unauthorized error');
