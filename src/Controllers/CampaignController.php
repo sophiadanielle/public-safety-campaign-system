@@ -470,8 +470,10 @@ class CampaignController
             elseif ($isCaptain) {
                 if ($normalizedCurrent === 'pending' && $normalizedNew === 'approved') {
                     $canChangeStatus = true; // Captain approves pending campaigns
-                } elseif ($normalizedCurrent === 'approved' && in_array($normalizedNew, ['ongoing', 'completed'], true)) {
+                } elseif ($normalizedCurrent === 'approved' && in_array($normalizedNew, ['ongoing', 'completed', 'scheduled'], true)) {
                     $canChangeStatus = true; // Can manage approved campaigns
+                } elseif ($normalizedCurrent === 'scheduled' && in_array($normalizedNew, ['ongoing', 'completed'], true)) {
+                    $canChangeStatus = true; // Can close scheduled campaigns
                 } elseif ($normalizedCurrent === $normalizedNew) {
                     $canChangeStatus = true; // Can update same status
                 } else {

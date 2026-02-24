@@ -3410,6 +3410,12 @@ function openEditContentModal(contentId) {
 
 // Show Archived Content Modal
 async function showArchivedContent() {
+    // Remove existing modal if any to prevent duplication
+    const existingModal = document.getElementById('archivedContentModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
     try {
         // Fetch archived content directly from API - this has the most accurate data
         // Add timestamp to prevent caching and per_page=200 to get all items

@@ -476,7 +476,6 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         </div>
     </main>
     
-    <script src="<?php echo htmlspecialchars($basePath . '/sidebar/js/sidebar.js'); ?>"></script>
     <script>
         const token = localStorage.getItem('jwtToken') || '';
         const basePath = '<?php echo $basePath; ?>';

@@ -1502,6 +1502,24 @@ class ContentController
             $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
             
+            // Try to create audit_logs table if it doesn't exist
+            $this->pdo->exec("
+                CREATE TABLE IF NOT EXISTS `audit_logs` (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT UNSIGNED NULL,
+                    action VARCHAR(150) NOT NULL,
+                    entity_type VARCHAR(50) NOT NULL,
+                    entity_id INT UNSIGNED NULL,
+                    ip_address VARCHAR(45) NULL,
+                    user_agent TEXT NULL,
+                    metadata JSON NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_user_id (user_id),
+                    INDEX idx_entity (entity_type, entity_id),
+                    INDEX idx_created_at (created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+            
             $stmt = $this->pdo->prepare('
                 INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address, user_agent, metadata)
                 VALUES (:user_id, :action, :entity_type, :entity_id, :ip_address, :user_agent, :metadata)

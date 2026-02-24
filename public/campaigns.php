@@ -4912,7 +4912,7 @@ function toggleBudgetVisibilityInline() {
                             <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
                                 ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; background: #10b981; color: white; border: none; margin: 0; white-space: nowrap;">Approve</button>` : ''}
                                 ${c.status === 'approved' ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Finalize</button>` : ''}
-                                ${c.status === 'approved' || c.status === 'ongoing' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; background: #3b82f6; color: white; border: none; margin: 0; white-space: nowrap;">Close</button>` : ''}
+                                ${c.status === 'approved' || c.status === 'ongoing' || c.status === 'scheduled' ? `<button class="btn btn-info" onclick="closeCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; background: #3b82f6; color: white; border: none; margin: 0; white-space: nowrap;">Close</button>` : ''}
                             </div>
                         </div>
                     ` : ''}
@@ -7234,8 +7234,8 @@ async function closeCampaign(campaignId) {
         return;
     }
     
-    if (campaign.status !== 'approved' && campaign.status !== 'ongoing') {
-        await customAlert('Only Approved or Ongoing campaigns can be closed.', 'Invalid Status');
+    if (campaign.status !== 'approved' && campaign.status !== 'ongoing' && campaign.status !== 'scheduled') {
+        await customAlert('Only Approved, Scheduled, or Ongoing campaigns can be closed.', 'Invalid Status');
         return;
     }
     

@@ -23,47 +23,81 @@ class AuditController
         
         $allLogs = [];
         
-        // 1. Get general audit logs (campaigns, content)
-        try {
-            $stmt = $this->pdo->prepare("
-                SELECT 
-                    al.id,
-                    al.user_id,
-                    u.full_name as user_name,
-                    r.name as user_role,
-                    al.action,
-                    al.entity_type,
-                    al.entity_id,
-                    al.details,
-                    al.ip_address,
-                    al.created_at
-                FROM audit_logs al
-                LEFT JOIN campaign_department_users u ON al.user_id = u.id
-                LEFT JOIN campaign_department_roles r ON u.role_id = r.id
-                ORDER BY al.created_at DESC
-                LIMIT :limit OFFSET :offset
-            ");
-            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-            $stmt->execute();
-            
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $allLogs[] = [
-                    'id' => 'general_' . $row['id'],
-                    'user_id' => $row['user_id'],
-                    'user_name' => $row['user_name'] ?? 'System',
-                    'user_role' => $row['user_role'] ?? 'N/A',
-                    'action' => $row['action'],
-                    'entity_type' => $row['entity_type'],
-                    'entity_id' => $row['entity_id'],
-                    'details' => $row['details'],
-                    'ip_address' => $row['ip_address'],
-                    'created_at' => $row['created_at'],
-                    'source' => 'general'
-                ];
+        // 1. Get general audit logs (campaigns, content) - try both table names
+        $auditTableNames = ['campaign_department_audit_logs', 'audit_logs'];
+        $auditTableFound = null;
+        
+        foreach ($auditTableNames as $tableName) {
+            try {
+                $checkTable = $this->pdo->query("SHOW TABLES LIKE '{$tableName}'");
+                if ($checkTable->rowCount() > 0) {
+                    $auditTableFound = $tableName;
+                    break;
+                }
+            } catch (\PDOException $e) {
+                continue;
             }
-        } catch (\PDOException $e) {
-            error_log('AuditController: Failed to fetch general audit logs: ' . $e->getMessage());
+        }
+        
+        if ($auditTableFound) {
+            try {
+                // Check table structure to determine column names
+                $columnsResult = $this->pdo->query("DESCRIBE `{$auditTableFound}`");
+                $columns = $columnsResult->fetchAll(PDO::FETCH_COLUMN);
+                
+                $hasDetails = in_array('details', $columns);
+                $hasMetadata = in_array('metadata', $columns);
+                $detailsColumn = $hasDetails ? 'al.details' : ($hasMetadata ? 'al.metadata as details' : "'' as details");
+                
+                $stmt = $this->pdo->prepare("
+                    SELECT 
+                        al.id,
+                        al.user_id,
+                        u.full_name as user_name,
+                        r.name as user_role,
+                        al.action,
+                        al.entity_type,
+                        al.entity_id,
+                        {$detailsColumn},
+                        al.created_at
+                    FROM `{$auditTableFound}` al
+                    LEFT JOIN campaign_department_users u ON al.user_id = u.id
+                    LEFT JOIN campaign_department_roles r ON u.role_id = r.id
+                    ORDER BY al.created_at DESC
+                    LIMIT :limit OFFSET :offset
+                ");
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+                $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+                $stmt->execute();
+                
+                while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $details = $row['details'] ?? '';
+                    // Try to decode JSON metadata for better display
+                    if ($details && is_string($details)) {
+                        $decoded = json_decode($details, true);
+                        if ($decoded && is_array($decoded)) {
+                            $details = implode(', ', array_map(function($k, $v) {
+                                return ucfirst($k) . ': ' . (is_array($v) ? json_encode($v) : $v);
+                            }, array_keys($decoded), array_values($decoded)));
+                        }
+                    }
+                    
+                    $allLogs[] = [
+                        'id' => 'general_' . $row['id'],
+                        'user_id' => $row['user_id'],
+                        'user_name' => $row['user_name'] ?? 'System',
+                        'user_role' => $row['user_role'] ?? 'N/A',
+                        'action' => $row['action'],
+                        'entity_type' => $row['entity_type'],
+                        'entity_id' => $row['entity_id'],
+                        'details' => $details,
+                        'created_at' => $row['created_at'],
+                        'source' => 'general'
+                    ];
+                }
+            } catch (\PDOException $e) {
+                error_log('AuditController: Failed to fetch general audit logs: ' . $e->getMessage());
+            }
         }
         
         // 2. Get event audit logs

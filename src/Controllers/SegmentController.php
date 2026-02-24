@@ -507,13 +507,16 @@ class SegmentController
             )
         ');
 
-        $count = 0;
+        $successCount = 0;
         $errors = [];
+        $rowNum = 1; // Start at 1 since row 0 is header (already read)
         
         while (($row = fgetcsv($fh)) !== false) {
+            $rowNum++; // Increment for each data row (row 2 is first data row after header)
+            
             $name = trim($row[$idxName] ?? '');
             if (!$name) {
-                $errors[] = 'Row ' . ($count + 1) . ': Name is required';
+                $errors[] = 'Row ' . $rowNum . ': Name is required';
                 continue;
             }
 
@@ -523,15 +526,15 @@ class SegmentController
             $purok = $idxPurok !== false ? trim($row[$idxPurok] ?? '') : null;
             $contact = $idxContact !== false ? trim($row[$idxContact] ?? '') : null;
 
-            // Validate sector if provided
+            // Validate sector if provided - skip validation if empty
             if ($sector && !in_array($sector, self::SECTOR_TYPES, true)) {
-                $errors[] = 'Row ' . ($count + 1) . ': Invalid sector type';
+                $errors[] = 'Row ' . $rowNum . ': Invalid sector type "' . $sector . '". Valid types: ' . implode(', ', self::SECTOR_TYPES);
                 continue;
             }
 
-            // Validate barangay if provided
+            // Validate barangay if provided - skip validation if empty
             if ($barangay && !in_array($barangay, self::QC_BARANGAYS, true)) {
-                $errors[] = 'Row ' . ($count + 1) . ': Invalid barangay (must be Quezon City barangay)';
+                $errors[] = 'Row ' . $rowNum . ': Invalid barangay "' . $barangay . '". Must be a valid Quezon City barangay.';
                 continue;
             }
 
@@ -545,15 +548,15 @@ class SegmentController
                     'purok' => $purok ?: null,
                     'contact' => $contact ?: null,
                 ]);
-                $count++;
+                $successCount++;
             } catch (\PDOException $e) {
-                $errors[] = 'Row ' . ($count + 1) . ': ' . $e->getMessage();
+                $errors[] = 'Row ' . $rowNum . ': Database error - ' . $e->getMessage();
             }
         }
 
         fclose($fh);
 
-        $result = ['message' => "Imported {$count} members"];
+        $result = ['message' => "Imported {$successCount} members"];
         if (!empty($errors)) {
             $result['errors'] = $errors;
             $result['error_count'] = count($errors);
