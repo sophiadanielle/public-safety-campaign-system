@@ -306,9 +306,14 @@ try {
     <section class="card" id="qr-generator" style="margin-bottom:24px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
             <h2 class="section-title" style="margin:0; border:none; padding:0;">Survey Form QR Link Generator</h2>
-            <button class="btn btn-secondary" onclick="openArchivedLinksModal()" style="display:flex; align-items:center; gap:6px; padding:8px 16px;">
-                <i class="fas fa-archive"></i> View Archived
-            </button>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-secondary" onclick="refreshQRGeneratorSection()" style="display:flex; align-items:center; gap:6px; padding:8px 16px;" title="Refresh surveys and links">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="btn btn-secondary" onclick="openArchivedLinksModal()" style="display:flex; align-items:center; gap:6px; padding:8px 16px;">
+                    <i class="fas fa-archive"></i> View Archived
+                </button>
+            </div>
         </div>
         <div style="background:#f0fdf4; border-left:4px solid #4c8a89; padding:12px 16px; border-radius:0 8px 8px 0; margin-bottom:20px; font-size:14px; color:#334155;">
             <strong>What this does:</strong> Generate shareable links and QR codes for published surveys. When users visit the link, they can fill out their details and answer survey questions. All responses are saved and can be viewed in the Survey Responses tab.
@@ -337,9 +342,6 @@ try {
                 <div style="display:flex; align-items:flex-start; padding-top:26px; gap:8px;">
                     <button class="btn btn-primary" onclick="generateSurveyLink()" style="padding:12px 24px; font-size:14px; font-weight:600; white-space:nowrap; display:flex; align-items:center; gap:8px;">
                         <i class="fas fa-qrcode"></i> Generate Link & QR
-                    </button>
-                    <button class="btn btn-secondary" onclick="refreshGeneratedLinks()" style="padding:12px 16px; font-size:14px; white-space:nowrap; display:flex; align-items:center; gap:8px;" title="Refresh generated links list">
-                        <i class="fas fa-sync-alt"></i> Refresh
                     </button>
                 </div>
             </div>
@@ -3093,6 +3095,22 @@ async function generateSurveyLink() {
         statusEl.textContent = '✗ Network error: ' + err.message;
         statusEl.style.color = '#dc2626';
     }
+}
+
+// Refresh the entire QR Generator section (survey dropdown + generated links)
+async function refreshQRGeneratorSection() {
+    // Reload published surveys from API
+    await loadPublishedSurveysForQR();
+    
+    // Reload generated links from localStorage
+    generatedLinks = JSON.parse(localStorage.getItem('surveyGeneratedLinks') || '[]');
+    archivedLinks = JSON.parse(localStorage.getItem('surveyArchivedLinks') || '[]');
+    
+    // Re-render the links list
+    renderGeneratedLinks();
+    
+    // Show feedback
+    showToast('Section refreshed successfully', 'success');
 }
 
 // Refresh generated links list (reload from localStorage and re-render)

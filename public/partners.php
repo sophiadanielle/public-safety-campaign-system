@@ -721,7 +721,7 @@ async function loadEngagementHistory() {
                 const tr = document.createElement('tr');
                 // Use engaged_at (when engagement was recorded) or starts_at (event date) or fallback
                 const dateStr = engagement.engaged_at || engagement.starts_at;
-                const date = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+                const date = dateStr ? new Date(dateStr).toLocaleString('en-US', { timeZone: 'Asia/Manila', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
                 
                 // Format engagement type
                 const engagementType = engagement.engagement_type || 'collaboration';
@@ -1076,17 +1076,23 @@ async function loadAssignments() {
             tbody.innerHTML = '';
             data.data.forEach(r => {
                 const tr = document.createElement('tr');
-                const date = r.starts_at ? new Date(r.starts_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+                // Use event date if available, otherwise use engagement date
+                const eventDateStr = r.starts_at;
+                const eventDate = eventDateStr ? new Date(eventDateStr).toLocaleString('en-US', { timeZone: 'Asia/Manila', year: 'numeric', month: 'long', day: 'numeric' }) : '-';
                 const statusBadge = r.status === 'completed' ? 
                     '<span style="background:#dcfce7; color:#166534; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600;">Completed</span>' :
                     r.status === 'ongoing' ?
                     '<span style="background:#dbeafe; color:#1e40af; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600;">Ongoing</span>' :
+                    r.status === 'scheduled' ?
+                    '<span style="background:#dbeafe; color:#1e40af; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600;">Scheduled</span>' :
+                    r.status === 'draft' ?
+                    '<span style="background:#f1f5f9; color:#475569; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600;">Draft</span>' :
                     '<span style="background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600;">' + (r.status || 'Active') + '</span>';
                 tr.innerHTML = `
                     <td><strong style="color:#0f172a;">${r.campaign_title || '-'}</strong></td>
                     <td>${statusBadge}</td>
                     <td>${r.event_name || 'No specific event'}</td>
-                    <td>${date}</td>
+                    <td>${eventDate}</td>
                 `;
                 tbody.appendChild(tr);
             });

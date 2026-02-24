@@ -473,7 +473,9 @@ class EventController
                 'warning' => !empty($conflicts) ? 'Scheduling conflicts detected - see conflicts array' : null
             ];
         } catch (\Exception $e) {
-            $this->pdo->rollBack();
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             http_response_code(500);
             return ['error' => 'Failed to create event: ' . $e->getMessage()];
         }
@@ -594,27 +596,33 @@ class EventController
             }
         }
 
-        $this->pdo->beginTransaction();
+        $transactionStarted = false;
         try {
+            $this->pdo->beginTransaction();
+            $transactionStarted = true;
+            
             $sql = 'UPDATE `campaign_department_events` SET ' . implode(', ', $updates) . ' WHERE id = :event_id';
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($updateParams);
 
-            // Log audit for each changed field
+            $this->pdo->commit();
+            $transactionStarted = false;
+
+            // Log audit AFTER commit to avoid transaction issues (logAudit has its own error handling)
             foreach ($oldValues as $field => $oldValue) {
-                $this->logAudit($eventId, $user['id'], 'updated', $field, $oldValue, $updateParams[$field] ?? null);
+                $this->logAudit($eventId, $user['id'], 'updated', $field, $oldValue, $updateParams[$fieldMapping[$field] ?? $field] ?? null);
             }
 
             // Handle status change
-            if (isset($input['event_status']) && $input['event_status'] != $event['event_status']) {
-                $this->logAudit($eventId, $user['id'], 'status_changed', 'event_status', $event['event_status'], $input['event_status']);
+            if (isset($input['event_status']) && $input['event_status'] != ($event['status'] ?? $event['event_status'])) {
+                $this->logAudit($eventId, $user['id'], 'status_changed', 'event_status', $event['status'] ?? $event['event_status'], $input['event_status']);
             }
-
-            $this->pdo->commit();
 
             return ['message' => 'Event updated successfully', 'event_id' => $eventId];
         } catch (\Exception $e) {
-            $this->pdo->rollBack();
+            if ($transactionStarted && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             http_response_code(500);
             return ['error' => 'Failed to update event: ' . $e->getMessage()];
         }
@@ -1335,7 +1343,9 @@ class EventController
             
             return ['message' => 'Event deleted successfully'];
         } catch (\Throwable $e) {
-            $this->pdo->rollBack();
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             error_log('EventController::destroy - Error: ' . $e->getMessage());
             http_response_code(500);
             return ['error' => 'Failed to delete event: ' . $e->getMessage()];

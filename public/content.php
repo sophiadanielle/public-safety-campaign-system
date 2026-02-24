@@ -2870,11 +2870,17 @@ async function loadContent(forceRefresh = false) {
 // Normalize approval status - defensive function that handles all edge cases
 function normalizeStatus(raw) {
     if (!raw) return "draft";
-    return raw
+    let normalized = raw
         .toString()
         .trim()
         .toLowerCase()
         .replace(/\s+/g, "_");
+    
+    // Map variations to standard values
+    if (normalized === 'pending' || normalized === 'under_review') {
+        normalized = 'pending_review';
+    }
+    return normalized;
 }
 
 // Render content grid
@@ -2990,13 +2996,15 @@ function renderContentGrid(container, items, isTemplate = false) {
                         </button>
                     </div>
                 `;
-            } else if (status === 'under_review' || status === 'pending_review') {
-                // UNDER_REVIEW: Show View + Edit + Approve + Reject + Archive
+            } else if (status === 'pending_review') {
+                // PENDING_REVIEW / UNDER_REVIEW: Show View + Edit + Archive + Approve + Reject
                 actionButtons = `
                     <div style="display: flex; flex-wrap: wrap; gap: 4px;">
                         ${viewButton}
                         ${editButton}
-                        ${archiveButton}
+                        <button class="btn btn-secondary" onclick="archiveContent(${item.id})" style="background: #64748b; color: white; margin: 2px;" title="Archive">
+                            <i class="fas fa-archive"></i> <span>Archive</span>
+                        </button>
                     </div>
                     <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
                         <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white; margin: 2px;">
