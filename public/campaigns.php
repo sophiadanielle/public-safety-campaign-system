@@ -4030,22 +4030,52 @@ async function acceptAIRecommendation() {
             }, 100);
         }
         
-        // Build summary message
-        let message = 'AI recommendations accepted!\n\n';
+        // Build summary message with HTML formatting for better readability
+        let messageHtml = '<div style="text-align:left;">';
+        messageHtml += '<p style="margin:0 0 12px 0; font-weight:600; color:#059669;">✓ AI recommendations accepted!</p>';
+        
         if (populatedFields.length > 0) {
-            message += `✓ Populated fields (${populatedFields.length}): ${populatedFields.join(', ')}\n`;
-        }
-        if (skippedFields.length > 0) {
-            message += `\n⚠ Fields not populated (${skippedFields.length}):\n`;
-            skippedFields.forEach(item => {
-                message += `  • ${item.field}: ${item.reason}\n`;
+            messageHtml += '<div style="margin-bottom:12px;">';
+            messageHtml += '<p style="margin:0 0 6px 0; font-weight:600; color:#166534;">Populated fields (' + populatedFields.length + '):</p>';
+            messageHtml += '<ul style="margin:0; padding-left:20px; color:#334155;">';
+            populatedFields.forEach(field => {
+                messageHtml += '<li style="margin:2px 0;">' + field + '</li>';
             });
-        }
-        if (populatedFields.length === 0 && skippedFields.length === 0) {
-            message += 'Final schedule has been set.';
+            messageHtml += '</ul></div>';
         }
         
-        alert(message);
+        if (skippedFields.length > 0) {
+            messageHtml += '<div style="margin-bottom:8px;">';
+            messageHtml += '<p style="margin:0 0 6px 0; font-weight:600; color:#92400e;">Fields not populated (' + skippedFields.length + '):</p>';
+            messageHtml += '<ul style="margin:0; padding-left:20px; color:#64748b; font-size:13px;">';
+            skippedFields.forEach(item => {
+                messageHtml += '<li style="margin:4px 0;"><strong>' + item.field + ':</strong> ' + item.reason + '</li>';
+            });
+            messageHtml += '</ul></div>';
+        }
+        
+        if (populatedFields.length === 0 && skippedFields.length === 0) {
+            messageHtml += '<p style="margin:0; color:#334155;">Final schedule has been set.</p>';
+        }
+        messageHtml += '</div>';
+        
+        // Use customAlert for better formatting (if available) or fallback to alert
+        if (typeof customAlert === 'function') {
+            await customAlert(messageHtml, 'AI Recommendations Applied');
+        } else {
+            // Fallback to plain text alert
+            let plainMessage = 'AI recommendations accepted!\n\n';
+            if (populatedFields.length > 0) {
+                plainMessage += 'Populated: ' + populatedFields.join(', ') + '\n';
+            }
+            if (skippedFields.length > 0) {
+                plainMessage += '\nNot populated:\n';
+                skippedFields.forEach(item => {
+                    plainMessage += '- ' + item.field + '\n';
+                });
+            }
+            alert(plainMessage);
+        }
         // FIX: Use centralized refresh to ensure all views update
         refreshAllCampaignViews();
     } catch (err) {

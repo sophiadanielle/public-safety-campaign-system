@@ -113,11 +113,6 @@ class EventController
                 return ['data' => []];
             }
             
-            // Ensure archived status is available (run once per request if needed)
-            if (isset($_GET['event_status']) && $_GET['event_status'] === 'archived') {
-                $this->ensureArchivedStatus();
-            }
-
             // Apply filters
             if (isset($_GET['date'])) {
                 $where[] = 'e.event_date = :filter_date';
