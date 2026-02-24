@@ -1471,12 +1471,29 @@ async function addModalQuestion() {
 async function loadModalQuestions() {
     if (!modalCurrentSurveyId) return;
     
+    const container = document.getElementById('modalQuestionsList');
+    
     try {
         const res = await fetch(apiBase + '/api/v1/surveys/' + modalCurrentSurveyId, { headers: { 'Authorization': 'Bearer ' + token } });
+        
+        // Check for server errors (502, 500, etc.)
+        if (res.status >= 500) {
+            console.error('Server error loading questions:', res.status);
+            container.innerHTML = '<p style="color:#dc2626; padding:12px; background:#fef2f2; border-radius:4px;">Server error. Please try again later.</p>';
+            return;
+        }
+        
+        // Check content type to avoid JSON parse errors
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            console.error('Invalid response type:', contentType);
+            container.innerHTML = '<p style="color:#dc2626; padding:12px; background:#fef2f2; border-radius:4px;">Server returned invalid response. Please try again.</p>';
+            return;
+        }
+        
         const data = await res.json();
         
         if (res.ok && data.data) {
-            const container = document.getElementById('modalQuestionsList');
             const questions = data.data.questions || [];
             
             if (questions.length === 0) {
@@ -1492,9 +1509,12 @@ async function loadModalQuestions() {
                 html += '</div>';
                 container.innerHTML = html;
             }
+        } else {
+            container.innerHTML = '<p style="color:#dc2626; padding:12px; background:#fef2f2; border-radius:4px;">Error: ' + (data.error || 'Failed to load questions') + '</p>';
         }
     } catch (err) {
         console.error('Error loading questions:', err);
+        container.innerHTML = '<p style="color:#dc2626; padding:12px; background:#fef2f2; border-radius:4px;">Error: ' + err.message + '</p>';
     }
 }
 
@@ -1532,6 +1552,20 @@ async function openViewSurveyModal(surveyId) {
     
     try {
         const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, { headers: { 'Authorization': 'Bearer ' + token } });
+        
+        // Check for server errors (502, 500, etc.)
+        if (res.status >= 500) {
+            contentDiv.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Server error (' + res.status + '). Please try again later.</p>';
+            return;
+        }
+        
+        // Check content type to avoid JSON parse errors
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            contentDiv.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Server returned invalid response. Please try again.</p>';
+            return;
+        }
+        
         const data = await res.json();
         
         if (res.ok && data.data) {
@@ -2387,8 +2421,28 @@ async function generateSurveyPDF(surveyId) {
             fetch(apiBase + '/api/v1/surveys/' + surveyId + '/results', { headers: { 'Authorization': 'Bearer ' + token } })
         ]);
         
+        // Check for server errors (502, 500, etc.)
+        if (surveyRes.status >= 500 || resultsRes.status >= 500) {
+            throw new Error('Server error. Please try again later.');
+        }
+        
+        // Check content type to avoid JSON parse errors
+        const surveyContentType = surveyRes.headers.get('content-type');
+        const resultsContentType = resultsRes.headers.get('content-type');
+        if (!surveyContentType || !surveyContentType.includes('application/json')) {
+            throw new Error('Server returned invalid response for survey data.');
+        }
+        
         const surveyData = await surveyRes.json();
-        const resultsData = await resultsRes.json();
+        // Results might fail but we can still generate PDF without them
+        let resultsData = {};
+        try {
+            if (resultsContentType && resultsContentType.includes('application/json')) {
+                resultsData = await resultsRes.json();
+            }
+        } catch (e) {
+            console.warn('Could not load results data:', e);
+        }
         
         if (!surveyRes.ok || !surveyData.data) {
             throw new Error('Failed to load survey data');
@@ -2978,6 +3032,22 @@ async function generateSurveyLink() {
         const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
             headers: { 'Authorization': 'Bearer ' + token }
         });
+        
+        // Check for server errors (502, 500, etc.)
+        if (res.status >= 500) {
+            statusEl.innerHTML = '✗ Server error (' + res.status + '). Please try again later.';
+            statusEl.style.color = '#dc2626';
+            return;
+        }
+        
+        // Check content type to avoid JSON parse errors
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            statusEl.innerHTML = '✗ Server returned invalid response. Please try again.';
+            statusEl.style.color = '#dc2626';
+            return;
+        }
+        
         const data = await res.json();
         
         if (!res.ok || !data.data) {

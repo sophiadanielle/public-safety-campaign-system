@@ -123,13 +123,11 @@ class DashboardController
         }
 
         try {
-            // Upcoming events (next 30 days, planned or ongoing)
+            // Upcoming events - count only events with 'ongoing' status
             $upcomingEventsQuery = "
                 SELECT COUNT(*) 
                 FROM `campaign_department_events` 
-                WHERE date >= CURDATE() 
-                AND date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-                AND event_status IN ('planned', 'ongoing')
+                WHERE event_status = 'ongoing'
             ";
             $upcomingEvents = (int) $this->pdo->query($upcomingEventsQuery)->fetchColumn();
         } catch (\Exception $e) {

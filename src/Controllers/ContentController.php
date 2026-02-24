@@ -1196,11 +1196,21 @@ class ContentController
             $hasCampaignId = in_array('campaign_id', $columns);
             $hasEventId = in_array('event_id', $columns);
             $hasSurveyId = in_array('survey_id', $columns);
+            $hasTagId = in_array('tag_id', $columns);
+            $hasTag = in_array('tag', $columns);
             
             // Build SELECT query dynamically based on available columns
             $selectFields = ['cu.id', 'cu.content_item_id', 'cu.usage_context', 'cu.created_at',
-                           'ci.title as content_title', 'ci.content_type',
-                           't.name as tag_name'];
+                           'ci.title as content_title', 'ci.content_type'];
+            
+            // Handle tag field - check for tag_id (foreign key) or tag (direct text field)
+            if ($hasTagId) {
+                $selectFields[] = 't.name as tag_name';
+            } elseif ($hasTag) {
+                $selectFields[] = 'cu.tag as tag_name';
+            } else {
+                $selectFields[] = 'NULL as tag_name';
+            }
             
             if ($hasCampaignId) {
                 $selectFields[] = 'cu.campaign_id';
@@ -1230,8 +1240,12 @@ class ContentController
                 $sql .= " LEFT JOIN campaign_department_campaigns c ON cu.campaign_id = c.id";
             }
             
-            $sql .= " LEFT JOIN campaign_department_tags t ON cu.tag_id = t.id
-                    WHERE 1=1";
+            // Only join tags table if tag_id column exists
+            if ($hasTagId) {
+                $sql .= " LEFT JOIN campaign_department_tags t ON cu.tag_id = t.id";
+            }
+            
+            $sql .= " WHERE 1=1";
             $bind = [];
             
             if ($contentId) {
@@ -1557,10 +1571,23 @@ class ContentController
                 $bind['tag_id'] = $input['tag_id'] ? (int) $input['tag_id'] : null;
             }
             
-            // Support tag as text field
-            if (array_key_exists('tag', $input) && in_array('tag', $columns)) {
-                $updates[] = 'tag = :tag';
-                $bind['tag'] = $input['tag'];
+            // Support tag as text - convert to tag_id if tag_id column exists
+            if (array_key_exists('tag', $input) && $input['tag']) {
+                if (in_array('tag_id', $columns)) {
+                    // Convert tag text to tag_id using ensureTags
+                    $tagIds = $this->ensureTags([$input['tag']]);
+                    if (!empty($tagIds)) {
+                        $updates[] = 'tag_id = :tag_id';
+                        $bind['tag_id'] = $tagIds[0];
+                    }
+                } elseif (in_array('tag', $columns)) {
+                    // Fallback: store tag as text if tag column exists
+                    $updates[] = 'tag = :tag';
+                    $bind['tag'] = $input['tag'];
+                }
+            } elseif (array_key_exists('tag', $input) && !$input['tag'] && in_array('tag_id', $columns)) {
+                // Clear tag_id if tag is empty
+                $updates[] = 'tag_id = NULL';
             }
             
             if (isset($input['is_archived']) && in_array('is_archived', $columns)) {

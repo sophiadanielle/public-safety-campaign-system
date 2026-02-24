@@ -2969,14 +2969,24 @@ document.getElementById('planningForm').addEventListener('submit', async (e) => 
         if (!res.ok) {
             console.error('Campaign creation - API error:', res.status, data);
             
-            // Handle 502 Bad Gateway - campaign might have been created despite the error
+            // Handle 502 Bad Gateway - verify if campaign was actually created
             if (res.status === 502) {
-                console.warn('502 Bad Gateway - Campaign may have been created. Refreshing list...');
-                showToast('Campaign may have been created. Refreshing list...', 'warning');
-                clearForm();
-                closePlanCampaignModal();
-                // Refresh to check if campaign was actually created
-                setTimeout(() => refreshAllCampaignViews(), 500);
+                console.warn('502 Bad Gateway - Verifying if campaign was created...');
+                createStatusEl.textContent = 'Server error. Verifying campaign creation...';
+                createStatusEl.className = 'status-text';
+                
+                // Wait and check if campaign was created by refreshing the list
+                setTimeout(async () => {
+                    try {
+                        // Refresh the campaign list to check
+                        await refreshAllCampaignViews();
+                        showToast('Server encountered an error. Please check if your campaign appears in the list.', 'warning');
+                        clearForm();
+                        closePlanCampaignModal();
+                    } catch (e) {
+                        showToast('Server error. Please refresh the page and check your campaigns.', 'error');
+                    }
+                }, 1000);
                 return;
             }
             
