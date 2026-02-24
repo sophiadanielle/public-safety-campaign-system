@@ -492,18 +492,18 @@ class ContentController
                 'file_reference' => $fileReference,
             ];
             
-            // Log audit entry
-            $this->logAudit($user['id'] ?? null, 'content', 'upload', $contentId ?? null, [
-                'title' => $title,
-                'content_type' => $contentType,
-                'approval_status' => 'draft'
-            ]);
-            
             $sql = 'INSERT INTO campaign_department_content_items (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $placeholders) . ')';
             
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute($bindParams);
             $contentId = (int) $this->pdo->lastInsertId();
+            
+            // Log audit entry AFTER getting the contentId
+            $this->logAuditSafe($user['id'] ?? null, 'content', 'upload', $contentId, [
+                'title' => $title,
+                'content_type' => $contentType,
+                'approval_status' => 'draft'
+            ]);
 
             // Save initial version (if table exists)
             try {
@@ -1672,7 +1672,48 @@ class ContentController
     }
     
     /**
-     * Log audit entry
+     * Log audit entry (safe version that doesn't interfere with transactions)
+     * This version skips DDL statements that could cause implicit commits
+     */
+    private function logAuditSafe(?int $userId, string $entityType, string $action, ?int $entityId, array $metadata = []): void
+    {
+        try {
+            $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+            
+            // Build details string from metadata
+            $details = !empty($metadata) ? json_encode($metadata) : null;
+            
+            // Check if table exists first without using DDL
+            $tableCheck = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_audit_logs'");
+            if ($tableCheck->rowCount() === 0) {
+                // Table doesn't exist, skip audit logging to avoid DDL in transaction
+                error_log('Audit log table does not exist, skipping audit entry');
+                return;
+            }
+            
+            $stmt = $this->pdo->prepare('
+                INSERT INTO campaign_department_audit_logs (user_id, action, entity_type, entity_id, details, ip_address, user_agent, metadata)
+                VALUES (:user_id, :action, :entity_type, :entity_id, :details, :ip_address, :user_agent, :metadata)
+            ');
+            $stmt->execute([
+                'user_id' => $userId,
+                'action' => $action,
+                'entity_type' => $entityType,
+                'entity_id' => $entityId,
+                'details' => $details,
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+                'metadata' => json_encode($metadata),
+            ]);
+        } catch (\PDOException $e) {
+            // Audit logging is non-critical, log error but don't fail
+            error_log('Failed to log audit entry: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Log audit entry (original version with table creation - use outside transactions)
      */
     private function logAudit(?int $userId, string $entityType, string $action, ?int $entityId, array $metadata = []): void
     {

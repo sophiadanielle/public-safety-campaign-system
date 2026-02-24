@@ -4479,26 +4479,36 @@ async function loadResources() {
             }
         });
         
-        document.getElementById('totalBudget').textContent = '₱' + totalBudget.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('totalStaff').textContent = totalStaff;
-        document.getElementById('activeCampaigns').textContent = activeCount;
+        // Safely update elements only if they exist
+        const totalBudgetEl = document.getElementById('totalBudget');
+        const totalStaffEl = document.getElementById('totalStaff');
+        const activeCampaignsEl = document.getElementById('activeCampaigns');
+        const budgetBreakdownEl = document.getElementById('budgetBreakdown');
+        const staffBreakdownEl = document.getElementById('staffBreakdown');
+        const campaignBreakdownEl = document.getElementById('campaignBreakdown');
+        const materialsEl = document.getElementById('materialsUsed');
+        
+        if (totalBudgetEl) totalBudgetEl.textContent = '₱' + totalBudget.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        if (totalStaffEl) totalStaffEl.textContent = totalStaff;
+        if (activeCampaignsEl) activeCampaignsEl.textContent = activeCount;
         
         // Update breakdowns
         const totalCampaigns = campaigns.length;
-        document.getElementById('budgetBreakdown').textContent = `${totalCampaigns} campaign${totalCampaigns !== 1 ? 's' : ''}`;
-        document.getElementById('staffBreakdown').textContent = `${totalCampaigns} campaign${totalCampaigns !== 1 ? 's' : ''} assigned`;
-        document.getElementById('campaignBreakdown').textContent = `${totalCampaigns - activeCount} inactive`;
+        if (budgetBreakdownEl) budgetBreakdownEl.textContent = `${totalCampaigns} campaign${totalCampaigns !== 1 ? 's' : ''}`;
+        if (staffBreakdownEl) staffBreakdownEl.textContent = `${totalCampaigns} campaign${totalCampaigns !== 1 ? 's' : ''} assigned`;
+        if (campaignBreakdownEl) campaignBreakdownEl.textContent = `${totalCampaigns - activeCount} inactive`;
         
-        const materialsEl = document.getElementById('materialsUsed');
-        if (Object.keys(materials).length > 0) {
-            const materialsList = Object.entries(materials)
-                .map(([k, v]) => `${k}: ${v}`)
-                .join(', ');
-            materialsEl.textContent = materialsList.length > 60 ? materialsList.substring(0, 60) + '...' : materialsList;
-            materialsEl.title = Object.entries(materials).map(([k, v]) => `${k}: ${v}`).join('\n');
-        } else {
-            materialsEl.textContent = 'No materials allocated';
-            materialsEl.style.fontSize = '14px';
+        if (materialsEl) {
+            if (Object.keys(materials).length > 0) {
+                const materialsList = Object.entries(materials)
+                    .map(([k, v]) => `${k}: ${v}`)
+                    .join(', ');
+                materialsEl.textContent = materialsList.length > 60 ? materialsList.substring(0, 60) + '...' : materialsList;
+                materialsEl.title = Object.entries(materials).map(([k, v]) => `${k}: ${v}`).join('\n');
+            } else {
+                materialsEl.textContent = 'No materials allocated';
+                materialsEl.style.fontSize = '14px';
+            }
         }
     } catch (err) {
         console.error('Failed to load resources:', err);
@@ -7308,16 +7318,16 @@ async function archiveCampaign(campaignId) {
         
         const data = await res.json();
         if (!res.ok) {
-            alert('Error: ' + (data.error || 'Failed to archive campaign'));
+            showToast('Error: ' + (data.error || 'Failed to archive campaign'), 'error');
             return;
         }
         
-        alert('Campaign archived successfully!');
+        showToast('Campaign archived successfully!', 'success');
         // FIX: Use centralized refresh to ensure all views update
         refreshAllCampaignViews();
         
     } catch (err) {
-        alert('Failed to archive campaign: ' + err.message);
+        showToast('Failed to archive campaign: ' + err.message, 'error');
     }
 }
 
@@ -7440,15 +7450,15 @@ async function restoreArchivedCampaign(campaignId) {
         
         if (!res.ok) {
             const data = await res.json();
-            alert('Error: ' + (data.error || 'Failed to restore campaign'));
+            showToast('Error: ' + (data.error || 'Failed to restore campaign'), 'error');
             return;
         }
         
-        alert('Campaign restored successfully!');
-        loadArchivedCampaignsList();
+        showToast('Campaign restored successfully!', 'success');
+        await loadArchivedCampaignsList();
         refreshAllCampaignViews();
     } catch (err) {
-        alert('Failed to restore campaign: ' + err.message);
+        showToast('Failed to restore campaign: ' + err.message, 'error');
     }
 }
 
