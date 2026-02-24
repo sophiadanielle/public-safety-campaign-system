@@ -7468,10 +7468,11 @@ async function deleteArchivedCampaignPermanently(campaignId) {
             return;
         }
         
-        alert('Campaign deleted permanently!');
+        // Use non-blocking notification to avoid modal interference
+        showToast('Campaign deleted permanently!', 'success');
         // Only reload the archived list content - do NOT call refreshAllCampaignViews here
         // as it may interfere with the modal
-        loadArchivedCampaignsList();
+        await loadArchivedCampaignsList();
         // Refresh main campaign list in background without affecting modal
         loadCampaigns();
     } catch (err) {

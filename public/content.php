@@ -3461,8 +3461,8 @@ async function editUsageRecord(recordId) {
             });
         } catch (e) { console.error('Failed to load content items for edit modal:', e); }
         
-        // Get tag value from record (it's a text field, not a dropdown)
-        const tagValue = record.tag || '';
+        // Get tag value from record (API returns tag_name from the tags table)
+        const tagValue = record.tag_name || record.tag || '';
         
         modal.innerHTML = `
             <div style="background: white; border-radius: 12px; max-width: 500px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
@@ -3718,9 +3718,21 @@ async function checkCloudinaryStatus() {
     const statusText = document.getElementById('cloudinaryStatusText');
     if (!statusDiv || !statusText) return;
     
+    // Get fresh token in case it was updated after page load
+    const currentToken = localStorage.getItem('jwtToken') || token;
+    if (!currentToken) {
+        // No token available, show local storage message without API call
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = '#fef3c7';
+        statusDiv.style.color = '#92400e';
+        statusDiv.style.border = '1px solid #fcd34d';
+        statusText.textContent = 'Local storage - Files will be stored on server';
+        return;
+    }
+    
     try {
         const res = await fetch(apiBase + '/api/v1/content/storage-status', {
-            headers: { 'Authorization': 'Bearer ' + token }
+            headers: { 'Authorization': 'Bearer ' + currentToken }
         });
         const data = await res.json();
         

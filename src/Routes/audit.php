@@ -4,6 +4,7 @@
  */
 
 use App\Controllers\AuditController;
+use App\Middleware\JWTMiddleware;
 
 return [
     // Get all audit logs (consolidated from all sources)
@@ -11,6 +12,6 @@ return [
         'method' => 'GET',
         'path' => '/api/v1/audit-logs',
         'handler' => [AuditController::class, 'index'],
-        'auth' => true,
+        'middleware' => JWTMiddleware::class,
     ],
 ];
