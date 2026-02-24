@@ -838,36 +838,36 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
     <!-- KPI Summary Cards -->
     <section id="kpi-overview" class="dashboard-section">
     <div class="kpi-grid" id="kpiGrid">
-        <div class="kpi-card">
+        <a href="<?php echo $publicPath; ?>/campaigns.php?status=active" class="kpi-card kpi-card-link" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.transform=''; this.style.boxShadow='';">
             <div class="kpi-icon">📢</div>
             <div class="kpi-value" id="kpiActiveCampaigns">-</div>
             <div class="kpi-label">Active Campaigns</div>
-        </div>
-        <div class="kpi-card">
+        </a>
+        <a href="<?php echo $publicPath; ?>/campaigns.php?status=scheduled" class="kpi-card kpi-card-link" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.transform=''; this.style.boxShadow='';">
             <div class="kpi-icon">📅</div>
             <div class="kpi-value" id="kpiScheduledCampaigns">-</div>
             <div class="kpi-label">Scheduled Campaigns</div>
-        </div>
-        <div class="kpi-card">
+        </a>
+        <a href="<?php echo $publicPath; ?>/events.php" class="kpi-card kpi-card-link" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.transform=''; this.style.boxShadow='';">
             <div class="kpi-icon">🎯</div>
             <div class="kpi-value" id="kpiUpcomingEvents">-</div>
             <div class="kpi-label">Upcoming Events</div>
-        </div>
-        <div class="kpi-card">
+        </a>
+        <a href="<?php echo $publicPath; ?>/segments.php" class="kpi-card kpi-card-link" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.transform=''; this.style.boxShadow='';">
             <div class="kpi-icon">👥</div>
             <div class="kpi-value" id="kpiDefinedSegments">-</div>
             <div class="kpi-label">Audience Segments</div>
-        </div>
-        <div class="kpi-card">
+        </a>
+        <a href="<?php echo $publicPath; ?>/partners.php" class="kpi-card kpi-card-link" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.transform=''; this.style.boxShadow='';">
             <div class="kpi-icon">🤝</div>
             <div class="kpi-value" id="kpiPartnerOrgs">-</div>
             <div class="kpi-label">Partner Organizations</div>
-        </div>
-        <div class="kpi-card">
+        </a>
+        <a href="<?php echo $publicPath; ?>/surveys.php#survey-responses" class="kpi-card kpi-card-link" style="text-decoration: none; color: inherit; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)';" onmouseout="this.style.transform=''; this.style.boxShadow='';">
             <div class="kpi-icon">💬</div>
             <div class="kpi-value" id="kpiFeedbackResponses">-</div>
             <div class="kpi-label">Feedback Responses</div>
-        </div>
+        </a>
     </div>
     </section>
 

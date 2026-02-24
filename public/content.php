@@ -2929,8 +2929,8 @@ function renderContentGrid(container, items, isTemplate = false) {
         
         if (isTemplate) {
             actionButtons = `
-                <button class="btn btn-primary" onclick="useTemplate(${item.id})">
-                    <i class="fas fa-check-circle"></i> <span>Use Approved Material</span>
+                <button class="btn btn-primary" onclick="useTemplate(${item.id})" title="Use this approved material in your campaign">
+                    <i class="fas fa-check-circle"></i> <span>Use</span>
                 </button>
                 <button class="btn btn-secondary" onclick="showContentDetails(${item.id})">
                     <i class="fas fa-info-circle"></i> <span>Details</span>
@@ -2996,6 +2996,9 @@ function renderContentGrid(container, items, isTemplate = false) {
                     <div style="display: flex; flex-wrap: wrap; gap: 4px;">
                         ${viewButton}
                         ${editButton}
+                        ${archiveButton}
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
                         <button class="btn btn-primary" onclick="approveContent(${item.id})" style="background: #059669; color: white; margin: 2px;">
                             <i class="fas fa-check-circle"></i> <span>Approve</span>
                         </button>

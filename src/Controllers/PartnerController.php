@@ -219,12 +219,13 @@ class PartnerController
 
         $stmt = $this->pdo->prepare('
             SELECT pe.id as engagement_id, c.id as campaign_id, c.title as campaign_title, c.status,
-                   e.id as event_id, e.event_title as event_name, e.date as starts_at
+                   pe.engagement_type, pe.notes, pe.created_at as engaged_at,
+                   e.id as event_id, e.name as event_name, e.event_date as starts_at
             FROM `campaign_department_partner_engagements` pe
             INNER JOIN `campaign_department_campaigns` c ON c.id = pe.campaign_id
             LEFT JOIN `campaign_department_events` e ON e.id = pe.event_id
             WHERE pe.partner_id = :pid
-            ORDER BY c.created_at DESC, e.date ASC
+            ORDER BY pe.created_at DESC
         ');
         $stmt->execute(['pid' => $partnerId]);
         $rows = $stmt->fetchAll();

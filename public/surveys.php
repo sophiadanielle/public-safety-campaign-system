@@ -334,9 +334,12 @@ try {
                     </select>
                     <div style="font-size:12px; color:#64748b; margin-top:6px;">💡 Only published surveys are shown</div>
                 </div>
-                <div style="display:flex; align-items:flex-start; padding-top:26px;">
+                <div style="display:flex; align-items:flex-start; padding-top:26px; gap:8px;">
                     <button class="btn btn-primary" onclick="generateSurveyLink()" style="padding:12px 24px; font-size:14px; font-weight:600; white-space:nowrap; display:flex; align-items:center; gap:8px;">
                         <i class="fas fa-qrcode"></i> Generate Link & QR
+                    </button>
+                    <button class="btn btn-secondary" onclick="refreshGeneratedLinks()" style="padding:12px 16px; font-size:14px; white-space:nowrap; display:flex; align-items:center; gap:8px;" title="Refresh generated links list">
+                        <i class="fas fa-sync-alt"></i> Refresh
                     </button>
                 </div>
             </div>
@@ -3090,6 +3093,19 @@ async function generateSurveyLink() {
         statusEl.textContent = '✗ Network error: ' + err.message;
         statusEl.style.color = '#dc2626';
     }
+}
+
+// Refresh generated links list (reload from localStorage and re-render)
+function refreshGeneratedLinks() {
+    // Reload from localStorage
+    generatedLinks = JSON.parse(localStorage.getItem('surveyGeneratedLinks') || '[]');
+    archivedLinks = JSON.parse(localStorage.getItem('surveyArchivedLinks') || '[]');
+    
+    // Re-render the list
+    renderGeneratedLinks();
+    
+    // Show feedback
+    showToast('Links refreshed successfully', 'success');
 }
 
 // Render generated links list

@@ -719,7 +719,21 @@ async function loadEngagementHistory() {
             tbody.innerHTML = '';
             data.data.forEach(engagement => {
                 const tr = document.createElement('tr');
-                const date = engagement.starts_at ? new Date(engagement.starts_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+                // Use engaged_at (when engagement was recorded) or starts_at (event date) or fallback
+                const dateStr = engagement.engaged_at || engagement.starts_at;
+                const date = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+                
+                // Format engagement type
+                const engagementType = engagement.engagement_type || 'collaboration';
+                const typeColors = {
+                    'collaboration': { bg: '#e0e7ff', color: '#3730a3' },
+                    'sponsorship': { bg: '#dcfce7', color: '#166534' },
+                    'training': { bg: '#fef3c7', color: '#92400e' },
+                    'resource_sharing': { bg: '#dbeafe', color: '#1e40af' }
+                };
+                const typeStyle = typeColors[engagementType] || typeColors['collaboration'];
+                const typeLabel = engagementType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                
                 const statusBadge = engagement.status === 'completed' ? 
                     '<span style="background:#dcfce7; color:#166534; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600;">Completed</span>' :
                     engagement.status === 'ongoing' ?
@@ -727,10 +741,10 @@ async function loadEngagementHistory() {
                     '<span style="background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:4px; font-size:12px; font-weight:600;">' + (engagement.status || 'Active') + '</span>';
                 tr.innerHTML = `
                     <td><strong style="color:#0f172a;">${engagement.campaign_title || '-'}</strong></td>
-                    <td><span style="background:#e0e7ff; color:#3730a3; padding:4px 10px; border-radius:4px; font-size:12px;">Collaboration</span></td>
+                    <td><span style="background:${typeStyle.bg}; color:${typeStyle.color}; padding:4px 10px; border-radius:4px; font-size:12px;">${typeLabel}</span></td>
                     <td>${engagement.event_name || 'No specific event'}</td>
                     <td>${date}</td>
-                    <td style="color:#64748b; font-size:13px;">-</td>
+                    <td style="color:#64748b; font-size:13px;">${engagement.notes || '-'}</td>
                 `;
                 tbody.appendChild(tr);
             });
