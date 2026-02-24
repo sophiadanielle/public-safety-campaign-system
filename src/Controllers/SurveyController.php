@@ -11,6 +11,8 @@ use App\Middleware\JWTMiddleware;
 
 class SurveyController
 {
+    private static bool $migrationsRun = false;
+    
     public function __construct(
         private PDO $pdo,
         private string $jwtSecret,
@@ -18,12 +20,20 @@ class SurveyController
         private string $jwtAudience,
         private int $jwtExpirySeconds
     ) {
-        // Auto-migration: Add status column if it doesn't exist
-        $this->ensureStatusColumn();
+        // Auto-migration: Only run once per application lifecycle, not on every request
+        // These migrations should be run via a dedicated migration script, not in constructor
+        // Disabled to prevent 502 Bad Gateway errors from slow INFORMATION_SCHEMA queries
+        // $this->ensureStatusColumn();
     }
     
     private function ensureStatusColumn(): void
     {
+        // Skip if already run in this request
+        if (self::$migrationsRun) {
+            return;
+        }
+        self::$migrationsRun = true;
+        
         try {
             // Check and add status column
             $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 

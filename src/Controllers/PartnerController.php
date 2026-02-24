@@ -10,6 +10,8 @@ use RuntimeException;
 
 class PartnerController
 {
+    private static bool $migrationsRun = false;
+    
     public function __construct(
         private PDO $pdo,
         private string $jwtSecret,
@@ -17,12 +19,16 @@ class PartnerController
         private string $jwtAudience,
         private int $jwtExpirySeconds
     ) {
-        // Auto-migration: Ensure status column exists
-        $this->ensureStatusColumn();
+        // Auto-migration: Disabled to prevent 502 Bad Gateway errors from slow INFORMATION_SCHEMA queries
+        // These migrations should be run via a dedicated migration script, not in constructor
+        // $this->ensureStatusColumn();
     }
     
     private function ensureStatusColumn(): void
     {
+        if (self::$migrationsRun) return;
+        self::$migrationsRun = true;
+        
         try {
             $checkStmt = $this->pdo->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
                 WHERE TABLE_SCHEMA = DATABASE() 

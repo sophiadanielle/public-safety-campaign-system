@@ -12,6 +12,9 @@ use RuntimeException;
 class CampaignController
 {
     private AutoMLService $autoMLService;
+    private static bool $columnsChecked = false;
+    private static bool $hasStartTime = true;
+    private static bool $hasEndTime = true;
 
     public function __construct(
         private PDO $pdo,
@@ -21,6 +24,59 @@ class CampaignController
         private int $jwtExpirySeconds
     ) {
         $this->autoMLService = new AutoMLService($pdo);
+    }
+    
+    /**
+     * Ensure start_time and end_time columns exist - cached to avoid slow INFORMATION_SCHEMA queries
+     */
+    private function ensureTimeColumns(): void
+    {
+        // Skip if already checked in this request
+        if (self::$columnsChecked) {
+            return;
+        }
+        self::$columnsChecked = true;
+        
+        try {
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_campaigns' 
+                AND COLUMN_NAME = 'start_time'");
+            self::$hasStartTime = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+        } catch (\Exception $e) {
+            self::$hasStartTime = true; // Assume exists to avoid errors
+        }
+        
+        try {
+            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'campaign_department_campaigns' 
+                AND COLUMN_NAME = 'end_time'");
+            self::$hasEndTime = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
+        } catch (\Exception $e) {
+            self::$hasEndTime = true; // Assume exists to avoid errors
+        }
+        
+        // Auto-apply migration if columns don't exist
+        if (!self::$hasStartTime) {
+            try {
+                $this->pdo->exec("ALTER TABLE `campaign_department_campaigns` ADD COLUMN start_time TIME NULL AFTER start_date");
+                self::$hasStartTime = true;
+                error_log('CampaignController: Auto-applied migration - added start_time column');
+            } catch (\Exception $e) {
+                error_log('CampaignController: Failed to add start_time column: ' . $e->getMessage());
+            }
+        }
+        
+        if (!self::$hasEndTime) {
+            try {
+                $this->pdo->exec("ALTER TABLE `campaign_department_campaigns` ADD COLUMN end_time TIME NULL AFTER end_date");
+                self::$hasEndTime = true;
+                error_log('CampaignController: Auto-applied migration - added end_time column');
+            } catch (\Exception $e) {
+                error_log('CampaignController: Failed to add end_time column: ' . $e->getMessage());
+            }
+        }
     }
 
     public function index(?array $user, array $params = []): array
@@ -187,45 +243,8 @@ class CampaignController
         $draftSchedule = null;
 
         // FIX: Auto-apply migration 032 if start_time and end_time columns don't exist
-        // This ensures the schema matches the backend logic
-        try {
-            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
-                WHERE TABLE_SCHEMA = DATABASE() 
-                AND TABLE_NAME = 'campaign_department_campaigns' 
-                AND COLUMN_NAME = 'start_time'");
-            $hasStartTime = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
-        } catch (\Exception $e) {
-            $hasStartTime = false;
-        }
-        
-        try {
-            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
-                WHERE TABLE_SCHEMA = DATABASE() 
-                AND TABLE_NAME = 'campaign_department_campaigns' 
-                AND COLUMN_NAME = 'end_time'");
-            $hasEndTime = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
-        } catch (\Exception $e) {
-            $hasEndTime = false;
-        }
-        
-        // Auto-apply migration if columns don't exist
-        if (!$hasStartTime) {
-            try {
-                $this->pdo->exec("ALTER TABLE `campaign_department_campaigns` ADD COLUMN start_time TIME NULL AFTER start_date");
-                error_log('CampaignController: Auto-applied migration - added start_time column');
-            } catch (\Exception $e) {
-                error_log('CampaignController: Failed to add start_time column: ' . $e->getMessage());
-            }
-        }
-        
-        if (!$hasEndTime) {
-            try {
-                $this->pdo->exec("ALTER TABLE `campaign_department_campaigns` ADD COLUMN end_time TIME NULL AFTER end_date");
-                error_log('CampaignController: Auto-applied migration - added end_time column');
-            } catch (\Exception $e) {
-                error_log('CampaignController: Failed to add end_time column: ' . $e->getMessage());
-            }
-        }
+        // Use cached check to avoid slow INFORMATION_SCHEMA queries on every request
+        $this->ensureTimeColumns();
         
         $stmt = $this->pdo->prepare('
             INSERT INTO campaign_department_campaigns (
@@ -325,41 +344,8 @@ class CampaignController
         }
         
         // FIX: Ensure start_time and end_time columns exist (same auto-migration as store method)
-        try {
-            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
-                WHERE TABLE_SCHEMA = DATABASE() 
-                AND TABLE_NAME = 'campaign_department_campaigns' 
-                AND COLUMN_NAME = 'start_time'");
-            $hasStartTime = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
-        } catch (\Exception $e) {
-            $hasStartTime = false;
-        }
-        
-        try {
-            $checkStmt = $this->pdo->query("SELECT COUNT(*) as cnt FROM INFORMATION_SCHEMA.COLUMNS 
-                WHERE TABLE_SCHEMA = DATABASE() 
-                AND TABLE_NAME = 'campaign_department_campaigns' 
-                AND COLUMN_NAME = 'end_time'");
-            $hasEndTime = $checkStmt->fetch(PDO::FETCH_ASSOC)['cnt'] > 0;
-        } catch (\Exception $e) {
-            $hasEndTime = false;
-        }
-        
-        if (!$hasStartTime) {
-            try {
-                $this->pdo->exec("ALTER TABLE `campaign_department_campaigns` ADD COLUMN start_time TIME NULL AFTER start_date");
-            } catch (\Exception $e) {
-                // Column may already exist or migration failed
-            }
-        }
-        
-        if (!$hasEndTime) {
-            try {
-                $this->pdo->exec("ALTER TABLE `campaign_department_campaigns` ADD COLUMN end_time TIME NULL AFTER end_date");
-            } catch (\Exception $e) {
-                // Column may already exist or migration failed
-            }
-        }
+        // Use cached check to avoid slow INFORMATION_SCHEMA queries on every request
+        $this->ensureTimeColumns();
         
         try {
             $userRole = RoleMiddleware::getUserRole($user, $this->pdo);

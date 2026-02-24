@@ -10,6 +10,8 @@ use App\Middleware\RoleMiddleware;
 
 class EventController
 {
+    private static bool $migrationsRun = false;
+    
     public function __construct(
         private PDO $pdo,
         private string $jwtSecret,
@@ -17,13 +19,16 @@ class EventController
         private string $jwtAudience,
         private int $jwtExpirySeconds
     ) {
-        // Auto-migration: Ensure status ENUM includes 'archived' and audit log table exists
-        $this->ensureArchivedStatus();
-        $this->ensureAuditLogTable();
+        // Auto-migration: Disabled to prevent 502 Bad Gateway errors from slow INFORMATION_SCHEMA queries
+        // These migrations should be run via a dedicated migration script, not in constructor
+        // $this->ensureArchivedStatus();
+        // $this->ensureAuditLogTable();
     }
     
     private function ensureArchivedStatus(): void
     {
+        if (self::$migrationsRun) return;
+        
         try {
             $checkStmt = $this->pdo->query("SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS 
                 WHERE TABLE_SCHEMA = DATABASE() 
@@ -43,6 +48,9 @@ class EventController
     
     private function ensureAuditLogTable(): void
     {
+        if (self::$migrationsRun) return;
+        self::$migrationsRun = true;
+        
         try {
             // Check if audit log table exists
             $checkTable = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_event_audit_log'");
