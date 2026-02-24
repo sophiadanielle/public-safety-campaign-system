@@ -1473,6 +1473,16 @@ async function loadModalQuestions() {
     
     try {
         const res = await fetch(apiBase + '/api/v1/surveys/' + modalCurrentSurveyId, { headers: { 'Authorization': 'Bearer ' + token } });
+        
+        // Handle non-JSON responses (502 errors return HTML)
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            console.error('Error loading questions: Server returned non-JSON response (status: ' + res.status + ')');
+            const container = document.getElementById('modalQuestionsList');
+            if (container) container.innerHTML = '<p style="color:#ef4444; padding:12px; background:#fef2f2; border-radius:4px;">Server error. Please try again.</p>';
+            return;
+        }
+        
         const data = await res.json();
         
         if (res.ok && data.data) {
@@ -2387,8 +2397,23 @@ async function generateSurveyPDF(surveyId) {
             fetch(apiBase + '/api/v1/surveys/' + surveyId + '/results', { headers: { 'Authorization': 'Bearer ' + token } })
         ]);
         
+        // Handle non-JSON responses (502 errors return HTML)
+        const surveyContentType = surveyRes.headers.get('content-type') || '';
+        const resultsContentType = resultsRes.headers.get('content-type') || '';
+        
+        if (!surveyContentType.includes('application/json')) {
+            console.error('PDF generation error: Server returned non-JSON response for survey (status: ' + surveyRes.status + ')');
+            showToast('Server error. Please try again later.', 'error');
+            return;
+        }
+        
         const surveyData = await surveyRes.json();
-        const resultsData = await resultsRes.json();
+        
+        // Results may fail but we can still generate PDF with survey data
+        let resultsData = { data: {} };
+        if (resultsContentType.includes('application/json')) {
+            resultsData = await resultsRes.json();
+        }
         
         if (!surveyRes.ok || !surveyData.data) {
             throw new Error('Failed to load survey data');
@@ -2978,6 +3003,16 @@ async function generateSurveyLink() {
         const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
             headers: { 'Authorization': 'Bearer ' + token }
         });
+        
+        // Handle non-JSON responses (502 errors return HTML)
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            console.error('generateSurveyLink error: Server returned non-JSON response (status: ' + res.status + ')');
+            statusEl.textContent = '✗ Server error. Please try again later.';
+            statusEl.style.color = '#dc2626';
+            return;
+        }
+        
         const data = await res.json();
         
         if (!res.ok || !data.data) {
@@ -3239,6 +3274,15 @@ async function loadSurveyResponses() {
             const res = await fetch(apiBase + '/api/v1/surveys?status=published', {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
+            
+            // Handle non-JSON responses (502 errors return HTML)
+            const contentType = res.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                console.error('Error fetching responses for survey ' + filterSurveyId + ': Server returned non-JSON response (status: ' + res.status + ')');
+                container.innerHTML = '<div style="text-align:center; padding:40px; color:#ef4444;"><i class="fas fa-exclamation-triangle" style="font-size:40px; margin-bottom:16px;"></i><p>Server error. Please try again later.</p></div>';
+                return;
+            }
+            
             const data = await res.json();
             surveysToFetch = (data.data || []).map(s => s.id);
         }
@@ -3251,6 +3295,14 @@ async function loadSurveyResponses() {
                 const res = await fetch(apiBase + '/api/v1/surveys/' + surveyId + '/responses?limit=100', {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
+                
+                // Handle non-JSON responses (502 errors return HTML)
+                const contentType = res.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    console.error('Error fetching responses for survey ' + surveyId + ': Server returned non-JSON response (status: ' + res.status + ')');
+                    continue;
+                }
+                
                 const data = await res.json();
                 
                 if (res.ok && data.data && data.data.length > 0) {
@@ -3258,6 +3310,14 @@ async function loadSurveyResponses() {
                     const surveyRes = await fetch(apiBase + '/api/v1/surveys/' + surveyId, {
                         headers: { 'Authorization': 'Bearer ' + token }
                     });
+                    
+                    // Handle non-JSON responses for survey details
+                    const surveyContentType = surveyRes.headers.get('content-type') || '';
+                    if (!surveyContentType.includes('application/json')) {
+                        console.error('Error fetching survey details for ' + surveyId + ': Server returned non-JSON response');
+                        continue;
+                    }
+                    
                     const surveyData = await surveyRes.json();
                     const survey = surveyData.data || {};
                     

@@ -11,6 +11,8 @@ use App\Middleware\JWTMiddleware;
 
 class SurveyController
 {
+    private static bool $migrationsApplied = false;
+    
     public function __construct(
         private PDO $pdo,
         private string $jwtSecret,
@@ -19,7 +21,11 @@ class SurveyController
         private int $jwtExpirySeconds
     ) {
         // Auto-migration: Add status column if it doesn't exist
-        $this->ensureStatusColumn();
+        // Only run once per PHP process to avoid performance issues
+        if (!self::$migrationsApplied) {
+            $this->ensureStatusColumn();
+            self::$migrationsApplied = true;
+        }
     }
     
     private function ensureStatusColumn(): void
