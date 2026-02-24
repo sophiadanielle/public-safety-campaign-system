@@ -4134,12 +4134,96 @@ async function checkConflicts() {
 
 async function overrideSchedule() {
     if (!currentCampaignId) {
-        alert('Please select a campaign first');
+        if (typeof customAlert === 'function') {
+            await customAlert('Please select a campaign first', 'Notice');
+        } else {
+            alert('Please select a campaign first');
+        }
         return;
     }
     
-    const manualDateTime = prompt('Enter manual schedule date & time (YYYY-MM-DD HH:MM:SS):');
-    if (!manualDateTime) return;
+    // Show custom modal for date/time selection
+    openOverrideScheduleModal();
+}
+
+function openOverrideScheduleModal() {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('overrideScheduleModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'overrideScheduleModal';
+        modal.innerHTML = `
+            <div style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; display:flex; align-items:center; justify-content:center;">
+                <div style="background:white; border-radius:12px; width:100%; max-width:450px; box-shadow:0 25px 50px rgba(0,0,0,0.25); overflow:hidden;">
+                    <div style="background:linear-gradient(135deg, #4c8a89 0%, #3d7170 100%); color:white; padding:16px 20px;">
+                        <h3 style="margin:0; font-size:18px; font-weight:600;">
+                            <i class="fas fa-calendar-alt" style="margin-right:8px;"></i>Override Schedule
+                        </h3>
+                    </div>
+                    <div style="padding:24px;">
+                        <p style="margin:0 0 20px 0; color:#64748b; font-size:14px;">
+                            Set a manual schedule date and time for this campaign. This will override any AI recommendations.
+                        </p>
+                        <div style="margin-bottom:16px;">
+                            <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:14px;">
+                                Schedule Date <span style="color:#dc2626;">*</span>
+                            </label>
+                            <input type="date" id="overrideDate" style="width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:8px; font-size:14px; box-sizing:border-box;">
+                        </div>
+                        <div style="margin-bottom:20px;">
+                            <label style="display:block; margin-bottom:6px; font-weight:600; color:#334155; font-size:14px;">
+                                Schedule Time <span style="color:#dc2626;">*</span>
+                            </label>
+                            <input type="time" id="overrideTime" style="width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:8px; font-size:14px; box-sizing:border-box;">
+                        </div>
+                        <div style="display:flex; gap:12px; justify-content:flex-end;">
+                            <button type="button" onclick="closeOverrideScheduleModal()" style="padding:10px 20px; border:2px solid #e2e8f0; background:white; color:#64748b; border-radius:6px; font-weight:600; cursor:pointer; font-size:14px;">
+                                Cancel
+                            </button>
+                            <button type="button" onclick="submitOverrideSchedule()" style="padding:10px 20px; border:none; background:#4c8a89; color:white; border-radius:6px; font-weight:600; cursor:pointer; font-size:14px;">
+                                <i class="fas fa-check" style="margin-right:6px;"></i>Apply Schedule
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    // Set default values to current date/time
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toTimeString().slice(0, 5);
+    document.getElementById('overrideDate').value = dateStr;
+    document.getElementById('overrideTime').value = timeStr;
+    
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeOverrideScheduleModal() {
+    const modal = document.getElementById('overrideScheduleModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+async function submitOverrideSchedule() {
+    const dateVal = document.getElementById('overrideDate').value;
+    const timeVal = document.getElementById('overrideTime').value;
+    
+    if (!dateVal || !timeVal) {
+        if (typeof customAlert === 'function') {
+            await customAlert('Please select both date and time', 'Notice');
+        } else {
+            alert('Please select both date and time');
+        }
+        return;
+    }
+    
+    const manualDateTime = `${dateVal} ${timeVal}:00`;
     
     try {
         const res = await fetch(apiBase + `/api/v1/campaigns/${currentCampaignId}/final-schedule`, {
@@ -4153,15 +4237,30 @@ async function overrideSchedule() {
         const data = await res.json();
         
         if (data.error) {
-            alert('Error: ' + data.error);
+            if (typeof customAlert === 'function') {
+                await customAlert('Error: ' + data.error, 'Error');
+            } else {
+                alert('Error: ' + data.error);
+            }
             return;
         }
         
-        alert('Manual schedule override successful!');
+        closeOverrideScheduleModal();
+        
+        if (typeof customAlert === 'function') {
+            await customAlert('<div style="text-align:center;"><i class="fas fa-check-circle" style="font-size:48px; color:#059669; margin-bottom:12px;"></i><p style="margin:0; font-weight:600; color:#059669;">Schedule Override Successful!</p><p style="margin:8px 0 0 0; color:#64748b;">New schedule: ' + manualDateTime + '</p></div>', 'Success');
+        } else {
+            alert('Manual schedule override successful!');
+        }
+        
         // FIX: Use centralized refresh to ensure all views update
         refreshAllCampaignViews();
     } catch (err) {
-        alert('Failed to override schedule: ' + err.message);
+        if (typeof customAlert === 'function') {
+            await customAlert('Failed to override schedule: ' + err.message, 'Error');
+        } else {
+            alert('Failed to override schedule: ' + err.message);
+        }
     }
 }
 

@@ -96,6 +96,9 @@ class EventController
      */
     public function index(?array $user, array $params = []): array
     {
+        // Set error reporting to catch all issues
+        error_log('EventController::index - START - Request params: ' . json_encode($_GET));
+        
         try {
             $filters = [];
             $where = [];
@@ -106,10 +109,12 @@ class EventController
                 $checkTable = $this->pdo->query("SHOW TABLES LIKE 'campaign_department_events'");
                 if ($checkTable->rowCount() === 0) {
                     error_log('EventController::index - Table campaign_department_events does not exist');
+                    http_response_code(200);
                     return ['data' => []];
                 }
             } catch (\PDOException $e) {
                 error_log('EventController::index - Error checking table existence: ' . $e->getMessage());
+                http_response_code(200);
                 return ['data' => []];
             }
             
@@ -209,12 +214,14 @@ class EventController
             } catch (\PDOException $e) {
                 error_log('EventController::index PDO error: ' . $e->getMessage());
                 error_log('EventController::index SQL: ' . $sql);
-                return ['data' => []];
+                http_response_code(200);
+                return ['data' => [], 'error' => 'Database query failed'];
             }
         } catch (\Throwable $e) {
             error_log('EventController::index error: ' . $e->getMessage());
             error_log('EventController::index stack: ' . $e->getTraceAsString());
-            return ['data' => []];
+            http_response_code(200);
+            return ['data' => [], 'error' => 'Internal error occurred'];
         }
     }
 
