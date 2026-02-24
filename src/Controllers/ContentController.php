@@ -1551,6 +1551,12 @@ class ContentController
                 $bind['tag_id'] = $input['tag_id'] ? (int) $input['tag_id'] : null;
             }
             
+            // Support tag as text field
+            if (array_key_exists('tag', $input) && in_array('tag', $columns)) {
+                $updates[] = 'tag = :tag';
+                $bind['tag'] = $input['tag'];
+            }
+            
             if (isset($input['is_archived']) && in_array('is_archived', $columns)) {
                 $updates[] = 'is_archived = :is_archived';
                 $bind['is_archived'] = (int) $input['is_archived'];
@@ -1721,11 +1727,30 @@ class ContentController
         }
         
         $cloudinaryEnabled = false;
-        $cloudinaryConfigPath = __DIR__ . '/../Config/cloudinary_config.php';
+        $debugInfo = [];
         
-        if (file_exists($cloudinaryConfigPath)) {
-            require_once $cloudinaryConfigPath;
-            $cloudinaryEnabled = function_exists('isCloudinaryConfigured') && isCloudinaryConfigured();
+        try {
+            $cloudinaryConfigPath = __DIR__ . '/../Config/cloudinary_config.php';
+            
+            if (file_exists($cloudinaryConfigPath)) {
+                require_once $cloudinaryConfigPath;
+                
+                // Check if the function exists and call it
+                if (function_exists('isCloudinaryConfigured')) {
+                    $cloudinaryEnabled = isCloudinaryConfigured();
+                }
+                
+                // Debug info
+                $debugInfo['config_loaded'] = true;
+                $debugInfo['cloud_name_set'] = defined('CLOUDINARY_CLOUD_NAME') && !empty(CLOUDINARY_CLOUD_NAME);
+                $debugInfo['api_key_set'] = defined('CLOUDINARY_API_KEY') && !empty(CLOUDINARY_API_KEY);
+                $debugInfo['api_secret_set'] = defined('CLOUDINARY_API_SECRET') && !empty(CLOUDINARY_API_SECRET);
+            } else {
+                $debugInfo['config_loaded'] = false;
+                $debugInfo['config_path'] = $cloudinaryConfigPath;
+            }
+        } catch (\Throwable $e) {
+            $debugInfo['error'] = $e->getMessage();
         }
         
         return [
@@ -1734,7 +1759,8 @@ class ContentController
             'storage_type' => $cloudinaryEnabled ? 'cloudinary' : 'local',
             'message' => $cloudinaryEnabled 
                 ? 'Files will be uploaded to Cloudinary cloud storage' 
-                : 'Files will be stored locally on the server'
+                : 'Files will be stored locally on the server',
+            'debug' => $debugInfo
         ];
     }
 }

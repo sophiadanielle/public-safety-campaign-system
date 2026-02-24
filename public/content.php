@@ -3459,15 +3459,8 @@ async function editUsageRecord(recordId) {
             });
         } catch (e) { console.error('Failed to load content items for edit modal'); }
         
-        try {
-            const tagRes = await fetch(apiBase + '/api/v1/content/tags', { headers: { 'Authorization': 'Bearer ' + token } });
-            const tagData = await tagRes.json();
-            const tags = tagData.data || tagData.tags || [];
-            tags.forEach(t => {
-                const selected = record.tag_id == t.id ? 'selected' : '';
-                tagOptions += `<option value="${t.id}" ${selected}>${t.name || t.tag_name}</option>`;
-            });
-        } catch (e) { console.error('Failed to load tags for edit modal'); }
+        // Get tag value from record (it's a text field, not a dropdown)
+        const tagValue = record.tag || '';
         
         modal.innerHTML = `
             <div style="background: white; border-radius: 12px; max-width: 500px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
@@ -3496,9 +3489,7 @@ async function editUsageRecord(recordId) {
                     </div>
                     <div style="margin-bottom: 16px;">
                         <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #374151;">Tag</label>
-                        <select id="editUsageTag" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
-                            ${tagOptions}
-                        </select>
+                        <input type="text" id="editUsageTag" value="${tagValue}" placeholder="e.g., poster, video, social media post" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box;">
                     </div>
                     <div style="margin-bottom: 16px;">
                         <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #374151;">Usage Context</label>
@@ -3521,7 +3512,7 @@ async function editUsageRecord(recordId) {
                 content_id: document.getElementById('editUsageContent').value || null,
                 campaign_id: document.getElementById('editUsageCampaign').value || null,
                 event_id: document.getElementById('editUsageEvent').value || null,
-                tag_id: document.getElementById('editUsageTag').value || null,
+                tag: document.getElementById('editUsageTag').value || null,
                 usage_context: document.getElementById('editUsageContext').value
             };
             

@@ -7348,6 +7348,14 @@ function showArchivedCampaigns() {
     `;
     
     document.body.appendChild(modal);
+    
+    // Close on backdrop click only
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeArchivedCampaignsModal();
+        }
+    });
+    
     loadArchivedCampaignsList();
 }
 

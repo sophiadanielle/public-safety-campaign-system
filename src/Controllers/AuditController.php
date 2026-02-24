@@ -18,10 +18,11 @@ class AuditController
      */
     public function index(?array $user, array $params = []): array
     {
-        $limit = min((int) ($_GET['limit'] ?? 500), 1000);
-        $offset = (int) ($_GET['offset'] ?? 0);
-        
-        $allLogs = [];
+        try {
+            $limit = min((int) ($_GET['limit'] ?? 500), 1000);
+            $offset = (int) ($_GET['offset'] ?? 0);
+            
+            $allLogs = [];
         
         // 1. Get general audit logs (campaigns, content) - try both table names
         $auditTableNames = ['campaign_department_audit_logs', 'audit_logs'];
@@ -227,5 +228,14 @@ class AuditController
             'data' => $allLogs,
             'total' => count($allLogs)
         ];
+        } catch (\Throwable $e) {
+            error_log('AuditController::index error: ' . $e->getMessage());
+            http_response_code(500);
+            return [
+                'success' => false,
+                'error' => 'Failed to fetch audit logs: ' . $e->getMessage(),
+                'data' => []
+            ];
+        }
     }
 }
