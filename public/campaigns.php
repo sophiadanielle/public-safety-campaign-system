@@ -1162,9 +1162,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             <div class="form-grid">
                 <div class="form-field">
                     <label for="title">Campaign Title *</label>
-                    <select class="standard-select" id="title" required>
-                        <option value="">Select campaign title...</option>
-                    </select>
+                    <input type="text" class="standard-input" id="title" placeholder="Enter campaign title..." required style="width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:8px; font-size:14px;">
                 </div>
                 <div class="form-field">
                     <label for="category">Category *</label>
@@ -2646,10 +2644,7 @@ function initMultiSelectEnhanced(selectId, options = {}) {
 (function() {
     function initAllDropdowns() {
         // STANDARD DROPDOWNS - Native <select> elements (no custom JS needed)
-        // Populate options for dynamic selects
-        if (document.getElementById('title')) {
-            populateStandardSelect('title', SAMPLE_CAMPAIGN_TITLES);
-        }
+        // Note: Campaign Title is now a text input, no dropdown population needed
         
         if (document.getElementById('geographic_scope')) {
             populateStandardSelect('geographic_scope', SAMPLE_BARANGAYS);
@@ -3901,18 +3896,9 @@ async function acceptAIRecommendation() {
         if (recommendations.title && recommendations.title.value) {
             const titleEl = document.getElementById('title');
             if (titleEl) {
-                const option = Array.from(titleEl.options).find(opt => opt.textContent === recommendations.title.value);
-                if (option) {
-                    titleEl.value = option.value;
-                    populatedFields.push('Campaign Title');
-                } else {
-                    const newOption = document.createElement('option');
-                    newOption.value = recommendations.title.value;
-                    newOption.textContent = recommendations.title.value;
-                    titleEl.appendChild(newOption);
-                    titleEl.value = recommendations.title.value;
-                    populatedFields.push('Campaign Title');
-                }
+                // Title is now a text input, just set the value directly
+                titleEl.value = recommendations.title.value;
+                populatedFields.push('Campaign Title');
             }
         } else {
             skippedFields.push({field: 'Campaign Title', reason: 'No factual data available for this field'});

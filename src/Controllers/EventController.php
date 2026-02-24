@@ -112,6 +112,11 @@ class EventController
                 error_log('EventController::index - Error checking table existence: ' . $e->getMessage());
                 return ['data' => []];
             }
+            
+            // Ensure archived status is available (run once per request if needed)
+            if (isset($_GET['event_status']) && $_GET['event_status'] === 'archived') {
+                $this->ensureArchivedStatus();
+            }
 
             // Apply filters
             if (isset($_GET['date'])) {

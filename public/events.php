@@ -3441,6 +3441,15 @@ async function loadArchivedEvents() {
     try {
         // Request archived events specifically
         const res = await fetch(apiBase + '/api/v1/events?event_status=archived', { headers: { 'Authorization': 'Bearer ' + token } });
+        
+        // Check if response is OK before parsing JSON
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error('Archived events API error:', res.status, errorText);
+            container.innerHTML = '<p style="text-align:center; color:#dc2626; padding:24px;">Error loading archived events. Server returned status ' + res.status + '</p>';
+            return;
+        }
+        
         const data = await res.json();
         const archivedEvents = data.data || data.events || [];
         
