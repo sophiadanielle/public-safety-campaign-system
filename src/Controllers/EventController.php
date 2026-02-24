@@ -250,6 +250,7 @@ class EventController
                 e.hazard_focus,
                 e.target_audience_profile_id,
                 a.segment_name as target_audience,
+                a.risk_level as target_audience_risk_level,
                 e.transport_requirements,
                 e.trainer_requirements,
                 e.equipment_requirements,

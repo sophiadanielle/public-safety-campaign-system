@@ -3176,7 +3176,7 @@ async function openViewEventModal(eventId) {
                     </div>
                     <div style="background:#f8fafc; padding:12px; border-radius:8px;">
                         <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Target Audience</strong>
-                        <p style="margin:4px 0 0 0; font-size:14px;">${e.target_audience || 'N/A'}</p>
+                        <p style="margin:4px 0 0 0; font-size:14px;">${e.target_audience || 'N/A'}${e.target_audience_risk_level ? ` <span style="background:${e.target_audience_risk_level === 'High' ? '#fee2e2' : e.target_audience_risk_level === 'Medium' ? '#fef3c7' : '#dcfce7'}; color:${e.target_audience_risk_level === 'High' ? '#991b1b' : e.target_audience_risk_level === 'Medium' ? '#92400e' : '#166534'}; padding:2px 8px; border-radius:4px; font-size:12px; margin-left:8px;">${e.target_audience_risk_level}</span>` : ''}</p>
                     </div>
                     <div style="background:#f8fafc; padding:12px; border-radius:8px;">
                         <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Attendance</strong>

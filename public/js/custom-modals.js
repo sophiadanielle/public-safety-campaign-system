@@ -51,7 +51,14 @@ function customAlert(message, title = 'Notice') {
 // Custom Confirm Modal
 function customConfirm(message, title = 'Confirm') {
     return new Promise((resolve) => {
+        // Generate unique ID for this modal instance
+        const modalId = 'customConfirmModal_' + Date.now();
+        const okBtnId = 'customConfirmOk_' + Date.now();
+        const cancelBtnId = 'customConfirmCancel_' + Date.now();
+        
         const modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'custom-confirm-modal';
         modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99999999; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); animation: fadeIn 0.2s ease;';
         
         modal.innerHTML = `
@@ -63,21 +70,27 @@ function customConfirm(message, title = 'Confirm') {
                     <p style="margin: 0; color: #475569; line-height: 1.6; font-size: 15px;">${message}</p>
                 </div>
                 <div style="background: #f8fafc; padding: 16px 24px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0;">
-                    <button id="customConfirmCancel" style="padding: 10px 24px; background: white; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; color: #475569; font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#cbd5e1'" onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">Cancel</button>
-                    <button id="customConfirmOk" style="padding: 10px 24px; background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(76, 138, 137, 0.2);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(76, 138, 137, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(76, 138, 137, 0.2)'">Confirm</button>
+                    <button id="${cancelBtnId}" style="padding: 10px 24px; background: white; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; color: #475569; font-size: 14px; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#cbd5e1'" onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">Cancel</button>
+                    <button id="${okBtnId}" style="padding: 10px 24px; background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; box-shadow: 0 2px 4px rgba(76, 138, 137, 0.2);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(76, 138, 137, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(76, 138, 137, 0.2)'">Confirm</button>
                 </div>
             </div>
         `;
         
         document.body.appendChild(modal);
         
-        const okBtn = document.getElementById('customConfirmOk');
-        const cancelBtn = document.getElementById('customConfirmCancel');
+        const okBtn = document.getElementById(okBtnId);
+        const cancelBtn = document.getElementById(cancelBtnId);
         
+        let resolved = false;
         const closeModal = (result) => {
+            if (resolved) return; // Prevent double resolution
+            resolved = true;
             modal.style.animation = 'fadeOut 0.2s ease';
+            document.removeEventListener('keydown', handleEscape);
             setTimeout(() => {
-                modal.remove();
+                if (modal.parentNode) {
+                    modal.remove();
+                }
                 resolve(result);
             }, 200);
         };
@@ -90,7 +103,6 @@ function customConfirm(message, title = 'Confirm') {
         const handleEscape = (e) => {
             if (e.key === 'Escape') {
                 closeModal(false);
-                document.removeEventListener('keydown', handleEscape);
             }
         };
         document.addEventListener('keydown', handleEscape);

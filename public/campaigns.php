@@ -1576,15 +1576,24 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         <!-- Budget Summary Cards -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
             <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 12px; padding: 20px; text-align: center;">
-                <div style="font-size: 12px; color: #166534; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Total Budget</div>
+                <div style="font-size: 12px; color: #166534; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    Total Budget
+                    <button onclick="showBudgetBreakdown('total')" style="background: none; border: none; cursor: pointer; color: #166534; padding: 2px;" title="View breakdown"><i class="fas fa-eye"></i></button>
+                </div>
                 <div id="budgetTotalDisplay" style="font-size: 24px; font-weight: 700; color: #166534;">₱0.00</div>
             </div>
             <div style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 12px; padding: 20px; text-align: center;">
-                <div style="font-size: 12px; color: #1e40af; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Government Allocated</div>
+                <div style="font-size: 12px; color: #1e40af; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    Government Allocated
+                    <button onclick="showBudgetBreakdown('government')" style="background: none; border: none; cursor: pointer; color: #1e40af; padding: 2px;" title="View breakdown"><i class="fas fa-eye"></i></button>
+                </div>
                 <div id="budgetGovDisplay" style="font-size: 24px; font-weight: 700; color: #1e40af;">₱0.00</div>
             </div>
             <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 20px; text-align: center;">
-                <div style="font-size: 12px; color: #92400e; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Reimbursable</div>
+                <div style="font-size: 12px; color: #92400e; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    Reimbursable
+                    <button onclick="showBudgetBreakdown('reimbursable')" style="background: none; border: none; cursor: pointer; color: #92400e; padding: 2px;" title="View breakdown"><i class="fas fa-eye"></i></button>
+                </div>
                 <div id="budgetReimbDisplay" style="font-size: 24px; font-weight: 700; color: #92400e;">₱0.00</div>
             </div>
             <div style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); border-radius: 12px; padding: 20px; text-align: center;">
@@ -5507,6 +5516,115 @@ function renderBudgetTable() {
     });
 }
 
+// Show budget breakdown by type (total, government, reimbursable)
+function showBudgetBreakdown(type) {
+    const items = (allBudgetItems || []).filter(item => !item.is_archived);
+    
+    let filteredItems = items;
+    let title = 'Total Budget Breakdown';
+    let headerColor = '#166534';
+    let headerBg = 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)';
+    
+    if (type === 'government') {
+        filteredItems = items.filter(item => item.funding_source === 'government_allocated');
+        title = 'Government Allocated Breakdown';
+        headerColor = '#1e40af';
+        headerBg = 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)';
+    } else if (type === 'reimbursable') {
+        filteredItems = items.filter(item => item.funding_source === 'reimbursable');
+        title = 'Reimbursable Breakdown';
+        headerColor = '#92400e';
+        headerBg = 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
+    }
+    
+    if (filteredItems.length === 0) {
+        showToast('No budget items found for this category.', 'info');
+        return;
+    }
+    
+    // Group by campaign
+    const grouped = {};
+    let grandTotal = 0;
+    filteredItems.forEach(item => {
+        const cid = item.campaign_id;
+        if (!grouped[cid]) {
+            grouped[cid] = {
+                title: item.campaign_title || 'Campaign #' + cid,
+                items: [],
+                total: 0
+            };
+        }
+        const itemTotal = (item.quantity || 0) * (item.unit_cost || 0);
+        grouped[cid].items.push(item);
+        grouped[cid].total += itemTotal;
+        grandTotal += itemTotal;
+    });
+    
+    let tableHtml = '';
+    Object.keys(grouped).forEach(cid => {
+        const campaign = grouped[cid];
+        tableHtml += `
+            <tr style="background: #f8fafc;">
+                <td colspan="5" style="padding: 12px 16px; font-weight: 600; color: #0f172a;">
+                    <i class="fas fa-folder"></i> ${campaign.title}
+                    <span style="float: right; color: ${headerColor};">₱${campaign.total.toLocaleString('en-PH', {minimumFractionDigits: 2})}</span>
+                </td>
+            </tr>
+        `;
+        campaign.items.forEach(item => {
+            const itemTotal = (item.quantity || 0) * (item.unit_cost || 0);
+            tableHtml += `
+                <tr>
+                    <td style="padding-left: 32px;">${item.item_name || '-'}</td>
+                    <td style="text-align: center;">${item.quantity || 0}</td>
+                    <td style="text-align: right;">₱${parseFloat(item.unit_cost || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+                    <td style="text-align: right;">₱${itemTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+                    <td><span class="badge ${item.item_type === 'material' ? 'scheduled' : 'draft'}">${item.item_type || 'consumable'}</span></td>
+                </tr>
+            `;
+        });
+    });
+    
+    const modal = document.createElement('div');
+    modal.id = 'budgetBreakdownModal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 12px; max-width: 800px; width: 90%; max-height: 80vh; overflow: auto; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-chart-pie"></i> ${title}</h3>
+                <button onclick="document.getElementById('budgetBreakdownModal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+            </div>
+            <div style="background: ${headerBg}; border-radius: 8px; padding: 16px; margin-bottom: 20px; text-align: center;">
+                <div style="font-size: 12px; color: ${headerColor}; font-weight: 600; text-transform: uppercase;">Grand Total</div>
+                <div style="font-size: 28px; font-weight: 700; color: ${headerColor};">₱${grandTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}</div>
+            </div>
+            <table class="data-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th style="text-align: center;">Qty</th>
+                        <th style="text-align: right;">Unit Cost</th>
+                        <th style="text-align: right;">Total</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>${tableHtml}</tbody>
+            </table>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="document.getElementById('budgetBreakdownModal').remove()" class="btn btn-secondary" style="padding: 10px 20px;">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+}
+
 // View budget details modal
 function viewBudgetDetails(campaignId) {
     const items = (allBudgetItems || []).filter(item => item.campaign_id === campaignId && !item.is_archived);
@@ -7331,12 +7449,17 @@ async function archiveCampaign(campaignId) {
     }
 }
 
+// Flag to track if archived modal operation is in progress
+let archivedModalOperationInProgress = false;
+
 // Show Archived Campaigns Modal
 function showArchivedCampaigns() {
-    // Remove existing modal if any
+    // Prevent duplicate modals
     const existingModal = document.getElementById('archivedCampaignsModal');
     if (existingModal) {
-        existingModal.remove();
+        // Modal already exists, just refresh the list
+        loadArchivedCampaignsList();
+        return;
     }
     
     // Create modal
@@ -7411,7 +7534,7 @@ async function loadArchivedCampaignsList() {
                         <button class="btn btn-success" onclick="restoreArchivedCampaign(${c.id})" style="padding: 4px 10px; font-size: 11px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px;">
                             <i class="fas fa-undo"></i> Restore
                         </button>
-                        <button class="btn btn-danger" onclick="deleteArchivedCampaignPermanently(${c.id})" style="padding: 4px 10px; font-size: 11px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        <button class="btn btn-danger" onclick="event.stopPropagation(); deleteArchivedCampaignPermanently(${c.id})" style="padding: 4px 10px; font-size: 11px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
                             <i class="fas fa-trash"></i> Delete
                         </button>
                     </td>
