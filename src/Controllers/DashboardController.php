@@ -121,10 +121,11 @@ class DashboardController
 
         try {
             // Upcoming events = only 'ongoing' status from events list
+            // Note: The column is named 'status' in the database, not 'event_status'
             $upcomingEventsQuery = "
                 SELECT COUNT(*) 
                 FROM `campaign_department_events` 
-                WHERE event_status = 'ongoing'
+                WHERE status = 'ongoing'
             ";
             $upcomingEvents = (int) $this->pdo->query($upcomingEventsQuery)->fetchColumn();
         } catch (\Exception $e) {
@@ -251,22 +252,23 @@ class DashboardController
 
         try {
             // Upcoming events (next 30 days)
+            // Note: Column is 'status' not 'event_status', and 'event_date' not 'date'
             $upcomingQuery = "
                 SELECT 
                     e.id as event_id,
                     e.name as event_name,
                     e.event_type,
-                    e.date,
-                    e.start_time,
+                    e.event_date as date,
+                    e.event_time as start_time,
                     e.venue,
-                    e.capacity,
-                    e.event_status,
-                    (SELECT COUNT(*) FROM `campaign_department_attendance` WHERE event_id = e.id) as registered_count
+                    NULL as capacity,
+                    e.status as event_status,
+                    0 as registered_count
                 FROM `campaign_department_events` e
-                WHERE e.date >= CURDATE()
-                AND e.date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-                AND e.event_status IN ('planned', 'ongoing')
-                ORDER BY e.date ASC, e.start_time ASC
+                WHERE e.event_date >= CURDATE()
+                AND e.event_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                AND e.status IN ('scheduled', 'ongoing')
+                ORDER BY e.event_date ASC, e.event_time ASC
                 LIMIT 10
             ";
             $upcoming = $this->pdo->query($upcomingQuery)->fetchAll(PDO::FETCH_ASSOC);
@@ -276,10 +278,11 @@ class DashboardController
 
         try {
             // Event types breakdown
+            // Note: Column is 'status' not 'event_status'
             $typesQuery = "
                 SELECT event_type, COUNT(*) as count
                 FROM `campaign_department_events`
-                WHERE event_status IN ('planned', 'ongoing')
+                WHERE status IN ('scheduled', 'ongoing')
                 GROUP BY event_type
             ";
             $typesResults = $this->pdo->query($typesQuery)->fetchAll(PDO::FETCH_ASSOC);
@@ -292,13 +295,14 @@ class DashboardController
 
         try {
             // Capacity readiness
+            // Note: Column is 'status' not 'event_status'
             $capacityQuery = "
                 SELECT 
                     COUNT(*) as total_events,
-                    SUM(CASE WHEN capacity IS NOT NULL THEN 1 ELSE 0 END) as events_with_capacity,
-                    SUM(CASE WHEN capacity IS NOT NULL AND (SELECT COUNT(*) FROM `campaign_department_attendance` WHERE event_id = e.id) >= e.capacity THEN 1 ELSE 0 END) as at_capacity
+                    0 as events_with_capacity,
+                    0 as at_capacity
                 FROM `campaign_department_events` e
-                WHERE e.event_status IN ('planned', 'ongoing')
+                WHERE e.status IN ('scheduled', 'ongoing')
             ";
             $capacityData = $this->pdo->query($capacityQuery)->fetch(PDO::FETCH_ASSOC) ?: [];
         } catch (\Exception $e) {
@@ -307,13 +311,14 @@ class DashboardController
 
         try {
             // Events linked to campaigns vs standalone
+            // Note: Column is 'status' not 'event_status'
             $linkedQuery = "
                 SELECT 
                     COUNT(*) as total,
-                    SUM(CASE WHEN linked_campaign_id IS NOT NULL THEN 1 ELSE 0 END) as linked,
-                    SUM(CASE WHEN linked_campaign_id IS NULL THEN 1 ELSE 0 END) as standalone
+                    SUM(CASE WHEN linked_campaign_id IS NOT NULL OR campaign_id IS NOT NULL THEN 1 ELSE 0 END) as linked,
+                    SUM(CASE WHEN linked_campaign_id IS NULL AND campaign_id IS NULL THEN 1 ELSE 0 END) as standalone
                 FROM `campaign_department_events`
-                WHERE event_status IN ('planned', 'ongoing')
+                WHERE status IN ('scheduled', 'ongoing')
             ";
             $linkageData = $this->pdo->query($linkedQuery)->fetch(PDO::FETCH_ASSOC) ?: [];
         } catch (\Exception $e) {
@@ -393,12 +398,12 @@ class DashboardController
         $recentEngagement = 0;
 
         try {
-            // Campaigns with feedback
+            // Campaigns with feedback - use campaign_department_survey_responses table
             $campaignsWithFeedbackQuery = "
                 SELECT COUNT(DISTINCT s.campaign_id)
                 FROM `campaign_department_surveys` s
                 WHERE EXISTS (
-                    SELECT 1 FROM survey_responses sr WHERE sr.survey_id = s.id
+                    SELECT 1 FROM `campaign_department_survey_responses` sr WHERE sr.survey_id = s.id
                 )
             ";
             $campaignsWithFeedback = (int) $this->pdo->query($campaignsWithFeedbackQuery)->fetchColumn();
@@ -457,13 +462,11 @@ class DashboardController
         $ngosCount = 0;
 
         try {
-            // Active partners
+            // Active partners - count from campaign_department_partners (exclude archived)
             $activePartnersQuery = "
-                SELECT COUNT(DISTINCT p.id)
-                FROM partners p
-                WHERE EXISTS (
-                    SELECT 1 FROM `campaign_department_events` e WHERE e.linked_campaign_id IS NOT NULL LIMIT 1
-                )
+                SELECT COUNT(*)
+                FROM `campaign_department_partners`
+                WHERE status != 'archived' OR status IS NULL
             ";
             $activePartners = (int) $this->pdo->query($activePartnersQuery)->fetchColumn();
         } catch (\Exception $e) {
@@ -471,18 +474,19 @@ class DashboardController
         }
 
         try {
-            // Upcoming partnered events (using linked_campaign_id as proxy for partnership)
+            // Upcoming partnered events (using linked_campaign_id or campaign_id as proxy for partnership)
+            // Note: Column is 'status' not 'event_status', 'event_date' not 'date'
             $partneredEventsQuery = "
                 SELECT 
                     e.id as event_id,
                     e.name as event_name,
-                    e.date,
+                    e.event_date as date,
                     0 as partner_count
                 FROM `campaign_department_events` e
-                WHERE e.date >= CURDATE()
-                AND e.event_status IN ('planned', 'ongoing')
-                AND e.linked_campaign_id IS NOT NULL
-                ORDER BY e.date ASC
+                WHERE e.event_date >= CURDATE()
+                AND e.status IN ('scheduled', 'ongoing')
+                AND (e.linked_campaign_id IS NOT NULL OR e.campaign_id IS NOT NULL)
+                ORDER BY e.event_date ASC
                 LIMIT 5
             ";
             $partneredEvents = $this->pdo->query($partneredEventsQuery)->fetchAll(PDO::FETCH_ASSOC);
@@ -491,11 +495,11 @@ class DashboardController
         }
 
         try {
-            // Schools and NGOs count
+            // Schools and NGOs count from campaign_department_partners
             $schoolsQuery = "
                 SELECT COUNT(*) 
-                FROM partners 
-                WHERE organization_type = 'school'
+                FROM `campaign_department_partners` 
+                WHERE partner_type = 'school' AND (status != 'archived' OR status IS NULL)
             ";
             $schoolsCount = (int) $this->pdo->query($schoolsQuery)->fetchColumn();
         } catch (\Exception $e) {
@@ -505,8 +509,8 @@ class DashboardController
         try {
             $ngosQuery = "
                 SELECT COUNT(*) 
-                FROM partners 
-                WHERE organization_type = 'ngo'
+                FROM `campaign_department_partners` 
+                WHERE partner_type = 'ngo' AND (status != 'archived' OR status IS NULL)
             ";
             $ngosCount = (int) $this->pdo->query($ngosQuery)->fetchColumn();
         } catch (\Exception $e) {
