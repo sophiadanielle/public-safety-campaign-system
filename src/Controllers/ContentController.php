@@ -23,13 +23,37 @@ class ContentController
     ) {
         $configuredPath = getenv('UPLOAD_PATH') ?: (__DIR__ . '/../../public/uploads');
         $this->uploadDir = realpath($configuredPath) ?: $configuredPath;
-        $this->maxUploadSize = 5 * 1024 * 1024; // 5MB
+        $this->maxUploadSize = 100 * 1024 * 1024; // 100MB for videos
         $this->allowedMime = [
+            // Images
             'image/png',
             'image/jpeg',
             'image/gif',
             'image/webp',
+            'image/svg+xml',
+            // Documents
             'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            // Videos
+            'video/mp4',
+            'video/mpeg',
+            'video/quicktime',
+            'video/x-msvideo',
+            'video/x-ms-wmv',
+            'video/webm',
+            'video/ogg',
+            'video/3gpp',
+            'video/x-matroska',
+            // Audio
+            'audio/mpeg',
+            'audio/wav',
+            'audio/ogg',
+            'audio/mp4',
         ];
     }
 
@@ -313,7 +337,7 @@ class ContentController
 
         if ($file['size'] > $this->maxUploadSize) {
             http_response_code(413);
-            return ['error' => 'File too large (max 5MB)'];
+            return ['error' => 'File too large (max 100MB)'];
         }
 
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
@@ -1507,6 +1531,11 @@ class ContentController
                 $bind['usage_context'] = $input['usage_context'];
             }
             
+            if (array_key_exists('content_id', $input) && in_array('content_id', $columns)) {
+                $updates[] = 'content_id = :content_id';
+                $bind['content_id'] = $input['content_id'] ? (int) $input['content_id'] : null;
+            }
+            
             if (array_key_exists('campaign_id', $input) && in_array('campaign_id', $columns)) {
                 $updates[] = 'campaign_id = :campaign_id';
                 $bind['campaign_id'] = $input['campaign_id'] ? (int) $input['campaign_id'] : null;
@@ -1679,6 +1708,34 @@ class ContentController
             // Audit logging is non-critical, log error but don't fail
             error_log('Failed to log audit entry: ' . $e->getMessage());
         }
+    }
+    
+    /**
+     * Get storage status (check if Cloudinary is configured)
+     */
+    public function getStorageStatus(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        
+        $cloudinaryEnabled = false;
+        $cloudinaryConfigPath = __DIR__ . '/../Config/cloudinary_config.php';
+        
+        if (file_exists($cloudinaryConfigPath)) {
+            require_once $cloudinaryConfigPath;
+            $cloudinaryEnabled = function_exists('isCloudinaryConfigured') && isCloudinaryConfigured();
+        }
+        
+        return [
+            'success' => true,
+            'cloudinary_enabled' => $cloudinaryEnabled,
+            'storage_type' => $cloudinaryEnabled ? 'cloudinary' : 'local',
+            'message' => $cloudinaryEnabled 
+                ? 'Files will be uploaded to Cloudinary cloud storage' 
+                : 'Files will be stored locally on the server'
+        ];
     }
 }
 

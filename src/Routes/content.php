@@ -92,6 +92,11 @@ return [
         'handler' => [ContentController::class, 'deleteUsage'],
         'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
+    // Storage status endpoint
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/content/storage-status',
+        'handler' => [ContentController::class, 'getStorageStatus'],
+        'middleware' => JWTMiddleware::class,
+    ],
 ];
-
-

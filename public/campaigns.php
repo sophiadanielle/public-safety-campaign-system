@@ -7321,66 +7321,152 @@ async function archiveCampaign(campaignId) {
     }
 }
 
-// Show Archived Campaigns
+// Show Archived Campaigns Modal
 function showArchivedCampaigns() {
-    const tbody = document.getElementById('campaignTable');
-    if (!tbody) {
-        console.error('showArchivedCampaigns() - Campaign table not found');
-        return;
+    // Remove existing modal if any
+    const existingModal = document.getElementById('archivedCampaignsModal');
+    if (existingModal) {
+        existingModal.remove();
     }
     
-    // Filter only archived campaigns from allCampaigns array
-    const archivedCampaigns = allCampaigns.filter(c => {
-        const status = (c.status || '').toLowerCase();
-        return status === 'archived';
-    });
+    // Create modal
+    const modal = document.createElement('div');
+    modal.id = 'archivedCampaignsModal';
+    modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); z-index: 999999; align-items: center; justify-content: center; backdrop-filter: blur(4px);';
     
-    if (archivedCampaigns.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:24px; color: #64748b;">No archived campaigns found.</td></tr>';
-        return;
-    }
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 12px; max-width: 900px; width: 90%; max-height: 80vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);">
+            <div style="background: linear-gradient(135deg, #115e59 0%, #0f766e 100%); color: white; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600;"><i class="fas fa-archive"></i> Archived Campaigns</h3>
+                <button onclick="closeArchivedCampaignsModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center;">&times;</button>
+            </div>
+            <div style="padding: 20px 24px; color: #64748b; font-size: 14px; border-bottom: 1px solid #e2e8f0;">
+                Archived campaigns are hidden from the main list. You can restore them or delete them permanently.
+            </div>
+            <div id="archivedCampaignsList" style="max-height: 50vh; overflow-y: auto; padding: 0;"></div>
+        </div>
+    `;
     
-    // Clear and render only archived campaigns
-    tbody.innerHTML = '';
+    document.body.appendChild(modal);
+    loadArchivedCampaignsList();
+}
+
+// Load archived campaigns list
+async function loadArchivedCampaignsList() {
+    const container = document.getElementById('archivedCampaignsList');
+    if (!container) return;
     
-    archivedCampaigns.forEach(c => {
-        const tr = document.createElement('tr');
-        tr.style.opacity = '0.7';
+    container.innerHTML = '<p style="text-align: center; padding: 24px; color: #64748b;">Loading...</p>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns?status=archived', {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        const archivedCampaigns = (data.data || []).filter(c => (c.status || '').toLowerCase() === 'archived');
         
-        const formatDate = (d) => {
-            if (!d) return '—';
-            try {
-                const date = new Date(d);
-                if (isNaN(date.getTime())) return d;
-                return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
-            } catch (e) {
-                return d;
-            }
-        };
+        if (archivedCampaigns.length === 0) {
+            container.innerHTML = '<p style="text-align: center; padding: 24px; color: #64748b;">No archived campaigns found.</p>';
+            return;
+        }
         
-        const statusBadge = `<span class="badge archived" style="background: #f3f4f6; color: #6b7280;">Archived</span>`;
-        
-        tr.innerHTML = `
-            <td>${c.id}</td>
-            <td><strong>${c.title || 'Untitled'}</strong></td>
-            <td>${c.category || '—'}</td>
-            <td>${c.geographic_scope || '—'}</td>
-            <td>${statusBadge}</td>
-            <td>${formatDate(c.start_date)}</td>
-            <td>${formatDate(c.end_date)}</td>
-            <td>${c.budget ? '₱' + parseFloat(c.budget).toLocaleString() : '—'}</td>
-            <td>${c.assigned_staff || '—'}</td>
-            <td>${formatDate(c.created_at)}</td>
-            <td>${c.created_by_name || '—'}</td>
-            <td>
-                <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0;">View</button>
-            </td>
+        let html = `
+            <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8fafc;">
+                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0;">ID</th>
+                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0;">Title</th>
+                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0;">Category</th>
+                        <th style="padding: 12px 16px; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
         `;
-        tbody.appendChild(tr);
-    });
+        
+        archivedCampaigns.forEach(c => {
+            html += `
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px 16px; color: #64748b;">${c.id}</td>
+                    <td style="padding: 12px 16px; font-weight: 500; color: #0f172a;">${c.title || 'Untitled'}</td>
+                    <td style="padding: 12px 16px; color: #64748b;">${c.category || '—'}</td>
+                    <td style="padding: 12px 16px;">
+                        <button class="btn btn-success" onclick="restoreArchivedCampaign(${c.id})" style="padding: 4px 10px; font-size: 11px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 4px;">
+                            <i class="fas fa-undo"></i> Restore
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteArchivedCampaignPermanently(${c.id})" style="padding: 4px 10px; font-size: 11px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    } catch (err) {
+        container.innerHTML = '<p style="text-align: center; padding: 24px; color: #dc2626;">Error loading archived campaigns: ' + err.message + '</p>';
+    }
+}
+
+// Close archived campaigns modal
+function closeArchivedCampaignsModal() {
+    const modal = document.getElementById('archivedCampaignsModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Restore archived campaign
+async function restoreArchivedCampaign(campaignId) {
+    if (!confirm('Are you sure you want to restore this campaign?')) return;
     
-    // Show message about viewing archived campaigns
-    alert(`Showing ${archivedCampaigns.length} archived campaign(s). Click "Refresh" to return to all campaigns view.`);
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
+            method: 'PUT',
+            headers: {
+                'Authorization': 'Bearer ' + getToken(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: 'draft' })
+        });
+        
+        if (!res.ok) {
+            const data = await res.json();
+            alert('Error: ' + (data.error || 'Failed to restore campaign'));
+            return;
+        }
+        
+        alert('Campaign restored successfully!');
+        loadArchivedCampaignsList();
+        refreshAllCampaignViews();
+    } catch (err) {
+        alert('Failed to restore campaign: ' + err.message);
+    }
+}
+
+// Delete archived campaign permanently
+async function deleteArchivedCampaignPermanently(campaignId) {
+    if (!confirm('Are you sure you want to PERMANENTLY delete this campaign? This action cannot be undone.')) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        
+        if (!res.ok) {
+            const data = await res.json();
+            alert('Error: ' + (data.error || 'Failed to delete campaign'));
+            return;
+        }
+        
+        alert('Campaign deleted permanently!');
+        // Reload the archived list - do NOT close the modal
+        loadArchivedCampaignsList();
+        refreshAllCampaignViews();
+    } catch (err) {
+        alert('Failed to delete campaign: ' + err.message);
+    }
 }
 
 // Segments

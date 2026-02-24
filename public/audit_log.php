@@ -266,12 +266,14 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         .user-info {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            justify-content: flex-start;
         }
         
         .user-avatar {
             width: 36px;
             height: 36px;
+            min-width: 36px;
             border-radius: 10px;
             background: linear-gradient(135deg, #4c8a89 0%, #3d7170 100%);
             color: white;
@@ -280,9 +282,13 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             justify-content: center;
             font-weight: 700;
             font-size: 14px;
+            flex-shrink: 0;
         }
         
         .user-details {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
             line-height: 1.3;
             text-align: left;
         }
@@ -291,12 +297,14 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             font-weight: 600;
             color: #0f172a;
             text-align: left;
+            white-space: nowrap;
         }
         
         .user-role {
             font-size: 12px;
             color: #64748b;
             text-align: left;
+            white-space: nowrap;
         }
         
         .timestamp {

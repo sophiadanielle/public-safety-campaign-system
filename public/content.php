@@ -604,11 +604,17 @@ try {
                 <button onclick="closeUploadContentModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; line-height: 1;">&times;</button>
             </div>
             <p style="color: #64748b; margin: 0 0 16px 0; font-size: 14px;">Upload campaign materials for internal LGU review and approval workflow</p>
+            
+            <!-- Cloudinary Status Indicator -->
+            <div id="cloudinaryStatus" style="margin-bottom: 16px; padding: 10px 14px; border-radius: 8px; font-size: 13px; display: none;">
+                <i class="fas fa-cloud"></i> <span id="cloudinaryStatusText">Checking storage...</span>
+            </div>
+            
         <form id="uploadForm" class="form-grid" enctype="multipart/form-data">
             <div class="form-field">
                 <label>File *</label>
-                <input type="file" name="file" required>
-                <small style="color: #94a3b8; font-size: 12px; margin-top: 4px; display: block;">Upload campaign material file (poster, video, guideline, etc.)</small>
+                <input type="file" name="file" required accept="image/*,video/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+                <small style="color: #94a3b8; font-size: 12px; margin-top: 4px; display: block;">Upload campaign material file (poster, video, guideline, etc.) - Max 100MB</small>
             </div>
             <div class="form-field">
                 <label>Title *</label>
@@ -3417,9 +3423,11 @@ async function editUsageRecord(recordId) {
         modal.id = 'editUsageModal';
         modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
         
-        // Fetch campaigns and events for dropdowns
+        // Fetch campaigns, events, content items, and tags for dropdowns
         let campaignOptions = '<option value="">-- Select Campaign --</option>';
         let eventOptions = '<option value="">-- Select Event --</option>';
+        let contentOptions = '<option value="">-- Select Content --</option>';
+        let tagOptions = '<option value="">-- Select Tag --</option>';
         
         try {
             const campRes = await fetch(apiBase + '/api/v1/campaigns', { headers: { 'Authorization': 'Bearer ' + token } });
@@ -3441,13 +3449,39 @@ async function editUsageRecord(recordId) {
             });
         } catch (e) { console.error('Failed to load events for edit modal'); }
         
+        try {
+            const contentRes = await fetch(apiBase + '/api/v1/content', { headers: { 'Authorization': 'Bearer ' + token } });
+            const contentData = await contentRes.json();
+            const contentItems = contentData.data || [];
+            contentItems.forEach(c => {
+                const selected = record.content_id == c.id ? 'selected' : '';
+                contentOptions += `<option value="${c.id}" ${selected}>${c.title}</option>`;
+            });
+        } catch (e) { console.error('Failed to load content items for edit modal'); }
+        
+        try {
+            const tagRes = await fetch(apiBase + '/api/v1/content/tags', { headers: { 'Authorization': 'Bearer ' + token } });
+            const tagData = await tagRes.json();
+            const tags = tagData.data || tagData.tags || [];
+            tags.forEach(t => {
+                const selected = record.tag_id == t.id ? 'selected' : '';
+                tagOptions += `<option value="${t.id}" ${selected}>${t.name || t.tag_name}</option>`;
+            });
+        } catch (e) { console.error('Failed to load tags for edit modal'); }
+        
         modal.innerHTML = `
-            <div style="background: white; border-radius: 12px; max-width: 500px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+            <div style="background: white; border-radius: 12px; max-width: 500px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h3 style="margin: 0; color: #0f172a;">Edit Usage Record</h3>
                     <button onclick="document.getElementById('editUsageModal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
                 </div>
                 <form id="editUsageForm">
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #374151;">Content</label>
+                        <select id="editUsageContent" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
+                            ${contentOptions}
+                        </select>
+                    </div>
                     <div style="margin-bottom: 16px;">
                         <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #374151;">Campaign</label>
                         <select id="editUsageCampaign" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
@@ -3458,6 +3492,12 @@ async function editUsageRecord(recordId) {
                         <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #374151;">Event</label>
                         <select id="editUsageEvent" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
                             ${eventOptions}
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #374151;">Tag</label>
+                        <select id="editUsageTag" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
+                            ${tagOptions}
                         </select>
                     </div>
                     <div style="margin-bottom: 16px;">
@@ -3478,8 +3518,10 @@ async function editUsageRecord(recordId) {
         document.getElementById('editUsageForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const updateData = {
+                content_id: document.getElementById('editUsageContent').value || null,
                 campaign_id: document.getElementById('editUsageCampaign').value || null,
                 event_id: document.getElementById('editUsageEvent').value || null,
+                tag_id: document.getElementById('editUsageTag').value || null,
                 usage_context: document.getElementById('editUsageContext').value
             };
             
@@ -3672,6 +3714,42 @@ function openUploadContentModal() {
     if (form) form.reset();
     const statusEl = document.getElementById('uploadStatus');
     if (statusEl) statusEl.textContent = '';
+    
+    // Check Cloudinary status
+    checkCloudinaryStatus();
+}
+
+// Check if Cloudinary is configured
+async function checkCloudinaryStatus() {
+    const statusDiv = document.getElementById('cloudinaryStatus');
+    const statusText = document.getElementById('cloudinaryStatusText');
+    if (!statusDiv || !statusText) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/storage-status', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        
+        statusDiv.style.display = 'block';
+        if (data.cloudinary_enabled) {
+            statusDiv.style.background = '#dcfce7';
+            statusDiv.style.color = '#166534';
+            statusDiv.style.border = '1px solid #86efac';
+            statusText.textContent = 'Cloud storage enabled (Cloudinary) - Files will be stored in the cloud';
+        } else {
+            statusDiv.style.background = '#fef3c7';
+            statusDiv.style.color = '#92400e';
+            statusDiv.style.border = '1px solid #fcd34d';
+            statusText.textContent = 'Local storage - Files will be stored on server';
+        }
+    } catch (err) {
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = '#f1f5f9';
+        statusDiv.style.color = '#64748b';
+        statusDiv.style.border = '1px solid #e2e8f0';
+        statusText.textContent = 'Local storage - Files will be stored on server';
+    }
 }
 
 function closeUploadContentModal() {

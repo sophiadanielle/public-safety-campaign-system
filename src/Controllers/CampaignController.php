@@ -1319,14 +1319,31 @@ class CampaignController
     private function logAudit(?int $userId, string $entityType, string $action, int $entityId, array $details = []): void
     {
         try {
-            $check = $this->pdo->query("SHOW TABLES LIKE 'audit_logs'");
-            if (!$check || $check->rowCount() === 0) {
-                return;
-            }
+            // Create campaign_department_audit_logs table if it doesn't exist
+            $this->pdo->exec("
+                CREATE TABLE IF NOT EXISTS `campaign_department_audit_logs` (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT UNSIGNED NULL,
+                    action VARCHAR(150) NOT NULL,
+                    entity_type VARCHAR(50) NOT NULL,
+                    entity_id INT UNSIGNED NULL,
+                    details TEXT NULL,
+                    metadata JSON NULL,
+                    ip_address VARCHAR(45) NULL,
+                    user_agent TEXT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_user_id (user_id),
+                    INDEX idx_entity (entity_type, entity_id),
+                    INDEX idx_created_at (created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
 
             $stmt = $this->pdo->prepare('
-                INSERT INTO audit_logs (user_id, entity_type, action, entity_id, details, created_at)
-                VALUES (:user_id, :entity_type, :action, :entity_id, :details, NOW())
+                INSERT INTO campaign_department_audit_logs (user_id, entity_type, action, entity_id, details, ip_address, user_agent, created_at)
+                VALUES (:user_id, :entity_type, :action, :entity_id, :details, :ip_address, :user_agent, NOW())
             ');
             $stmt->execute([
                 'user_id' => $userId,
@@ -1334,6 +1351,8 @@ class CampaignController
                 'action' => $action,
                 'entity_id' => $entityId,
                 'details' => json_encode($details),
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
             ]);
         } catch (\Throwable $e) {
             // Fail silently - audit logging should not break main operations
