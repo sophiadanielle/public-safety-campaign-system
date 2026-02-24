@@ -89,6 +89,10 @@ require_once __DIR__ . '/../../header/includes/path_helper.php';
             <i class="fas fa-users-cog"></i>
             <span>User Management</span>
         </a>
+        <a href="<?php echo $publicPath; ?>/audit_log.php" class="dropdown-item">
+            <i class="fas fa-history"></i>
+            <span>Audit Log</span>
+        </a>
         <a href="<?php echo $publicPath; ?>/settings.php" class="dropdown-item">
             <i class="fas fa-cog"></i>
             <span>Settings</span>

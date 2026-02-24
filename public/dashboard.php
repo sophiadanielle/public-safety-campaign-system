@@ -1299,18 +1299,32 @@ function updateCampaignSnapshot(snapshot) {
     }
     
     const statusData = snapshot.by_status || {};
+    
+    // Define vibrant colors for each status
+    const statusColors = {
+        'draft': '#94a3b8',
+        'pending': '#f59e0b',
+        'approved': '#3b82f6',
+        'scheduled': '#8b5cf6',
+        'ongoing': '#10b981',
+        'active': '#22c55e',
+        'completed': '#6366f1',
+        'archived': '#64748b',
+        'cancelled': '#ef4444'
+    };
+    
+    const labels = Object.keys(statusData);
+    const colors = labels.map(label => statusColors[label.toLowerCase()] || '#4c8a89');
+    
     campaignStatusChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: Object.keys(statusData),
+            labels: labels,
             datasets: [{
                 data: Object.values(statusData),
-                backgroundColor: [
-                    '#f1f5f9', // draft
-                    '#dbeafe', // scheduled
-                    '#dcfce7', // active
-                    '#e0e7ff', // completed
-                ],
+                backgroundColor: colors,
+                borderWidth: 2,
+                borderColor: '#ffffff',
             }]
         },
         options: {
@@ -1319,6 +1333,15 @@ function updateCampaignSnapshot(snapshot) {
             plugins: {
                 legend: {
                     position: 'bottom',
+                    labels: {
+                        padding: 15,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: {
+                            size: 11,
+                            weight: '600'
+                        }
+                    }
                 }
             }
         }

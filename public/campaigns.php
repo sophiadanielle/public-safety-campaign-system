@@ -1484,19 +1484,39 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         
         <!-- Calendar View Content -->
         <div id="campaignCalendarView" style="display: none;">
-            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
-                Calendar view of campaign schedules. Click on any campaign event to view details. Events from the <a href="events.php" style="color: #4c8a89; font-weight: 600;">Events module</a> are integrated to show potential conflicts.
-            </p>
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
-                <span style="font-size: 13px; color: #64748b;"><i class="fas fa-info-circle"></i> Status Legend:</span>
-                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #9ca3af; border-radius: 2px;"></span> Draft</span>
-                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #f59e0b; border-radius: 2px;"></span> Pending</span>
-                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #3b82f6; border-radius: 2px;"></span> Approved</span>
-                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #8b5cf6; border-radius: 2px;"></span> Scheduled</span>
-                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #10b981; border-radius: 2px;"></span> Active/Ongoing</span>
-                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #059669; border-radius: 2px;"></span> Completed</span>
-                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #6b7280; border-radius: 2px;"></span> Archived</span>
-                <span style="display: flex; align-items: center; gap: 4px; font-size: 12px;"><span style="width: 12px; height: 12px; background: #ef4444; border-radius: 2px;"></span> Cancelled</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                <p style="margin: 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+                    Calendar view of campaign schedules. Click on any campaign event to view details. Events from the <a href="events.php" style="color: #4c8a89; font-weight: 600;">Events module</a> are integrated to show potential conflicts.
+                </p>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <select id="calendarStatusFilterInline" onchange="renderInlineCalendar()" style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; background: white;">
+                        <option value="">All Statuses</option>
+                        <option value="draft">Draft</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="active">Active</option>
+                        <option value="ongoing">Ongoing</option>
+                        <option value="completed">Completed</option>
+                        <option value="archived">Archived</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="renderInlineCalendar()" style="display: flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <!-- Status Legend -->
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <span style="font-weight: 600; color: #475569; font-size: 13px; display: flex; align-items: center; gap: 6px;"><i class="fas fa-info-circle"></i> Status Legend:</span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);"></span> Draft</span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);"></span> Pending</span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);"></span> Approved</span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);"></span> Scheduled</span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);"></span> Active/Ongoing</span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);"></span> Completed</span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #78716c 0%, #57534e 100%);"></span> Archived</span>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);"></span> Cancelled</span>
             </div>
             <div id="calendarInline" style="min-height: 500px;"></div>
         </div><!-- End Calendar View -->
@@ -1760,86 +1780,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     </section>
     <?php endif; // End RBAC: Hide AutoML section for Viewer ?>
 
-    <!-- Calendar View (Replaced Gantt Chart) -->
-    <section class="card" id="timeline-section">
-        <div class="section-header" style="margin-bottom: 16px;">
-            <h3 class="section-title analytics-accent">Campaign Calendar</h3>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <select id="calendarStatusFilter" onchange="if(calendar) calendar.refetchEvents();" style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px; background: white;">
-                    <option value="">All Statuses</option>
-                    <option value="draft">Draft</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="active">Active</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="completed">Completed</option>
-                    <option value="archived">Archived</option>
-                    <option value="cancelled">Cancelled</option>
-                </select>
-                <button class="btn btn-secondary" onclick="if(calendar) calendar.refetchEvents();" style="display: flex; align-items: center; gap: 6px;">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
-            </div>
-        </div>
-        <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
-            Calendar view of campaign schedules. Click on any campaign event to view details. Events from the <strong>Events module</strong> are integrated to show potential conflicts.
-        </p>
-        <!-- Status Legend -->
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
-            <span style="font-weight: 600; color: #475569; font-size: 13px; display: flex; align-items: center; gap: 6px;"><i class="fas fa-info-circle"></i> Status Legend:</span>
-            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);"></span> Draft</span>
-            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);"></span> Pending</span>
-            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);"></span> Approved</span>
-            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);"></span> Scheduled</span>
-            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);"></span> Active/Ongoing</span>
-            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);"></span> Completed</span>
-            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #78716c 0%, #57534e 100%);"></span> Archived</span>
-            <span style="display: flex; align-items: center; gap: 6px; font-size: 12px;"><span style="width: 14px; height: 14px; border-radius: 4px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);"></span> Cancelled</span>
-        </div>
-        <div id="calendar"></div>
-    </section>
-
-    <!-- Resource Allocation -->
-    <section class="card" id="resources-section">
-        <div class="section-header" style="margin-bottom: 20px;">
-            <h2 class="section-title analytics-accent">Resource Allocation</h2>
-            <button class="btn btn-secondary" onclick="loadResources()" style="display: flex; align-items: center; gap: 6px;">
-                <i class="fas fa-sync-alt"></i> Refresh
-            </button>
-        </div>
-        <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
-            Overview of allocated resources across all campaigns. Budget and staff assignments are tracked and integrated with campaign planning.
-        </p>
-        <div class="resource-grid" id="resourceGrid">
-            <div class="resource-card">
-                <h4 style="display: flex; align-items: center; gap: 8px; justify-content: space-between;">
-                    <span>💰 Total Budget</span>
-                    <button type="button" id="toggleTotalBudgetBtn" onclick="toggleTotalBudgetVisibility()" style="background: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;" title="Show/Hide Total Budget">
-                        <i class="fas fa-eye-slash" id="totalBudgetEyeIcon"></i>
-                    </button>
-                </h4>
-                <div class="resource-value" id="totalBudget" style="display: none;">₱0.00</div>
-                <div class="resource-value" id="totalBudgetHidden" style="font-size: 24px; font-weight: 700; color: #64748b;">••••••</div>
-                <div style="margin-top: 8px; font-size: 12px; color: #64748b;" id="budgetBreakdown">All campaigns</div>
-            </div>
-            <div class="resource-card">
-                <h4>👥 Total Staff</h4>
-                <div class="resource-value" id="totalStaff">0</div>
-                <div style="margin-top: 8px; font-size: 12px; color: #64748b;" id="staffBreakdown">Assigned personnel</div>
-            </div>
-            <div class="resource-card">
-                <h4>🚀 Active Campaigns</h4>
-                <div class="resource-value" id="activeCampaigns">0</div>
-                <div style="margin-top: 8px; font-size: 12px; color: #64748b;" id="campaignBreakdown">Ongoing/Approved</div>
-            </div>
-            <div class="resource-card">
-                <h4>📦 Materials Allocated</h4>
-                <div class="resource-value" id="materialsUsed" style="font-size: 18px; line-height: 1.4;">-</div>
-                <div style="margin-top: 8px; font-size: 12px; color: #64748b;">Inventory summary</div>
-            </div>
-        </div>
-    </section>
+    <!-- Campaign Calendar and Resource Allocation sections removed - now integrated into All Campaigns switch view -->
 
     <!-- Schedule Management -->
     <section class="card" id="schedule-management-section" style="display:none;">
@@ -4609,21 +4550,27 @@ async function renderInlineCalendar() {
     container.innerHTML = '<p style="text-align:center; color:#64748b; padding:40px;"><i class="fas fa-spinner fa-spin"></i> Loading calendar...</p>';
     
     try {
+        const statusFilter = document.getElementById('calendarStatusFilterInline')?.value || '';
         const res = await fetch(apiBase + '/api/v1/campaigns', {
             headers: { 'Authorization': 'Bearer ' + getToken() }
         });
         const data = await res.json();
-        const campaigns = data.data || [];
+        let campaigns = data.data || [];
+        
+        // Apply status filter
+        if (statusFilter) {
+            campaigns = campaigns.filter(c => c.status === statusFilter);
+        }
         
         const statusColors = {
             'draft': '#9ca3af',
             'pending': '#f59e0b',
             'approved': '#3b82f6',
-            'scheduled': '#8b5cf6',
-            'ongoing': '#10b981',
-            'active': '#10b981',
-            'completed': '#059669',
-            'archived': '#6b7280',
+            'scheduled': '#06b6d4',
+            'ongoing': '#22c55e',
+            'active': '#22c55e',
+            'completed': '#a855f7',
+            'archived': '#78716c',
             'cancelled': '#ef4444'
         };
         
@@ -4643,6 +4590,10 @@ async function renderInlineCalendar() {
         }).filter(e => e.start);
         
         container.innerHTML = '';
+        
+        if (inlineCalendar) {
+            inlineCalendar.destroy();
+        }
         
         inlineCalendar = new FullCalendar.Calendar(container, {
             initialView: 'dayGridMonth',

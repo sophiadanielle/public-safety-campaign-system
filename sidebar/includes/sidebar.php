@@ -209,8 +209,6 @@
                                     ['label' => 'All Campaigns', 'href' => '#list-section', 'icon' => 'fa-list'],
                                     ['label' => 'Financial & Budgeting', 'href' => '#budgeting-section', 'icon' => 'fa-coins'],
                                     ['label' => 'AI-Powered Deployment Optimization', 'href' => '#automl-section', 'icon' => 'fa-robot'],
-                                    ['label' => 'Campaign Calendar', 'href' => '#timeline-section', 'icon' => 'fa-calendar-alt'],
-                                    ['label' => 'Resource Allocation', 'href' => '#resources-section', 'icon' => 'fa-cubes'],
                                 ]
                             ],
                             'content.php' => [

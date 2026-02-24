@@ -1,11 +1,11 @@
 name,sector,barangay,zone,purok,contact
-Juan Dela Cruz,Residential,Barangay 1,Zone 1,Purok 1,09171234567
-Maria Santos,Commercial,Barangay 2,Zone 2,Purok 2,09181234568
-Pedro Garcia,Industrial,Barangay 1,Zone 3,Purok 3,09191234569
-Ana Reyes,Residential,Barangay 3,Zone 1,Purok 4,09201234570
-Jose Mendoza,Agricultural,Barangay 2,Zone 2,Purok 5,09211234571
-Rosa Fernandez,Residential,Barangay 1,Zone 4,Purok 1,09221234572
-Carlos Bautista,Commercial,Barangay 3,Zone 1,Purok 2,09231234573
-Elena Cruz,Residential,Barangay 2,Zone 3,Purok 3,09241234574
-Miguel Torres,Industrial,Barangay 1,Zone 2,Purok 4,09251234575
-Sofia Ramos,Residential,Barangay 3,Zone 4,Purok 5,09261234576
+Juan Dela Cruz,Households,Barangay Batasan Hills,Zone 1,Purok 1,09171234567
+Maria Santos,Youth,Barangay Commonwealth,Zone 2,Purok 2,09181234568
+Pedro Garcia,Senior Citizens,Barangay Holy Spirit,Zone 3,Purok 3,09191234569
+Ana Reyes,Households,Barangay Payatas,Zone 1,Purok 4,09201234570
+Jose Mendoza,Schools,Barangay Bagong Silangan,Zone 2,Purok 5,09211234571
+Rosa Fernandez,Households,Barangay Batasan Hills,Zone 4,Purok 1,09221234572
+Carlos Bautista,NGOs,Barangay Commonwealth,Zone 1,Purok 2,09231234573
+Elena Cruz,Pregnant Women,Barangay Holy Spirit,Zone 3,Purok 3,09241234574
+Miguel Torres,Person with Disabilities,Barangay Payatas,Zone 2,Purok 4,09251234575
+Sofia Ramos,Households,Barangay Bagong Silangan,Zone 4,Purok 5,09261234576

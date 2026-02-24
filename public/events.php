@@ -3160,7 +3160,7 @@ async function openViewEventModal(eventId) {
                     </div>
                     <div style="background:#f8fafc; padding:12px; border-radius:8px;">
                         <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Date & Time</strong>
-                        <p style="margin:4px 0 0 0; font-size:14px;">${e.date || 'TBD'} ${formatTimeAMPM(e.start_time)} ${e.end_time ? '- ' + formatTimeAMPM(e.end_time) : ''}</p>
+                        <p style="margin:4px 0 0 0; font-size:14px;">${e.date || 'TBD'} ${e.start_time || ''} ${e.end_time ? '- ' + e.end_time : ''}</p>
                     </div>
                     <div style="background:#f8fafc; padding:12px; border-radius:8px;">
                         <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Venue</strong>
