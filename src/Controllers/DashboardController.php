@@ -96,22 +96,19 @@ class DashboardController
         $feedbackResponses = 0;
 
         try {
-            // Active campaigns (scheduled or active status)
+            // Active campaigns = Draft + Pending + Approved status (from All Campaigns list)
             $activeCampaignsQuery = "
                 SELECT COUNT(*) 
                 FROM campaign_department_campaigns 
-                WHERE status IN ('scheduled', 'active')
+                WHERE status IN ('draft', 'pending', 'approved')
             ";
-            if ($isResident) {
-                $activeCampaignsQuery .= " AND status = 'active'";
-            }
             $activeCampaigns = (int) $this->pdo->query($activeCampaignsQuery)->fetchColumn();
         } catch (\Exception $e) {
             error_log('Error getting active campaigns: ' . $e->getMessage());
         }
 
         try {
-            // Scheduled campaigns
+            // Scheduled campaigns = only 'scheduled' status
             $scheduledCampaignsQuery = "
                 SELECT COUNT(*) 
                 FROM campaign_department_campaigns 
@@ -123,7 +120,7 @@ class DashboardController
         }
 
         try {
-            // Upcoming events - count only events with 'ongoing' status
+            // Upcoming events = only 'ongoing' status from events list
             $upcomingEventsQuery = "
                 SELECT COUNT(*) 
                 FROM `campaign_department_events` 
@@ -143,22 +140,20 @@ class DashboardController
         }
 
         try {
-            // Partner organizations
-            $partnersQuery = "SELECT COUNT(*) FROM partners";
+            // Partner organizations = count from campaign_department_partners (All Partners)
+            // Exclude archived partners
+            $partnersQuery = "SELECT COUNT(*) FROM `campaign_department_partners` WHERE status != 'archived' OR status IS NULL";
             $partnerOrgs = (int) $this->pdo->query($partnersQuery)->fetchColumn();
         } catch (\Exception $e) {
             error_log('Error getting partners: ' . $e->getMessage());
         }
 
-        // Feedback responses (from surveys)
-        $feedbackQuery = "
-            SELECT COUNT(DISTINCT survey_id) 
-            FROM survey_responses
-        ";
-        $feedbackResponses = 0;
+        // Feedback responses = count from survey responses (Survey Responses tab)
         try {
+            $feedbackQuery = "SELECT COUNT(*) FROM `campaign_department_survey_responses`";
             $feedbackResponses = (int) $this->pdo->query($feedbackQuery)->fetchColumn();
         } catch (\Exception $e) {
+            error_log('Error getting feedback responses: ' . $e->getMessage());
             // Table might not exist yet
         }
 
