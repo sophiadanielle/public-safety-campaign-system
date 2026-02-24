@@ -105,7 +105,7 @@ async function showArchivedCampaigns() {
         
         const data = await res.json();
         if (data.error) {
-            await customAlert('Error loading archived campaigns: ' + data.error, 'Error');
+            showToast('Error loading archived campaigns: ' + data.error, 'error');
             return;
         }
         
@@ -189,7 +189,7 @@ async function showArchivedCampaigns() {
             }
         });
     } catch (err) {
-        await customAlert('Failed to load archived campaigns: ' + err.message, 'Error');
+        showToast('Failed to load archived campaigns: ' + err.message, 'error');
     }
 }
 
@@ -215,17 +215,17 @@ async function restoreCampaign(campaignId) {
         
         const data = await res.json();
         if (!res.ok) {
-            await customAlert('Error: ' + (data.error || 'Failed to restore campaign'), 'Error');
+            showToast('Error: ' + (data.error || 'Failed to restore campaign'), 'error');
             return;
         }
         
-        await customAlert('Campaign restored successfully!', 'Success');
+        showToast('Campaign restored successfully!', 'success');
         document.getElementById('archivedCampaignsModal').remove();
         if (typeof loadCampaigns === 'function') {
             loadCampaigns();
         }
     } catch (err) {
-        await customAlert('Failed to restore campaign: ' + err.message, 'Error');
+        showToast('Failed to restore campaign: ' + err.message, 'error');
     }
 }
 
@@ -249,14 +249,14 @@ async function deleteCampaignPermanent(campaignId) {
         
         const data = await res.json();
         if (!res.ok) {
-            await customAlert('Error: ' + (data.error || 'Failed to delete campaign'), 'Error');
+            showToast('Error: ' + (data.error || 'Failed to delete campaign'), 'error');
             return;
         }
         
-        await customAlert('Campaign deleted permanently!', 'Success');
+        showToast('Campaign deleted permanently!', 'success');
         showArchivedCampaigns(); // Refresh the modal
     } catch (err) {
-        await customAlert('Failed to delete campaign: ' + err.message, 'Error');
+        showToast('Failed to delete campaign: ' + err.message, 'error');
     }
 }
 
@@ -282,16 +282,16 @@ async function archiveCampaign(campaignId) {
         
         const data = await res.json();
         if (!res.ok) {
-            await customAlert('Error: ' + (data.error || 'Failed to archive campaign'), 'Error');
+            showToast('Error: ' + (data.error || 'Failed to archive campaign'), 'error');
             return;
         }
         
-        await customAlert('Campaign archived successfully!', 'Success');
+        showToast('Campaign archived successfully!', 'success');
         if (typeof loadCampaigns === 'function') {
             loadCampaigns();
         }
     } catch (err) {
-        await customAlert('Failed to archive campaign: ' + err.message, 'Error');
+        showToast('Failed to archive campaign: ' + err.message, 'error');
     }
 }
 
