@@ -99,10 +99,26 @@ try {
             $results[] = 'Added user_agent column to audit_logs';
         }
         
-        // Add indexes if they don't exist (ignore errors if they already exist)
-        @$mysqli->query("ALTER TABLE audit_logs ADD INDEX idx_user_id (user_id)");
-        @$mysqli->query("ALTER TABLE audit_logs ADD INDEX idx_entity (entity_type, entity_id)");
-        @$mysqli->query("ALTER TABLE audit_logs ADD INDEX idx_created_at (created_at)");
+        // Check and add indexes if they don't exist
+        $indexResult = $mysqli->query("SHOW INDEX FROM audit_logs");
+        $existingIndexes = [];
+        if ($indexResult) {
+            while ($row = $indexResult->fetch_assoc()) {
+                $existingIndexes[] = $row['Key_name'];
+            }
+        }
+        
+        if (!in_array('idx_user_id', $existingIndexes)) {
+            $mysqli->query("ALTER TABLE audit_logs ADD INDEX idx_user_id (user_id)");
+        }
+        
+        if (!in_array('idx_entity', $existingIndexes)) {
+            $mysqli->query("ALTER TABLE audit_logs ADD INDEX idx_entity (entity_type, entity_id)");
+        }
+        
+        if (!in_array('idx_created_at', $existingIndexes)) {
+            $mysqli->query("ALTER TABLE audit_logs ADD INDEX idx_created_at (created_at)");
+        }
         
         $results[] = 'Updated audit_logs table structure';
     }
@@ -111,7 +127,7 @@ try {
     $checkTable2 = $mysqli->query("SHOW TABLES LIKE 'campaign_department_audit_logs'");
     
     if ($checkTable2 && $checkTable2->num_rows === 0) {
-        // Create the campaign_department_audit_logs table as well
+        // Create the campaign_department_audit_logs table
         if (!$mysqli->query("
             CREATE TABLE IF NOT EXISTS `campaign_department_audit_logs` (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -132,6 +148,32 @@ try {
             throw new Exception($mysqli->error);
         }
         $results[] = 'Created campaign_department_audit_logs table';
+    } else {
+        // Table exists, check for missing columns
+        $result = $mysqli->query("SHOW COLUMNS FROM campaign_department_audit_logs");
+        $columns = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $columns[] = $row['Field'];
+            }
+        }
+        
+        // Add missing columns
+        if (!in_array('details', $columns)) {
+            if (!$mysqli->query("ALTER TABLE campaign_department_audit_logs ADD COLUMN details TEXT NULL")) {
+                throw new Exception($mysqli->error);
+            }
+            $results[] = 'Added details column to campaign_department_audit_logs';
+        }
+        
+        if (!in_array('metadata', $columns)) {
+            if (!$mysqli->query("ALTER TABLE campaign_department_audit_logs ADD COLUMN metadata JSON NULL")) {
+                throw new Exception($mysqli->error);
+            }
+            $results[] = 'Added metadata column to campaign_department_audit_logs';
+        }
+        
+        $results[] = 'Updated campaign_department_audit_logs table structure';
     }
     
     // Count existing audit logs
