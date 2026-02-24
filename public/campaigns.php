@@ -7490,7 +7490,7 @@ async function deleteArchivedCampaignPermanently(campaignId) {
         
         showToast('Campaign deleted permanently!', 'success');
         await loadArchivedCampaignsList();
-        refreshAllCampaignViews();
+        setTimeout(() => refreshAllCampaignViews(), 100);
     } catch (err) {
         showToast('Failed to delete campaign: ' + err.message, 'error');
     }

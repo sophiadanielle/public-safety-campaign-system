@@ -249,6 +249,7 @@ class EventController
                 e.linked_campaign_id,
                 e.hazard_focus,
                 e.target_audience_profile_id,
+                a.segment_name as target_audience,
                 e.transport_requirements,
                 e.trainer_requirements,
                 e.equipment_requirements,
@@ -260,6 +261,7 @@ class EventController
                 c.title as campaign_title
             FROM `campaign_department_events` e
             LEFT JOIN `campaign_department_campaigns` c ON c.id = e.linked_campaign_id
+            LEFT JOIN `campaign_department_audience_segments` a ON a.id = e.target_audience_profile_id
             WHERE e.id = :id
         ');
         $stmt->execute(['id' => $eventId]);
