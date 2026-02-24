@@ -47,7 +47,7 @@ try {
         }
         $results[] = 'Created audit_logs table';
     } else {
-        // Check if details column exists
+        // Table exists, check for missing columns
         $result = $mysqli->query("SHOW COLUMNS FROM audit_logs");
         $columns = [];
         if ($result) {
@@ -56,19 +56,55 @@ try {
             }
         }
         
+        // Add missing columns one by one
+        if (!in_array('entity_type', $columns)) {
+            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN entity_type VARCHAR(50) NULL")) {
+                throw new Exception($mysqli->error);
+            }
+            $results[] = 'Added entity_type column to audit_logs';
+        }
+        
+        if (!in_array('entity_id', $columns)) {
+            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN entity_id INT UNSIGNED NULL")) {
+                throw new Exception($mysqli->error);
+            }
+            $results[] = 'Added entity_id column to audit_logs';
+        }
+        
         if (!in_array('details', $columns)) {
-            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN details TEXT NULL AFTER entity_id")) {
+            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN details TEXT NULL")) {
                 throw new Exception($mysqli->error);
             }
             $results[] = 'Added details column to audit_logs';
         }
         
         if (!in_array('metadata', $columns)) {
-            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN metadata JSON NULL AFTER details")) {
+            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN metadata JSON NULL")) {
                 throw new Exception($mysqli->error);
             }
             $results[] = 'Added metadata column to audit_logs';
         }
+        
+        if (!in_array('ip_address', $columns)) {
+            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN ip_address VARCHAR(45) NULL")) {
+                throw new Exception($mysqli->error);
+            }
+            $results[] = 'Added ip_address column to audit_logs';
+        }
+        
+        if (!in_array('user_agent', $columns)) {
+            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN user_agent TEXT NULL")) {
+                throw new Exception($mysqli->error);
+            }
+            $results[] = 'Added user_agent column to audit_logs';
+        }
+        
+        // Add indexes if they don't exist (ignore errors if they already exist)
+        @$mysqli->query("ALTER TABLE audit_logs ADD INDEX idx_user_id (user_id)");
+        @$mysqli->query("ALTER TABLE audit_logs ADD INDEX idx_entity (entity_type, entity_id)");
+        @$mysqli->query("ALTER TABLE audit_logs ADD INDEX idx_created_at (created_at)");
+        
+        $results[] = 'Updated audit_logs table structure';
     }
     
     // Check if campaign_department_audit_logs table exists (alternative name)
