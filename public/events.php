@@ -3175,6 +3175,10 @@ async function openViewEventModal(eventId) {
                         <p style="margin:4px 0 0 0; font-size:14px;">${e.linked_campaign_id || 'None'}</p>
                     </div>
                     <div style="background:#f8fafc; padding:12px; border-radius:8px;">
+                        <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Target Audience</strong>
+                        <p style="margin:4px 0 0 0; font-size:14px;">${e.target_audience || 'N/A'}</p>
+                    </div>
+                    <div style="background:#f8fafc; padding:12px; border-radius:8px;">
                         <strong style="color:#64748b; font-size:11px; text-transform:uppercase;">Attendance</strong>
                         <p style="margin:4px 0 0 0; font-size:14px; font-weight:600;">${summary.total_attendance || 0}</p>
                     </div>
