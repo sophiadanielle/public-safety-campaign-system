@@ -7109,13 +7109,13 @@ async function approveCampaign(campaignId) {
 // Finalize Schedule (Captain only)
 async function finalizeSchedule(campaignId) {
     if (!canFinalizeSchedule()) {
-        await customAlert('Only Captain can finalize schedules.', 'Permission Denied');
+        showToast('Only Captain can finalize schedules.', 'error');
         return;
     }
     
     const campaign = allCampaigns.find(c => c.id === campaignId);
     if (!campaign) {
-        await customAlert('Campaign not found', 'Error');
+        showToast('Campaign not found', 'error');
         return;
     }
     
@@ -7148,15 +7148,15 @@ async function finalizeSchedule(campaignId) {
         
         const data = await res.json();
         if (!res.ok) {
-            await customAlert('Error: ' + (data.error || 'Failed to finalize schedule'), 'Error');
+            showToast('Error: ' + (data.error || 'Failed to finalize schedule'), 'error');
             return;
         }
         
-        await customAlert('Schedule finalized successfully! Status changed to Scheduled.', 'Success');
+        showToast('Schedule finalized successfully! Status changed to Scheduled.', 'success');
         // FIX: Use centralized refresh to ensure all views update
         refreshAllCampaignViews();
     } catch (err) {
-        await customAlert('Failed to finalize schedule: ' + err.message, 'Error');
+        showToast('Failed to finalize schedule: ' + err.message, 'error');
     }
 }
 
@@ -7292,18 +7292,18 @@ async function recommendApproval(campaignId) {
 // Close Campaign (Captain only - Approved/Ongoing → Completed)
 async function closeCampaign(campaignId) {
     if (!isCaptain() && !isAdmin()) {
-        await customAlert('Only Captain can close campaigns.', 'Permission Denied');
+        showToast('Only Captain can close campaigns.', 'error');
         return;
     }
     
     const campaign = allCampaigns.find(c => c.id === campaignId);
     if (!campaign) {
-        await customAlert('Campaign not found', 'Error');
+        showToast('Campaign not found', 'error');
         return;
     }
     
     if (campaign.status !== 'approved' && campaign.status !== 'ongoing' && campaign.status !== 'scheduled') {
-        await customAlert('Only Approved, Scheduled, or Ongoing campaigns can be closed.', 'Invalid Status');
+        showToast('Only Approved, Scheduled, or Ongoing campaigns can be closed.', 'error');
         return;
     }
     
@@ -7324,14 +7324,14 @@ async function closeCampaign(campaignId) {
         
         const data = await res.json();
         if (!res.ok) {
-            await customAlert('Error: ' + (data.error || 'Failed to close campaign'), 'Error');
+            showToast('Error: ' + (data.error || 'Failed to close campaign'), 'error');
             return;
         }
         
-        await customAlert('Campaign closed successfully!', 'Success');
+        showToast('Campaign closed successfully!', 'success');
         refreshAllCampaignViews();
     } catch (err) {
-        await customAlert('Failed to close campaign: ' + err.message, 'Error');
+        showToast('Failed to close campaign: ' + err.message, 'error');
     }
 }
 
