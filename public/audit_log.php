@@ -496,15 +496,21 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
             
             try {
                 // Fetch audit logs from API
+                console.log('Fetching audit logs from:', apiBase + '/api/v1/audit-logs');
                 const res = await fetch(apiBase + '/api/v1/audit-logs', {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 
+                console.log('Audit logs response status:', res.status);
+                
                 if (res.ok) {
                     const data = await res.json();
+                    console.log('Audit logs data:', data);
                     allAuditLogs = data.data || [];
+                    console.log('Total audit logs loaded:', allAuditLogs.length);
                 } else {
-                    // If API doesn't exist, show empty state
+                    const errorData = await res.json().catch(() => ({}));
+                    console.error('Audit logs API error:', res.status, errorData);
                     allAuditLogs = [];
                 }
                 

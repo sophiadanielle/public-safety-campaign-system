@@ -488,7 +488,7 @@ class SegmentController
         }
 
         $ins = $this->pdo->prepare('
-            INSERT INTO audience_members (
+            INSERT INTO campaign_department_audience_members (
                 segment_id, 
                 full_name, 
                 sector, 

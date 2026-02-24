@@ -4907,7 +4907,7 @@ function toggleBudgetVisibilityInline() {
                             <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
                                 <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">View</button>
                                 <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Edit</button>
-                                ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Archive</button>` : c.status === 'archived' ? '<span style="color: #9ca3af; font-size: 12px;">Archived</span>' : ''}
+                                ${c.status !== 'archived' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Archive</button>` : '<span style="color: #9ca3af; font-size: 12px;">Archived</span>'}
                             </div>
                             <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
                                 ${c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; background: #10b981; color: white; border: none; margin: 0; white-space: nowrap;">Approve</button>` : ''}
@@ -4924,7 +4924,7 @@ function toggleBudgetVisibilityInline() {
                             <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
                                 <button class="btn btn-secondary" onclick="viewCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">View</button>
                                 <button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Edit</button>
-                                ${c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Archive</button>` : ''}
+                                ${c.status !== 'archived' ? `<button class="btn btn-secondary" onclick="archiveCampaign(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Archive</button>` : '<span style="color: #9ca3af; font-size: 12px;">Archived</span>'}
                             </div>
                             <div style="display: flex; gap: 4px; flex-wrap: nowrap;">
                                 ${c.status === 'approved' ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 5px 10px; font-size: 12px; margin: 0; white-space: nowrap;">Finalize</button>` : ''}
@@ -5148,7 +5148,7 @@ function renderPaginatedCampaigns() {
                 ${!isViewer() && c.status === 'pending' ? `<button class="btn btn-success" onclick="approveCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Approve</button>` : ''}
                 ${!isViewer() && c.status === 'approved' ? `<button class="btn btn-primary" onclick="finalizeSchedule(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px;">Finalize</button>` : ''}
                 ${!isViewer() && (c.status === 'scheduled' || c.status === 'ongoing') ? `<button class="btn btn-success" onclick="closeCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #10b981; color: white; border: none;">Close</button>` : ''}
-                ${!isViewer() && c.status !== 'archived' && c.status !== 'completed' ? `<button class="btn btn-warning" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;">Archive</button>` : ''}
+                ${!isViewer() && c.status !== 'archived' ? `<button class="btn btn-warning" onclick="archiveCampaign(${c.id})" style="padding: 4px 8px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;">Archive</button>` : ''}
             </td>
         `;
         tbody.appendChild(tr);
