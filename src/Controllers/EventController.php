@@ -393,10 +393,10 @@ class EventController
             return ['error' => 'Invalid event_type'];
         }
 
-        // Database ENUM only allows: scheduled, ongoing, completed, cancelled
-        if (!in_array($eventStatus, ['scheduled', 'ongoing', 'completed', 'cancelled'], true)) {
+        // Database ENUM allows: scheduled, ongoing, completed, cancelled, archived
+        if (!in_array($eventStatus, ['scheduled', 'ongoing', 'completed', 'cancelled', 'archived'], true)) {
             http_response_code(422);
-            return ['error' => 'Invalid event_status. Must be: scheduled, ongoing, completed, or cancelled'];
+            return ['error' => 'Invalid event_status. Must be: scheduled, ongoing, completed, cancelled, or archived'];
         }
 
         // Build starts_at and ends_at from date and times

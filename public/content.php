@@ -3397,26 +3397,118 @@ async function loadUsageHistory() {
     }
 }
 
-// Edit usage record
+// Edit usage record - full edit modal
 async function editUsageRecord(recordId) {
-    const newContext = prompt('Enter new usage context:');
-    if (newContext === null) return; // User cancelled
-    
+    // First fetch the current record data
     try {
-        const res = await fetch(apiBase + '/api/v1/content/usage/' + recordId, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ usage_context: newContext })
+        const res = await fetch(apiBase + '/api/v1/content/usage?record_id=' + recordId, {
+            headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
-        if (res.ok) {
-            alert('Usage record updated successfully');
-            loadUsageHistory();
-        } else {
-            alert('Error: ' + (data.error || 'Failed to update'));
-        }
+        const records = data.data || [];
+        const record = records.find(r => r.id == recordId) || {};
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('editUsageModal');
+        if (existingModal) existingModal.remove();
+        
+        // Create edit modal
+        const modal = document.createElement('div');
+        modal.id = 'editUsageModal';
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+        
+        // Fetch campaigns and events for dropdowns
+        let campaignOptions = '<option value="">-- Select Campaign --</option>';
+        let eventOptions = '<option value="">-- Select Event --</option>';
+        
+        try {
+            const campRes = await fetch(apiBase + '/api/v1/campaigns', { headers: { 'Authorization': 'Bearer ' + token } });
+            const campData = await campRes.json();
+            const campaigns = campData.data || [];
+            campaigns.forEach(c => {
+                const selected = record.campaign_id == c.id ? 'selected' : '';
+                campaignOptions += `<option value="${c.id}" ${selected}>${c.title}</option>`;
+            });
+        } catch (e) { console.error('Failed to load campaigns for edit modal'); }
+        
+        try {
+            const eventRes = await fetch(apiBase + '/api/v1/events', { headers: { 'Authorization': 'Bearer ' + token } });
+            const eventData = await eventRes.json();
+            const events = eventData.data || [];
+            events.forEach(e => {
+                const selected = record.event_id == e.event_id ? 'selected' : '';
+                eventOptions += `<option value="${e.event_id}" ${selected}>${e.event_title || e.name}</option>`;
+            });
+        } catch (e) { console.error('Failed to load events for edit modal'); }
+        
+        modal.innerHTML = `
+            <div style="background: white; border-radius: 12px; max-width: 500px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #0f172a;">Edit Usage Record</h3>
+                    <button onclick="document.getElementById('editUsageModal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+                </div>
+                <form id="editUsageForm">
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #374151;">Campaign</label>
+                        <select id="editUsageCampaign" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
+                            ${campaignOptions}
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #374151;">Event</label>
+                        <select id="editUsageEvent" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px;">
+                            ${eventOptions}
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #374151;">Usage Context</label>
+                        <input type="text" id="editUsageContext" value="${record.usage_context || ''}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; box-sizing: border-box;">
+                    </div>
+                    <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                        <button type="button" onclick="document.getElementById('editUsageModal').remove()" style="padding: 10px 20px; background: #f1f5f9; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Cancel</button>
+                        <button type="submit" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Handle form submission
+        document.getElementById('editUsageForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const updateData = {
+                campaign_id: document.getElementById('editUsageCampaign').value || null,
+                event_id: document.getElementById('editUsageEvent').value || null,
+                usage_context: document.getElementById('editUsageContext').value
+            };
+            
+            try {
+                const updateRes = await fetch(apiBase + '/api/v1/content/usage/' + recordId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify(updateData)
+                });
+                const updateResult = await updateRes.json();
+                if (updateRes.ok) {
+                    alert('Usage record updated successfully');
+                    modal.remove();
+                    loadUsageHistory();
+                } else {
+                    alert('Error: ' + (updateResult.error || 'Failed to update'));
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
+            }
+        });
+        
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+        
     } catch (err) {
-        alert('Network error: ' + err.message);
+        alert('Failed to load record: ' + err.message);
     }
 }
 

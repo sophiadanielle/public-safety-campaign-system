@@ -284,16 +284,19 @@ require_once __DIR__ . '/../header/includes/path_helper.php';
         
         .user-details {
             line-height: 1.3;
+            text-align: left;
         }
         
         .user-name {
             font-weight: 600;
             color: #0f172a;
+            text-align: left;
         }
         
         .user-role {
             font-size: 12px;
             color: #64748b;
+            text-align: left;
         }
         
         .timestamp {

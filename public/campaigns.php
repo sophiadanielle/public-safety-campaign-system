@@ -6785,6 +6785,12 @@ async function deleteCampaign(campaignId) {
             return;
         }
         
+        // Close any open view modal before refreshing
+        const viewModal = document.getElementById('viewCampaignModal');
+        if (viewModal) {
+            viewModal.remove();
+        }
+        
         alert('Campaign deleted successfully!');
         refreshAllCampaignViews();
     } catch (err) {

@@ -380,19 +380,45 @@ class ContentController
             $audienceColCheck = $this->pdo->query("SHOW COLUMNS FROM campaign_department_content_items LIKE 'intended_audience%'")->fetchAll(PDO::FETCH_COLUMN);
             $audienceColumn = !empty($audienceColCheck) ? $audienceColCheck[0] : 'intended_audience';
             
-            // Create content_repository subdirectory
-            $contentRepoDir = rtrim($this->uploadDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'content_repository';
-            if (!is_dir($contentRepoDir)) {
-                mkdir($contentRepoDir, 0775, true);
+            // Check if Cloudinary is configured and should be used
+            $useCloudinary = false;
+            $cloudinaryConfigPath = __DIR__ . '/../Config/cloudinary_config.php';
+            if (file_exists($cloudinaryConfigPath)) {
+                require_once $cloudinaryConfigPath;
+                $useCloudinary = function_exists('isCloudinaryConfigured') && isCloudinaryConfigured();
             }
             
-            $newFileName = $this->uniqueFilename($file['name']);
-            $targetPath = $contentRepoDir . DIRECTORY_SEPARATOR . $newFileName;
-            if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
-                throw new RuntimeException('Failed to save file');
+            $fileReference = '';
+            $cloudinaryPublicId = null;
+            
+            if ($useCloudinary) {
+                // Upload to Cloudinary
+                $cloudinaryResult = uploadToCloudinary($file['tmp_name'], 'campaign_materials');
+                if ($cloudinaryResult && isset($cloudinaryResult['secure_url'])) {
+                    $fileReference = $cloudinaryResult['secure_url'];
+                    $cloudinaryPublicId = $cloudinaryResult['public_id'] ?? null;
+                } else {
+                    // Fallback to local storage if Cloudinary fails
+                    error_log('Cloudinary upload failed, falling back to local storage');
+                    $useCloudinary = false;
+                }
             }
-
-            $fileReference = 'uploads/content_repository/' . $newFileName;
+            
+            if (!$useCloudinary) {
+                // Create content_repository subdirectory for local storage
+                $contentRepoDir = rtrim($this->uploadDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'content_repository';
+                if (!is_dir($contentRepoDir)) {
+                    mkdir($contentRepoDir, 0775, true);
+                }
+                
+                $newFileName = $this->uniqueFilename($file['name']);
+                $targetPath = $contentRepoDir . DIRECTORY_SEPARATOR . $newFileName;
+                if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+                    throw new RuntimeException('Failed to save file');
+                }
+                
+                $fileReference = 'uploads/content_repository/' . $newFileName;
+            }
             
             // Validate user ID exists before inserting
             $userId = $user['id'] ?? null;
@@ -1481,6 +1507,21 @@ class ContentController
                 $bind['usage_context'] = $input['usage_context'];
             }
             
+            if (array_key_exists('campaign_id', $input) && in_array('campaign_id', $columns)) {
+                $updates[] = 'campaign_id = :campaign_id';
+                $bind['campaign_id'] = $input['campaign_id'] ? (int) $input['campaign_id'] : null;
+            }
+            
+            if (array_key_exists('event_id', $input) && in_array('event_id', $columns)) {
+                $updates[] = 'event_id = :event_id';
+                $bind['event_id'] = $input['event_id'] ? (int) $input['event_id'] : null;
+            }
+            
+            if (array_key_exists('tag_id', $input) && in_array('tag_id', $columns)) {
+                $updates[] = 'tag_id = :tag_id';
+                $bind['tag_id'] = $input['tag_id'] ? (int) $input['tag_id'] : null;
+            }
+            
             if (isset($input['is_archived']) && in_array('is_archived', $columns)) {
                 $updates[] = 'is_archived = :is_archived';
                 $bind['is_archived'] = (int) $input['is_archived'];
@@ -1598,17 +1639,18 @@ class ContentController
             $ipAddress = $_SERVER['REMOTE_ADDR'] ?? null;
             $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
             
-            // Try to create audit_logs table if it doesn't exist
+            // Try to create campaign_department_audit_logs table if it doesn't exist
             $this->pdo->exec("
-                CREATE TABLE IF NOT EXISTS `audit_logs` (
+                CREATE TABLE IF NOT EXISTS `campaign_department_audit_logs` (
                     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     user_id INT UNSIGNED NULL,
                     action VARCHAR(150) NOT NULL,
                     entity_type VARCHAR(50) NOT NULL,
                     entity_id INT UNSIGNED NULL,
+                    details TEXT NULL,
+                    metadata JSON NULL,
                     ip_address VARCHAR(45) NULL,
                     user_agent TEXT NULL,
-                    metadata JSON NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     INDEX idx_user_id (user_id),
                     INDEX idx_entity (entity_type, entity_id),
@@ -1616,15 +1658,19 @@ class ContentController
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
             ");
             
+            // Build details string from metadata
+            $details = !empty($metadata) ? json_encode($metadata) : null;
+            
             $stmt = $this->pdo->prepare('
-                INSERT INTO audit_logs (user_id, action, entity_type, entity_id, ip_address, user_agent, metadata)
-                VALUES (:user_id, :action, :entity_type, :entity_id, :ip_address, :user_agent, :metadata)
+                INSERT INTO campaign_department_audit_logs (user_id, action, entity_type, entity_id, details, ip_address, user_agent, metadata)
+                VALUES (:user_id, :action, :entity_type, :entity_id, :details, :ip_address, :user_agent, :metadata)
             ');
             $stmt->execute([
                 'user_id' => $userId,
                 'action' => $action,
                 'entity_type' => $entityType,
                 'entity_id' => $entityId,
+                'details' => $details,
                 'ip_address' => $ipAddress,
                 'user_agent' => $userAgent,
                 'metadata' => json_encode($metadata),
