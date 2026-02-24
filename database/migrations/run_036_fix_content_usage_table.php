@@ -8,13 +8,23 @@ require_once __DIR__ . '/../../api/config.php';
 
 header('Content-Type: application/json');
 
+if ($mysqli->connect_error) {
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Database connection failed',
+        'error' => $mysqli->connect_error
+    ], JSON_PRETTY_PRINT) . "\n";
+    exit;
+}
+
 try {
     // Check if table exists
-    $checkTable = $pdo->query("SHOW TABLES LIKE 'campaign_department_content_usage'");
+    $checkTable = $mysqli->query("SHOW TABLES LIKE 'campaign_department_content_usage'");
     
-    if ($checkTable->rowCount() === 0) {
+    if ($checkTable && $checkTable->num_rows === 0) {
         // Create the table with all required columns
-        $pdo->exec("
+        if (!$mysqli->query("
             CREATE TABLE `campaign_department_content_usage` (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 content_item_id INT NOT NULL,
@@ -31,7 +41,9 @@ try {
                 INDEX idx_event (event_id),
                 INDEX idx_is_archived (is_archived)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        ");
+        ")) {
+            throw new Exception($mysqli->error);
+        }
         
         echo json_encode([
             'status' => 'success',
@@ -41,7 +53,13 @@ try {
     }
     
     // Table exists, check for missing columns
-    $columns = $pdo->query("SHOW COLUMNS FROM campaign_department_content_usage")->fetchAll(PDO::FETCH_COLUMN);
+    $result = $mysqli->query("SHOW COLUMNS FROM campaign_department_content_usage");
+    $columns = [];
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $columns[] = $row['Field'];
+        }
+    }
     
     $columnsToAdd = [];
     
@@ -70,7 +88,9 @@ try {
     
     if (count($columnsToAdd) > 0) {
         $sql = "ALTER TABLE campaign_department_content_usage " . implode(", ", $columnsToAdd);
-        $pdo->exec($sql);
+        if (!$mysqli->query($sql)) {
+            throw new Exception($mysqli->error);
+        }
         
         echo json_encode([
             'status' => 'success',
@@ -85,7 +105,7 @@ try {
         ], JSON_PRETTY_PRINT) . "\n";
     }
     
-} catch (PDOException $e) {
+} catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
         'status' => 'error',

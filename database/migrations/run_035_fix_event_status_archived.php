@@ -8,10 +8,20 @@ require_once __DIR__ . '/../../api/config.php';
 
 header('Content-Type: application/json');
 
+if ($mysqli->connect_error) {
+    http_response_code(500);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Database connection failed',
+        'error' => $mysqli->connect_error
+    ], JSON_PRETTY_PRINT) . "\n";
+    exit;
+}
+
 try {
     // Check current status column definition
-    $checkStmt = $pdo->query("SHOW COLUMNS FROM `campaign_department_events` LIKE 'status'");
-    $column = $checkStmt->fetch(PDO::FETCH_ASSOC);
+    $result = $mysqli->query("SHOW COLUMNS FROM `campaign_department_events` LIKE 'status'");
+    $column = $result ? $result->fetch_assoc() : null;
     
     if ($column) {
         $currentType = $column['Type'];
@@ -37,11 +47,13 @@ try {
             MODIFY COLUMN status ENUM('scheduled', 'ongoing', 'completed', 'cancelled', 'archived') 
             NOT NULL DEFAULT 'scheduled'";
     
-    $pdo->exec($sql);
+    if (!$mysqli->query($sql)) {
+        throw new Exception($mysqli->error);
+    }
     
     // Verify the change
-    $verifyStmt = $pdo->query("SHOW COLUMNS FROM `campaign_department_events` LIKE 'status'");
-    $newColumn = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+    $verifyResult = $mysqli->query("SHOW COLUMNS FROM `campaign_department_events` LIKE 'status'");
+    $newColumn = $verifyResult ? $verifyResult->fetch_assoc() : null;
     
     echo json_encode([
         'status' => 'success',
@@ -50,7 +62,7 @@ try {
         'note' => 'Archived events should now load without 502 errors'
     ], JSON_PRETTY_PRINT) . "\n";
     
-} catch (PDOException $e) {
+} catch (Exception $e) {
     http_response_code(500);
     echo json_encode([
         'status' => 'error',
