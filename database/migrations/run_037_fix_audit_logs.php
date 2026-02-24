@@ -1,6 +1,6 @@
 <?php
 /**
- * Auto-migration script to ensure audit_logs table exists and is properly structured
+ * Auto-migration script to ensure campaign_department_audit_logs table is properly structured
  * This fixes the "no audit logs found" issue
  */
 
@@ -21,119 +21,17 @@ if ($mysqli->connect_error) {
 try {
     $results = [];
     
-    // Check if audit_logs table exists
-    $checkTable = $mysqli->query("SHOW TABLES LIKE 'audit_logs'");
+    // Check if campaign_department_audit_logs table exists
+    $checkTable = $mysqli->query("SHOW TABLES LIKE 'campaign_department_audit_logs'");
     
     if ($checkTable && $checkTable->num_rows === 0) {
-        // Create the audit_logs table
-        if (!$mysqli->query("
-            CREATE TABLE IF NOT EXISTS `audit_logs` (
-                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                user_id INT UNSIGNED NULL,
-                action VARCHAR(150) NOT NULL,
-                entity_type VARCHAR(50) NOT NULL,
-                entity_id INT UNSIGNED NULL,
-                details TEXT NULL,
-                metadata JSON NULL,
-                ip_address VARCHAR(45) NULL,
-                user_agent TEXT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                INDEX idx_user_id (user_id),
-                INDEX idx_entity (entity_type, entity_id),
-                INDEX idx_created_at (created_at)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        ")) {
-            throw new Exception($mysqli->error);
-        }
-        $results[] = 'Created audit_logs table';
-    } else {
-        // Table exists, check for missing columns
-        $result = $mysqli->query("SHOW COLUMNS FROM audit_logs");
-        $columns = [];
-        if ($result) {
-            while ($row = $result->fetch_assoc()) {
-                $columns[] = $row['Field'];
-            }
-        }
-        
-        // Add missing columns one by one
-        if (!in_array('entity_type', $columns)) {
-            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN entity_type VARCHAR(50) NULL")) {
-                throw new Exception($mysqli->error);
-            }
-            $results[] = 'Added entity_type column to audit_logs';
-        }
-        
-        if (!in_array('entity_id', $columns)) {
-            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN entity_id INT UNSIGNED NULL")) {
-                throw new Exception($mysqli->error);
-            }
-            $results[] = 'Added entity_id column to audit_logs';
-        }
-        
-        if (!in_array('details', $columns)) {
-            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN details TEXT NULL")) {
-                throw new Exception($mysqli->error);
-            }
-            $results[] = 'Added details column to audit_logs';
-        }
-        
-        if (!in_array('metadata', $columns)) {
-            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN metadata JSON NULL")) {
-                throw new Exception($mysqli->error);
-            }
-            $results[] = 'Added metadata column to audit_logs';
-        }
-        
-        if (!in_array('ip_address', $columns)) {
-            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN ip_address VARCHAR(45) NULL")) {
-                throw new Exception($mysqli->error);
-            }
-            $results[] = 'Added ip_address column to audit_logs';
-        }
-        
-        if (!in_array('user_agent', $columns)) {
-            if (!$mysqli->query("ALTER TABLE audit_logs ADD COLUMN user_agent TEXT NULL")) {
-                throw new Exception($mysqli->error);
-            }
-            $results[] = 'Added user_agent column to audit_logs';
-        }
-        
-        // Check and add indexes if they don't exist
-        $indexResult = $mysqli->query("SHOW INDEX FROM audit_logs");
-        $existingIndexes = [];
-        if ($indexResult) {
-            while ($row = $indexResult->fetch_assoc()) {
-                $existingIndexes[] = $row['Key_name'];
-            }
-        }
-        
-        if (!in_array('idx_user_id', $existingIndexes)) {
-            $mysqli->query("ALTER TABLE audit_logs ADD INDEX idx_user_id (user_id)");
-        }
-        
-        if (!in_array('idx_entity', $existingIndexes)) {
-            $mysqli->query("ALTER TABLE audit_logs ADD INDEX idx_entity (entity_type, entity_id)");
-        }
-        
-        if (!in_array('idx_created_at', $existingIndexes)) {
-            $mysqli->query("ALTER TABLE audit_logs ADD INDEX idx_created_at (created_at)");
-        }
-        
-        $results[] = 'Updated audit_logs table structure';
-    }
-    
-    // Check if campaign_department_audit_logs table exists (alternative name)
-    $checkTable2 = $mysqli->query("SHOW TABLES LIKE 'campaign_department_audit_logs'");
-    
-    if ($checkTable2 && $checkTable2->num_rows === 0) {
         // Create the campaign_department_audit_logs table
         if (!$mysqli->query("
             CREATE TABLE IF NOT EXISTS `campaign_department_audit_logs` (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 user_id INT UNSIGNED NULL,
                 action VARCHAR(150) NOT NULL,
-                entity_type VARCHAR(50) NOT NULL,
+                entity_type VARCHAR(50) NULL,
                 entity_id INT UNSIGNED NULL,
                 details TEXT NULL,
                 metadata JSON NULL,
@@ -158,38 +56,58 @@ try {
             }
         }
         
-        // Add missing columns
+        // Add missing columns one by one
         if (!in_array('details', $columns)) {
             if (!$mysqli->query("ALTER TABLE campaign_department_audit_logs ADD COLUMN details TEXT NULL")) {
                 throw new Exception($mysqli->error);
             }
-            $results[] = 'Added details column to campaign_department_audit_logs';
+            $results[] = 'Added details column';
         }
         
         if (!in_array('metadata', $columns)) {
             if (!$mysqli->query("ALTER TABLE campaign_department_audit_logs ADD COLUMN metadata JSON NULL")) {
                 throw new Exception($mysqli->error);
             }
-            $results[] = 'Added metadata column to campaign_department_audit_logs';
+            $results[] = 'Added metadata column';
+        }
+        
+        // Check and add indexes if they don't exist
+        $indexResult = $mysqli->query("SHOW INDEX FROM campaign_department_audit_logs");
+        $existingIndexes = [];
+        if ($indexResult) {
+            while ($row = $indexResult->fetch_assoc()) {
+                $existingIndexes[] = $row['Key_name'];
+            }
+        }
+        
+        if (!in_array('idx_user_id', $existingIndexes)) {
+            $mysqli->query("ALTER TABLE campaign_department_audit_logs ADD INDEX idx_user_id (user_id)");
+            $results[] = 'Added idx_user_id index';
+        }
+        
+        if (!in_array('idx_entity', $existingIndexes)) {
+            $mysqli->query("ALTER TABLE campaign_department_audit_logs ADD INDEX idx_entity (entity_type, entity_id)");
+            $results[] = 'Added idx_entity index';
+        }
+        
+        if (!in_array('idx_created_at', $existingIndexes)) {
+            $mysqli->query("ALTER TABLE campaign_department_audit_logs ADD INDEX idx_created_at (created_at)");
+            $results[] = 'Added idx_created_at index';
         }
         
         $results[] = 'Updated campaign_department_audit_logs table structure';
     }
     
     // Count existing audit logs
-    $result1 = $mysqli->query("SELECT COUNT(*) as count FROM audit_logs");
+    $result1 = $mysqli->query("SELECT COUNT(*) as count FROM campaign_department_audit_logs");
     $countAuditLogs = $result1 ? $result1->fetch_assoc()['count'] : 0;
     
-    $result2 = $mysqli->query("SELECT COUNT(*) as count FROM campaign_department_audit_logs");
-    $countCampaignAuditLogs = $result2 ? $result2->fetch_assoc()['count'] : 0;
+    $results[] = "campaign_department_audit_logs count: {$countAuditLogs}";
     
-    $results[] = "audit_logs count: {$countAuditLogs}";
-    $results[] = "campaign_department_audit_logs count: {$countCampaignAuditLogs}";
-    
-    // If both tables are empty, add a system initialization log entry
-    if ($countAuditLogs == 0 && $countCampaignAuditLogs == 0) {
+    // If table is empty, add a system initialization log entry
+    if ($countAuditLogs == 0) {
         if (!$mysqli->query("
-            INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, created_at)
+            INSERT INTO campaign_department_audit_logs (user_id, action, entity_type, entity_id, details, created_at)
             VALUES (NULL, 'system_init', 'system', NULL, 'Audit logging system initialized', NOW())
         ")) {
             throw new Exception($mysqli->error);
