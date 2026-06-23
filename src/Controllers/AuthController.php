@@ -684,7 +684,7 @@ class AuthController
             
             // Generate 6-digit OTP
             $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $expiresAt = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 minute'));
             
             // Ensure password_reset_tokens table exists
             $this->pdo->exec("
@@ -868,7 +868,7 @@ class AuthController
                                 <div style='background: white; border: 2px solid #0d9488; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;'>
                                     <span style='font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #0d9488;'>{$otp}</span>
                                 </div>
-                                <p style='color: #64748b; font-size: 14px;'>This code will expire in 5 minutes.</p>
+                                <p style='color: #64748b; font-size: 14px;'>This code will expire in 1 minute.</p>
                                 <p style='color: #64748b; font-size: 14px;'>If you didn't request this, please ignore this email.</p>
                             </div>
                             <div style='padding: 20px; text-align: center; color: #94a3b8; font-size: 12px;'>
@@ -876,7 +876,7 @@ class AuthController
                             </div>
                         </div>
                     ";
-                    $mail->AltBody = "Your password reset code is: {$otp}. This code expires in 5 minutes.";
+                    $mail->AltBody = "Your password reset code is: {$otp}. This code expires in 1 minute.";
                     
                     $mail->send();
                     error_log("Password reset email sent to: {$email}");
@@ -886,7 +886,7 @@ class AuthController
             
             // Fallback to PHP mail() function
             $subject = 'Password Reset Code - Alertara QC';
-            $message = "Hello {$name},\n\nYour password reset code is: {$otp}\n\nThis code expires in 5 minutes.\n\nIf you didn't request this, please ignore this email.\n\n- Alertara QC";
+            $message = "Hello {$name},\n\nYour password reset code is: {$otp}\n\nThis code expires in 1 minute.\n\nIf you didn't request this, please ignore this email.\n\n- Alertara QC";
             $headers = "From: noreply@alertaraqc.com\r\n";
             $headers .= "Reply-To: noreply@alertaraqc.com\r\n";
             

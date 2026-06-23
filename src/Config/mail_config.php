@@ -111,7 +111,7 @@ class MailConfig
             $mail->addAddress($toEmail, $toName);
             $mail->Subject = 'Your Login Verification Code - Alertara QC';
             $mail->Body = self::getOTPEmailTemplate($otp, $toName);
-            $mail->AltBody = "Your verification code is: $otp. This code expires in 5 minutes.";
+            $mail->AltBody = "Your verification code is: $otp. This code expires in 1 minute.";
 
             $mail->send();
             error_log("OTP email sent successfully to: $toEmail");
@@ -165,7 +165,7 @@ class MailConfig
                             </div>
                             
                             <p style="margin: 24px 0 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                                <strong>⏱️ This code expires in 5 minutes.</strong><br><br>
+                                <strong>⏱️ This code expires in 1 minute.</strong><br><br>
                                 If you didn't request this code, please ignore this email or contact support if you have concerns about your account security.
                             </p>
                         </td>

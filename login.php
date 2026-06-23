@@ -890,7 +890,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                 </div>
 
                 <div class="otp-timer">
-                    Code expires in <span id="otpTimer">5:00</span>
+                    Code expires in <span id="otpTimer">1:00</span>
                 </div>
 
                 <div class="otp-resend">
@@ -961,7 +961,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                         <input type="text" class="otp-input forgot-otp-input" maxlength="1" data-index="5" inputmode="numeric" pattern="[0-9]">
                     </div>
                     <div class="otp-timer">
-                        Code expires in <span id="forgotOtpTimer">5:00</span>
+                        Code expires in <span id="forgotOtpTimer">1:00</span>
                     </div>
                     <button type="button" class="otp-verify-btn" id="verifyResetCodeBtn" onclick="verifyResetCode()">
                         <i class="fas fa-check-circle"></i>
@@ -1124,7 +1124,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
         function openOtpModal() {
             document.getElementById('otpModal').classList.add('show');
             clearOtpInputs();
-            startOtpTimer(300); // 5 minutes
+            startOtpTimer(60); // 1 minute
             document.querySelector('.otp-input[data-index="0"]').focus();
         }
 
@@ -1468,7 +1468,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                 document.getElementById('forgotStep1').style.display = 'none';
                 document.getElementById('forgotStep2').style.display = 'block';
                 clearForgotOtpInputs();
-                startForgotOtpTimer(300);
+                startForgotOtpTimer(60);
                 document.querySelector('.forgot-otp-input[data-index="0"]').focus();
                 
                 showForgotStatus(2, 'Reset code sent to your email', 'success');
@@ -1486,7 +1486,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                     document.getElementById('forgotStep1').style.display = 'none';
                     document.getElementById('forgotStep2').style.display = 'block';
                     clearForgotOtpInputs();
-                    startForgotOtpTimer(300);
+                    startForgotOtpTimer(60);
                     document.querySelector('.forgot-otp-input[data-index="0"]').focus();
                     showForgotStatus(2, 'Reset code may have been sent. Please check your email.', 'success');
                 } else {

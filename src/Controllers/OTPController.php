@@ -121,7 +121,7 @@ class OTPController
 
             // Generate OTP
             $otp = $this->generateOTP();
-            $expiresAt = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 minute'));
 
             // Invalidate any existing OTPs for this user
             $stmt = $this->pdo->prepare("UPDATE campaign_department_otp SET is_used = 1 WHERE user_id = :user_id AND is_used = 0");
@@ -156,7 +156,7 @@ class OTPController
                 'success' => true,
                 'message' => 'OTP sent to your email',
                 'email' => $this->maskEmail($userData['email']),
-                'expires_in' => 300 // 5 minutes in seconds
+                'expires_in' => 60 // 1 minute in seconds
             ];
 
         } catch (PDOException $e) {
@@ -292,7 +292,7 @@ class OTPController
 
             // Generate new OTP
             $otp = $this->generateOTP();
-            $expiresAt = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 minute'));
 
             // Invalidate existing OTPs
             $stmt = $this->pdo->prepare("UPDATE campaign_department_otp SET is_used = 1 WHERE user_id = :user_id AND is_used = 0");
@@ -324,7 +324,7 @@ class OTPController
             return [
                 'success' => true,
                 'message' => 'New OTP sent to your email',
-                'expires_in' => 300
+                'expires_in' => 60
             ];
 
         } catch (PDOException $e) {
