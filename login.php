@@ -1255,7 +1255,7 @@ if (!$isDefinitelyLocalhost && $finalHost !== '') {
                 }
 
                 clearOtpInputs();
-                startOtpTimer(300);
+                startOtpTimer(data.expires_in || 60);
                 showOtpStatus('New code sent to your email', 'success');
                 setTimeout(() => {
                     document.getElementById('otpStatus').className = 'otp-status';
