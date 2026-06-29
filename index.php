@@ -4,6 +4,8 @@
  * Handles API routing and serves login page for non-API requests
  */
 
+require_once __DIR__ . '/src/Config/logging.php';
+
 // CRITICAL: Check for API request FIRST - before any other processing
 // This must be the absolute first check to ensure API requests are handled correctly
 $rawUri = $_SERVER['REQUEST_URI'] ?? '';

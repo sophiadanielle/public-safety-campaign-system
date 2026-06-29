@@ -2,6 +2,8 @@
 // Shared path configuration for local XAMPP and production domains.
 // This file must stay silent because it is included before headers are finalized.
 
+@require_once __DIR__ . '/../../src/Config/logging.php';
+
 $host = strtolower($_SERVER['HTTP_HOST'] ?? '');
 $serverName = strtolower($_SERVER['SERVER_NAME'] ?? '');
 
