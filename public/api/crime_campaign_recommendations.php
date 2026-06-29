@@ -77,7 +77,7 @@ function get_env_value(string $key): ?string
     return null;
 }
 
-function http_json_request(string $url, string $method = 'GET', ?array $body = null, array $headers = []): array
+function http_json_request(string $url, string $method = 'GET', ?array $body = null, array $headers = [], int $timeout = 20): array
 {
     $headers[] = 'Accept: application/json';
     $payload = $body === null ? null : json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -91,8 +91,8 @@ function http_json_request(string $url, string $method = 'GET', ?array $body = n
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_TIMEOUT => 20,
-            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => min(8, $timeout),
             CURLOPT_CUSTOMREQUEST => $method,
             CURLOPT_HTTPHEADER => $headers,
             CURLOPT_SSL_VERIFYPEER => true,
@@ -116,7 +116,7 @@ function http_json_request(string $url, string $method = 'GET', ?array $body = n
             'http' => [
                 'method' => $method,
                 'header' => implode("\r\n", $headers),
-                'timeout' => 20,
+                'timeout' => $timeout,
                 'ignore_errors' => true,
             ],
         ];
@@ -323,25 +323,6 @@ function gemini_recommendations(array $groups): ?array
     $prompt = "Generate concise public-safety campaign titles from crime report incident groups. Return only a JSON array. Each item must have incident_title and recommended_campaign_title. Keep titles professional, specific, and suitable for a barangay public safety campaign.\n\nIncident groups:\n" . json_encode($limitedGroups, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
     try {
-        $interactionResponse = http_json_request(
-            'https://generativelanguage.googleapis.com/v1beta/interactions',
-            'POST',
-            [
-                'model' => $model,
-                'input' => $prompt,
-            ],
-            ['x-goog-api-key: ' . $apiKey]
-        );
-
-        $parsed = extract_json_from_text(parse_gemini_text($interactionResponse));
-        if (is_array($parsed)) {
-            return $parsed;
-        }
-    } catch (Throwable $interactionError) {
-        error_log('Gemini interactions request failed: ' . $interactionError->getMessage());
-    }
-
-    try {
         $generateModel = str_starts_with($model, 'models/') ? substr($model, 7) : $model;
         $generateResponse = http_json_request(
             'https://generativelanguage.googleapis.com/v1beta/models/' . rawurlencode($generateModel) . ':generateContent',
@@ -355,7 +336,8 @@ function gemini_recommendations(array $groups): ?array
                     ],
                 ],
             ],
-            ['x-goog-api-key: ' . $apiKey]
+            ['x-goog-api-key: ' . $apiKey],
+            8
         );
 
         $parsed = extract_json_from_text(parse_gemini_text($generateResponse));
