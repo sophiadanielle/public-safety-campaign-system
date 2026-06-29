@@ -835,51 +835,11 @@ class AuthController
     private function sendPasswordResetEmail(string $email, string $name, string $otp): void
     {
         try {
-            // Try to use PHPMailer if available
-            $mailerPath = __DIR__ . '/../../vendor/autoload.php';
-            if (file_exists($mailerPath)) {
-                require_once $mailerPath;
-                
-                if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
-                    $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
-                    
-                    // SMTP configuration from environment
-                    $mail->isSMTP();
-                    $mail->Host = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
-                    $mail->SMTPAuth = true;
-                    $mail->Username = $_ENV['SMTP_USER'] ?? '';
-                    $mail->Password = $_ENV['SMTP_PASS'] ?? '';
-                    $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-                    $mail->Port = (int)($_ENV['SMTP_PORT'] ?? 587);
-                    
-                    $mail->setFrom($_ENV['SMTP_FROM'] ?? 'noreply@alertaraqc.com', 'Alertara QC');
-                    $mail->addAddress($email, $name);
-                    
-                    $mail->isHTML(true);
-                    $mail->Subject = 'Password Reset Code - Alertara QC';
-                    $mail->Body = "
-                        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
-                            <div style='background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 30px; text-align: center;'>
-                                <h1 style='color: white; margin: 0;'>Password Reset</h1>
-                            </div>
-                            <div style='padding: 30px; background: #f8fafc;'>
-                                <p>Hello <strong>{$name}</strong>,</p>
-                                <p>You requested to reset your password. Use the code below to complete the process:</p>
-                                <div style='background: white; border: 2px solid #0d9488; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;'>
-                                    <span style='font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #0d9488;'>{$otp}</span>
-                                </div>
-                                <p style='color: #64748b; font-size: 14px;'>This code will expire in 1 minute.</p>
-                                <p style='color: #64748b; font-size: 14px;'>If you didn't request this, please ignore this email.</p>
-                            </div>
-                            <div style='padding: 20px; text-align: center; color: #94a3b8; font-size: 12px;'>
-                                <p>Alertara QC - Barangay Public Safety Campaign Management System</p>
-                            </div>
-                        </div>
-                    ";
-                    $mail->AltBody = "Your password reset code is: {$otp}. This code expires in 1 minute.";
-                    
-                    $mail->send();
-                    error_log("Password reset email sent to: {$email}");
+            $mailConfigPath = __DIR__ . '/../Config/mail_config.php';
+            if (file_exists($mailConfigPath)) {
+                require_once $mailConfigPath;
+
+                if (class_exists('\MailConfig') && \MailConfig::sendPasswordResetEmail($email, $name, $otp)) {
                     return;
                 }
             }
@@ -1248,4 +1208,3 @@ class AuthController
         exit;
     }
 }
-

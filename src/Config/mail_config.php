@@ -25,55 +25,23 @@ class MailConfig
         return self::$mailer;
     }
 
+    public static function newMailer(): PHPMailer
+    {
+        $mail = new PHPMailer(true);
+        self::configure($mail);
+        return $mail;
+    }
+
     private static function configure(PHPMailer $mail): void
     {
-        // Load environment variables
-        $envPath = __DIR__ . '/../../.env';
-        $smtpHost = 'smtp.gmail.com';
-        $smtpPort = 587;
-        $smtpUser = '';
-        $smtpPass = '';
-        $smtpFromEmail = '';
-        $smtpFromName = 'Alertara QC';
-
-        if (file_exists($envPath)) {
-            $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            foreach ($lines as $line) {
-                $line = trim($line);
-                if ($line === '' || strpos($line, '#') === 0) continue;
-                if (strpos($line, '=') === false) continue;
-                
-                $pos = strpos($line, '=');
-                $key = trim(substr($line, 0, $pos));
-                $val = trim(substr($line, $pos + 1));
-                
-                // Remove quotes if present
-                if (strlen($val) >= 2 && (($val[0] === '"' && substr($val, -1) === '"') || ($val[0] === "'" && substr($val, -1) === "'"))) {
-                    $val = substr($val, 1, -1);
-                }
-
-                switch ($key) {
-                    case 'SMTP_HOST':
-                        $smtpHost = $val;
-                        break;
-                    case 'SMTP_PORT':
-                        $smtpPort = (int) $val;
-                        break;
-                    case 'SMTP_USER':
-                        $smtpUser = $val;
-                        break;
-                    case 'SMTP_PASS':
-                        $smtpPass = $val;
-                        break;
-                    case 'SMTP_FROM_EMAIL':
-                        $smtpFromEmail = $val;
-                        break;
-                    case 'SMTP_FROM_NAME':
-                        $smtpFromName = $val;
-                        break;
-                }
-            }
-        }
+        $env = self::loadEnv();
+        $smtpHost = self::env($env, ['SMTP_HOST', 'MAIL_HOST'], 'smtp.gmail.com');
+        $smtpPort = (int) self::env($env, ['SMTP_PORT', 'MAIL_PORT'], '587');
+        $smtpUser = self::env($env, ['SMTP_USER', 'MAIL_USERNAME'], '');
+        $smtpPass = self::env($env, ['SMTP_PASS', 'MAIL_PASSWORD'], '');
+        $smtpFromEmail = self::env($env, ['SMTP_FROM_EMAIL', 'SMTP_FROM', 'MAIL_FROM_ADDRESS'], $smtpUser);
+        $smtpFromName = self::env($env, ['SMTP_FROM_NAME', 'MAIL_FROM_NAME'], 'Alertara QC');
+        $smtpEncryption = strtolower(self::env($env, ['SMTP_ENCRYPTION', 'MAIL_ENCRYPTION'], 'tls'));
 
         // If from email not set, use SMTP user
         if (empty($smtpFromEmail)) {
@@ -86,7 +54,9 @@ class MailConfig
         $mail->SMTPAuth = true;
         $mail->Username = $smtpUser;
         $mail->Password = $smtpPass;
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->SMTPSecure = $smtpEncryption === 'ssl'
+            ? PHPMailer::ENCRYPTION_SMTPS
+            : PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port = $smtpPort;
 
         // Default sender
@@ -99,14 +69,54 @@ class MailConfig
         $mail->CharSet = 'UTF-8';
     }
 
+    private static function loadEnv(): array
+    {
+        $env = $_ENV;
+        $envPath = __DIR__ . '/../../.env';
+
+        if (!file_exists($envPath)) {
+            return $env;
+        }
+
+        $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, '#') === 0 || strpos($line, '=') === false) {
+                continue;
+            }
+
+            $pos = strpos($line, '=');
+            $key = trim(substr($line, 0, $pos));
+            $val = trim(substr($line, $pos + 1));
+
+            if (strlen($val) >= 2 && (($val[0] === '"' && substr($val, -1) === '"') || ($val[0] === "'" && substr($val, -1) === "'"))) {
+                $val = substr($val, 1, -1);
+            }
+
+            $env[$key] = $val;
+        }
+
+        return $env;
+    }
+
+    private static function env(array $env, array $keys, string $default): string
+    {
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $env) && trim((string) $env[$key]) !== '') {
+                return (string) $env[$key];
+            }
+        }
+
+        return $default;
+    }
+
     /**
      * Send OTP email
      */
     public static function sendOTPEmail(string $toEmail, string $toName, string $otp): bool
     {
         try {
-            $mail = new PHPMailer(true);
-            self::configure($mail);
+            $mail = self::newMailer();
 
             $mail->addAddress($toEmail, $toName);
             $mail->Subject = 'Your Login Verification Code - Alertara QC';
@@ -118,6 +128,25 @@ class MailConfig
             return true;
         } catch (Exception $e) {
             error_log("Failed to send OTP email to $toEmail: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public static function sendPasswordResetEmail(string $toEmail, string $toName, string $otp): bool
+    {
+        try {
+            $mail = self::newMailer();
+
+            $mail->addAddress($toEmail, $toName);
+            $mail->Subject = 'Password Reset Code - Alertara QC';
+            $mail->Body = self::getPasswordResetEmailTemplate($otp, $toName);
+            $mail->AltBody = "Your password reset code is: $otp. This code expires in 1 minute.";
+
+            $mail->send();
+            error_log("Password reset email sent successfully to: $toEmail");
+            return true;
+        } catch (Exception $e) {
+            error_log("Failed to send password reset email to $toEmail: " . $e->getMessage());
             return false;
         }
     }
@@ -187,6 +216,29 @@ class MailConfig
     </table>
 </body>
 </html>
+HTML;
+    }
+
+    private static function getPasswordResetEmailTemplate(string $otp, string $name): string
+    {
+        return <<<HTML
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+    <div style="background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); padding: 30px; text-align: center;">
+        <h1 style="color: white; margin: 0;">Password Reset</h1>
+    </div>
+    <div style="padding: 30px; background: #f8fafc;">
+        <p>Hello <strong>{$name}</strong>,</p>
+        <p>You requested to reset your password. Use the code below to complete the process:</p>
+        <div style="background: white; border: 2px solid #0d9488; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0;">
+            <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #0d9488;">{$otp}</span>
+        </div>
+        <p style="color: #64748b; font-size: 14px;">This code will expire in 1 minute.</p>
+        <p style="color: #64748b; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+    </div>
+    <div style="padding: 20px; text-align: center; color: #94a3b8; font-size: 12px;">
+        <p>Alertara QC - Barangay Public Safety Campaign Management System</p>
+    </div>
+</div>
 HTML;
     }
 }
