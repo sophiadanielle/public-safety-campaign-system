@@ -38,9 +38,7 @@
                         $page = basename($_SERVER['PHP_SELF']);
                         require_once __DIR__ . '/../../header/includes/path_helper.php';
                         
-                        // Get current user role for module filtering
-                        // CRITICAL: This must work consistently across ALL pages
-                        // Wrapped in try-catch with error suppression to prevent 502 errors
+                        // Get current user role for module filtering.
                         $currentUserRole = null;
                         try {
                             $oldErr = error_reporting(0);
@@ -50,141 +48,19 @@
                                 $currentUserRole = @getCurrentUserRole();
                             }
                         } catch (\Throwable $roleErr) {
-                            error_log('RBAC SIDEBAR: get_user_role failed: ' . $roleErr->getMessage());
                             $currentUserRole = null;
                         }
                         
-                        // CRITICAL FIX: If role is still null, try one more time with session fallback
-                        // This handles cases where cookies aren't available but user is logged in
                         if (!$currentUserRole) {
-                            // Try to get from session if available (only if headers not sent)
                             if (!headers_sent() && session_status() === PHP_SESSION_NONE) {
                                 session_start();
                             }
                             if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['user_role'])) {
                                 $currentUserRole = $_SESSION['user_role'];
-                                error_log('RBAC SIDEBAR: Using session fallback - role=' . $currentUserRole);
-                            } else {
-                                // Last resort: Try to decode JWT from cookie one more time with more aggressive error handling
-                                $jwtToken = $_COOKIE['jwt_token'] ?? null;
-                                if ($jwtToken) {
-                                    try {
-                                        // Suppress errors to prevent 502 Bad Gateway
-                                        $oldErrorReporting = error_reporting(0);
-                                        try {
-                                            @require_once __DIR__ . '/../../vendor/autoload.php';
-                                        } catch (\Throwable $autoloadErr) {
-                                            error_log('RBAC SIDEBAR: vendor/autoload.php threw error: ' . $autoloadErr->getMessage());
-                                            error_reporting($oldErrorReporting);
-                                            $currentUserRole = null;
-                                        }
-                                        error_reporting($oldErrorReporting);
-                                        $envPath = __DIR__ . '/../../.env';
-                                        $jwtSecret = 'your-secret-key-change-in-production';
-                                        $jwtIssuer = 'public-safety-campaign-system';
-                                        $jwtAudience = 'public-safety-campaign-system';
-                                        
-                                        if (file_exists($envPath)) {
-                                            $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-                                            foreach ($lines as $line) {
-                                                $line = trim($line);
-                                                if ($line === '' || strpos($line, '#') === 0) continue;
-                                                if (strpos($line, '=') === false) continue;
-                                                list($name, $value) = explode('=', $line, 2);
-                                                $name = trim($name);
-                                                $value = trim($value);
-                                                if ($name === 'JWT_SECRET') $jwtSecret = $value;
-                                                if ($name === 'JWT_ISSUER') $jwtIssuer = $value;
-                                                if ($name === 'JWT_AUDIENCE') $jwtAudience = $value;
-                                            }
-                                        }
-                                        
-                                        $decoded = Firebase\JWT\JWT::decode($jwtToken, new Firebase\JWT\Key($jwtSecret, 'HS256'));
-                                        if (($decoded->aud ?? null) === $jwtAudience && ($decoded->iss ?? null) === $jwtIssuer) {
-                                            $roleId = (int) ($decoded->role_id ?? 0);
-                                            if ($roleId > 0) {
-                                                // Suppress errors and catch exceptions to prevent 502 Bad Gateway
-                                                $oldErrorReporting2 = error_reporting(0);
-                                                try {
-                                                    @require_once __DIR__ . '/../../src/Config/db_connect.php';
-                                                } catch (Exception $dbEx) {
-                                                    error_log('RBAC SIDEBAR: db_connect.php threw exception: ' . $dbEx->getMessage());
-                                                    $pdo = null;
-                                                } catch (Error $dbErr) {
-                                                    error_log('RBAC SIDEBAR: db_connect.php threw error: ' . $dbErr->getMessage());
-                                                    $pdo = null;
-                                                }
-                                                error_reporting($oldErrorReporting2);
-                                                if (isset($pdo) && $pdo instanceof PDO) {
-                                                    $stmt = $pdo->prepare('SELECT r.name FROM campaign_department_roles r WHERE r.id = :role_id LIMIT 1');
-                                                    $stmt->execute(['role_id' => $roleId]);
-                                                    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-                                                    if ($result) {
-                                                        $roleName = strtolower(trim($result['name']));
-                                                        $roleMappings = [
-                                                            'partner' => 'viewer',
-                                                            'partner representative' => 'viewer',
-                                                            'partner_representative' => 'viewer',
-                                                            'viewer' => 'viewer',
-                                                            'staff' => 'staff',
-                                                            'secretary' => 'secretary',
-                                                            'kagawad' => 'kagawad',
-                                                            'captain' => 'captain',
-                                                            'admin' => 'admin',
-                                                            'barangay administrator' => 'admin',
-                                                            'barangay admin' => 'admin',
-                                                            'barangay staff' => 'staff',
-                                                            'system_admin' => 'admin',
-                                                            'barangay_admin' => 'admin',
-                                                        ];
-                                                        $currentUserRole = $roleMappings[$roleName] ?? $roleName;
-                                                        if (strpos($roleName, 'partner') !== false || (strpos($roleName, 'viewer') !== false && !isset($roleMappings[$roleName]))) {
-                                                            $currentUserRole = 'viewer';
-                                                        }
-                                                        // Store in session for future requests (only if headers not sent)
-                                                        if (!headers_sent() && session_status() === PHP_SESSION_NONE) {
-                                                            session_start();
-                                                        }
-                                                        if (session_status() === PHP_SESSION_ACTIVE) {
-                                                            $_SESSION['user_role'] = $currentUserRole;
-                                                        }
-                                                        // Also set cookie for future requests
-                                                        if (!headers_sent()) {
-                                                            setcookie('user_role_id', (string)$roleId, [
-                                                                'expires' => time() + (30 * 24 * 60 * 60),
-                                                                'path' => '/',
-                                                                'samesite' => 'Lax'
-                                                            ]);
-                                                            $_COOKIE['user_role_id'] = (string)$roleId;
-                                                        }
-                                                        error_log('RBAC SIDEBAR: Last resort JWT decode SUCCESS - role=' . $currentUserRole);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } catch (Exception $e) {
-                                        error_log('RBAC SIDEBAR: Last resort JWT decode error: ' . $e->getMessage());
-                                    }
-                                }
-                            }
-                            
-                            // Final check: If still null, log critical error
-                            if (!$currentUserRole) {
-                                error_log('RBAC SIDEBAR CRITICAL: getCurrentUserRole() returned NULL after all fallbacks. ' .
-                                          'Cookies available: ' . json_encode(array_keys($_COOKIE)) . 
-                                          ', Request URI: ' . ($_SERVER['REQUEST_URI'] ?? 'unknown') .
-                                          ', Page: ' . basename($_SERVER['PHP_SELF'] ?? 'unknown'));
                             }
                         }
                         
-                        // DEBUG: Log role detection and available cookies
-                        $availableCookies = array_keys($_COOKIE);
-                        $hasRoleCookie = isset($_COOKIE['user_role_id']);
-                        $hasJwtCookie = isset($_COOKIE['jwt_token']);
-                        error_log('RBAC SIDEBAR DEBUG: Detected role = ' . ($currentUserRole ?? 'NULL') . 
-                                  ', user_role_id cookie = ' . ($_COOKIE['user_role_id'] ?? 'NOT SET') .
-                                  ', jwt_token cookie = ' . ($hasJwtCookie ? 'SET' : 'NOT SET') .
-                                  ', All cookies: ' . implode(', ', $availableCookies));
+                        $currentUserRole = $currentUserRole ?: 'viewer';
                         
                         // Define modules with their nested features
                         $modules = [

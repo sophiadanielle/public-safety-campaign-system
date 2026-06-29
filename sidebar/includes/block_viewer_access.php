@@ -33,37 +33,15 @@ if ($currentUserRole) {
                 strpos($roleLower, 'partner') !== false || strpos($roleLower, 'viewer') !== false);
 }
 
-// Also check cookie directly
-if (!$isViewer && isset($_COOKIE['user_role_id'])) {
+// Also check cookie directly. For the current deployment, role_id 1 is admin;
+// all other roles are read-only/viewer for page rendering.
+if (!$currentUserRole && isset($_COOKIE['user_role_id'])) {
     $roleIdFromCookie = (int)($_COOKIE['user_role_id'] ?? 0);
     if ($roleIdFromCookie > 0) {
-        try {
-            // Suppress errors and catch exceptions during include to prevent 502 errors
-            $oldErrorReporting = error_reporting(0);
-            try {
-                @require_once __DIR__ . '/../../src/Config/db_connect.php';
-            } catch (\Throwable $dbEx) {
-                error_log('RBAC block_viewer_access: db_connect.php threw throwable: ' . $dbEx->getMessage());
-                $pdo = null;
-            }
-            error_reporting($oldErrorReporting);
-            if (isset($pdo) && $pdo instanceof PDO) {
-                $stmt = $pdo->prepare('SELECT name FROM campaign_department_roles WHERE id = :id LIMIT 1');
-                $stmt->execute(['id' => $roleIdFromCookie]);
-                $roleResult = $stmt->fetch(PDO::FETCH_ASSOC);
-                if ($roleResult) {
-                    $roleName = strtolower(trim($roleResult['name']));
-                    $isViewer = ($roleName === 'viewer' || $roleName === 'partner' || 
-                                strpos($roleName, 'partner') !== false || strpos($roleName, 'viewer') !== false ||
-                                $roleIdFromCookie === 6);
-                }
-            }
-        } catch (\Throwable $e) {
-            error_log('RBAC block_viewer_access: Error checking role from cookie: ' . $e->getMessage());
-        }
+        $currentUserRole = $roleIdFromCookie === 1 ? 'admin' : 'viewer';
+        $isViewer = $currentUserRole === 'viewer';
     }
 }
 
 // $isViewer is now available to the page for conditional rendering
 // Pages should use PHP conditionals to hide forms and action buttons for viewers
-
