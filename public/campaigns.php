@@ -560,6 +560,41 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         max-height: 360px;
         position: relative;
     }
+    .crime-ai-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+    }
+    .crime-ai-page-controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .crime-ai-page-btn {
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #475569;
+        min-width: 34px;
+        height: 34px;
+        padding: 0 10px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 13px;
+    }
+    .crime-ai-page-btn.active {
+        background: #667eea;
+        border-color: #667eea;
+        color: #ffffff;
+    }
+    .crime-ai-page-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
     @media (max-width: 768px) {
         .crime-ai-card {
             padding: 16px;
@@ -1628,6 +1663,10 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                         </tbody>
                     </table>
                 </div>
+                <div id="crimeAiPagination" class="crime-ai-pagination" style="display: none;">
+                    <div id="crimeAiPaginationSummary" style="color: #64748b; font-size: 13px; font-weight: 600;"></div>
+                    <div id="crimeAiPaginationControls" class="crime-ai-page-controls"></div>
+                </div>
             </div>
         </div>
     </section>
@@ -2092,6 +2131,9 @@ let crimeReportRecords = [];
 let crimeIncidentGroups = [];
 let crimeAiRecommendations = [];
 let crimeRecommendationChart = null;
+let crimeRecommendationsCurrentPage = 1;
+
+const crimeRecommendationsPageSize = 10;
 
 const crimePriorityThresholds = {
     high: 10,
@@ -2278,6 +2320,7 @@ function setCrimeAiStatus(message, isError = false) {
 function renderCrimeRecommendationsLoading() {
     const tbody = document.getElementById('crimeAiRecommendationsTable');
     if (!tbody) return;
+    updateCrimeRecommendationsPagination(0);
     tbody.innerHTML = `
         <tr>
             <td colspan="5" style="padding: 28px; text-align: center; color: #64748b;">
@@ -2291,6 +2334,7 @@ function renderCrimeRecommendationsLoading() {
 function renderCrimeRecommendationsEmpty(message) {
     const tbody = document.getElementById('crimeAiRecommendationsTable');
     if (!tbody) return;
+    updateCrimeRecommendationsPagination(0);
     tbody.innerHTML = `
         <tr>
             <td colspan="5" style="padding: 28px; text-align: center; color: #64748b;">
@@ -2299,6 +2343,78 @@ function renderCrimeRecommendationsEmpty(message) {
             </td>
         </tr>
     `;
+}
+
+function updateCrimeRecommendationsPagination(totalItems) {
+    const pagination = document.getElementById('crimeAiPagination');
+    const summary = document.getElementById('crimeAiPaginationSummary');
+    const controls = document.getElementById('crimeAiPaginationControls');
+    if (!pagination || !summary || !controls) return;
+
+    controls.innerHTML = '';
+
+    if (totalItems <= crimeRecommendationsPageSize) {
+        pagination.style.display = 'none';
+        return;
+    }
+
+    const totalPages = Math.ceil(totalItems / crimeRecommendationsPageSize);
+    crimeRecommendationsCurrentPage = Math.min(Math.max(crimeRecommendationsCurrentPage, 1), totalPages);
+    const startItem = (crimeRecommendationsCurrentPage - 1) * crimeRecommendationsPageSize + 1;
+    const endItem = Math.min(startItem + crimeRecommendationsPageSize - 1, totalItems);
+
+    pagination.style.display = 'flex';
+    summary.textContent = `Showing ${startItem}-${endItem} of ${totalItems.toLocaleString()} recommendations`;
+
+    const createButton = (label, page, options = {}) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'crime-ai-page-btn';
+        button.textContent = label;
+        button.disabled = Boolean(options.disabled);
+        if (options.active) button.classList.add('active');
+        button.addEventListener('click', () => {
+            if (!button.disabled) {
+                setCrimeRecommendationsPage(page);
+            }
+        });
+        controls.appendChild(button);
+    };
+
+    createButton('Prev', crimeRecommendationsCurrentPage - 1, { disabled: crimeRecommendationsCurrentPage === 1 });
+
+    const visiblePages = [];
+    const firstPage = Math.max(1, crimeRecommendationsCurrentPage - 2);
+    const lastPage = Math.min(totalPages, crimeRecommendationsCurrentPage + 2);
+    for (let page = firstPage; page <= lastPage; page++) {
+        visiblePages.push(page);
+    }
+    if (!visiblePages.includes(1)) {
+        visiblePages.unshift(1);
+    }
+    if (!visiblePages.includes(totalPages)) {
+        visiblePages.push(totalPages);
+    }
+
+    let previousPage = 0;
+    visiblePages.forEach(page => {
+        if (previousPage && page - previousPage > 1) {
+            const dots = document.createElement('span');
+            dots.textContent = '...';
+            dots.style.cssText = 'color: #94a3b8; padding: 0 4px; font-weight: 700;';
+            controls.appendChild(dots);
+        }
+        createButton(String(page), page, { active: page === crimeRecommendationsCurrentPage });
+        previousPage = page;
+    });
+
+    createButton('Next', crimeRecommendationsCurrentPage + 1, { disabled: crimeRecommendationsCurrentPage === totalPages });
+}
+
+function setCrimeRecommendationsPage(page) {
+    const totalPages = Math.max(1, Math.ceil(crimeAiRecommendations.length / crimeRecommendationsPageSize));
+    crimeRecommendationsCurrentPage = Math.min(Math.max(page, 1), totalPages);
+    renderCrimeRecommendationsTable(crimeAiRecommendations);
 }
 
 function renderCrimeRecommendationsTable(recommendations) {
@@ -2311,7 +2427,13 @@ function renderCrimeRecommendationsTable(recommendations) {
         return;
     }
 
-    recommendations.forEach((recommendation, index) => {
+    const totalPages = Math.max(1, Math.ceil(recommendations.length / crimeRecommendationsPageSize));
+    crimeRecommendationsCurrentPage = Math.min(Math.max(crimeRecommendationsCurrentPage, 1), totalPages);
+    const startIndex = (crimeRecommendationsCurrentPage - 1) * crimeRecommendationsPageSize;
+    const pageRecommendations = recommendations.slice(startIndex, startIndex + crimeRecommendationsPageSize);
+
+    pageRecommendations.forEach((recommendation, pageIndex) => {
+        const recommendationIndex = startIndex + pageIndex;
         const row = document.createElement('tr');
         row.style.borderBottom = '1px solid #e2e8f0';
 
@@ -2341,12 +2463,14 @@ function renderCrimeRecommendationsTable(recommendations) {
         viewButton.className = 'btn btn-primary';
         viewButton.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 13px;';
         viewButton.innerHTML = '<i class="fas fa-eye"></i><span>View</span>';
-        viewButton.addEventListener('click', () => openCrimeRecommendationModal(index));
+        viewButton.addEventListener('click', () => openCrimeRecommendationModal(recommendationIndex));
         actionCell.appendChild(viewButton);
 
         row.append(titleCell, incidentCell, countCell, priorityCell, actionCell);
         tbody.appendChild(row);
     });
+
+    updateCrimeRecommendationsPagination(recommendations.length);
 }
 
 async function loadCrimeCampaignRecommendations(forceRefresh = false) {
@@ -2357,6 +2481,7 @@ async function loadCrimeCampaignRecommendations(forceRefresh = false) {
 
     renderCrimeRecommendationsLoading();
     setCrimeAiStatus('Loading crime analytics reports...');
+    crimeRecommendationsCurrentPage = 1;
 
     try {
         let reportResult;
@@ -2375,6 +2500,7 @@ async function loadCrimeCampaignRecommendations(forceRefresh = false) {
             : await fetchCrimeAiTitles(crimeIncidentGroups);
 
         crimeAiRecommendations = buildCrimeRecommendations(crimeIncidentGroups, titleResult.recommendations);
+        crimeRecommendationsCurrentPage = 1;
         renderCrimeRecommendationsTable(crimeAiRecommendations);
 
         if (!crimeAiRecommendations.length) {
