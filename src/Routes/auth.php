@@ -70,6 +70,11 @@ return [
         'path' => '/api/v1/auth/google/callback',
         'handler' => [AuthController::class, 'googleCallback'],
     ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/auth/users',
+        'handler' => [AuthController::class, 'users'],
+    ],
 ];
 
 

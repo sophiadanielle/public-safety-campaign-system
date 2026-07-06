@@ -989,6 +989,51 @@ class AuthController
     }
 
     /**
+     * Expose users list for external system integration (no auth required)
+     * Returns all active users with their roles and barangays.
+     */
+    public function users(?array $user = null, array $params = []): array
+    {
+        if ($this->pdo === null) {
+            http_response_code(503);
+            return ['error' => 'Database unavailable'];
+        }
+
+        try {
+            $stmt = $this->pdo->query('
+                SELECT u.id, u.name, u.email, u.role_id, u.barangay_id,
+                       u.is_active, u.created_at,
+                       r.name as role_name, b.name as barangay_name
+                FROM campaign_department_users u
+                LEFT JOIN campaign_department_roles r ON r.id = u.role_id
+                LEFT JOIN campaign_department_barangays b ON b.id = u.barangay_id
+                ORDER BY u.name ASC
+            ');
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $result = array_map(function ($u) {
+                return [
+                    'id' => (int) $u['id'],
+                    'name' => $u['name'],
+                    'email' => $u['email'],
+                    'role_id' => (int) $u['role_id'],
+                    'role' => $u['role_name'],
+                    'barangay_id' => $u['barangay_id'] ? (int) $u['barangay_id'] : null,
+                    'barangay' => $u['barangay_name'],
+                    'is_active' => (bool) $u['is_active'],
+                    'created_at' => $u['created_at'],
+                ];
+            }, $users);
+
+            return ['users' => $result, 'total' => count($result)];
+        } catch (\PDOException $e) {
+            error_log('AuthController::users error: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Database error'];
+        }
+    }
+
+    /**
      * Initiate Google OAuth login - redirects to Google
      */
     public function google(?array $user = null, array $params = []): void
