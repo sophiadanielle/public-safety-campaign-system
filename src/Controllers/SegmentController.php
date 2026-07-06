@@ -714,6 +714,87 @@ class SegmentController
         return ['message' => 'Segment restored successfully'];
     }
 
+    public function publicList(?array $user = null, array $params = []): array
+    {
+        $stmt = $this->pdo->query('
+            SELECT 
+                s.id,
+                s.segment_name,
+                s.geographic_scope,
+                s.location_reference,
+                s.sector_type,
+                s.risk_level,
+                s.basis_of_segmentation,
+                s.created_at,
+                COUNT(m.id) AS member_count
+            FROM `campaign_department_audience_segments` s
+            LEFT JOIN `campaign_department_audience_members` m ON m.segment_id = s.id
+            WHERE COALESCE(s.is_archived, 0) = 0
+            GROUP BY s.id
+            ORDER BY s.created_at DESC
+        ');
+        $segments = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $result = array_map(function ($s) {
+            return [
+                'id' => (int) $s['id'],
+                'segment_name' => $s['segment_name'],
+                'geographic_scope' => $s['geographic_scope'],
+                'location_reference' => $s['location_reference'],
+                'sector_type' => $s['sector_type'],
+                'risk_level' => $s['risk_level'],
+                'basis_of_segmentation' => $s['basis_of_segmentation'],
+                'member_count' => (int) $s['member_count'],
+                'created_at' => $s['created_at'],
+            ];
+        }, $segments);
+
+        return ['segments' => $result, 'total' => count($result)];
+    }
+
+    public function publicMembers(?array $user = null, array $params = []): array
+    {
+        $stmt = $this->pdo->query('
+            SELECT 
+                m.id,
+                m.full_name,
+                m.sector,
+                m.barangay,
+                m.zone,
+                m.purok,
+                m.contact,
+                m.channel,
+                m.risk_level,
+                m.created_at,
+                s.segment_name,
+                s.id AS segment_id
+            FROM `campaign_department_audience_members` m
+            LEFT JOIN `campaign_department_audience_segments` s ON s.id = m.segment_id
+            WHERE COALESCE(s.is_archived, 0) = 0
+            ORDER BY m.full_name ASC
+        ');
+        $members = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $result = array_map(function ($m) {
+            return [
+                'id' => (int) $m['id'],
+                'full_name' => $m['full_name'],
+                'sector' => $m['sector'],
+                'barangay' => $m['barangay'],
+                'zone' => $m['zone'],
+                'purok' => $m['purok'],
+                'contact' => $m['contact'],
+                'channel' => $m['channel'],
+                'risk_level' => $m['risk_level'],
+                'segment_id' => $m['segment_id'] ? (int) $m['segment_id'] : null,
+                'segment_name' => $m['segment_name'],
+                'created_at' => $m['created_at'],
+            ];
+        }, $members);
+
+        return ['members' => $result, 'total' => count($result)];
+    }
+
     private function findSegment(int $id): array
     {
         $stmt = $this->pdo->prepare('

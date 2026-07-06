@@ -21,6 +21,16 @@ return [
     ],
     [
         'method' => 'GET',
+        'path' => '/api/v1/segments/public',
+        'handler' => [SegmentController::class, 'publicList'],
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/segments/public/members',
+        'handler' => [SegmentController::class, 'publicMembers'],
+    ],
+    [
+        'method' => 'GET',
         'path' => '/api/v1/segments/{id}',
         'handler' => [SegmentController::class, 'show'],
         'middleware' => JWTMiddleware::class,
