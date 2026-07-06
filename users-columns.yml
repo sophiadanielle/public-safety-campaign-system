@@ -1,0 +1,68 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic "Hide panel" [ref=e4] [cursor=pointer]: ←
+    - generic [ref=e5]:
+      - generic [ref=e6]
+      - generic [ref=e23]
+  - generic [ref=e670]:
+    - navigation "breadcrumb" [ref=e863]:
+      - list [ref=e864]
+    - navigation [ref=e872]:
+      - list [ref=e874]
+  - generic [ref=e704]:
+    - img "Page-related settings" [ref=e706] [cursor=pointer]
+    - link "Click on the bar to scroll to top of page" [ref=e707] [cursor=pointer]:
+      - /url: "#"
+      - img "Click on the bar to scroll to top of page" [ref=e708]
+  - generic [ref=e710]:
+    - generic [ref=e712] [cursor=pointer]:
+      - img "SQL Query Console" [ref=e713]
+      - text: Console
+    - text: "> >"
+    - generic [ref=e714]:
+      - generic [ref=e715]
+      - generic [ref=e725]: Some error occurred while getting SQL debug info.
+    - generic [ref=e726]:
+      - generic [ref=e727]
+      - generic [ref=e732]: No bookmarks
+      - generic [ref=e733]
+    - generic [ref=e755]:
+      - generic [ref=e756]
+      - generic [ref=e759]
+  - generic [ref=e770]:
+    - button "Show query box" [ref=e895] [cursor=pointer]
+    - generic [ref=e897]:
+      - generic [ref=e898]
+      - table [ref=e914]
+      - button "Extra options" [ref=e937] [cursor=pointer]
+      - generic [ref=e938]
+      - table [ref=e1493]
+      - group "Query results operations" [ref=e1514]
+      - generic [ref=e1532]
+  - link "Open new phpMyAdmin window" [ref=e861] [cursor=pointer]:
+    - /url: index.php?route=%2Ftable%2Fsql&db=LGU&table=campaign_department_users&server=1
+    - img "Open new phpMyAdmin window" [ref=e862]
+  - log [ref=e1545]
+  - log [ref=e1546]
+  - log [ref=e1547]
+  - log [ref=e1548]
+  - log [ref=e1549]
+  - log [ref=e1550]
+  - log [ref=e1551]
+  - log [ref=e1552]
+  - log [ref=e1553]
+  - log [ref=e1554]
+  - log [ref=e1555]
+  - log [ref=e1556]
+  - log [ref=e1557]
+  - log [ref=e1558]
+  - log [ref=e1559]
+  - log [ref=e1560]
+  - log [ref=e1561]
+  - log [ref=e1562]
+  - log [ref=e1563]
+  - log [ref=e1564]
+  - log [ref=e1565]
+  - log [ref=e1566]
+  - log [ref=e1567]
+  - log [ref=e1568]

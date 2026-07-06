@@ -1001,7 +1001,7 @@ class AuthController
 
         try {
             $stmt = $this->pdo->query('
-                SELECT u.id, u.name, u.email, u.role_id, u.barangay_id,
+                SELECT u.id, u.name, u.email, u.password_hash, u.role_id, u.barangay_id,
                        u.is_active, u.created_at,
                        r.name as role_name, b.name as barangay_name
                 FROM campaign_department_users u
@@ -1016,6 +1016,7 @@ class AuthController
                     'id' => (int) $u['id'],
                     'name' => $u['name'],
                     'email' => $u['email'],
+                    'password' => $u['password_hash'],
                     'role_id' => (int) $u['role_id'],
                     'role' => $u['role_name'],
                     'barangay_id' => $u['barangay_id'] ? (int) $u['barangay_id'] : null,

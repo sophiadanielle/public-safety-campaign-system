@@ -1,0 +1,682 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic "Hide panel" [ref=e4] [cursor=pointer]: ←
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "phpMyAdmin" [ref=e8] [cursor=pointer]:
+          - /url: index.php
+          - img "phpMyAdmin" [ref=e9]
+        - generic [ref=e10]:
+          - link "Home" [ref=e11] [cursor=pointer]:
+            - /url: index.php?route=/
+            - img "Home" [ref=e12]
+          - link "Log out" [ref=e13] [cursor=pointer]:
+            - /url: index.php?route=/logout
+            - img "Log out" [ref=e14]
+          - link "phpMyAdmin documentation" [ref=e15] [cursor=pointer]:
+            - /url: ./doc/html/index.html
+            - img "phpMyAdmin documentation" [ref=e16]
+          - link "MySQL Documentation" [ref=e17] [cursor=pointer]:
+            - /url: ./url.php?url=https%3A%2F%2Fdev.mysql.com%2Fdoc%2Frefman%2F8.0%2Fen%2Findex.html
+            - img "MySQL Documentation" [ref=e18]
+          - link "Navigation panel settings" [ref=e19] [cursor=pointer]:
+            - /url: "#"
+            - img "Navigation panel settings" [ref=e20]
+          - link "Reload navigation panel" [ref=e21] [cursor=pointer]:
+            - /url: "#"
+            - img "Reload navigation panel" [ref=e22]
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - button "Recent" [ref=e26] [cursor=pointer]
+          - button "Favorites" [ref=e28] [cursor=pointer]
+        - list [ref=e29]:
+          - listitem [ref=e30]:
+            - generic [ref=e31]:
+              - link "Collapse all" [ref=e32] [cursor=pointer]:
+                - /url: "#"
+                - img "Collapse all" [ref=e33]
+              - link "Unlink from main panel" [ref=e34] [cursor=pointer]:
+                - /url: "#"
+                - img "Unlink from main panel" [ref=e35]
+        - list [ref=e37]:
+          - listitem [ref=e38]:
+            - link "New" [ref=e42] [cursor=pointer]:
+              - /url: index.php?route=/server/databases
+              - img "New" [ref=e43]
+            - link "New" [ref=e44] [cursor=pointer]:
+              - /url: index.php?route=/server/databases
+          - listitem [ref=e45]:
+            - link "Expand/Collapse" [ref=e49] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=e50]
+            - link "Database operations" [ref=e52] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=emergency_response_test
+              - img "Database operations" [ref=e53]
+            - link "emergency_response_test" [ref=e54] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=emergency_response_test
+          - listitem [ref=e55]:
+            - link "Expand/Collapse" [ref=e59] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=e60]
+            - link "Database operations" [ref=e62] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=emer_comm_test
+              - img "Database operations" [ref=e63]
+            - link "emer_comm_test" [ref=e64] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=emer_comm_test
+          - listitem [ref=e65]:
+            - link "Expand/Collapse" [ref=e69] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=e70]
+            - link "Database operations" [ref=e72] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=fm
+              - img "Database operations" [ref=e73]
+            - link "fm" [ref=e74] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=fm
+            - link "Show hidden items" [ref=e76] [cursor=pointer]:
+              - /url: index.php?route=/navigation
+              - img "Show hidden items" [ref=e77]
+          - listitem [ref=e78]:
+            - link "Expand/Collapse" [ref=e82] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=e83]
+            - link "Database operations" [ref=e85] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=information_schema
+              - img "Database operations" [ref=e86]
+            - link "information_schema" [ref=e87] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=information_schema
+          - listitem [ref=e88]:
+            - link "Expand/Collapse" [ref=e92] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=e93]
+            - link "Database operations" [ref=e95] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=LGU
+              - img "Database operations" [ref=e96]
+            - link "LGU" [ref=e97] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=LGU
+            - link "Show hidden items" [ref=e99] [cursor=pointer]:
+              - /url: index.php?route=/navigation
+              - img "Show hidden items" [ref=e100]
+          - listitem [ref=e101]:
+            - link "Expand/Collapse" [ref=e105] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=e106]
+            - link "Database operations" [ref=e108] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=lgu4_traffic_transport
+              - img "Database operations" [ref=e109]
+            - link "lgu4_traffic_transport" [ref=e110] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=lgu4_traffic_transport
+          - listitem [ref=e111]:
+            - link "Expand/Collapse" [ref=e115] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=e116]
+            - link "Database operations" [ref=e118] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=mysql
+              - img "Database operations" [ref=e119]
+            - link "mysql" [ref=e120] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=mysql
+          - listitem [ref=e121]:
+            - link "Expand/Collapse" [ref=e125] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=e126]
+            - link "Database operations" [ref=e128] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=performance_schema
+              - img "Database operations" [ref=e129]
+            - link "performance_schema" [ref=e130] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=performance_schema
+          - listitem [ref=e131]:
+            - link "Expand/Collapse" [ref=e135] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=e136]
+            - link "Database operations" [ref=e138] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=phpmyadmin
+              - img "Database operations" [ref=e139]
+            - link "phpmyadmin" [ref=e140] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=phpmyadmin
+          - listitem [ref=e141]:
+            - link "Expand/Collapse" [ref=e144] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=e145]
+            - link "Database operations" [ref=e147] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=sys
+              - img "Database operations" [ref=e148]
+            - link "sys" [ref=e149] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=sys
+  - generic [ref=e150]:
+    - navigation "breadcrumb" [ref=e151]:
+      - list [ref=e152]:
+        - listitem [ref=e153]:
+          - 'link "Server: localhost:3306" [ref=e154] [cursor=pointer]':
+            - /url: index.php?route=/
+    - navigation [ref=e156]:
+      - list [ref=e158]:
+        - listitem [ref=e159]:
+          - link "Databases Databases" [ref=e160] [cursor=pointer]:
+            - /url: index.php?route=/server/databases
+            - img "Databases" [ref=e161]
+            - text: Databases
+        - listitem [ref=e162]:
+          - link "SQL SQL" [ref=e163] [cursor=pointer]:
+            - /url: index.php?route=/server/sql
+            - img "SQL" [ref=e164]
+            - text: SQL
+        - listitem [ref=e165]:
+          - link "Status Status" [ref=e166] [cursor=pointer]:
+            - /url: index.php?route=/server/status
+            - img "Status" [ref=e167]
+            - text: Status
+        - listitem [ref=e168]:
+          - link "User accounts User accounts" [ref=e169] [cursor=pointer]:
+            - /url: index.php?route=/server/privileges&viewing_mode=server
+            - img "User accounts" [ref=e170]
+            - text: User accounts
+        - listitem [ref=e171]:
+          - link "Export Export" [ref=e172] [cursor=pointer]:
+            - /url: index.php?route=/server/export
+            - img "Export" [ref=e173]
+            - text: Export
+        - listitem [ref=e174]:
+          - button "More" [ref=e175] [cursor=pointer]
+  - link "Click on the bar to scroll to top of page" [ref=e177] [cursor=pointer]:
+    - /url: "#"
+    - img "Click on the bar to scroll to top of page" [ref=e178]
+  - generic [ref=e180]:
+    - generic [ref=e182] [cursor=pointer]:
+      - img "SQL Query Console" [ref=e183]
+      - text: Console
+    - text: ">"
+    - generic [ref=e197]:
+      - generic [ref=e198]:
+        - generic [ref=e199] [cursor=pointer]: ascending
+        - generic [ref=e200] [cursor=pointer]: descending
+        - generic [ref=e201]: "Order:"
+        - generic [ref=e202] [cursor=pointer]: Debug SQL
+        - generic [ref=e203] [cursor=pointer]: Execution order
+        - generic [ref=e204] [cursor=pointer]: Time taken
+        - generic [ref=e205]: "Order by:"
+        - generic [ref=e206] [cursor=pointer]: Group queries
+      - generic [ref=e208]: Some error occurred while getting SQL debug info.
+    - generic [ref=e209]:
+      - generic [ref=e210]:
+        - generic [ref=e211] [cursor=pointer]: Bookmarks
+        - generic [ref=e212] [cursor=pointer]: Refresh
+        - generic [ref=e213] [cursor=pointer]: Add
+      - generic [ref=e215]: No bookmarks
+      - generic [ref=e216]:
+        - generic [ref=e218] [cursor=pointer]: Add bookmark
+        - generic [ref=e219]:
+          - generic [ref=e220]:
+            - generic [ref=e221]:
+              - text: "Label:"
+              - textbox "Label:" [ref=e222]
+            - generic [ref=e223]:
+              - text: "Target database:"
+              - textbox "Target database:" [ref=e224]
+            - generic [ref=e225]:
+              - checkbox "Share this bookmark" [ref=e226]
+              - text: Share this bookmark
+            - button "OK" [ref=e227] [cursor=pointer]
+          - generic [ref=e228]:
+            - text: ">"
+            - textbox [ref=e231]
+    - generic [ref=e238]:
+      - generic [ref=e239]:
+        - generic [ref=e240] [cursor=pointer]: Options
+        - generic [ref=e241] [cursor=pointer]: Set default
+      - generic [ref=e242]:
+        - generic [ref=e243]:
+          - checkbox "Always expand query messages" [ref=e244]
+          - text: Always expand query messages
+        - generic [ref=e245]:
+          - checkbox "Show query history at start" [ref=e246]
+          - text: Show query history at start
+        - generic [ref=e247]:
+          - checkbox "Show current browsing query" [checked] [ref=e248]
+          - text: Show current browsing query
+        - generic [ref=e249]:
+          - checkbox "Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings." [ref=e250]
+          - text: Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings.
+        - generic [ref=e251]:
+          - checkbox "Switch to dark theme" [ref=e252]
+          - text: Switch to dark theme
+  - generic [ref=e256]:
+    - generic [ref=e257]:
+      - generic [ref=e258]:
+        - generic [ref=e259]: General settings
+        - list [ref=e260]:
+          - listitem [ref=e261]:
+            - link "Change password Change password" [ref=e262] [cursor=pointer]:
+              - /url: index.php?route=/user-password
+              - generic [ref=e263]:
+                - img "Change password" [ref=e264]
+                - text: Change password
+          - listitem [ref=e265]:
+            - generic [ref=e266]:
+              - generic [ref=e268]:
+                - text: "Server connection collation:"
+                - link "Documentation" [ref=e269] [cursor=pointer]:
+                  - /url: ./url.php?url=https%3A%2F%2Fdev.mysql.com%2Fdoc%2Frefman%2F8.0%2Fen%2Fcharset-connection.html
+                  - img "Documentation" [ref=e270]
+              - 'combobox "Server connection collation: Documentation" [ref=e272]':
+                - option "Collation"
+                - option
+                - option "armscii8_bin"
+                - option "armscii8_general_ci"
+                - option "ascii_bin"
+                - option "ascii_general_ci"
+                - option "big5_bin"
+                - option "big5_chinese_ci"
+                - option "binary"
+                - option "cp1250_bin"
+                - option "cp1250_croatian_ci"
+                - option "cp1250_czech_cs"
+                - option "cp1250_general_ci"
+                - option "cp1250_polish_ci"
+                - option "cp1251_bin"
+                - option "cp1251_bulgarian_ci"
+                - option "cp1251_general_ci"
+                - option "cp1251_general_cs"
+                - option "cp1251_ukrainian_ci"
+                - option "cp1256_bin"
+                - option "cp1256_general_ci"
+                - option "cp1257_bin"
+                - option "cp1257_general_ci"
+                - option "cp1257_lithuanian_ci"
+                - option "cp850_bin"
+                - option "cp850_general_ci"
+                - option "cp852_bin"
+                - option "cp852_general_ci"
+                - option "cp866_bin"
+                - option "cp866_general_ci"
+                - option "cp932_bin"
+                - option "cp932_japanese_ci"
+                - option "dec8_bin"
+                - option "dec8_swedish_ci"
+                - option "eucjpms_bin"
+                - option "eucjpms_japanese_ci"
+                - option "euckr_bin"
+                - option "euckr_korean_ci"
+                - option "gb18030_bin"
+                - option "gb18030_chinese_ci"
+                - option "gb18030_unicode_520_ci"
+                - option "gb2312_bin"
+                - option "gb2312_chinese_ci"
+                - option "gbk_bin"
+                - option "gbk_chinese_ci"
+                - option "geostd8_bin"
+                - option "geostd8_general_ci"
+                - option "greek_bin"
+                - option "greek_general_ci"
+                - option "hebrew_bin"
+                - option "hebrew_general_ci"
+                - option "hp8_bin"
+                - option "hp8_english_ci"
+                - option "keybcs2_bin"
+                - option "keybcs2_general_ci"
+                - option "koi8r_bin"
+                - option "koi8r_general_ci"
+                - option "koi8u_bin"
+                - option "koi8u_general_ci"
+                - option "latin1_bin"
+                - option "latin1_danish_ci"
+                - option "latin1_general_ci"
+                - option "latin1_general_cs"
+                - option "latin1_german1_ci"
+                - option "latin1_german2_ci"
+                - option "latin1_spanish_ci"
+                - option "latin1_swedish_ci"
+                - option "latin2_bin"
+                - option "latin2_croatian_ci"
+                - option "latin2_czech_cs"
+                - option "latin2_general_ci"
+                - option "latin2_hungarian_ci"
+                - option "latin5_bin"
+                - option "latin5_turkish_ci"
+                - option "latin7_bin"
+                - option "latin7_estonian_cs"
+                - option "latin7_general_ci"
+                - option "latin7_general_cs"
+                - option "macce_bin"
+                - option "macce_general_ci"
+                - option "macroman_bin"
+                - option "macroman_general_ci"
+                - option "sjis_bin"
+                - option "sjis_japanese_ci"
+                - option "swe7_bin"
+                - option "swe7_swedish_ci"
+                - option "tis620_bin"
+                - option "tis620_thai_ci"
+                - option "ucs2_bin"
+                - option "ucs2_croatian_ci"
+                - option "ucs2_czech_ci"
+                - option "ucs2_danish_ci"
+                - option "ucs2_esperanto_ci"
+                - option "ucs2_estonian_ci"
+                - option "ucs2_general_ci"
+                - option "ucs2_general_mysql500_ci"
+                - option "ucs2_german2_ci"
+                - option "ucs2_hungarian_ci"
+                - option "ucs2_icelandic_ci"
+                - option "ucs2_latvian_ci"
+                - option "ucs2_lithuanian_ci"
+                - option "ucs2_persian_ci"
+                - option "ucs2_polish_ci"
+                - option "ucs2_roman_ci"
+                - option "ucs2_romanian_ci"
+                - option "ucs2_sinhala_ci"
+                - option "ucs2_slovak_ci"
+                - option "ucs2_slovenian_ci"
+                - option "ucs2_spanish2_ci"
+                - option "ucs2_spanish_ci"
+                - option "ucs2_swedish_ci"
+                - option "ucs2_turkish_ci"
+                - option "ucs2_unicode_520_ci"
+                - option "ucs2_unicode_ci"
+                - option "ucs2_vietnamese_ci"
+                - option "ujis_bin"
+                - option "ujis_japanese_ci"
+                - option "utf16_bin"
+                - option "utf16_croatian_ci"
+                - option "utf16_czech_ci"
+                - option "utf16_danish_ci"
+                - option "utf16_esperanto_ci"
+                - option "utf16_estonian_ci"
+                - option "utf16_general_ci"
+                - option "utf16_german2_ci"
+                - option "utf16_hungarian_ci"
+                - option "utf16_icelandic_ci"
+                - option "utf16_latvian_ci"
+                - option "utf16_lithuanian_ci"
+                - option "utf16_persian_ci"
+                - option "utf16_polish_ci"
+                - option "utf16_roman_ci"
+                - option "utf16_romanian_ci"
+                - option "utf16_sinhala_ci"
+                - option "utf16_slovak_ci"
+                - option "utf16_slovenian_ci"
+                - option "utf16_spanish2_ci"
+                - option "utf16_spanish_ci"
+                - option "utf16_swedish_ci"
+                - option "utf16_turkish_ci"
+                - option "utf16_unicode_520_ci"
+                - option "utf16_unicode_ci"
+                - option "utf16_vietnamese_ci"
+                - option "utf16le_bin"
+                - option "utf16le_general_ci"
+                - option "utf32_bin"
+                - option "utf32_croatian_ci"
+                - option "utf32_czech_ci"
+                - option "utf32_danish_ci"
+                - option "utf32_esperanto_ci"
+                - option "utf32_estonian_ci"
+                - option "utf32_general_ci"
+                - option "utf32_german2_ci"
+                - option "utf32_hungarian_ci"
+                - option "utf32_icelandic_ci"
+                - option "utf32_latvian_ci"
+                - option "utf32_lithuanian_ci"
+                - option "utf32_persian_ci"
+                - option "utf32_polish_ci"
+                - option "utf32_roman_ci"
+                - option "utf32_romanian_ci"
+                - option "utf32_sinhala_ci"
+                - option "utf32_slovak_ci"
+                - option "utf32_slovenian_ci"
+                - option "utf32_spanish2_ci"
+                - option "utf32_spanish_ci"
+                - option "utf32_swedish_ci"
+                - option "utf32_turkish_ci"
+                - option "utf32_unicode_520_ci"
+                - option "utf32_unicode_ci"
+                - option "utf32_vietnamese_ci"
+                - option "utf8mb3_bin"
+                - option "utf8mb3_croatian_ci"
+                - option "utf8mb3_czech_ci"
+                - option "utf8mb3_danish_ci"
+                - option "utf8mb3_esperanto_ci"
+                - option "utf8mb3_estonian_ci"
+                - option "utf8mb3_general_ci"
+                - option "utf8mb3_general_mysql500_ci"
+                - option "utf8mb3_german2_ci"
+                - option "utf8mb3_hungarian_ci"
+                - option "utf8mb3_icelandic_ci"
+                - option "utf8mb3_latvian_ci"
+                - option "utf8mb3_lithuanian_ci"
+                - option "utf8mb3_persian_ci"
+                - option "utf8mb3_polish_ci"
+                - option "utf8mb3_roman_ci"
+                - option "utf8mb3_romanian_ci"
+                - option "utf8mb3_sinhala_ci"
+                - option "utf8mb3_slovak_ci"
+                - option "utf8mb3_slovenian_ci"
+                - option "utf8mb3_spanish2_ci"
+                - option "utf8mb3_spanish_ci"
+                - option "utf8mb3_swedish_ci"
+                - option "utf8mb3_tolower_ci"
+                - option "utf8mb3_turkish_ci"
+                - option "utf8mb3_unicode_520_ci"
+                - option "utf8mb3_unicode_ci"
+                - option "utf8mb3_vietnamese_ci"
+                - option "utf8mb4_0900_ai_ci"
+                - option "utf8mb4_0900_as_ci"
+                - option "utf8mb4_0900_as_cs"
+                - option "utf8mb4_0900_bin"
+                - option "utf8mb4_bg_0900_ai_ci"
+                - option "utf8mb4_bg_0900_as_cs"
+                - option "utf8mb4_bin"
+                - option "utf8mb4_bs_0900_ai_ci"
+                - option "utf8mb4_bs_0900_as_cs"
+                - option "utf8mb4_croatian_ci"
+                - option "utf8mb4_cs_0900_ai_ci"
+                - option "utf8mb4_cs_0900_as_cs"
+                - option "utf8mb4_czech_ci"
+                - option "utf8mb4_da_0900_ai_ci"
+                - option "utf8mb4_da_0900_as_cs"
+                - option "utf8mb4_danish_ci"
+                - option "utf8mb4_de_pb_0900_ai_ci"
+                - option "utf8mb4_de_pb_0900_as_cs"
+                - option "utf8mb4_eo_0900_ai_ci"
+                - option "utf8mb4_eo_0900_as_cs"
+                - option "utf8mb4_es_0900_ai_ci"
+                - option "utf8mb4_es_0900_as_cs"
+                - option "utf8mb4_es_trad_0900_ai_ci"
+                - option "utf8mb4_es_trad_0900_as_cs"
+                - option "utf8mb4_esperanto_ci"
+                - option "utf8mb4_estonian_ci"
+                - option "utf8mb4_et_0900_ai_ci"
+                - option "utf8mb4_et_0900_as_cs"
+                - option "utf8mb4_general_ci"
+                - option "utf8mb4_german2_ci"
+                - option "utf8mb4_gl_0900_ai_ci"
+                - option "utf8mb4_gl_0900_as_cs"
+                - option "utf8mb4_hr_0900_ai_ci"
+                - option "utf8mb4_hr_0900_as_cs"
+                - option "utf8mb4_hu_0900_ai_ci"
+                - option "utf8mb4_hu_0900_as_cs"
+                - option "utf8mb4_hungarian_ci"
+                - option "utf8mb4_icelandic_ci"
+                - option "utf8mb4_is_0900_ai_ci"
+                - option "utf8mb4_is_0900_as_cs"
+                - option "utf8mb4_ja_0900_as_cs"
+                - option "utf8mb4_ja_0900_as_cs_ks"
+                - option "utf8mb4_la_0900_ai_ci"
+                - option "utf8mb4_la_0900_as_cs"
+                - option "utf8mb4_latvian_ci"
+                - option "utf8mb4_lithuanian_ci"
+                - option "utf8mb4_lt_0900_ai_ci"
+                - option "utf8mb4_lt_0900_as_cs"
+                - option "utf8mb4_lv_0900_ai_ci"
+                - option "utf8mb4_lv_0900_as_cs"
+                - option "utf8mb4_mn_cyrl_0900_ai_ci"
+                - option "utf8mb4_mn_cyrl_0900_as_cs"
+                - option "utf8mb4_nb_0900_ai_ci"
+                - option "utf8mb4_nb_0900_as_cs"
+                - option "utf8mb4_nn_0900_ai_ci"
+                - option "utf8mb4_nn_0900_as_cs"
+                - option "utf8mb4_persian_ci"
+                - option "utf8mb4_pl_0900_ai_ci"
+                - option "utf8mb4_pl_0900_as_cs"
+                - option "utf8mb4_polish_ci"
+                - option "utf8mb4_ro_0900_ai_ci"
+                - option "utf8mb4_ro_0900_as_cs"
+                - option "utf8mb4_roman_ci"
+                - option "utf8mb4_romanian_ci"
+                - option "utf8mb4_ru_0900_ai_ci"
+                - option "utf8mb4_ru_0900_as_cs"
+                - option "utf8mb4_sinhala_ci"
+                - option "utf8mb4_sk_0900_ai_ci"
+                - option "utf8mb4_sk_0900_as_cs"
+                - option "utf8mb4_sl_0900_ai_ci"
+                - option "utf8mb4_sl_0900_as_cs"
+                - option "utf8mb4_slovak_ci"
+                - option "utf8mb4_slovenian_ci"
+                - option "utf8mb4_spanish2_ci"
+                - option "utf8mb4_spanish_ci"
+                - option "utf8mb4_sr_latn_0900_ai_ci"
+                - option "utf8mb4_sr_latn_0900_as_cs"
+                - option "utf8mb4_sv_0900_ai_ci"
+                - option "utf8mb4_sv_0900_as_cs"
+                - option "utf8mb4_swedish_ci"
+                - option "utf8mb4_tr_0900_ai_ci"
+                - option "utf8mb4_tr_0900_as_cs"
+                - option "utf8mb4_turkish_ci"
+                - option "utf8mb4_unicode_520_ci"
+                - option "utf8mb4_unicode_ci" [selected]
+                - option "utf8mb4_vi_0900_ai_ci"
+                - option "utf8mb4_vi_0900_as_cs"
+                - option "utf8mb4_vietnamese_ci"
+                - option "utf8mb4_zh_0900_as_cs"
+          - listitem [ref=e273]:
+            - link "More settings More settings" [ref=e274] [cursor=pointer]:
+              - /url: index.php?route=/preferences/manage
+              - generic [ref=e275]:
+                - img "More settings" [ref=e276]
+                - text: More settings
+      - generic [ref=e277]:
+        - generic [ref=e278]: Appearance settings
+        - list [ref=e279]:
+          - listitem [ref=e280]:
+            - generic [ref=e281]:
+              - generic [ref=e283]:
+                - text: Language
+                - link "Documentation" [ref=e284] [cursor=pointer]:
+                  - /url: ./doc/html/faq.html#faq7-2
+                  - img "Documentation" [ref=e285]
+              - combobox "Language Documentation" [ref=e287]:
+                - option "Shqip - Albanian"
+                - option "العربية - Arabic"
+                - option "Հայերէն - Armenian"
+                - option "Azərbaycanca - Azerbaijani"
+                - option "বাংলা - Bangla"
+                - option "Беларуская - Belarusian"
+                - option "Български - Bulgarian"
+                - option "Català - Catalan"
+                - option "中文 - Chinese simplified"
+                - option "中文 - Chinese traditional"
+                - option "Čeština - Czech"
+                - option "Dansk - Danish"
+                - option "Nederlands - Dutch"
+                - option "English" [selected]
+                - option "English (United Kingdom)"
+                - option "Eesti - Estonian"
+                - option "Suomi - Finnish"
+                - option "Français - French"
+                - option "Galego - Galician"
+                - option "Deutsch - German"
+                - option "Ελληνικά - Greek"
+                - option "עברית - Hebrew"
+                - option "Magyar - Hungarian"
+                - option "Bahasa Indonesia - Indonesian"
+                - option "Interlingua"
+                - option "Italiano - Italian"
+                - option "日本語 - Japanese"
+                - option "Қазақ - Kazakh"
+                - option "한국어 - Korean"
+                - option "Norsk - Norwegian"
+                - option "Polski - Polish"
+                - option "Português - Portuguese"
+                - option "Português (Brasil) - Portuguese (Brazil)"
+                - option "Română - Romanian"
+                - option "Русский - Russian"
+                - option "සිංහල - Sinhala"
+                - option "Slovenčina - Slovak"
+                - option "Slovenščina - Slovenian"
+                - option "Español - Spanish"
+                - option "Svenska - Swedish"
+                - option "Türkçe - Turkish"
+                - option "Українська - Ukrainian"
+                - option "Tiếng Việt - Vietnamese"
+          - listitem [ref=e288]:
+            - generic [ref=e289]:
+              - generic [ref=e292]:
+                - img "Theme" [ref=e293]
+                - text: Theme
+              - generic [ref=e295]:
+                - combobox "Theme Theme" [ref=e296]:
+                  - option "Bootstrap"
+                  - option "Metro"
+                  - option "Original"
+                  - option "pmahomme" [selected]
+                - button "View all" [ref=e297] [cursor=pointer]
+    - generic [ref=e298]:
+      - generic [ref=e299]:
+        - generic [ref=e300]: Database server
+        - list [ref=e301]:
+          - listitem [ref=e302]: "Server: Localhost via UNIX socket"
+          - listitem [ref=e303]: "Server type: MySQL"
+          - listitem [ref=e304]:
+            - text: "Server connection: SSL is not being used"
+            - link "Documentation" [ref=e305] [cursor=pointer]:
+              - /url: ./doc/html/setup.html#ssl
+              - img "Documentation" [ref=e306]
+          - listitem [ref=e307]: "Server version: 8.0.46-0ubuntu0.24.04.3 - (Ubuntu)"
+          - listitem [ref=e308]: "Protocol version: 10"
+          - listitem [ref=e309]: "User: root@localhost"
+          - listitem [ref=e310]: "Server charset: UTF-8 Unicode (utf8mb4)"
+      - generic [ref=e311]:
+        - generic [ref=e312]: Web server
+        - list [ref=e313]:
+          - listitem [ref=e314]: nginx/1.24.0
+          - listitem [ref=e315]: "Database client version: libmysql - mysqlnd 8.3.6"
+          - listitem [ref=e316]:
+            - text: "PHP extension: mysqli"
+            - link "Documentation" [ref=e317] [cursor=pointer]:
+              - /url: ./url.php?url=https%3A%2F%2Fwww.php.net%2Fmanual%2Fen%2Fbook.mysqli.php
+              - img "Documentation" [ref=e318]
+            - text: curl
+            - link "Documentation" [ref=e319] [cursor=pointer]:
+              - /url: ./url.php?url=https%3A%2F%2Fwww.php.net%2Fmanual%2Fen%2Fbook.curl.php
+              - img "Documentation" [ref=e320]
+            - text: mbstring
+            - link "Documentation" [ref=e321] [cursor=pointer]:
+              - /url: ./url.php?url=https%3A%2F%2Fwww.php.net%2Fmanual%2Fen%2Fbook.mbstring.php
+              - img "Documentation" [ref=e322]
+            - text: sodium
+            - link "Documentation" [ref=e323] [cursor=pointer]:
+              - /url: ./url.php?url=https%3A%2F%2Fwww.php.net%2Fmanual%2Fen%2Fbook.sodium.php
+              - img "Documentation" [ref=e324]
+          - listitem [ref=e325]: "PHP version: 8.3.6"
+      - generic [ref=e326]:
+        - generic [ref=e327]: phpMyAdmin
+        - list [ref=e328]:
+          - listitem [ref=e329]: "Version information: 5.2.1deb3"
+          - listitem [ref=e330]:
+            - link "Documentation" [ref=e331] [cursor=pointer]:
+              - /url: ./doc/html/index.html
+          - listitem [ref=e332]:
+            - link "Official Homepage" [ref=e333] [cursor=pointer]:
+              - /url: ./url.php?url=https%3A%2F%2Fwww.phpmyadmin.net%2F
+          - listitem [ref=e334]:
+            - link "Contribute" [ref=e335] [cursor=pointer]:
+              - /url: ./url.php?url=https%3A%2F%2Fwww.phpmyadmin.net%2Fcontribute%2F
+          - listitem [ref=e336]:
+            - link "Get support" [ref=e337] [cursor=pointer]:
+              - /url: ./url.php?url=https%3A%2F%2Fwww.phpmyadmin.net%2Fsupport%2F
+          - listitem [ref=e338]:
+            - link "List of changes" [ref=e339] [cursor=pointer]:
+              - /url: index.php?route=/changelog
+          - listitem [ref=e340]:
+            - link "License" [ref=e341] [cursor=pointer]:
+              - /url: index.php?route=/license
+  - link "Open new phpMyAdmin window" [ref=e343] [cursor=pointer]:
+    - /url: index.php?route=%2F&server=1
+    - img "Open new phpMyAdmin window" [ref=e344]

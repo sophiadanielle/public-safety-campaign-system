@@ -1,0 +1,53 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - link "Alertara Logo" [ref=e3] [cursor=pointer]:
+      - /url: /
+      - img "Alertara Logo" [ref=e4]
+    - link " Back to Home" [ref=e5] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e6]: 
+      - text: Back to Home
+  - main [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - text: 
+        - heading "Welcome Back" [level=1] [ref=e10]
+        - paragraph [ref=e11]: Sign in to access the campaign management dashboard
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - generic [ref=e14]: Email Address
+            - generic [ref=e15]:
+              - textbox "Email Address" [active] [ref=e16]:
+                - /placeholder: Enter your email
+              - generic: 
+          - generic [ref=e17]:
+            - generic [ref=e18]: Password
+            - generic [ref=e19]:
+              - textbox "Password" [ref=e20]:
+                - /placeholder: Enter your password
+              - generic: 
+              - button "Toggle password visibility" [ref=e21] [cursor=pointer]:
+                - generic [ref=e22]: 
+          - button " Sign In" [ref=e23] [cursor=pointer]:
+            - generic [ref=e24]: 
+            - text: Sign In
+        - link " Forgot Password?" [ref=e26] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=e27]: 
+          - text: Forgot Password?
+      - generic [ref=e29]:
+        - heading "Alertara QC" [level=2] [ref=e30]
+        - paragraph [ref=e31]: Empowering barangays across Quezon City with comprehensive public safety campaign management.
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - generic [ref=e34]: 
+            - generic [ref=e35]: Plan & Execute Safety Campaigns
+          - generic [ref=e36]:
+            - generic [ref=e37]: 
+            - generic [ref=e38]: Track Real-time Analytics
+          - generic [ref=e39]:
+            - generic [ref=e40]: 
+            - generic [ref=e41]: Engage Your Community
+  - contentinfo [ref=e42]:
+    - paragraph [ref=e43]: © 2026 Barangay Public Safety Campaign Management System
+  - text:              
