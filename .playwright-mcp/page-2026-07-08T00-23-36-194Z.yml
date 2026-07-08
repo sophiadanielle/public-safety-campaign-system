@@ -1,0 +1,229 @@
+- generic [active] [ref=f18e1]:
+  - generic [ref=f18e4]:
+    - tablist [ref=f18e5]:
+      - tab "Browse mode" [selected] [ref=f18e6] [cursor=pointer]
+    - tabpanel "Browse mode" [ref=f18e8]:
+      - generic [ref=f18e10]:
+        - heading "Browse mode" [level=5] [ref=f18e11]
+        - heading "Customize browse mode." [level=6] [ref=f18e12]
+        - group "Browse mode" [ref=f18e13]:
+          - generic [ref=f18e14]: Browse mode
+          - table [ref=f18e15]:
+            - rowgroup [ref=f18e16]:
+              - row "Table navigation bar Documentation Use only icons, only text or both. Icons Restore default value" [ref=f18e17]:
+                - rowheader "Table navigation bar Documentation Use only icons, only text or both." [ref=f18e18]:
+                  - text: Table navigation bar
+                  - link "Documentation" [ref=f18e20] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_TableNavigationLinksMode
+                    - img "Documentation" [ref=f18e21]
+                  - text: Use only icons, only text or both.
+                - cell "Icons Restore default value" [ref=f18e22]:
+                  - combobox "Table navigation bar" [ref=f18e23]:
+                    - option "Icons" [selected]
+                    - option "Text"
+                    - option "Both"
+                  - link "Restore default value" [ref=f18e24] [cursor=pointer]:
+                    - /url: "#TableNavigationLinksMode"
+                    - img "Restore default value" [ref=f18e25]
+              - row "How to display various action links Documentation Use only icons, only text or both. Both Restore default value" [ref=f18e26]:
+                - rowheader "How to display various action links Documentation Use only icons, only text or both." [ref=f18e27]:
+                  - text: How to display various action links
+                  - link "Documentation" [ref=f18e29] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_ActionLinksMode
+                    - img "Documentation" [ref=f18e30]
+                  - text: Use only icons, only text or both.
+                - cell "Both Restore default value" [ref=f18e31]:
+                  - combobox "How to display various action links" [ref=f18e32]:
+                    - option "Icons"
+                    - option "Text"
+                    - option "Both" [selected]
+                  - link "Restore default value" [ref=f18e33] [cursor=pointer]:
+                    - /url: "#ActionLinksMode"
+                    - img "Restore default value" [ref=f18e34]
+              - row "Allow to display all the rows Documentation Whether a user should be displayed a \"show all (rows)\" button. Restore default value" [ref=f18e35]:
+                - rowheader "Allow to display all the rows Documentation Whether a user should be displayed a \"show all (rows)\" button." [ref=f18e36]:
+                  - text: Allow to display all the rows
+                  - link "Documentation" [ref=f18e38] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_ShowAll
+                    - img "Documentation" [ref=f18e39]
+                  - text: Whether a user should be displayed a "show all (rows)" button.
+                - cell "Allow to display all the rows Restore default value" [ref=f18e40]:
+                  - checkbox "Allow to display all the rows" [ref=f18e42]
+                  - link "Restore default value" [ref=f18e43] [cursor=pointer]:
+                    - /url: "#ShowAll"
+                    - img "Restore default value" [ref=f18e44]
+              - row "Maximum number of rows to display Documentation Number of rows displayed when browsing a result set. If the result set contains more rows, \"Previous\" and \"Next\" links will be shown. 25 Restore default value" [ref=f18e45]:
+                - rowheader "Maximum number of rows to display Documentation Number of rows displayed when browsing a result set. If the result set contains more rows, \"Previous\" and \"Next\" links will be shown." [ref=f18e46]:
+                  - text: Maximum number of rows to display
+                  - link "Documentation" [ref=f18e48] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_MaxRows
+                    - img "Documentation" [ref=f18e49]
+                  - text: Number of rows displayed when browsing a result set. If the result set contains more rows, "Previous" and "Next" links will be shown.
+                - cell "25 Restore default value" [ref=f18e50]:
+                  - combobox "Maximum number of rows to display" [ref=f18e51]:
+                    - option "25" [selected]
+                    - option "50"
+                    - option "100"
+                    - option "250"
+                    - option "500"
+                  - link "Restore default value" [ref=f18e52] [cursor=pointer]:
+                    - /url: "#MaxRows"
+                    - img "Restore default value" [ref=f18e53]
+              - row "Default sorting order Documentation SMART - i.e. descending order for columns of type TIME, DATE, DATETIME and TIMESTAMP, ascending order otherwise. SMART Restore default value" [ref=f18e54]:
+                - rowheader "Default sorting order Documentation SMART - i.e. descending order for columns of type TIME, DATE, DATETIME and TIMESTAMP, ascending order otherwise." [ref=f18e55]:
+                  - text: Default sorting order
+                  - link "Documentation" [ref=f18e57] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_Order
+                    - img "Documentation" [ref=f18e58]
+                  - generic [ref=f18e59]: SMART - i.e. descending order for columns of type TIME, DATE, DATETIME and TIMESTAMP, ascending order otherwise.
+                - cell "SMART Restore default value" [ref=f18e60]:
+                  - combobox "Default sorting order" [ref=f18e61]:
+                    - option "ASC"
+                    - option "DESC"
+                    - option "SMART" [selected]
+                  - link "Restore default value" [ref=f18e62] [cursor=pointer]:
+                    - /url: "#Order"
+                    - img "Restore default value" [ref=f18e63]
+              - row "Highlight pointer Documentation Highlight row pointed by the mouse cursor. Restore default value" [ref=f18e64]:
+                - rowheader "Highlight pointer Documentation Highlight row pointed by the mouse cursor." [ref=f18e65]:
+                  - text: Highlight pointer
+                  - link "Documentation" [ref=f18e67] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_BrowsePointerEnable
+                    - img "Documentation" [ref=f18e68]
+                  - text: Highlight row pointed by the mouse cursor.
+                - cell "Highlight pointer Restore default value" [ref=f18e69]:
+                  - checkbox "Highlight pointer" [checked] [ref=f18e71]
+                  - link "Restore default value" [ref=f18e72] [cursor=pointer]:
+                    - /url: "#BrowsePointerEnable"
+                    - img "Restore default value" [ref=f18e73]
+              - row "Row marker Documentation Highlight selected rows. Restore default value" [ref=f18e74]:
+                - rowheader "Row marker Documentation Highlight selected rows." [ref=f18e75]:
+                  - text: Row marker
+                  - link "Documentation" [ref=f18e77] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_BrowseMarkerEnable
+                    - img "Documentation" [ref=f18e78]
+                  - text: Highlight selected rows.
+                - cell "Row marker Restore default value" [ref=f18e79]:
+                  - checkbox "Row marker" [checked] [ref=f18e81]
+                  - link "Restore default value" [ref=f18e82] [cursor=pointer]:
+                    - /url: "#BrowseMarkerEnable"
+                    - img "Restore default value" [ref=f18e83]
+              - 'row "Grid editing: trigger action Documentation Double click Restore default value" [ref=f18e84]':
+                - 'rowheader "Grid editing: trigger action Documentation" [ref=f18e85]':
+                  - text: "Grid editing: trigger action"
+                  - link "Documentation" [ref=f18e87] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_GridEditing
+                    - img "Documentation" [ref=f18e88]
+                - cell "Double click Restore default value" [ref=f18e89]:
+                  - 'combobox "Grid editing: trigger action" [ref=f18e90]':
+                    - option "Click"
+                    - option "Double click" [selected]
+                    - option "Disabled"
+                  - link "Restore default value" [ref=f18e91] [cursor=pointer]:
+                    - /url: "#GridEditing"
+                    - img "Restore default value" [ref=f18e92]
+              - 'row "Grid editing: save all edited cells at once Documentation Restore default value" [ref=f18e93]':
+                - 'rowheader "Grid editing: save all edited cells at once Documentation" [ref=f18e94]':
+                  - text: "Grid editing: save all edited cells at once"
+                  - link "Documentation" [ref=f18e96] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_SaveCellsAtOnce
+                    - img "Documentation" [ref=f18e97]
+                - 'cell "Grid editing: save all edited cells at once Restore default value" [ref=f18e98]':
+                  - 'checkbox "Grid editing: save all edited cells at once" [ref=f18e100]'
+                  - link "Restore default value" [ref=f18e101] [cursor=pointer]:
+                    - /url: "#SaveCellsAtOnce"
+                    - img "Restore default value" [ref=f18e102]
+              - row "Repeat headers Documentation Repeat the headers every X cells, 0 deactivates this feature. 100 Restore default value" [ref=f18e103]:
+                - rowheader "Repeat headers Documentation Repeat the headers every X cells, 0 deactivates this feature." [ref=f18e104]:
+                  - text: Repeat headers
+                  - link "Documentation" [ref=f18e106] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_RepeatCells
+                    - img "Documentation" [ref=f18e107]
+                  - generic [ref=f18e108]: Repeat the headers every X cells, 0 deactivates this feature.
+                - cell "100 Restore default value" [ref=f18e109]:
+                  - spinbutton "Repeat headers" [ref=f18e110]: "100"
+                  - link "Restore default value" [ref=f18e111] [cursor=pointer]:
+                    - /url: "#RepeatCells"
+                    - img "Restore default value" [ref=f18e112]
+              - row "Limit column characters Documentation Maximum number of characters shown in any non-numeric column on browse view. 50 Restore default value" [ref=f18e113]:
+                - rowheader "Limit column characters Documentation Maximum number of characters shown in any non-numeric column on browse view." [ref=f18e114]:
+                  - text: Limit column characters
+                  - link "Documentation" [ref=f18e116] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_LimitChars
+                    - img "Documentation" [ref=f18e117]
+                  - text: Maximum number of characters shown in any non-numeric column on browse view.
+                - cell "50 Restore default value" [ref=f18e118]:
+                  - spinbutton "Limit column characters" [ref=f18e119]: "50"
+                  - link "Restore default value" [ref=f18e120] [cursor=pointer]:
+                    - /url: "#LimitChars"
+                    - img "Restore default value" [ref=f18e121]
+              - row "Where to show the table row links Documentation These are Edit, Copy and Delete links. Left Restore default value" [ref=f18e122]:
+                - rowheader "Where to show the table row links Documentation These are Edit, Copy and Delete links." [ref=f18e123]:
+                  - text: Where to show the table row links
+                  - link "Documentation" [ref=f18e125] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_RowActionLinks
+                    - img "Documentation" [ref=f18e126]
+                  - text: These are Edit, Copy and Delete links.
+                - cell "Left Restore default value" [ref=f18e127]:
+                  - combobox "Where to show the table row links" [ref=f18e128]:
+                    - option "Nowhere"
+                    - option "Left" [selected]
+                    - option "Right"
+                    - option "Both"
+                  - link "Restore default value" [ref=f18e129] [cursor=pointer]:
+                    - /url: "#RowActionLinks"
+                    - img "Restore default value" [ref=f18e130]
+              - row "Show row links anyway Documentation Whether to show row links even in the absence of a unique key. Restore default value" [ref=f18e131]:
+                - rowheader "Show row links anyway Documentation Whether to show row links even in the absence of a unique key." [ref=f18e132]:
+                  - text: Show row links anyway
+                  - link "Documentation" [ref=f18e134] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_RowActionLinksWithoutUnique
+                    - img "Documentation" [ref=f18e135]
+                  - text: Whether to show row links even in the absence of a unique key.
+                - cell "Show row links anyway Restore default value" [ref=f18e136]:
+                  - checkbox "Show row links anyway" [ref=f18e138]
+                  - link "Restore default value" [ref=f18e139] [cursor=pointer]:
+                    - /url: "#RowActionLinksWithoutUnique"
+                    - img "Restore default value" [ref=f18e140]
+              - row "Primary key default sort order Documentation Default sort order for tables with a primary key. None Restore default value" [ref=f18e141]:
+                - rowheader "Primary key default sort order Documentation Default sort order for tables with a primary key." [ref=f18e142]:
+                  - text: Primary key default sort order
+                  - link "Documentation" [ref=f18e144] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_TablePrimaryKeyOrder
+                    - img "Documentation" [ref=f18e145]
+                  - text: Default sort order for tables with a primary key.
+                - cell "None Restore default value" [ref=f18e146]:
+                  - combobox "Primary key default sort order" [ref=f18e147]:
+                    - option "None" [selected]
+                    - option "Ascending"
+                    - option "Descending"
+                  - link "Restore default value" [ref=f18e148] [cursor=pointer]:
+                    - /url: "#TablePrimaryKeyOrder"
+                    - img "Restore default value" [ref=f18e149]
+              - row "Remember table's sorting Documentation When browsing tables, the sorting of each table is remembered. Restore default value" [ref=f18e150]:
+                - rowheader "Remember table's sorting Documentation When browsing tables, the sorting of each table is remembered." [ref=f18e151]:
+                  - text: Remember table's sorting
+                  - link "Documentation" [ref=f18e153] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_RememberSorting
+                    - img "Documentation" [ref=f18e154]
+                  - text: When browsing tables, the sorting of each table is remembered.
+                - cell "Remember table's sorting Restore default value" [ref=f18e155]:
+                  - checkbox "Remember table's sorting" [checked] [ref=f18e157]
+                  - link "Restore default value" [ref=f18e158] [cursor=pointer]:
+                    - /url: "#RememberSorting"
+                    - img "Restore default value" [ref=f18e159]
+              - row "Relational display Documentation For display Options key Restore default value" [ref=f18e160]:
+                - rowheader "Relational display Documentation For display Options" [ref=f18e161]:
+                  - text: Relational display
+                  - link "Documentation" [ref=f18e163] [cursor=pointer]:
+                    - /url: ./doc/html/config.html#cfg_RelationalDisplay
+                    - img "Documentation" [ref=f18e164]
+                  - text: For display Options
+                - cell "key Restore default value" [ref=f18e165]:
+                  - combobox "Relational display" [ref=f18e166]:
+                    - option "key" [selected]
+                    - option "display column"
+                  - link "Restore default value" [ref=f18e167] [cursor=pointer]:
+                    - /url: "#RelationalDisplay"
+                    - img "Restore default value" [ref=f18e168]
+  - alert [ref=f18e169]: "ValueError: mysqli::query(): Argument #1 ($query) cannot be empty"

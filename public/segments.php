@@ -610,56 +610,6 @@ try {
         <div id="segmentAnalyticsContainer" style="margin-top: 20px;"></div>
     </section>
 
-    <!-- Import Members CSV -->
-    <section id="import-export" class="card" style="margin-bottom:32px;">
-        <h2 class="section-title">
-            <span class="section-step">Step 5</span>
-            Import Members
-        </h2>
-        <div class="section-description">
-            <strong>What this does:</strong> Supports real-world interoperability with external systems. Upload CSV files from LGU systems, census exports, barangay records, or other government datasets to bulk add residents to segments. This enables integration with external data sources and ensures the system can work with data from various government and organizational systems.
-            <br><br>
-            <strong>Integration-ready:</strong> This feature supports integration with external data sources including CSV from LGU systems, census exports, barangay records, and other government datasets. The system accepts standardized CSV formats to enable seamless data import from partner organizations.
-            <br><br>
-            <strong>When to use:</strong> Use this when you have a spreadsheet or CSV file with resident information from external systems (LGU databases, census data, barangay records) that you want to add to a segment. This is faster than manually entering each resident and enables integration with existing government data systems.
-        </div>
-        <form id="importForm" class="form-grid">
-            <div class="form-field">
-                <label>Select Segment <span style="color:#dc2626;">*</span></label>
-                <select name="segment_id" id="importSegmentId" required style="font-size:15px; padding:12px 16px;">
-                    <option value="">-- Choose a segment to add members to --</option>
-                </select>
-                <div class="helper-text">💡 <strong>Required:</strong> Select which segment you want to add members to. If you don't see any segments, create one first using the "Create Segment" section above. This feature supports integration with external data sources (CSV from LGU systems, census exports, barangay records).</div>
-            </div>
-            <div class="form-field">
-                <label>CSV File <span style="color:#dc2626;">*</span></label>
-                <input type="file" name="file" accept=".csv" required style="font-size:15px; padding:12px 16px;">
-                <div class="helper-text">💡 <strong>File format:</strong> Your CSV file should have a header row with column names. This format supports integration with external systems (LGU databases, census exports, government datasets). See format requirements below.</div>
-            </div>
-        </form>
-        <div style="color:#64748b; font-size:13px; margin:16px 0; padding: 16px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #4c8a89;">
-            <strong style="color:#0f172a; display:block; margin-bottom:8px;">📋 CSV File Format Requirements (External System Integration):</strong>
-            <ul style="margin:8px 0 0 0; padding-left:20px; line-height:1.8;">
-                <li><strong>Required column:</strong> <code>name</code> (or <code>full_name</code>) - The resident's full name</li>
-                <li><strong>Optional columns:</strong> <code>sector</code>, <code>barangay</code>, <code>zone</code>, <code>purok</code>, <code>contact</code></li>
-                <li>Make sure your CSV file has a header row with column names</li>
-                <li>The file should be saved as .csv format (not Excel .xlsx)</li>
-                <li><strong>Integration-ready:</strong> This format supports imports from LGU systems, census exports, barangay records, and other government datasets</li>
-            </ul>
-            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0;">
-                <a href="samples/sample_members_import.csv" download class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 13px; text-decoration: none;">
-                    <i class="fas fa-download"></i> Download Sample CSV File
-                </a>
-                <span style="margin-left: 8px; color: #94a3b8; font-size: 12px;">Use this as a template for your import</span>
-            </div>
-        </div>
-        <div class="form-field" style="margin-top:20px;">
-            <button type="submit" form="importForm" class="btn btn-primary" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
-                <i class="fas fa-file-upload" style="margin-right:8px;"></i>Import Members from CSV
-            </button>
-        </div>
-        <div class="status" id="importStatus" style="margin-top:12px;"></div>
-    </section>
 </main>
 
 <script>
@@ -726,24 +676,6 @@ function populateSegmentDropdowns(segments) {
         });
         if (currentValue) {
             viewHistorySelect.value = currentValue;
-        }
-    }
-    
-    // Populate Import Members dropdown
-    const importSelect = document.getElementById('importSegmentId');
-    if (importSelect) {
-        const currentValue = importSelect.value;
-        importSelect.innerHTML = '<option value="">-- Choose a segment to add members to --</option>';
-        segments.forEach(seg => {
-            const option = document.createElement('option');
-            const segmentId = seg.segment_id || seg.id;
-            const segmentName = seg.segment_name || seg.name || 'Unnamed Segment';
-            option.value = segmentId;
-            option.textContent = segmentName;
-            importSelect.appendChild(option);
-        });
-        if (currentValue) {
-            importSelect.value = currentValue;
         }
     }
     
@@ -1402,7 +1334,7 @@ async function createSegment() {
         
         const data = await res.json();
         if (res.ok) {
-            statusEl.textContent = 'Segment created successfully. You can now view it in "All Segments" or add members using "Import Members".';
+            statusEl.textContent = 'Segment created successfully. You can now view it in "All Segments".';
             statusEl.style.color = '#166534';
             resetForm();
             loadSegments();
@@ -1796,7 +1728,7 @@ async function viewSegmentMembersDirect(segmentId) {
                 emptyState.style.display = 'block';
                 const lastP = emptyState.querySelector('p:last-child');
                 if (lastP) {
-                    lastP.innerHTML = 'This segment has no members yet. Use the "Import Members" section below to add residents to this segment.';
+                    lastP.innerHTML = 'This segment has no members yet.';
                 }
             }
             return;

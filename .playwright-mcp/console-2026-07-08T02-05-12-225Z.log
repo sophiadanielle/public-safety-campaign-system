@@ -1,0 +1,279 @@
+[     190ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://campaign.alertaraqc.com/login.php:0
+[     190ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://campaign.alertaraqc.com/login.php:0
+[   50891ms] [LOG] RBAC: Set user_role_id cookie in <head> = 1 @ https://campaign.alertaraqc.com/public/dashboard.php:92
+[   51083ms] [LOG] loadCurrentUser - Token: EXISTS (length: 353) @ https://campaign.alertaraqc.com/public/dashboard.php:1048
+[   51083ms] [LOG] loadCurrentUser - Calling API: /index.php/api/v1/users/me @ https://campaign.alertaraqc.com/public/dashboard.php:1057
+[   51083ms] [LOG] loadCurrentUser - Token being sent: EXISTS (length: 353) @ https://campaign.alertaraqc.com/public/dashboard.php:1058
+[   51083ms] [LOG] loadCurrentUser - Token first 20 chars: eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/dashboard.php:1059
+[   51083ms] [LOG] loadCurrentUser - Authorization header: Bearer eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/dashboard.php:1060
+[   51086ms] [LOG] RBAC: NOT Viewer (role: null roleId: 1 ) @ https://campaign.alertaraqc.com/public/dashboard.php:3502
+[   51096ms] [LOG] RBAC: NOT Viewer (role: null roleId: 1 ) @ https://campaign.alertaraqc.com/public/dashboard.php:3502
+[   51096ms] [LOG] RBAC: Role cookie set via server: 1 @ https://campaign.alertaraqc.com/public/dashboard.php:537
+[   51251ms] [LOG] loadCurrentUser - Response status: 200 @ https://campaign.alertaraqc.com/public/dashboard.php:1076
+[   51251ms] [LOG] loadCurrentUser - Response URL: https://campaign.alertaraqc.com/index.php/api/v1/users/me @ https://campaign.alertaraqc.com/public/dashboard.php:1077
+[   51255ms] [LOG] === TASK 2 PROOF: API Response data === {
+  "user": {
+    "id": 8,
+    "name": "Just  Dev",
+    "email": "maginghotdogpano@gmail.com",
+    "role_id": 1,
+    "role": "Barangay Administrator",
+    "user_type": "Super Admin",
+    "avatar_url": null,
+    "barangay_id": null,
+    "barangay_name": null,
+    "phone_number": null,
+    "created_at": "2026-06-16 13:09:16"
+  }
+} @ https://campaign.alertaraqc.com/public/dashboard.php:1105
+[   51255ms] [LOG] === TASK 2 PROOF: Extracted user object === {
+  "id": 8,
+  "name": "Just  Dev",
+  "email": "maginghotdogpano@gmail.com",
+  "role_id": 1,
+  "role": "Barangay Administrator",
+  "user_type": "Super Admin",
+  "avatar_url": null,
+  "barangay_id": null,
+  "barangay_name": null,
+  "phone_number": null,
+  "created_at": "2026-06-16 13:09:16"
+} @ https://campaign.alertaraqc.com/public/dashboard.php:1107
+[   51255ms] [LOG] === TASK 3 PROOF: user.name value === Just  Dev @ https://campaign.alertaraqc.com/public/dashboard.php:1110
+[   51255ms] [LOG] === TASK 3 PROOF: user.name type === string @ https://campaign.alertaraqc.com/public/dashboard.php:1111
+[   51255ms] [LOG] === TASK 3 PROOF: user.name truthy check === true @ https://campaign.alertaraqc.com/public/dashboard.php:1112
+[   51255ms] [LOG] === TASK 3 PROOF: user.name || "User" result === Just  Dev @ https://campaign.alertaraqc.com/public/dashboard.php:1113
+[   51255ms] [LOG] User email from API: maginghotdogpano@gmail.com @ https://campaign.alertaraqc.com/public/dashboard.php:1122
+[   51255ms] [LOG] User ID from API: 8 @ https://campaign.alertaraqc.com/public/dashboard.php:1123
+[   51255ms] [LOG] Stored fresh user data for: maginghotdogpano@gmail.com @ https://campaign.alertaraqc.com/public/dashboard.php:1128
+[   51256ms] [LOG] === TASK 3 PROOF: updateUserDisplay called with user.name === Just  Dev @ https://campaign.alertaraqc.com/public/dashboard.php:1158
+[   51256ms] [LOG] === TASK 3 PROOF: user.name || "User" will result in === Just  Dev @ https://campaign.alertaraqc.com/public/dashboard.php:1159
+[   51256ms] [LOG] === TASK 3 PROOF: Setting headerUserName.textContent to === Just  Dev @ https://campaign.alertaraqc.com/public/dashboard.php:1162
+[   51256ms] [LOG] Updating dropdown - Name: Just  Dev Email: maginghotdogpano@gmail.com @ https://campaign.alertaraqc.com/public/dashboard.php:1203
+[   51256ms] [LOG] Dropdown email element updated to: maginghotdogpano@gmail.com @ https://campaign.alertaraqc.com/public/dashboard.php:1207
+[   69509ms] [LOG] Auth guard - Just logged in: false @ https://campaign.alertaraqc.com/public/campaigns.php:14
+[   69509ms] [LOG] Auth guard - Attempt 1 - Token: EXISTS (length: 353) @ https://campaign.alertaraqc.com/public/campaigns.php:22
+[   69509ms] [LOG] Token found - access granted @ https://campaign.alertaraqc.com/public/campaigns.php:25
+[   69510ms] [LOG] Token value (first 50 chars): eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwd... @ https://campaign.alertaraqc.com/public/campaigns.php:26
+[   69629ms] [LOG] Modal replacer loaded - alert() calls will use custom modals @ https://campaign.alertaraqc.com/public/js/modal-replacer.js:61
+[   69631ms] [LOG] RBAC: Set user_role_id cookie in <head> = 1 @ https://campaign.alertaraqc.com/public/campaigns.php:101
+[   69631ms] [LOG] === IMMEDIATE CHECK (before any scripts) === @ https://campaign.alertaraqc.com/public/campaigns.php:111
+[   69631ms] [LOG] localStorage available: true @ https://campaign.alertaraqc.com/public/campaigns.php:112
+[   69631ms] [LOG] Token check (immediate): FOUND (length: 353) @ https://campaign.alertaraqc.com/public/campaigns.php:115
+[   69631ms] [LOG] All localStorage keys (immediate): [theme, userId, currentUser, jwtToken] @ https://campaign.alertaraqc.com/public/campaigns.php:116
+[   69800ms] [LOG] FullCalendar script loaded successfully @ https://campaign.alertaraqc.com/public/campaigns.php:4571
+[   69800ms] [LOG] FullCalendar global found: object @ https://campaign.alertaraqc.com/public/campaigns.php:4571
+[   69883ms] [LOG] BASE PATH:  @ https://campaign.alertaraqc.com/public/campaigns.php:4578
+[   69884ms] [LOG] RBAC: Detected role = admin , roleId = 1 @ https://campaign.alertaraqc.com/public/campaigns.php:5347
+[   69884ms] [LOG] AutoML functions registered globally: {getAutoMLPrediction: function, handleGetPredictionClick: function, refreshAutoMLCampaigns: function} @ https://campaign.alertaraqc.com/public/campaigns.php:7082
+[   69898ms] [LOG] RBAC: Role cookie set via server: 1 @ https://campaign.alertaraqc.com/public/campaigns.php:463
+[   69905ms] [LOG] loadCurrentUser - Token: EXISTS (length: 353) @ https://campaign.alertaraqc.com/public/campaigns.php:974
+[   69905ms] [LOG] loadCurrentUser - Calling API: /index.php/api/v1/users/me @ https://campaign.alertaraqc.com/public/campaigns.php:983
+[   69905ms] [LOG] loadCurrentUser - Token being sent: EXISTS (length: 353) @ https://campaign.alertaraqc.com/public/campaigns.php:984
+[   69905ms] [LOG] loadCurrentUser - Token first 20 chars: eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/campaigns.php:985
+[   69905ms] [LOG] loadCurrentUser - Authorization header: Bearer eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/campaigns.php:986
+[   69915ms] [LOG] MultiSelectEnhanced initialized for: assigned_staff @ https://campaign.alertaraqc.com/public/campaigns.php:5781
+[   69916ms] [LOG] DOMContentLoaded - Initializing campaigns @ https://campaign.alertaraqc.com/public/campaigns.php:11445
+[   69917ms] [LOG] initializeCampaigns() - Starting initialization @ https://campaign.alertaraqc.com/public/campaigns.php:11215
+[   69919ms] [LOG] RBAC: Refreshed role detection - role = admin , roleId = 1 @ https://campaign.alertaraqc.com/public/campaigns.php:5431
+[   69921ms] [LOG] === TASK 4 PROOF: getToken() called === @ https://campaign.alertaraqc.com/public/campaigns.php:5243
+[   69921ms] [LOG] TASK 4: localStorage.getItem("jwtToken") result: EXISTS (length: 353) @ https://campaign.alertaraqc.com/public/campaigns.php:5244
+[   69921ms] [LOG] TASK 4: Token value (first 20 chars): eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/campaigns.php:5245
+[   69921ms] [LOG] TASK 4: Token after trim: eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/campaigns.php:5246
+[   69921ms] [LOG] === TASK 4 PROOF: Token returned (length: 353) === @ https://campaign.alertaraqc.com/public/campaigns.php:5253
+[   69921ms] [LOG] loadCampaigns() - Making API call with token (length: 353) @ https://campaign.alertaraqc.com/public/campaigns.php:8099
+[   69924ms] [LOG] Functions made globally accessible: {handleGetPredictionClick: function, getAutoMLPrediction: function, refreshAutoMLCampaigns: function} @ https://campaign.alertaraqc.com/public/campaigns.php:11456
+[   69967ms] [LOG] loadCurrentUser - Response status: 200 @ https://campaign.alertaraqc.com/public/campaigns.php:1002
+[   69967ms] [LOG] loadCurrentUser - Response URL: https://campaign.alertaraqc.com/index.php/api/v1/users/me @ https://campaign.alertaraqc.com/public/campaigns.php:1003
+[   69968ms] [LOG] === TASK 2 PROOF: API Response data === {
+  "user": {
+    "id": 8,
+    "name": "Just  Dev",
+    "email": "maginghotdogpano@gmail.com",
+    "role_id": 1,
+    "role": "Barangay Administrator",
+    "user_type": "Super Admin",
+    "avatar_url": null,
+    "barangay_id": null,
+    "barangay_name": null,
+    "phone_number": null,
+    "created_at": "2026-06-16 13:09:16"
+  }
+} @ https://campaign.alertaraqc.com/public/campaigns.php:1031
+[   69969ms] [LOG] === TASK 2 PROOF: Extracted user object === {
+  "id": 8,
+  "name": "Just  Dev",
+  "email": "maginghotdogpano@gmail.com",
+  "role_id": 1,
+  "role": "Barangay Administrator",
+  "user_type": "Super Admin",
+  "avatar_url": null,
+  "barangay_id": null,
+  "barangay_name": null,
+  "phone_number": null,
+  "created_at": "2026-06-16 13:09:16"
+} @ https://campaign.alertaraqc.com/public/campaigns.php:1033
+[   69969ms] [LOG] === TASK 3 PROOF: user.name value === Just  Dev @ https://campaign.alertaraqc.com/public/campaigns.php:1036
+[   69969ms] [LOG] === TASK 3 PROOF: user.name type === string @ https://campaign.alertaraqc.com/public/campaigns.php:1037
+[   69969ms] [LOG] === TASK 3 PROOF: user.name truthy check === true @ https://campaign.alertaraqc.com/public/campaigns.php:1038
+[   69969ms] [LOG] === TASK 3 PROOF: user.name || "User" result === Just  Dev @ https://campaign.alertaraqc.com/public/campaigns.php:1039
+[   69969ms] [LOG] User email from API: maginghotdogpano@gmail.com @ https://campaign.alertaraqc.com/public/campaigns.php:1048
+[   69969ms] [LOG] User ID from API: 8 @ https://campaign.alertaraqc.com/public/campaigns.php:1049
+[   69969ms] [LOG] Stored fresh user data for: maginghotdogpano@gmail.com @ https://campaign.alertaraqc.com/public/campaigns.php:1054
+[   69970ms] [LOG] === TASK 3 PROOF: updateUserDisplay called with user.name === Just  Dev @ https://campaign.alertaraqc.com/public/campaigns.php:1084
+[   69970ms] [LOG] === TASK 3 PROOF: user.name || "User" will result in === Just  Dev @ https://campaign.alertaraqc.com/public/campaigns.php:1085
+[   69970ms] [LOG] === TASK 3 PROOF: Setting headerUserName.textContent to === Just  Dev @ https://campaign.alertaraqc.com/public/campaigns.php:1088
+[   69971ms] [LOG] Updating dropdown - Name: Just  Dev Email: maginghotdogpano@gmail.com @ https://campaign.alertaraqc.com/public/campaigns.php:1129
+[   69971ms] [LOG] Dropdown email element updated to: maginghotdogpano@gmail.com @ https://campaign.alertaraqc.com/public/campaigns.php:1133
+[   70013ms] [LOG] loadCampaigns() - Response status: 200 @ https://campaign.alertaraqc.com/public/campaigns.php:8107
+[   70043ms] [LOG] loadCampaigns() - Response text length: 8504 @ https://campaign.alertaraqc.com/public/campaigns.php:8111
+[   70044ms] [LOG] loadCampaigns() - Received data: {data: Array(13)} @ https://campaign.alertaraqc.com/public/campaigns.php:8148
+[   70044ms] [LOG] loadCampaigns() - Campaigns count: 13 @ https://campaign.alertaraqc.com/public/campaigns.php:8150
+[   70044ms] [LOG] loadCampaigns() - Filtered out archived, remaining: 13 @ https://campaign.alertaraqc.com/public/campaigns.php:8157
+[   70045ms] [LOG] loadCampaigns() - Rendering 13 campaigns @ https://campaign.alertaraqc.com/public/campaigns.php:8181
+[   70045ms] [LOG] loadCampaigns() - Populating dropdowns with 13 campaigns @ https://campaign.alertaraqc.com/public/campaigns.php:8195
+[   70045ms] [LOG] loadCampaigns() - Rendering campaigns. Current role: admin Role ID: 1 @ https://campaign.alertaraqc.com/public/campaigns.php:8198
+[   70045ms] [LOG] loadCampaigns() - isAdmin(): true isViewer(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8199
+[   70046ms] [LOG] populateAutoMLDropdown() - Called. allCampaigns length: 13 @ https://campaign.alertaraqc.com/public/campaigns.php:6658
+[   70046ms] [LOG] populateAutoMLDropdown() - Current dropdown options: 1 @ https://campaign.alertaraqc.com/public/campaigns.php:6659
+[   70046ms] [LOG] populateAutoMLDropdown() - Populating with 13 campaigns @ https://campaign.alertaraqc.com/public/campaigns.php:6663
+[   70047ms] [LOG] populateAutoMLDropdown() - Added option: 48 48 - crime prevention month test @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70047ms] [LOG] populateAutoMLDropdown() - Added option: 47 47 - Crime Prevention Month @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70047ms] [LOG] populateAutoMLDropdown() - Added option: 37 37 - Fire Safety Awareness Week @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70047ms] [LOG] populateAutoMLDropdown() - Added option: 35 35 - Fire Safety Awareness Week @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70047ms] [LOG] populateAutoMLDropdown() - Added option: 32 32 - Community Disaster Preparedness Orientation @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70048ms] [LOG] populateAutoMLDropdown() - Added option: 31 31 - Fire Safety Awareness Week @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70048ms] [LOG] populateAutoMLDropdown() - Added option: 29 29 - Road Safety for Students @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70048ms] [LOG] populateAutoMLDropdown() - Added option: 27 27 - Dengue Prevention and Clean-Up Drive @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70048ms] [LOG] populateAutoMLDropdown() - Added option: 25 25 - Earthquake Drill and Preparedness Campaign @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70048ms] [LOG] populateAutoMLDropdown() - Added option: 11 11 - Earthquake Go-Bag Campaign @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70048ms] [LOG] populateAutoMLDropdown() - Added option: 10 10 - Flood Evacuation Awareness @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70048ms] [LOG] populateAutoMLDropdown() - Added option: 3 3 - Flood Preparedness Campaign @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70048ms] [LOG] populateAutoMLDropdown() - Added option: 1 1 - Fire Safety Awareness Week 2025 @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70048ms] [LOG] populateAutoMLDropdown() - Successfully added 13 options. Total options now: 14 @ https://campaign.alertaraqc.com/public/campaigns.php:6687
+[   70049ms] [LOG] validateAutoMLForm() - Campaign selected:  Value:  @ https://campaign.alertaraqc.com/public/campaigns.php:6582
+[   70050ms] [LOG] validateAutoMLForm() - Button disabled (no campaign selected) @ https://campaign.alertaraqc.com/public/campaigns.php:6595
+[   70050ms] [LOG] Get Prediction button event listener attached @ https://campaign.alertaraqc.com/public/campaigns.php:6643
+[   70050ms] [LOG] validateAutoMLForm() - Campaign selected:  Value:  @ https://campaign.alertaraqc.com/public/campaigns.php:6582
+[   70050ms] [LOG] validateAutoMLForm() - Button disabled (no campaign selected) @ https://campaign.alertaraqc.com/public/campaigns.php:6595
+[   70050ms] [LOG] Dropdown changed to:  @ https://campaign.alertaraqc.com/public/campaigns.php:3943
+[   70052ms] [LOG] Rendering Actions for campaign 48 Status: draft Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70052ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70052ms] [LOG] Rendering Actions for campaign 47 Status: scheduled Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70052ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70053ms] [LOG] Rendering Actions for campaign 37 Status: scheduled Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70053ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70054ms] [LOG] Rendering Actions for campaign 35 Status: approved Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70054ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70054ms] [LOG] Rendering Actions for campaign 32 Status: scheduled Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70054ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70055ms] [LOG] Rendering Actions for campaign 31 Status: approved Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70055ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70055ms] [LOG] Rendering Actions for campaign 29 Status: scheduled Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70055ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70056ms] [LOG] Rendering Actions for campaign 27 Status: draft Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70056ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70056ms] [LOG] Rendering Actions for campaign 25 Status: scheduled Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70056ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70057ms] [LOG] Rendering Actions for campaign 10 Status: scheduled Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70057ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70057ms] [LOG] Rendering Actions for campaign 11 Status: approved Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70057ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70058ms] [LOG] Rendering Actions for campaign 1 Status: approved Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70058ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70059ms] [LOG] Rendering Actions for campaign 3 Status: pending Current Role: admin @ https://campaign.alertaraqc.com/public/campaigns.php:8225
+[   70059ms] [LOG] isAdmin(): true isViewer(): false isStaff(): false isSecretary(): false isKagawad(): false isCaptain(): false @ https://campaign.alertaraqc.com/public/campaigns.php:8226
+[   70060ms] [LOG] loadCampaigns() - Dropdowns populated. automlSelect options: 14 @ https://campaign.alertaraqc.com/public/campaigns.php:8340
+[   70060ms] [LOG] === TASK 4 PROOF: getToken() called === @ https://campaign.alertaraqc.com/public/campaigns.php:5243
+[   70061ms] [LOG] TASK 4: localStorage.getItem("jwtToken") result: EXISTS (length: 353) @ https://campaign.alertaraqc.com/public/campaigns.php:5244
+[   70061ms] [LOG] TASK 4: Token value (first 20 chars): eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/campaigns.php:5245
+[   70061ms] [LOG] TASK 4: Token after trim: eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/campaigns.php:5246
+[   70061ms] [LOG] === TASK 4 PROOF: Token returned (length: 353) === @ https://campaign.alertaraqc.com/public/campaigns.php:5253
+[   70065ms] [LOG] === TASK 4 PROOF: getToken() called === @ https://campaign.alertaraqc.com/public/campaigns.php:5243
+[   70065ms] [LOG] TASK 4: localStorage.getItem("jwtToken") result: EXISTS (length: 353) @ https://campaign.alertaraqc.com/public/campaigns.php:5244
+[   70065ms] [LOG] TASK 4: Token value (first 20 chars): eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/campaigns.php:5245
+[   70066ms] [LOG] TASK 4: Token after trim: eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/campaigns.php:5246
+[   70066ms] [LOG] === TASK 4 PROOF: Token returned (length: 353) === @ https://campaign.alertaraqc.com/public/campaigns.php:5253
+[   70066ms] [LOG] initializeCampaigns() - Campaigns loaded. Count: 13 @ https://campaign.alertaraqc.com/public/campaigns.php:11219
+[   70066ms] [LOG] initializeCampaigns() - Initializing calendar... @ https://campaign.alertaraqc.com/public/campaigns.php:11223
+[   70067ms] [LOG] === initCalendar() called === @ https://campaign.alertaraqc.com/public/campaigns.php:7500
+[   70067ms] [ERROR] CRITICAL: Calendar container element not found! Looking for #calendar @ https://campaign.alertaraqc.com/public/campaigns.php:7505
+[   70068ms] [ERROR] Available elements with id containing "calendar": [calendarStatusFilterInline, calendarInline] @ https://campaign.alertaraqc.com/public/campaigns.php:7506
+[   70068ms] [LOG] === TASK 4 PROOF: getToken() called === @ https://campaign.alertaraqc.com/public/campaigns.php:5243
+[   70068ms] [LOG] TASK 4: localStorage.getItem("jwtToken") result: EXISTS (length: 353) @ https://campaign.alertaraqc.com/public/campaigns.php:5244
+[   70068ms] [LOG] TASK 4: Token value (first 20 chars): eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/campaigns.php:5245
+[   70068ms] [LOG] TASK 4: Token after trim: eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/campaigns.php:5246
+[   70068ms] [LOG] === TASK 4 PROOF: Token returned (length: 353) === @ https://campaign.alertaraqc.com/public/campaigns.php:5253
+[   70069ms] [LOG] initializeCampaigns() - Populating AutoML dropdown with 13 campaigns @ https://campaign.alertaraqc.com/public/campaigns.php:11230
+[   70069ms] [LOG] populateAutoMLDropdown() - Called. allCampaigns length: 13 @ https://campaign.alertaraqc.com/public/campaigns.php:6658
+[   70069ms] [LOG] populateAutoMLDropdown() - Current dropdown options: 14 @ https://campaign.alertaraqc.com/public/campaigns.php:6659
+[   70069ms] [LOG] populateAutoMLDropdown() - Populating with 13 campaigns @ https://campaign.alertaraqc.com/public/campaigns.php:6663
+[   70070ms] [LOG] populateAutoMLDropdown() - Added option: 48 48 - crime prevention month test @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70070ms] [LOG] populateAutoMLDropdown() - Added option: 47 47 - Crime Prevention Month @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70070ms] [LOG] populateAutoMLDropdown() - Added option: 37 37 - Fire Safety Awareness Week @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70070ms] [LOG] populateAutoMLDropdown() - Added option: 35 35 - Fire Safety Awareness Week @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70070ms] [LOG] populateAutoMLDropdown() - Added option: 32 32 - Community Disaster Preparedness Orientation @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70070ms] [LOG] populateAutoMLDropdown() - Added option: 31 31 - Fire Safety Awareness Week @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70070ms] [LOG] populateAutoMLDropdown() - Added option: 29 29 - Road Safety for Students @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70070ms] [LOG] populateAutoMLDropdown() - Added option: 27 27 - Dengue Prevention and Clean-Up Drive @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70070ms] [LOG] populateAutoMLDropdown() - Added option: 25 25 - Earthquake Drill and Preparedness Campaign @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70071ms] [LOG] populateAutoMLDropdown() - Added option: 11 11 - Earthquake Go-Bag Campaign @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70071ms] [LOG] populateAutoMLDropdown() - Added option: 10 10 - Flood Evacuation Awareness @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70071ms] [LOG] populateAutoMLDropdown() - Added option: 3 3 - Flood Preparedness Campaign @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70071ms] [LOG] populateAutoMLDropdown() - Added option: 1 1 - Fire Safety Awareness Week 2025 @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70071ms] [LOG] populateAutoMLDropdown() - Successfully added 13 options. Total options now: 14 @ https://campaign.alertaraqc.com/public/campaigns.php:6687
+[   70071ms] [LOG] validateAutoMLForm() - Campaign selected:  Value:  @ https://campaign.alertaraqc.com/public/campaigns.php:6582
+[   70071ms] [LOG] validateAutoMLForm() - Button disabled (no campaign selected) @ https://campaign.alertaraqc.com/public/campaigns.php:6595
+[   70072ms] [LOG] Get Prediction button event listener attached @ https://campaign.alertaraqc.com/public/campaigns.php:6643
+[   70072ms] [LOG] validateAutoMLForm() - Campaign selected:  Value:  @ https://campaign.alertaraqc.com/public/campaigns.php:6582
+[   70072ms] [LOG] validateAutoMLForm() - Button disabled (no campaign selected) @ https://campaign.alertaraqc.com/public/campaigns.php:6595
+[   70072ms] [LOG] Dropdown changed to:  @ https://campaign.alertaraqc.com/public/campaigns.php:3943
+[   70072ms] [LOG] validateAutoMLForm() - Campaign selected:  Value:  @ https://campaign.alertaraqc.com/public/campaigns.php:6582
+[   70072ms] [LOG] validateAutoMLForm() - Button disabled (no campaign selected) @ https://campaign.alertaraqc.com/public/campaigns.php:6595
+[   70319ms] [LOG] Budget data loaded: {success: true, data: Array(16), summary: Object} @ https://campaign.alertaraqc.com/public/campaigns.php:8563
+[   70319ms] [LOG] Budget items count: 16 @ https://campaign.alertaraqc.com/public/campaigns.php:8567
+[   70324ms] [LOG] loadCampaigns() - Calling populateAutoMLDropdown() @ https://campaign.alertaraqc.com/public/campaigns.php:8346
+[   70324ms] [LOG] loadCampaigns() - allCampaigns data (from database): [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object] @ https://campaign.alertaraqc.com/public/campaigns.php:8347
+[   70325ms] [LOG] loadCampaigns() - Campaign count: 13 @ https://campaign.alertaraqc.com/public/campaigns.php:8348
+[   70325ms] [LOG] populateAutoMLDropdown() - Called. allCampaigns length: 13 @ https://campaign.alertaraqc.com/public/campaigns.php:6658
+[   70325ms] [LOG] populateAutoMLDropdown() - Current dropdown options: 14 @ https://campaign.alertaraqc.com/public/campaigns.php:6659
+[   70325ms] [LOG] populateAutoMLDropdown() - Populating with 13 campaigns @ https://campaign.alertaraqc.com/public/campaigns.php:6663
+[   70326ms] [LOG] populateAutoMLDropdown() - Added option: 48 48 - crime prevention month test @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70326ms] [LOG] populateAutoMLDropdown() - Added option: 47 47 - Crime Prevention Month @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70326ms] [LOG] populateAutoMLDropdown() - Added option: 37 37 - Fire Safety Awareness Week @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70326ms] [LOG] populateAutoMLDropdown() - Added option: 35 35 - Fire Safety Awareness Week @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70326ms] [LOG] populateAutoMLDropdown() - Added option: 32 32 - Community Disaster Preparedness Orientation @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70326ms] [LOG] populateAutoMLDropdown() - Added option: 31 31 - Fire Safety Awareness Week @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70326ms] [LOG] populateAutoMLDropdown() - Added option: 29 29 - Road Safety for Students @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70327ms] [LOG] populateAutoMLDropdown() - Added option: 27 27 - Dengue Prevention and Clean-Up Drive @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70327ms] [LOG] populateAutoMLDropdown() - Added option: 25 25 - Earthquake Drill and Preparedness Campaign @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70327ms] [LOG] populateAutoMLDropdown() - Added option: 11 11 - Earthquake Go-Bag Campaign @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70327ms] [LOG] populateAutoMLDropdown() - Added option: 10 10 - Flood Evacuation Awareness @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70327ms] [LOG] populateAutoMLDropdown() - Added option: 3 3 - Flood Preparedness Campaign @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70327ms] [LOG] populateAutoMLDropdown() - Added option: 1 1 - Fire Safety Awareness Week 2025 @ https://campaign.alertaraqc.com/public/campaigns.php:6683
+[   70327ms] [LOG] populateAutoMLDropdown() - Successfully added 13 options. Total options now: 14 @ https://campaign.alertaraqc.com/public/campaigns.php:6687
+[   70328ms] [LOG] validateAutoMLForm() - Campaign selected:  Value:  @ https://campaign.alertaraqc.com/public/campaigns.php:6582
+[   70328ms] [LOG] validateAutoMLForm() - Button disabled (no campaign selected) @ https://campaign.alertaraqc.com/public/campaigns.php:6595
+[   70328ms] [LOG] Get Prediction button event listener attached @ https://campaign.alertaraqc.com/public/campaigns.php:6643
+[   70328ms] [LOG] validateAutoMLForm() - Campaign selected:  Value:  @ https://campaign.alertaraqc.com/public/campaigns.php:6582
+[   70328ms] [LOG] validateAutoMLForm() - Button disabled (no campaign selected) @ https://campaign.alertaraqc.com/public/campaigns.php:6595
+[   70328ms] [LOG] Dropdown changed to:  @ https://campaign.alertaraqc.com/public/campaigns.php:3943
+[   70328ms] [LOG] loadCampaigns() - populateAutoMLDropdown() returned: true @ https://campaign.alertaraqc.com/public/campaigns.php:8351
+[   70329ms] [LOG] loadCampaigns() - Final dropdown option count: 13 @ https://campaign.alertaraqc.com/public/campaigns.php:8357
+[   70329ms] [LOG] loadCampaigns() - All dropdown options: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object] @ https://campaign.alertaraqc.com/public/campaigns.php:8366
+[   70329ms] [LOG] validateAutoMLForm() - Campaign selected:  Value:  @ https://campaign.alertaraqc.com/public/campaigns.php:6582
+[   70329ms] [LOG] validateAutoMLForm() - Button disabled (no campaign selected) @ https://campaign.alertaraqc.com/public/campaigns.php:6595
+[   70330ms] [LOG] validateAutoMLForm() - Campaign selected:  Value:  @ https://campaign.alertaraqc.com/public/campaigns.php:6582
+[   70330ms] [LOG] validateAutoMLForm() - Button disabled (no campaign selected) @ https://campaign.alertaraqc.com/public/campaigns.php:6595
+[   70330ms] [LOG] initializeCampaigns() - Dropdown already has 13 options @ https://campaign.alertaraqc.com/public/campaigns.php:11242
+[   70331ms] [LOG] validateAutoMLForm() - Campaign selected:  Value:  @ https://campaign.alertaraqc.com/public/campaigns.php:6582
+[   70331ms] [LOG] validateAutoMLForm() - Button disabled (no campaign selected) @ https://campaign.alertaraqc.com/public/campaigns.php:6595
+[   70331ms] [LOG] initializeCampaigns() - Found Get Prediction button @ https://campaign.alertaraqc.com/public/campaigns.php:11249
+[   70331ms] [LOG] initializeCampaigns() - Get Prediction button event listeners attached @ https://campaign.alertaraqc.com/public/campaigns.php:11276
+[   70331ms] [LOG] initializeCampaigns() - Found Refresh button @ https://campaign.alertaraqc.com/public/campaigns.php:11284
+[   70331ms] [LOG] initializeCampaigns() - Refresh button event listener attached @ https://campaign.alertaraqc.com/public/campaigns.php:11316
+[   92916ms] [LOG] === TASK 4 PROOF: getToken() called === @ https://campaign.alertaraqc.com/public/campaigns.php:5243
+[   92916ms] [LOG] TASK 4: localStorage.getItem("jwtToken") result: EXISTS (length: 353) @ https://campaign.alertaraqc.com/public/campaigns.php:5244
+[   92916ms] [LOG] TASK 4: Token value (first 20 chars): eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/campaigns.php:5245
+[   92916ms] [LOG] TASK 4: Token after trim: eyJ0eXAiOiJKV1QiLCJh... @ https://campaign.alertaraqc.com/public/campaigns.php:5246
+[   92916ms] [LOG] === TASK 4 PROOF: Token returned (length: 353) === @ https://campaign.alertaraqc.com/public/campaigns.php:5253

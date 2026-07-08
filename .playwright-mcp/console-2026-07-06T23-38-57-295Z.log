@@ -1,0 +1,29 @@
+[   22563ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  107496ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  108893ms] [LOG] highlightPayorFromNotification: {highlightCustomerName: null, highlightType: null} @ http://localhost/hatdog/public/js/payments.js?v=1783381240:1679
+[  259242ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  259756ms] [LOG] Payable Cheque Voucher Enhancement loaded @ http://localhost/hatdog/public/js/Payable-Cheque-Voucher-Enhancement.js:623
+[  689441ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[  689990ms] [LOG] Payable Cheque Voucher Enhancement loaded @ http://localhost/hatdog/public/js/Payable-Cheque-Voucher-Enhancement.js:623
+[ 1051568ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost/hatdog/public/special/accounting/payments/overdue-notifications:0
+[ 1051569ms] [ERROR] Error loading special notifications: Error: Invoice API error: 500
+    at http://localhost/hatdog/public/special/accounting/payable-cheque-voucher:2879:38
+    at async Promise.all (index 1) @ http://localhost/hatdog/public/special/accounting/payable-cheque-voucher:2971
+[ 2767696ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 2768012ms] [LOG] Payable Cheque Voucher Enhancement loaded @ http://localhost/hatdog/public/js/Payable-Cheque-Voucher-Enhancement.js:623
+[ 3242399ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 3262472ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 3491898ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 3657474ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 3669115ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 3893643ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 4155894ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 6908874ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8310356ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/regular/purchase/purchase-note?from_viber=1:0
+[ 8311556ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8317387ms] [WARNING] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation @ https://cdn.tailwindcss.com/:63
+[ 8390081ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/regular/purchase/purchase-note?from_viber=1:0
+[ 8393822ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/regular/purchase/purchase-note?from_viber=1:0
+[ 8393955ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/regular/purchase/purchase-note?from_viber=1:0
+[ 8394106ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/regular/purchase/purchase-note?from_viber=1:0
+[ 8394247ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost/regular/purchase/purchase-note?from_viber=1:0

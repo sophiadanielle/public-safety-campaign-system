@@ -1,0 +1,652 @@
+- generic [active] [ref=f19e1]:
+  - generic [ref=f19e2]:
+    - generic "Hide panel" [ref=f19e4] [cursor=pointer]: ←
+    - generic [ref=f19e5]:
+      - generic [ref=f19e6]:
+        - link "phpMyAdmin" [ref=f19e8] [cursor=pointer]:
+          - /url: index.php
+          - img "phpMyAdmin" [ref=f19e9]
+        - generic [ref=f19e10]:
+          - link "Home" [ref=f19e11] [cursor=pointer]:
+            - /url: index.php?route=/
+            - img "Home" [ref=f19e12]
+          - link "Log out" [ref=f19e13] [cursor=pointer]:
+            - /url: index.php?route=/logout
+            - img "Log out" [ref=f19e14]
+          - link "phpMyAdmin documentation" [ref=f19e15] [cursor=pointer]:
+            - /url: ./doc/html/index.html
+            - img "phpMyAdmin documentation" [ref=f19e16]
+          - link "MySQL Documentation" [ref=f19e17] [cursor=pointer]:
+            - /url: ./url.php?url=https%3A%2F%2Fdev.mysql.com%2Fdoc%2Frefman%2F8.0%2Fen%2Findex.html
+            - img "MySQL Documentation" [ref=f19e18]
+          - link "Navigation panel settings" [ref=f19e19] [cursor=pointer]:
+            - /url: "#"
+            - img "Navigation panel settings" [ref=f19e20]
+          - link "Reload navigation panel" [ref=f19e21] [cursor=pointer]:
+            - /url: "#"
+            - img "Reload navigation panel" [ref=f19e22]
+      - generic [ref=f19e23]:
+        - generic [ref=f19e24]:
+          - button "Recent" [ref=f19e26] [cursor=pointer]
+          - button "Favorites" [ref=f19e28] [cursor=pointer]
+        - list [ref=f19e29]:
+          - listitem [ref=f19e30]:
+            - generic [ref=f19e31]:
+              - link "Collapse all" [ref=f19e32] [cursor=pointer]:
+                - /url: "#"
+                - img "Collapse all" [ref=f19e33]
+              - link "Unlink from main panel" [ref=f19e34] [cursor=pointer]:
+                - /url: "#"
+                - img "Unlink from main panel" [ref=f19e35]
+        - list [ref=f19e37]:
+          - listitem [ref=f19e38]:
+            - link "New" [ref=f19e42] [cursor=pointer]:
+              - /url: index.php?route=/server/databases
+              - img "New" [ref=f19e43]
+            - link "New" [ref=f19e44] [cursor=pointer]:
+              - /url: index.php?route=/server/databases
+          - listitem [ref=f19e45]:
+            - link "Expand/Collapse" [ref=f19e49] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f19e50]
+            - link "Database operations" [ref=f19e52] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=disaster_training
+              - img "Database operations" [ref=f19e53]
+            - link "disaster_training" [ref=f19e54] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=disaster_training
+          - listitem [ref=f19e55]:
+            - link "Expand/Collapse" [ref=f19e59] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f19e60]
+            - link "Database operations" [ref=f19e62] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=emergency_response_test
+              - img "Database operations" [ref=f19e63]
+            - link "emergency_response_test" [ref=f19e64] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=emergency_response_test
+          - listitem [ref=f19e65]:
+            - link "Expand/Collapse" [ref=f19e69] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f19e70]
+            - link "Database operations" [ref=f19e72] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=emer_comm_test
+              - img "Database operations" [ref=f19e73]
+            - link "emer_comm_test" [ref=f19e74] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=emer_comm_test
+          - listitem [ref=f19e75]:
+            - link "Expand/Collapse" [ref=f19e79] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f19e80]
+            - link "Database operations" [ref=f19e82] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=fm
+              - img "Database operations" [ref=f19e83]
+            - link "fm" [ref=f19e84] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=fm
+            - link "Show hidden items" [ref=f19e86] [cursor=pointer]:
+              - /url: index.php?route=/navigation
+              - img "Show hidden items" [ref=f19e87]
+          - listitem [ref=f19e88]:
+            - link "Expand/Collapse" [ref=f19e92] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f19e93]
+            - link "Database operations" [ref=f19e95] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=information_schema
+              - img "Database operations" [ref=f19e96]
+            - link "information_schema" [ref=f19e97] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=information_schema
+          - listitem [ref=f19e98]:
+            - link "Expand/Collapse" [ref=f19e102] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f19e103]
+            - link "Database operations" [ref=f19e105] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=LGU
+              - img "Database operations" [ref=f19e106]
+            - link "LGU" [ref=f19e107] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=LGU
+            - link "Show hidden items" [ref=f19e109] [cursor=pointer]:
+              - /url: index.php?route=/navigation
+              - img "Show hidden items" [ref=f19e110]
+          - listitem [ref=f19e111]:
+            - link "Expand/Collapse" [ref=f19e115] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f19e116]
+            - link "Database operations" [ref=f19e118] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=lgu4_traffic_transport
+              - img "Database operations" [ref=f19e119]
+            - link "lgu4_traffic_transport" [ref=f19e120] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=lgu4_traffic_transport
+          - listitem [ref=f19e121]:
+            - link "Expand/Collapse" [ref=f19e125] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f19e126]
+            - link "Database operations" [ref=f19e128] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=mysql
+              - img "Database operations" [ref=f19e129]
+            - link "mysql" [ref=f19e130] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=mysql
+          - listitem [ref=f19e131]:
+            - link "Expand/Collapse" [ref=f19e135] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f19e136]
+            - link "Database operations" [ref=f19e138] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=performance_schema
+              - img "Database operations" [ref=f19e139]
+            - link "performance_schema" [ref=f19e140] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=performance_schema
+          - listitem [ref=f19e141]:
+            - link "Expand/Collapse" [ref=f19e145] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f19e146]
+            - link "Database operations" [ref=f19e148] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=phpmyadmin
+              - img "Database operations" [ref=f19e149]
+            - link "phpmyadmin" [ref=f19e150] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=phpmyadmin
+          - listitem [ref=f19e151]:
+            - link "Expand/Collapse" [ref=f19e154] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f19e155]
+            - link "Database operations" [ref=f19e157] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=sys
+              - img "Database operations" [ref=f19e158]
+            - link "sys" [ref=f19e159] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=sys
+  - generic [ref=f19e160]:
+    - navigation "breadcrumb" [ref=f19e161]:
+      - list [ref=f19e162]:
+        - listitem [ref=f19e163]:
+          - 'link "Server: localhost:3306" [ref=f19e164] [cursor=pointer]':
+            - /url: index.php?route=/
+        - listitem [ref=f19e165]:
+          - text: »
+          - 'link "Database: LGU" [ref=f19e166] [cursor=pointer]':
+            - /url: index.php?route=/database/structure&db=LGU
+        - listitem [ref=f19e167]:
+          - text: »
+          - 'link "Table: campaign_department_reference_staff" [ref=f19e168] [cursor=pointer]':
+            - /url: index.php?route=/sql&db=LGU&table=campaign_department_reference_staff
+    - navigation [ref=f19e170]:
+      - list [ref=f19e172]:
+        - listitem [ref=f19e173]:
+          - link "Browse Browse" [ref=f19e174] [cursor=pointer]:
+            - /url: index.php?route=/sql&db=LGU&table=campaign_department_reference_staff&pos=0
+            - img "Browse" [ref=f19e175]
+            - text: Browse
+        - listitem [ref=f19e176]:
+          - link "Structure Structure (current)" [ref=f19e177] [cursor=pointer]:
+            - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_reference_staff
+            - img "Structure" [ref=f19e178]
+            - text: Structure
+            - generic [ref=f19e179]: (current)
+        - listitem [ref=f19e180]:
+          - link "SQL SQL" [ref=f19e181] [cursor=pointer]:
+            - /url: index.php?route=/table/sql&db=LGU&table=campaign_department_reference_staff
+            - img "SQL" [ref=f19e182]
+            - text: SQL
+        - listitem [ref=f19e183]:
+          - link "Search Search" [ref=f19e184] [cursor=pointer]:
+            - /url: index.php?route=/table/search&db=LGU&table=campaign_department_reference_staff
+            - img "Search" [ref=f19e185]
+            - text: Search
+        - listitem [ref=f19e186]:
+          - link "Insert Insert" [ref=f19e187] [cursor=pointer]:
+            - /url: index.php?route=/table/change&db=LGU&table=campaign_department_reference_staff
+            - img "Insert" [ref=f19e188]
+            - text: Insert
+        - listitem [ref=f19e189]:
+          - link "Export Export" [ref=f19e190] [cursor=pointer]:
+            - /url: index.php?route=/table/export&db=LGU&table=campaign_department_reference_staff&single_table=true
+            - img "Export" [ref=f19e191]
+            - text: Export
+        - listitem [ref=f19e192]:
+          - link "Import Import" [ref=f19e193] [cursor=pointer]:
+            - /url: index.php?route=/table/import&db=LGU&table=campaign_department_reference_staff
+            - img "Import" [ref=f19e194]
+            - text: Import
+        - listitem [ref=f19e195]:
+          - link "Privileges Privileges" [ref=f19e196] [cursor=pointer]:
+            - /url: index.php?route=/server/privileges&db=LGU&table=campaign_department_reference_staff&checkprivsdb=LGU&checkprivstable=campaign_department_reference_staff&viewing_mode=table
+            - img "Privileges" [ref=f19e197]
+            - text: Privileges
+        - listitem [ref=f19e198]:
+          - button "More" [ref=f19e199] [cursor=pointer]
+  - generic [ref=f19e200]:
+    - img "Page-related settings" [ref=f19e202] [cursor=pointer]
+    - link "Click on the bar to scroll to top of page" [ref=f19e203] [cursor=pointer]:
+      - /url: "#"
+      - img "Click on the bar to scroll to top of page" [ref=f19e204]
+  - generic [ref=f19e205]:
+    - generic [ref=f19e207] [cursor=pointer]:
+      - img "SQL Query Console" [ref=f19e208]
+      - text: Console
+    - generic [ref=f19e209]:
+      - generic [ref=f19e210]:
+        - generic [ref=f19e211]: Press Ctrl+Enter to execute query
+        - text: "> >"
+      - generic: ">"
+    - generic [ref=f19e213]:
+      - generic [ref=f19e214] [cursor=pointer]: ascending
+      - generic [ref=f19e215] [cursor=pointer]: descending
+      - generic [ref=f19e216]: "Order:"
+      - generic [ref=f19e217] [cursor=pointer]: Debug SQL
+      - generic [ref=f19e218] [cursor=pointer]: Count
+      - generic [ref=f19e219] [cursor=pointer]: Execution order
+      - generic [ref=f19e220] [cursor=pointer]: Time taken
+      - generic [ref=f19e221]: "Order by:"
+      - generic [ref=f19e222] [cursor=pointer]: Group queries
+      - generic [ref=f19e223] [cursor=pointer]: Ungroup queries
+    - generic [ref=f19e226]:
+      - generic [ref=f19e227]:
+        - generic [ref=f19e228] [cursor=pointer]: Bookmarks
+        - generic [ref=f19e229] [cursor=pointer]: Refresh
+        - generic [ref=f19e230] [cursor=pointer]: Add
+      - generic [ref=f19e232]: No bookmarks
+      - generic [ref=f19e233]:
+        - generic [ref=f19e235] [cursor=pointer]: Add bookmark
+        - generic [ref=f19e236]:
+          - generic [ref=f19e237]:
+            - generic [ref=f19e238]:
+              - text: "Label:"
+              - textbox "Label:" [ref=f19e239]
+            - generic [ref=f19e240]:
+              - text: "Target database:"
+              - textbox "Target database:" [ref=f19e241]
+            - generic [ref=f19e242]:
+              - checkbox "Share this bookmark" [ref=f19e243]
+              - text: Share this bookmark
+            - button "OK" [ref=f19e244] [cursor=pointer]
+          - generic: ">"
+    - generic [ref=f19e245]:
+      - generic [ref=f19e246]:
+        - generic [ref=f19e247] [cursor=pointer]: Options
+        - generic [ref=f19e248] [cursor=pointer]: Set default
+      - generic [ref=f19e249]:
+        - generic [ref=f19e250]:
+          - checkbox "Always expand query messages" [ref=f19e251]
+          - text: Always expand query messages
+        - generic [ref=f19e252]:
+          - checkbox "Show query history at start" [ref=f19e253]
+          - text: Show query history at start
+        - generic [ref=f19e254]:
+          - checkbox "Show current browsing query" [ref=f19e255]
+          - text: Show current browsing query
+        - generic [ref=f19e256]:
+          - checkbox "Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings." [ref=f19e257]
+          - text: Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings.
+        - generic [ref=f19e258]:
+          - checkbox "Switch to dark theme" [ref=f19e259]
+          - text: Switch to dark theme
+  - generic [ref=f19e260]:
+    - list [ref=f19e261]:
+      - listitem [ref=f19e262]:
+        - link "Table structure Table structure" [ref=f19e263] [cursor=pointer]:
+          - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_reference_staff
+          - generic [ref=f19e264]:
+            - img "Table structure" [ref=f19e265]
+            - text: Table structure
+      - listitem [ref=f19e266]:
+        - link "Relation view Relation view" [ref=f19e267] [cursor=pointer]:
+          - /url: index.php?route=/table/relation&db=LGU&table=campaign_department_reference_staff
+          - generic [ref=f19e268]:
+            - img "Relation view" [ref=f19e269]
+            - text: Relation view
+    - generic [ref=f19e270]:
+      - generic [ref=f19e271]:
+        - table [ref=f19e273]:
+          - rowgroup [ref=f19e274]:
+            - row "# Name Type Collation Attributes Null Default Comments Extra Action" [ref=f19e275]:
+              - columnheader [ref=f19e276]
+              - columnheader "#" [ref=f19e277]
+              - columnheader "Name" [ref=f19e278]
+              - columnheader "Type" [ref=f19e279]
+              - columnheader "Collation" [ref=f19e280]
+              - columnheader "Attributes" [ref=f19e281]
+              - columnheader "Null" [ref=f19e282]
+              - columnheader "Default" [ref=f19e283]
+              - columnheader "Comments" [ref=f19e284]
+              - columnheader "Extra" [ref=f19e285]
+              - columnheader "Action" [ref=f19e286]
+          - rowgroup [ref=f19e287]:
+            - row "id Primary 1 int UNSIGNED No None AUTO_INCREMENT Change Change Drop Drop More" [ref=f19e288]:
+              - cell "id Primary" [ref=f19e289]:
+                - checkbox "id Primary" [ref=f19e290]
+              - cell "1" [ref=f19e291]
+              - rowheader "id Primary" [ref=f19e292]:
+                - generic [ref=f19e293]:
+                  - text: id
+                  - img "Primary" [ref=f19e294]
+              - cell "int" [ref=f19e295]
+              - cell [ref=f19e296]
+              - cell "UNSIGNED" [ref=f19e297]
+              - cell "No" [ref=f19e298]
+              - cell "None" [ref=f19e299]:
+                - emphasis [ref=f19e300]: None
+              - cell [ref=f19e301]
+              - cell "AUTO_INCREMENT" [ref=f19e302]
+              - cell "Change Change" [ref=f19e303]:
+                - link "Change Change" [ref=f19e304] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure/change&db=LGU&table=campaign_department_reference_staff&field=id&change_column=1
+                  - generic [ref=f19e305]:
+                    - img "Change" [ref=f19e306]
+                    - text: Change
+              - cell "Drop Drop" [ref=f19e307]:
+                - link "Drop Drop" [ref=f19e308] [cursor=pointer]:
+                  - /url: index.php?route=/sql
+                  - generic [ref=f19e309]:
+                    - img "Drop" [ref=f19e310]
+                    - text: Drop
+              - cell "More" [ref=f19e311]:
+                - button "More" [ref=f19e313] [cursor=pointer]
+            - row "name 2 varchar(150) utf8mb4_0900_ai_ci No None Change Change Drop Drop More" [ref=f19e314]:
+              - cell "name" [ref=f19e315]:
+                - checkbox "name" [ref=f19e316]
+              - cell "2" [ref=f19e317]
+              - rowheader "name" [ref=f19e318]:
+                - generic [ref=f19e319]: name
+              - cell "varchar(150)" [ref=f19e320]
+              - cell "utf8mb4_0900_ai_ci" [ref=f19e321]:
+                - term [ref=f19e322]: utf8mb4_0900_ai_ci
+              - cell [ref=f19e323]
+              - cell "No" [ref=f19e324]
+              - cell "None" [ref=f19e325]:
+                - emphasis [ref=f19e326]: None
+              - cell [ref=f19e327]
+              - cell [ref=f19e328]
+              - cell "Change Change" [ref=f19e329]:
+                - link "Change Change" [ref=f19e330] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure/change&db=LGU&table=campaign_department_reference_staff&field=name&change_column=1
+                  - generic [ref=f19e331]:
+                    - img "Change" [ref=f19e332]
+                    - text: Change
+              - cell "Drop Drop" [ref=f19e333]:
+                - link "Drop Drop" [ref=f19e334] [cursor=pointer]:
+                  - /url: index.php?route=/sql
+                  - generic [ref=f19e335]:
+                    - img "Drop" [ref=f19e336]
+                    - text: Drop
+              - cell "More" [ref=f19e337]:
+                - button "More" [ref=f19e339] [cursor=pointer]
+            - row "role 3 varchar(150) utf8mb4_0900_ai_ci Yes NULL Change Change Drop Drop More" [ref=f19e340]:
+              - cell "role" [ref=f19e341]:
+                - checkbox "role" [ref=f19e342]
+              - cell "3" [ref=f19e343]
+              - rowheader "role" [ref=f19e344]:
+                - generic [ref=f19e345]: role
+              - cell "varchar(150)" [ref=f19e346]
+              - cell "utf8mb4_0900_ai_ci" [ref=f19e347]:
+                - term [ref=f19e348]: utf8mb4_0900_ai_ci
+              - cell [ref=f19e349]
+              - cell "Yes" [ref=f19e350]
+              - cell "NULL" [ref=f19e351]:
+                - emphasis [ref=f19e352]: "NULL"
+              - cell [ref=f19e353]
+              - cell [ref=f19e354]
+              - cell "Change Change" [ref=f19e355]:
+                - link "Change Change" [ref=f19e356] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure/change&db=LGU&table=campaign_department_reference_staff&field=role&change_column=1
+                  - generic [ref=f19e357]:
+                    - img "Change" [ref=f19e358]
+                    - text: Change
+              - cell "Drop Drop" [ref=f19e359]:
+                - link "Drop Drop" [ref=f19e360] [cursor=pointer]:
+                  - /url: index.php?route=/sql
+                  - generic [ref=f19e361]:
+                    - img "Drop" [ref=f19e362]
+                    - text: Drop
+              - cell "More" [ref=f19e363]:
+                - button "More" [ref=f19e365] [cursor=pointer]
+            - row "created_at 4 timestamp Yes CURRENT_TIMESTAMP DEFAULT_GENERATED Change Change Drop Drop More" [ref=f19e366]:
+              - cell "created_at" [ref=f19e367]:
+                - checkbox "created_at" [ref=f19e368]
+              - cell "4" [ref=f19e369]
+              - rowheader "created_at" [ref=f19e370]:
+                - generic [ref=f19e371]: created_at
+              - cell "timestamp" [ref=f19e372]
+              - cell [ref=f19e373]
+              - cell [ref=f19e374]
+              - cell "Yes" [ref=f19e375]
+              - cell "CURRENT_TIMESTAMP" [ref=f19e376]
+              - cell [ref=f19e377]
+              - cell "DEFAULT_GENERATED" [ref=f19e378]
+              - cell "Change Change" [ref=f19e379]:
+                - link "Change Change" [ref=f19e380] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure/change&db=LGU&table=campaign_department_reference_staff&field=created_at&change_column=1
+                  - generic [ref=f19e381]:
+                    - img "Change" [ref=f19e382]
+                    - text: Change
+              - cell "Drop Drop" [ref=f19e383]:
+                - link "Drop Drop" [ref=f19e384] [cursor=pointer]:
+                  - /url: index.php?route=/sql
+                  - generic [ref=f19e385]:
+                    - img "Drop" [ref=f19e386]
+                    - text: Drop
+              - cell "More" [ref=f19e387]:
+                - button "More" [ref=f19e389] [cursor=pointer]
+            - row "updated_at 5 timestamp on update CURRENT_TIMESTAMP Yes CURRENT_TIMESTAMP DEFAULT_GENERATED ON UPDATE CURRENT_TIMESTAMP Change Change Drop Drop More" [ref=f19e390]:
+              - cell "updated_at" [ref=f19e391]:
+                - checkbox "updated_at" [ref=f19e392]
+              - cell "5" [ref=f19e393]
+              - rowheader "updated_at" [ref=f19e394]:
+                - generic [ref=f19e395]: updated_at
+              - cell "timestamp" [ref=f19e396]
+              - cell [ref=f19e397]
+              - cell "on update CURRENT_TIMESTAMP" [ref=f19e398]
+              - cell "Yes" [ref=f19e399]
+              - cell "CURRENT_TIMESTAMP" [ref=f19e400]
+              - cell [ref=f19e401]
+              - cell "DEFAULT_GENERATED ON UPDATE CURRENT_TIMESTAMP" [ref=f19e402]
+              - cell "Change Change" [ref=f19e403]:
+                - link "Change Change" [ref=f19e404] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure/change&db=LGU&table=campaign_department_reference_staff&field=updated_at&change_column=1
+                  - generic [ref=f19e405]:
+                    - img "Change" [ref=f19e406]
+                    - text: Change
+              - cell "Drop Drop" [ref=f19e407]:
+                - link "Drop Drop" [ref=f19e408] [cursor=pointer]:
+                  - /url: index.php?route=/sql
+                  - generic [ref=f19e409]:
+                    - img "Drop" [ref=f19e410]
+                    - text: Drop
+              - cell "More" [ref=f19e411]:
+                - button "More" [ref=f19e413] [cursor=pointer]
+        - generic [ref=f19e414]:
+          - img "With selected:" [ref=f19e415]
+          - checkbox "Check all" [ref=f19e416]
+          - generic [ref=f19e417] [cursor=pointer]: Check all
+          - emphasis [ref=f19e418]: "With selected:"
+          - button "Browse Browse" [ref=f19e419] [cursor=pointer]:
+            - generic [ref=f19e420]:
+              - img "Browse" [ref=f19e421]
+              - text: Browse
+          - button "Change Change" [ref=f19e422] [cursor=pointer]:
+            - generic [ref=f19e423]:
+              - img "Change" [ref=f19e424]
+              - text: Change
+          - button "Drop Drop" [ref=f19e425] [cursor=pointer]:
+            - generic [ref=f19e426]:
+              - img "Drop" [ref=f19e427]
+              - text: Drop
+          - button "Primary Primary" [ref=f19e428] [cursor=pointer]:
+            - generic [ref=f19e429]:
+              - img "Primary" [ref=f19e430]
+              - text: Primary
+          - button "Unique Unique" [ref=f19e431] [cursor=pointer]:
+            - generic [ref=f19e432]:
+              - img "Unique" [ref=f19e433]
+              - text: Unique
+          - button "Index Index" [ref=f19e434] [cursor=pointer]:
+            - generic [ref=f19e435]:
+              - img "Index" [ref=f19e436]
+              - text: Index
+          - button "Spatial Spatial" [ref=f19e437] [cursor=pointer]:
+            - generic [ref=f19e438]:
+              - img "Spatial" [ref=f19e439]
+              - text: Spatial
+          - button "Fulltext Fulltext" [ref=f19e440] [cursor=pointer]:
+            - generic [ref=f19e441]:
+              - img "Fulltext" [ref=f19e442]
+              - text: Fulltext
+          - button "Add to central columns Add to central columns" [ref=f19e443] [cursor=pointer]:
+            - generic [ref=f19e444]:
+              - img "Add to central columns" [ref=f19e445]
+              - text: Add to central columns
+          - button "Remove from central columns Remove from central columns" [ref=f19e446] [cursor=pointer]:
+            - generic [ref=f19e447]:
+              - img "Remove from central columns" [ref=f19e448]
+              - text: Remove from central columns
+      - separator [ref=f19e449]
+      - generic [ref=f19e450]:
+        - button "Print Print" [ref=f19e451] [cursor=pointer]:
+          - generic [ref=f19e452]:
+            - img "Print" [ref=f19e453]
+            - text: Print
+        - link "Track table Track table" [ref=f19e454] [cursor=pointer]:
+          - /url: index.php?route=/table/tracking&db=LGU&table=campaign_department_reference_staff
+          - generic [ref=f19e455]:
+            - img "Track table" [ref=f19e456]
+            - text: Track table
+        - link "Move columns Move columns" [ref=f19e457] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=f19e458]:
+            - img "Move columns" [ref=f19e459]
+            - text: Move columns
+        - link "Normalize Normalize" [ref=f19e460] [cursor=pointer]:
+          - /url: index.php?route=/normalization&db=LGU&table=campaign_department_reference_staff
+          - generic [ref=f19e461]:
+            - img "Normalize" [ref=f19e462]
+            - text: Normalize
+      - generic [ref=f19e463]:
+        - img "Add column" [ref=f19e464]
+        - text: Add
+        - spinbutton [ref=f19e465]: "1"
+        - text: column(s)
+        - combobox [ref=f19e466]:
+          - option "at beginning of table"
+          - option "after id"
+          - option "after name"
+          - option "after role"
+          - option "after created_at"
+          - option "after updated_at" [selected]
+        - button "Go" [ref=f19e467] [cursor=pointer]
+      - generic [ref=f19e468]:
+        - group "Indexes Documentation" [ref=f19e469]:
+          - generic [ref=f19e470]:
+            - text: Indexes
+            - link "Documentation" [ref=f19e471] [cursor=pointer]:
+              - /url: ./url.php?url=https%3A%2F%2Fdev.mysql.com%2Fdoc%2Frefman%2F8.0%2Fen%2Foptimizing-database-structure.html
+              - img "Documentation" [ref=f19e472]
+          - table [ref=f19e474]:
+            - rowgroup [ref=f19e475]:
+              - row "Action Keyname Type Unique Packed Column Cardinality Collation Null Comment" [ref=f19e476]:
+                - columnheader "Action" [ref=f19e477]
+                - columnheader "Keyname" [ref=f19e478]
+                - columnheader "Type" [ref=f19e479]
+                - columnheader "Unique" [ref=f19e480]
+                - columnheader "Packed" [ref=f19e481]
+                - columnheader "Column" [ref=f19e482]
+                - columnheader "Cardinality" [ref=f19e483]
+                - columnheader "Collation" [ref=f19e484]
+                - columnheader "Null" [ref=f19e485]
+                - columnheader "Comment" [ref=f19e486]
+            - rowgroup [ref=f19e487]:
+              - row "Edit Edit Rename Rename Drop Drop PRIMARY BTREE Yes No id 15 A No" [ref=f19e488]:
+                - cell "Edit Edit" [ref=f19e489]:
+                  - link "Edit Edit" [ref=f19e490] [cursor=pointer]:
+                    - /url: index.php?route=/table/indexes
+                    - generic [ref=f19e491]:
+                      - img "Edit" [ref=f19e492]
+                      - text: Edit
+                - cell "Rename Rename" [ref=f19e493]:
+                  - link "Rename Rename" [ref=f19e494] [cursor=pointer]:
+                    - /url: index.php?route=/table/indexes/rename
+                    - generic [ref=f19e495]:
+                      - img "Rename" [ref=f19e496]
+                      - text: Rename
+                - cell "Drop Drop" [ref=f19e497]:
+                  - link "Drop Drop" [ref=f19e498] [cursor=pointer]:
+                    - /url: index.php
+                    - generic [ref=f19e499]:
+                      - img "Drop" [ref=f19e500]
+                      - text: Drop
+                - rowheader "PRIMARY" [ref=f19e501]
+                - cell "BTREE" [ref=f19e502]
+                - cell "Yes" [ref=f19e503]
+                - cell "No" [ref=f19e504]
+                - cell "id" [ref=f19e505]
+                - cell "15" [ref=f19e506]
+                - cell "A" [ref=f19e507]
+                - cell "No" [ref=f19e508]
+                - cell [ref=f19e509]
+        - group [ref=f19e510]:
+          - generic [ref=f19e511]:
+            - text: Create an index on
+            - spinbutton [ref=f19e512]: "1"
+            - text: columns
+            - button "Go" [ref=f19e513] [cursor=pointer]
+      - generic [ref=f19e514]:
+        - group "Partitions Documentation" [ref=f19e515]:
+          - generic [ref=f19e516]:
+            - text: Partitions
+            - link "Documentation" [ref=f19e517] [cursor=pointer]:
+              - /url: ./url.php?url=https%3A%2F%2Fdev.mysql.com%2Fdoc%2Frefman%2F8.0%2Fen%2Fpartitioning.html
+              - img "Documentation" [ref=f19e518]
+          - alert [ref=f19e519]: No partitioning defined!
+        - group [ref=f19e520]:
+          - button "Partition table" [ref=f19e522] [cursor=pointer]
+    - group "Information" [ref=f19e524]:
+      - generic [ref=f19e525]: Information
+      - table "Space usage" [ref=f19e526]:
+        - caption [ref=f19e527]: Space usage
+        - rowgroup [ref=f19e528]:
+          - row "Data 16.0 KiB" [ref=f19e529]:
+            - rowheader "Data" [ref=f19e530]
+            - cell "16.0" [ref=f19e531]
+            - cell "KiB" [ref=f19e532]
+          - row "Index 0 B" [ref=f19e533]:
+            - rowheader "Index" [ref=f19e534]
+            - cell "0" [ref=f19e535]
+            - cell "B" [ref=f19e536]
+          - row "Overhead 0 B" [ref=f19e537]:
+            - rowheader "Overhead" [ref=f19e538]
+            - cell "0" [ref=f19e539]
+            - cell "B" [ref=f19e540]
+          - row "Effective 16.0 KiB" [ref=f19e541]:
+            - rowheader "Effective" [ref=f19e542]
+            - cell "16.0" [ref=f19e543]
+            - cell "KiB" [ref=f19e544]
+          - row "Total 16.0 KiB" [ref=f19e545]:
+            - rowheader "Total" [ref=f19e546]
+            - cell "16.0" [ref=f19e547]
+            - cell "KiB" [ref=f19e548]
+        - rowgroup [ref=f19e549]:
+          - row "Optimize table Optimize table" [ref=f19e550]:
+            - columnheader "Optimize table Optimize table" [ref=f19e551]:
+              - link "Optimize table Optimize table" [ref=f19e552] [cursor=pointer]:
+                - /url: index.php?route=/sql
+                - generic [ref=f19e553]:
+                  - img "Optimize table" [ref=f19e554]
+                  - text: Optimize table
+      - table "Row statistics" [ref=f19e555]:
+        - caption [ref=f19e556]: Row statistics
+        - rowgroup [ref=f19e557]:
+          - row "Format dynamic" [ref=f19e558]:
+            - rowheader "Format" [ref=f19e559]
+            - cell "dynamic" [ref=f19e560]
+          - row "Collation utf8mb4_0900_ai_ci" [ref=f19e561]:
+            - rowheader "Collation" [ref=f19e562]
+            - cell "utf8mb4_0900_ai_ci" [ref=f19e563]:
+              - term [ref=f19e564]: utf8mb4_0900_ai_ci
+          - row "Next autoindex 15" [ref=f19e565]:
+            - rowheader "Next autoindex" [ref=f19e566]
+            - cell "15" [ref=f19e567]
+          - row "Creation Jan 08, 2026 at 02:10 PM" [ref=f19e568]:
+            - rowheader "Creation" [ref=f19e569]
+            - cell "Jan 08, 2026 at 02:10 PM" [ref=f19e570]
+          - row "Last update Jul 08, 2026 at 12:45 AM" [ref=f19e571]:
+            - rowheader "Last update" [ref=f19e572]
+            - cell "Jul 08, 2026 at 12:45 AM" [ref=f19e573]
+          - row "Last check Jul 08, 2026 at 12:45 AM" [ref=f19e574]:
+            - rowheader "Last check" [ref=f19e575]
+            - cell "Jul 08, 2026 at 12:45 AM" [ref=f19e576]
+  - link "Open new phpMyAdmin window" [ref=f19e578] [cursor=pointer]:
+    - /url: index.php?route=%2Ftable%2Fstructure&db=LGU&table=campaign_department_reference_staff&server=1
+    - img "Open new phpMyAdmin window" [ref=f19e579]

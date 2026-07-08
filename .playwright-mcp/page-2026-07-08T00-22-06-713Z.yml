@@ -1,0 +1,1419 @@
+- generic [active] [ref=f16e1]:
+  - generic [ref=f16e2]:
+    - generic "Hide panel" [ref=f16e4] [cursor=pointer]: ←
+    - generic [ref=f16e5]:
+      - generic [ref=f16e6]:
+        - link "phpMyAdmin" [ref=f16e8] [cursor=pointer]:
+          - /url: index.php
+          - img "phpMyAdmin" [ref=f16e9]
+        - generic [ref=f16e10]:
+          - link "Home" [ref=f16e11] [cursor=pointer]:
+            - /url: index.php?route=/
+            - img "Home" [ref=f16e12]
+          - link "Log out" [ref=f16e13] [cursor=pointer]:
+            - /url: index.php?route=/logout
+            - img "Log out" [ref=f16e14]
+          - link "phpMyAdmin documentation" [ref=f16e15] [cursor=pointer]:
+            - /url: ./doc/html/index.html
+            - img "phpMyAdmin documentation" [ref=f16e16]
+          - link "MySQL Documentation" [ref=f16e17] [cursor=pointer]:
+            - /url: ./url.php?url=https%3A%2F%2Fdev.mysql.com%2Fdoc%2Frefman%2F8.0%2Fen%2Findex.html
+            - img "MySQL Documentation" [ref=f16e18]
+          - link "Navigation panel settings" [ref=f16e19] [cursor=pointer]:
+            - /url: "#"
+            - img "Navigation panel settings" [ref=f16e20]
+          - link "Reload navigation panel" [ref=f16e21] [cursor=pointer]:
+            - /url: "#"
+            - img "Reload navigation panel" [ref=f16e22]
+      - generic [ref=f16e23]:
+        - generic [ref=f16e344]:
+          - button "Recent" [ref=f16e346] [cursor=pointer]
+          - button "Favorites" [ref=f16e348] [cursor=pointer]
+        - list [ref=f16e349]:
+          - listitem [ref=f16e350]:
+            - generic [ref=f16e351]:
+              - link "Collapse all" [ref=f16e352] [cursor=pointer]:
+                - /url: "#"
+                - img "Collapse all" [ref=f16e353]
+              - link "Unlink from main panel" [ref=f16e354] [cursor=pointer]:
+                - /url: "#"
+                - img "Unlink from main panel" [ref=f16e355]
+        - list [ref=f16e357]:
+          - listitem [ref=f16e358]:
+            - link "New" [ref=f16e362] [cursor=pointer]:
+              - /url: index.php?route=/server/databases
+              - img "New" [ref=f16e363]
+            - link "New" [ref=f16e364] [cursor=pointer]:
+              - /url: index.php?route=/server/databases
+          - listitem [ref=f16e365]:
+            - link "Expand/Collapse" [ref=f16e369] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f16e370]
+            - link "Database operations" [ref=f16e372] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=disaster_training
+              - img "Database operations" [ref=f16e373]
+            - link "disaster_training" [ref=f16e374] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=disaster_training
+          - listitem [ref=f16e375]:
+            - link "Expand/Collapse" [ref=f16e379] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f16e380]
+            - link "Database operations" [ref=f16e382] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=emergency_response_test
+              - img "Database operations" [ref=f16e383]
+            - link "emergency_response_test" [ref=f16e384] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=emergency_response_test
+          - listitem [ref=f16e385]:
+            - link "Expand/Collapse" [ref=f16e389] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f16e390]
+            - link "Database operations" [ref=f16e392] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=emer_comm_test
+              - img "Database operations" [ref=f16e393]
+            - link "emer_comm_test" [ref=f16e394] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=emer_comm_test
+          - listitem [ref=f16e395]:
+            - link "Expand/Collapse" [ref=f16e399] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f16e400]
+            - link "Database operations" [ref=f16e402] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=fm
+              - img "Database operations" [ref=f16e403]
+            - link "fm" [ref=f16e404] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=fm
+            - link "Show hidden items" [ref=f16e406] [cursor=pointer]:
+              - /url: index.php?route=/navigation
+              - img "Show hidden items" [ref=f16e407]
+          - listitem [ref=f16e408]:
+            - link "Expand/Collapse" [ref=f16e412] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f16e413]
+            - link "Database operations" [ref=f16e415] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=information_schema
+              - img "Database operations" [ref=f16e416]
+            - link "information_schema" [ref=f16e417] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=information_schema
+          - listitem [ref=f16e418]:
+            - link [ref=f16e422] [cursor=pointer]:
+              - /url: "#"
+            - link "Database operations" [ref=f16e424] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=LGU
+              - img "Database operations" [ref=f16e425]
+            - link "LGU" [ref=f16e426] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=LGU
+            - link "Show hidden items" [ref=f16e428] [cursor=pointer]:
+              - /url: index.php?route=/navigation
+              - img "Show hidden items" [ref=f16e429]
+            - list [ref=f16e431]:
+              - listitem [ref=f16e432]:
+                - generic [ref=f16e434]:
+                  - textbox "Type to filter these, Enter to search all" [ref=f16e435]
+                  - button "Clear fast filter" [ref=f16e436] [cursor=pointer]: X
+              - generic [ref=f16e437]:
+                - combobox [ref=f16e439]:
+                  - option "1" [selected]
+                  - option "2"
+                  - option "3"
+                - link ">" [ref=f16e440] [cursor=pointer]:
+                  - /url: index.php?route=/navigation
+                - link ">>" [ref=f16e441] [cursor=pointer]:
+                  - /url: index.php?route=/navigation
+              - listitem [ref=f16e442]:
+                - link "New" [ref=f16e446] [cursor=pointer]:
+                  - /url: index.php?route=/table/create&db=LGU
+                  - img "New" [ref=f16e447]
+                - link "New" [ref=f16e448] [cursor=pointer]:
+                  - /url: index.php?route=/table/create&db=LGU
+              - listitem [ref=f16e449]:
+                - link "Expand/Collapse" [ref=f16e453] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e454]
+                - link "Structure" [ref=f16e456] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=accident_cases
+                  - img "Structure" [ref=f16e457]
+                - link "accident_cases" [ref=f16e458] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=accident_cases
+              - listitem [ref=f16e459]:
+                - link "Expand/Collapse" [ref=f16e463] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e464]
+                - link "Structure" [ref=f16e466] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=accident_peoples
+                  - img "Structure" [ref=f16e467]
+                - link "accident_peoples" [ref=f16e468] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=accident_peoples
+              - listitem [ref=f16e469]:
+                - link "Expand/Collapse" [ref=f16e473] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e474]
+                - link "Structure" [ref=f16e476] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=accident_vehicles
+                  - img "Structure" [ref=f16e477]
+                - link "accident_vehicles" [ref=f16e478] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=accident_vehicles
+              - listitem [ref=f16e479]:
+                - link "Expand/Collapse" [ref=f16e483] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e484]
+                - link "Structure" [ref=f16e486] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=admins
+                  - img "Structure" [ref=f16e487]
+                - link "admins" [ref=f16e488] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=admins
+              - listitem [ref=f16e489]:
+                - link "Expand/Collapse" [ref=f16e493] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e494]
+                - link "Structure" [ref=f16e496] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=attachments
+                  - img "Structure" [ref=f16e497]
+                - link "attachments" [ref=f16e498] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=attachments
+              - listitem [ref=f16e499]:
+                - link "Expand/Collapse" [ref=f16e503] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e504]
+                - link "Structure" [ref=f16e506] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=audit_logs
+                  - img "Structure" [ref=f16e507]
+                - link "audit_logs" [ref=f16e508] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=audit_logs
+              - listitem [ref=f16e509]:
+                - link "Expand/Collapse" [ref=f16e513] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e514]
+                - link "Structure" [ref=f16e516] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=automated_reports_schedule
+                  - img "Structure" [ref=f16e517]
+                - link "automated_reports_schedule" [ref=f16e518] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=automated_reports_schedule
+              - listitem [ref=f16e519]:
+                - link "Expand/Collapse" [ref=f16e523] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e524]
+                - link "Structure" [ref=f16e526] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=barangay_officials
+                  - img "Structure" [ref=f16e527]
+                - link "barangay_officials" [ref=f16e528] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=barangay_officials
+              - listitem [ref=f16e529]:
+                - link "Expand/Collapse" [ref=f16e533] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e534]
+                - link "Structure" [ref=f16e536] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=bcpc_officers
+                  - img "Structure" [ref=f16e537]
+                - link "bcpc_officers" [ref=f16e538] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=bcpc_officers
+              - listitem [ref=f16e539]:
+                - link "Expand/Collapse" [ref=f16e543] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e544]
+                - link "Structure" [ref=f16e546] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=blotters
+                  - img "Structure" [ref=f16e547]
+                - link "blotters" [ref=f16e548] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=blotters
+              - listitem [ref=f16e549]:
+                - link "Expand/Collapse" [ref=f16e553] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e554]
+                - link "Structure" [ref=f16e556] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_budgets
+                  - img "Structure" [ref=f16e557]
+                - link "campaign_budgets" [ref=f16e558] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_budgets
+              - listitem [ref=f16e559]:
+                - link "Expand/Collapse" [ref=f16e563] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e564]
+                - link "Structure" [ref=f16e566] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_attachments
+                  - img "Structure" [ref=f16e567]
+                - link "campaign_department_attachments" [ref=f16e568] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_attachments
+              - listitem [ref=f16e569]:
+                - link "Expand/Collapse" [ref=f16e573] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e574]
+                - link "Structure" [ref=f16e576] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_attendance
+                  - img "Structure" [ref=f16e577]
+                - link "campaign_department_attendance" [ref=f16e578] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_attendance
+              - listitem [ref=f16e579]:
+                - link "Expand/Collapse" [ref=f16e583] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e584]
+                - link "Structure" [ref=f16e586] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_audience_members
+                  - img "Structure" [ref=f16e587]
+                - link "campaign_department_audience_members" [ref=f16e588] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_audience_members
+              - listitem [ref=f16e589]:
+                - link "Expand/Collapse" [ref=f16e593] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e594]
+                - link "Structure" [ref=f16e596] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_audience_segments
+                  - img "Structure" [ref=f16e597]
+                - link "campaign_department_audience_segments" [ref=f16e598] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_audience_segments
+              - listitem [ref=f16e599]:
+                - link "Expand/Collapse" [ref=f16e603] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e604]
+                - link "Structure" [ref=f16e606] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_audit_logs
+                  - img "Structure" [ref=f16e607]
+                - link "campaign_department_audit_logs" [ref=f16e608] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_audit_logs
+              - listitem [ref=f16e609]:
+                - link "Expand/Collapse" [ref=f16e613] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e614]
+                - link "Structure" [ref=f16e616] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_automl_predictions
+                  - img "Structure" [ref=f16e617]
+                - link "campaign_department_automl_predictions" [ref=f16e618] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_automl_predictions
+              - listitem [ref=f16e619]:
+                - link "Expand/Collapse" [ref=f16e623] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e624]
+                - link "Structure" [ref=f16e626] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_barangays
+                  - img "Structure" [ref=f16e627]
+                - link "campaign_department_barangays" [ref=f16e628] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_barangays
+              - listitem [ref=f16e629]:
+                - link "Expand/Collapse" [ref=f16e633] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e634]
+                - link "Structure" [ref=f16e636] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaigns
+                  - img "Structure" [ref=f16e637]
+                - link "campaign_department_campaigns" [ref=f16e638] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_campaigns
+              - listitem [ref=f16e639]:
+                - link "Expand/Collapse" [ref=f16e643] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e644]
+                - link "Structure" [ref=f16e646] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaign_audience
+                  - img "Structure" [ref=f16e647]
+                - link "campaign_department_campaign_audience" [ref=f16e648] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_campaign_audience
+              - listitem [ref=f16e649]:
+                - link "Expand/Collapse" [ref=f16e653] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e654]
+                - link "Structure" [ref=f16e656] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaign_content_items
+                  - img "Structure" [ref=f16e657]
+                - link "campaign_department_campaign_content_items" [ref=f16e658] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_campaign_content_items
+              - listitem [ref=f16e659]:
+                - link "Expand/Collapse" [ref=f16e663] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e664]
+                - link "Structure" [ref=f16e666] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaign_schedules
+                  - img "Structure" [ref=f16e667]
+                - link "campaign_department_campaign_schedules" [ref=f16e668] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_campaign_schedules
+              - listitem [ref=f16e669]:
+                - link "Expand/Collapse" [ref=f16e673] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e674]
+                - link "Structure" [ref=f16e676] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_items
+                  - img "Structure" [ref=f16e677]
+                - link "campaign_department_content_items" [ref=f16e678] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_content_items
+              - listitem [ref=f16e679]:
+                - link "Expand/Collapse" [ref=f16e683] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e684]
+                - link "Structure" [ref=f16e686] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_item_versions
+                  - img "Structure" [ref=f16e687]
+                - link "campaign_department_content_item_versions" [ref=f16e688] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_content_item_versions
+              - listitem [ref=f16e689]:
+                - link "Expand/Collapse" [ref=f16e693] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e694]
+                - link "Structure" [ref=f16e696] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_tags
+                  - img "Structure" [ref=f16e697]
+                - link "campaign_department_content_tags" [ref=f16e698] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_content_tags
+              - listitem [ref=f16e699]:
+                - link "Expand/Collapse" [ref=f16e703] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e704]
+                - link "Structure" [ref=f16e706] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_usage
+                  - img "Structure" [ref=f16e707]
+                - link "campaign_department_content_usage" [ref=f16e708] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_content_usage
+              - listitem [ref=f16e709]:
+                - link "Expand/Collapse" [ref=f16e713] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e714]
+                - link "Structure" [ref=f16e716] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_evaluation_reports
+                  - img "Structure" [ref=f16e717]
+                - link "campaign_department_evaluation_reports" [ref=f16e718] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_evaluation_reports
+              - listitem [ref=f16e719]:
+                - link "Expand/Collapse" [ref=f16e723] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e724]
+                - link "Structure" [ref=f16e726] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_events
+                  - img "Structure" [ref=f16e727]
+                - link "campaign_department_events" [ref=f16e728] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_events
+              - listitem [ref=f16e729]:
+                - link "Expand/Collapse" [ref=f16e733] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e734]
+                - link "Structure" [ref=f16e736] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_agency_coordination
+                  - img "Structure" [ref=f16e737]
+                - link "campaign_department_event_agency_coordination" [ref=f16e738] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_agency_coordination
+              - listitem [ref=f16e739]:
+                - link "Expand/Collapse" [ref=f16e743] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e744]
+                - link "Structure" [ref=f16e746] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_audience_segments
+                  - img "Structure" [ref=f16e747]
+                - link "campaign_department_event_audience_segments" [ref=f16e748] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_audience_segments
+              - listitem [ref=f16e749]:
+                - link "Expand/Collapse" [ref=f16e753] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e754]
+                - link "Structure" [ref=f16e756] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_audit_log
+                  - img "Structure" [ref=f16e757]
+                - link "campaign_department_event_audit_log" [ref=f16e758] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_audit_log
+              - listitem [ref=f16e759]:
+                - link "Expand/Collapse" [ref=f16e763] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e764]
+                - link "Structure" [ref=f16e766] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_conflicts
+                  - img "Structure" [ref=f16e767]
+                - link "campaign_department_event_conflicts" [ref=f16e768] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_conflicts
+              - listitem [ref=f16e769]:
+                - link "Expand/Collapse" [ref=f16e773] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e774]
+                - link "Structure" [ref=f16e776] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_facilitators
+                  - img "Structure" [ref=f16e777]
+                - link "campaign_department_event_facilitators" [ref=f16e778] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_facilitators
+              - listitem [ref=f16e779]:
+                - link "Expand/Collapse" [ref=f16e783] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e784]
+                - link "Structure" [ref=f16e786] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_integration_checkpoints
+                  - img "Structure" [ref=f16e787]
+                - link "campaign_department_event_integration_checkpoints" [ref=f16e788] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_integration_checkpoints
+              - listitem [ref=f16e789]:
+                - link "Expand/Collapse" [ref=f16e793] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e794]
+                - link "Structure" [ref=f16e796] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_feedback
+                  - img "Structure" [ref=f16e797]
+                - link "campaign_department_feedback" [ref=f16e798] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_feedback
+              - listitem [ref=f16e799]:
+                - link "Expand/Collapse" [ref=f16e803] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e804]
+                - link "Structure" [ref=f16e806] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_impact_metrics
+                  - img "Structure" [ref=f16e807]
+                - link "campaign_department_impact_metrics" [ref=f16e808] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_impact_metrics
+              - listitem [ref=f16e809]:
+                - link "Expand/Collapse" [ref=f16e813] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e814]
+                - link "Structure" [ref=f16e816] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_integration_logs
+                  - img "Structure" [ref=f16e817]
+                - link "campaign_department_integration_logs" [ref=f16e818] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_integration_logs
+              - listitem [ref=f16e819]:
+                - link "Expand/Collapse" [ref=f16e823] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e824]
+                - link "Structure" [ref=f16e826] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_notification_logs
+                  - img "Structure" [ref=f16e827]
+                - link "campaign_department_notification_logs" [ref=f16e828] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_notification_logs
+              - listitem [ref=f16e829]:
+                - link "Expand/Collapse" [ref=f16e833] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e834]
+                - link "Structure" [ref=f16e836] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_otp
+                  - img "Structure" [ref=f16e837]
+                - link "campaign_department_otp" [ref=f16e838] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_otp
+              - listitem [ref=f16e839]:
+                - link "Expand/Collapse" [ref=f16e843] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e844]
+                - link "Structure" [ref=f16e846] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_partners
+                  - img "Structure" [ref=f16e847]
+                - link "campaign_department_partners" [ref=f16e848] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_partners
+              - listitem [ref=f16e849]:
+                - link "Expand/Collapse" [ref=f16e853] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e854]
+                - link "Structure" [ref=f16e856] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_partner_engagements
+                  - img "Structure" [ref=f16e857]
+                - link "campaign_department_partner_engagements" [ref=f16e858] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_partner_engagements
+              - listitem [ref=f16e859]:
+                - link "Expand/Collapse" [ref=f16e863] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e864]
+                - link "Structure" [ref=f16e866] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_permissions
+                  - img "Structure" [ref=f16e867]
+                - link "campaign_department_permissions" [ref=f16e868] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_permissions
+              - listitem [ref=f16e869]:
+                - link "Expand/Collapse" [ref=f16e873] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e874]
+                - link "Structure" [ref=f16e876] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_reference_locations
+                  - img "Structure" [ref=f16e877]
+                - link "campaign_department_reference_locations" [ref=f16e878] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_reference_locations
+              - listitem [ref=f16e879]:
+                - link "Expand/Collapse" [ref=f16e883] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e884]
+                - link "Structure" [ref=f16e886] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_reference_staff
+                  - img "Structure" [ref=f16e887]
+                - link "campaign_department_reference_staff" [ref=f16e888] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_reference_staff
+              - listitem [ref=f16e889]:
+                - link "Expand/Collapse" [ref=f16e893] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e894]
+                - link "Structure" [ref=f16e896] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_roles
+                  - img "Structure" [ref=f16e897]
+                - link "campaign_department_roles" [ref=f16e898] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_roles
+              - listitem [ref=f16e899]:
+                - link "Expand/Collapse" [ref=f16e903] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e904]
+                - link "Structure" [ref=f16e906] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_role_permissions
+                  - img "Structure" [ref=f16e907]
+                - link "campaign_department_role_permissions" [ref=f16e908] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_role_permissions
+              - listitem [ref=f16e909]:
+                - link "Expand/Collapse" [ref=f16e913] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e914]
+                - link "Structure" [ref=f16e916] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_survey_aggregated_results
+                  - img "Structure" [ref=f16e917]
+                - link "campaign_department_survey_aggregated_results" [ref=f16e918] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_survey_aggregated_results
+              - listitem [ref=f16e919]:
+                - link "Expand/Collapse" [ref=f16e923] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e924]
+                - link "Structure" [ref=f16e926] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_survey_audit_log
+                  - img "Structure" [ref=f16e927]
+                - link "campaign_department_survey_audit_log" [ref=f16e928] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_survey_audit_log
+              - listitem [ref=f16e929]:
+                - link "Expand/Collapse" [ref=f16e933] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e934]
+                - link "Structure" [ref=f16e936] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_survey_questions
+                  - img "Structure" [ref=f16e937]
+                - link "campaign_department_survey_questions" [ref=f16e938] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_survey_questions
+              - listitem [ref=f16e939]:
+                - link "Expand/Collapse" [ref=f16e942] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f16e943]
+                - link "Structure" [ref=f16e945] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_survey_response_details
+                  - img "Structure" [ref=f16e946]
+                - link "campaign_department_survey_response_details" [ref=f16e947] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_survey_response_details
+          - listitem [ref=f16e948]:
+            - link "Expand/Collapse" [ref=f16e952] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f16e953]
+            - link "Database operations" [ref=f16e955] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=lgu4_traffic_transport
+              - img "Database operations" [ref=f16e956]
+            - link "lgu4_traffic_transport" [ref=f16e957] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=lgu4_traffic_transport
+          - listitem [ref=f16e958]:
+            - link "Expand/Collapse" [ref=f16e962] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f16e963]
+            - link "Database operations" [ref=f16e965] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=mysql
+              - img "Database operations" [ref=f16e966]
+            - link "mysql" [ref=f16e967] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=mysql
+          - listitem [ref=f16e968]:
+            - link "Expand/Collapse" [ref=f16e972] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f16e973]
+            - link "Database operations" [ref=f16e975] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=performance_schema
+              - img "Database operations" [ref=f16e976]
+            - link "performance_schema" [ref=f16e977] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=performance_schema
+          - listitem [ref=f16e978]:
+            - link "Expand/Collapse" [ref=f16e982] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f16e983]
+            - link "Database operations" [ref=f16e985] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=phpmyadmin
+              - img "Database operations" [ref=f16e986]
+            - link "phpmyadmin" [ref=f16e987] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=phpmyadmin
+          - listitem [ref=f16e988]:
+            - link "Expand/Collapse" [ref=f16e991] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f16e992]
+            - link "Database operations" [ref=f16e994] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=sys
+              - img "Database operations" [ref=f16e995]
+            - link "sys" [ref=f16e996] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=sys
+  - generic [ref=f16e160]:
+    - navigation "breadcrumb" [ref=f16e1008]:
+      - list [ref=f16e1009]:
+        - listitem [ref=f16e1010]:
+          - 'link "Server: localhost:3306" [ref=f16e1011] [cursor=pointer]':
+            - /url: index.php?route=/
+        - listitem [ref=f16e1012]:
+          - text: »
+          - 'link "Database: LGU" [ref=f16e1013] [cursor=pointer]':
+            - /url: index.php?route=/database/structure&db=LGU
+        - listitem [ref=f16e1014]:
+          - text: »
+          - 'link "Table: campaign_department_reference_staff" [ref=f16e1015] [cursor=pointer]':
+            - /url: index.php?route=/sql&db=LGU&table=campaign_department_reference_staff
+    - navigation [ref=f16e1017]:
+      - list [ref=f16e1019]:
+        - listitem [ref=f16e1020]:
+          - link "Browse Browse" [ref=f16e1021] [cursor=pointer]:
+            - /url: index.php?route=/sql&db=LGU&table=campaign_department_reference_staff&pos=0
+            - img "Browse" [ref=f16e1022]
+            - text: Browse
+        - listitem [ref=f16e1023]:
+          - link "Structure Structure" [ref=f16e1024] [cursor=pointer]:
+            - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_reference_staff
+            - img "Structure" [ref=f16e1025]
+            - text: Structure
+        - listitem [ref=f16e1026]:
+          - link "SQL SQL" [ref=f16e1027] [cursor=pointer]:
+            - /url: index.php?route=/table/sql&db=LGU&table=campaign_department_reference_staff
+            - img "SQL" [ref=f16e1028]
+            - text: SQL
+        - listitem [ref=f16e1029]:
+          - link "Search Search" [ref=f16e1030] [cursor=pointer]:
+            - /url: index.php?route=/table/search&db=LGU&table=campaign_department_reference_staff
+            - img "Search" [ref=f16e1031]
+            - text: Search
+        - listitem [ref=f16e1032]:
+          - link "Insert Insert" [ref=f16e1033] [cursor=pointer]:
+            - /url: index.php?route=/table/change&db=LGU&table=campaign_department_reference_staff
+            - img "Insert" [ref=f16e1034]
+            - text: Insert
+        - listitem [ref=f16e1035]:
+          - link "Export Export" [ref=f16e1036] [cursor=pointer]:
+            - /url: index.php?route=/table/export&db=LGU&table=campaign_department_reference_staff&single_table=true
+            - img "Export" [ref=f16e1037]
+            - text: Export
+        - listitem [ref=f16e1038]:
+          - link "Import Import" [ref=f16e1039] [cursor=pointer]:
+            - /url: index.php?route=/table/import&db=LGU&table=campaign_department_reference_staff
+            - img "Import" [ref=f16e1040]
+            - text: Import
+        - listitem [ref=f16e1041]:
+          - link "Privileges Privileges" [ref=f16e1042] [cursor=pointer]:
+            - /url: index.php?route=/server/privileges&db=LGU&table=campaign_department_reference_staff&checkprivsdb=LGU&checkprivstable=campaign_department_reference_staff&viewing_mode=table
+            - img "Privileges" [ref=f16e1043]
+            - text: Privileges
+        - listitem [ref=f16e1044]:
+          - link "Operations Operations" [ref=f16e1045] [cursor=pointer]:
+            - /url: index.php?route=/table/operations&db=LGU&table=campaign_department_reference_staff
+            - img "Operations" [ref=f16e1046]
+            - text: Operations
+        - listitem [ref=f16e1047]:
+          - button "More" [ref=f16e1048] [cursor=pointer]
+  - generic [ref=f16e200]:
+    - img "Page-related settings" [ref=f16e202] [cursor=pointer]
+    - link "Click on the bar to scroll to top of page" [ref=f16e203] [cursor=pointer]:
+      - /url: "#"
+      - img "Click on the bar to scroll to top of page" [ref=f16e204]
+  - generic [ref=f16e205]:
+    - generic [ref=f16e207] [cursor=pointer]:
+      - img "SQL Query Console" [ref=f16e208]
+      - text: Console
+    - text: "> >"
+    - generic [ref=f16e212]:
+      - generic [ref=f16e213]:
+        - generic [ref=f16e214] [cursor=pointer]: ascending
+        - generic [ref=f16e215] [cursor=pointer]: descending
+        - generic [ref=f16e216]: "Order:"
+        - generic [ref=f16e217] [cursor=pointer]: Debug SQL
+        - generic [ref=f16e219] [cursor=pointer]: Execution order
+        - generic [ref=f16e220] [cursor=pointer]: Time taken
+        - generic [ref=f16e221]: "Order by:"
+        - generic [ref=f16e222] [cursor=pointer]: Group queries
+      - generic [ref=f16e225]: Some error occurred while getting SQL debug info.
+    - generic [ref=f16e226]:
+      - generic [ref=f16e227]:
+        - generic [ref=f16e228] [cursor=pointer]: Bookmarks
+        - generic [ref=f16e229] [cursor=pointer]: Refresh
+        - generic [ref=f16e230] [cursor=pointer]: Add
+      - generic [ref=f16e232]: No bookmarks
+      - generic [ref=f16e233]:
+        - generic [ref=f16e235] [cursor=pointer]: Add bookmark
+        - generic [ref=f16e236]:
+          - generic [ref=f16e237]:
+            - generic [ref=f16e238]:
+              - text: "Label:"
+              - textbox "Label:" [ref=f16e239]
+            - generic [ref=f16e240]:
+              - text: "Target database:"
+              - textbox "Target database:" [ref=f16e241]
+            - generic [ref=f16e242]:
+              - checkbox "Share this bookmark" [ref=f16e243]
+              - text: Share this bookmark
+            - button "OK" [ref=f16e244] [cursor=pointer]
+          - generic [ref=f16e998]:
+            - text: ">"
+            - textbox [ref=f16e1001]
+    - generic [ref=f16e245]:
+      - generic [ref=f16e246]:
+        - generic [ref=f16e247] [cursor=pointer]: Options
+        - generic [ref=f16e248] [cursor=pointer]: Set default
+      - generic [ref=f16e249]:
+        - generic [ref=f16e250]:
+          - checkbox "Always expand query messages" [ref=f16e251]
+          - text: Always expand query messages
+        - generic [ref=f16e252]:
+          - checkbox "Show query history at start" [ref=f16e253]
+          - text: Show query history at start
+        - generic [ref=f16e254]:
+          - checkbox "Show current browsing query" [checked] [ref=f16e255]
+          - text: Show current browsing query
+        - generic [ref=f16e256]:
+          - checkbox "Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings." [ref=f16e257]
+          - text: Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings.
+        - generic [ref=f16e258]:
+          - checkbox "Switch to dark theme" [ref=f16e259]
+          - text: Switch to dark theme
+  - generic [ref=f16e260]:
+    - button "Show query box" [ref=f16e1049] [cursor=pointer]
+    - generic [ref=f16e1051]:
+      - generic [ref=f16e1052]:
+        - alert [ref=f16e1053]: Showing rows 0 - 14 (15 total, Query took 0.0003 seconds.)
+        - code [ref=f16e1055]:
+          - generic [ref=f16e1056]:
+            - link "SELECT" [ref=f16e1058] [cursor=pointer]:
+              - /url: ./url.php?url=https://dev.mysql.com/doc/refman/8.0/en/select.html
+            - text: "* FROM `campaign_department_reference_staff` WHERE 1;"
+        - generic [ref=f16e1059]:
+          - generic [ref=f16e1060]:
+            - checkbox "Profiling" [ref=f16e1061]
+            - generic [ref=f16e1062]: Profiling
+          - text: "["
+          - link "Edit inline" [ref=f16e1063] [cursor=pointer]:
+            - /url: "#"
+          - text: "] ["
+          - link "Edit" [ref=f16e1064] [cursor=pointer]:
+            - /url: index.php
+          - text: "] ["
+          - link "Explain SQL" [ref=f16e1065] [cursor=pointer]:
+            - /url: index.php
+          - text: "] ["
+          - link "Create PHP code" [ref=f16e1066] [cursor=pointer]:
+            - /url: index.php
+          - text: "] ["
+          - link "Refresh" [ref=f16e1067] [cursor=pointer]:
+            - /url: index.php
+          - text: "]"
+      - table [ref=f16e1068]:
+        - rowgroup [ref=f16e1069]:
+          - 'row "Show all Show all | Number of rows: 25 Filter rows: Sort by key: None" [ref=f16e1070]':
+            - cell [ref=f16e1071]
+            - cell "Show all Show all" [ref=f16e1072]:
+              - generic [ref=f16e1073]:
+                - checkbox "Show all Show all" [ref=f16e1074]
+                - generic [ref=f16e1075]: Show all
+            - cell "|" [ref=f16e1076]:
+              - generic [ref=f16e1077]: "|"
+            - cell
+            - cell
+            - 'cell "Number of rows: 25" [ref=f16e1078]':
+              - generic [ref=f16e1079]:
+                - generic [ref=f16e1080]: "Number of rows:"
+                - 'combobox "Number of rows: Number of rows:" [ref=f16e1081]':
+                  - option "25" [selected]
+                  - option "50"
+                  - option "100"
+                  - option "250"
+                  - option "500"
+            - cell [ref=f16e1082]
+            - cell "Filter rows:" [ref=f16e1083]:
+              - text: "Filter rows:"
+              - textbox "Search this table" [ref=f16e1084]
+            - 'cell "Sort by key: None" [ref=f16e1085]':
+              - generic [ref=f16e1086]:
+                - text: "Sort by key:"
+                - combobox [ref=f16e1087]:
+                  - option "PRIMARY (ASC)"
+                  - option "PRIMARY (DESC)"
+                  - option "None" [selected]
+            - cell [ref=f16e1088]
+      - button "Extra options" [ref=f16e1091] [cursor=pointer]
+      - generic [ref=f16e1092]:
+        - table [ref=f16e1100]:
+          - rowgroup [ref=f16e1101]:
+            - row "Full texts id name role created_at updated_at" [ref=f16e1102]:
+              - columnheader "Full texts" [ref=f16e1103]:
+                - link "Full texts" [ref=f16e1105] [cursor=pointer]:
+                  - /url: index.php
+                  - img "Full texts" [ref=f16e1106]
+              - columnheader "id" [ref=f16e1109]:
+                - link "id" [ref=f16e1111] [cursor=pointer]:
+                  - /url: index.php?route=/sql&db=LGU&table=campaign_department_reference_staff&sql_query=SELECT+%2A+FROM+%60campaign_department_reference_staff%60+WHERE+1++%0AORDER+BY+%60campaign_department_reference_staff%60.%60id%60+ASC&sql_signature=4950c514f8f321ae6f495e83c84c68404878ba85834d5086469de56b6864eacb&session_max_rows=25&is_browse_distinct=0
+              - columnheader "name" [ref=f16e1112]:
+                - link "name" [ref=f16e1114] [cursor=pointer]:
+                  - /url: index.php?route=/sql&db=LGU&table=campaign_department_reference_staff&sql_query=SELECT+%2A+FROM+%60campaign_department_reference_staff%60+WHERE+1++%0AORDER+BY+%60campaign_department_reference_staff%60.%60name%60+ASC&sql_signature=edaad7ba69ce84baa07e031c546cfc679c2d633d73b090beff8e97cee1efe132&session_max_rows=25&is_browse_distinct=0
+              - columnheader "role" [ref=f16e1115]:
+                - link "role" [ref=f16e1117] [cursor=pointer]:
+                  - /url: index.php?route=/sql&db=LGU&table=campaign_department_reference_staff&sql_query=SELECT+%2A+FROM+%60campaign_department_reference_staff%60+WHERE+1++%0AORDER+BY+%60campaign_department_reference_staff%60.%60role%60+ASC&sql_signature=48685ee500ad63dadc1e2b5004b04851d261b17acd7797cbdf7d6b38a92f6e0f&session_max_rows=25&is_browse_distinct=0
+              - columnheader "created_at" [ref=f16e1118]:
+                - link "created_at" [ref=f16e1120] [cursor=pointer]:
+                  - /url: index.php?route=/sql&db=LGU&table=campaign_department_reference_staff&sql_query=SELECT+%2A+FROM+%60campaign_department_reference_staff%60+WHERE+1++%0AORDER+BY+%60campaign_department_reference_staff%60.%60created_at%60+DESC&sql_signature=f875cfdff04d4caefb669430112c1fcea296a95f77b7271f0d470a901161b286&session_max_rows=25&is_browse_distinct=0
+              - rowheader "updated_at" [ref=f16e1121]:
+                - link "updated_at" [ref=f16e1123] [cursor=pointer]:
+                  - /url: index.php?route=/sql&db=LGU&table=campaign_department_reference_staff&sql_query=SELECT+%2A+FROM+%60campaign_department_reference_staff%60+WHERE+1++%0AORDER+BY+%60campaign_department_reference_staff%60.%60updated_at%60+DESC&sql_signature=1c83b46233545897e764ae27c88a9abcfba50a6e19cd091ac3ff073faad15d72&session_max_rows=25&is_browse_distinct=0
+              - cell [ref=f16e1124]
+          - rowgroup [ref=f16e1125]:
+            - row "Edit Edit Copy Copy Delete Delete 1 Juan Dela Cruz Barangay Safety Officer 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1126]:
+              - cell [ref=f16e1127]:
+                - checkbox [ref=f16e1129]
+              - cell "Edit Edit" [ref=f16e1130]:
+                - link "Edit Edit" [ref=f16e1132] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1133]:
+                    - img "Edit" [ref=f16e1134]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1135]:
+                - link "Copy Copy" [ref=f16e1137] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1138]:
+                    - img "Copy" [ref=f16e1139]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1140]:
+                - link "Delete Delete" [ref=f16e1142] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1143]:
+                    - img "Delete" [ref=f16e1144]
+                    - text: Delete
+              - cell "1" [ref=f16e1145]:
+                - generic [ref=f16e1146]: "1"
+              - cell "Juan Dela Cruz" [ref=f16e1147]:
+                - generic [ref=f16e1148]: Juan Dela Cruz
+              - cell "Barangay Safety Officer" [ref=f16e1149]:
+                - generic [ref=f16e1150]: Barangay Safety Officer
+              - cell "2026-01-08 14:10:59" [ref=f16e1151]:
+                - generic [ref=f16e1152]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1153]:
+                - generic [ref=f16e1154]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 2 Maria Santos DRRM Coordinator 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1155]:
+              - cell [ref=f16e1156]:
+                - checkbox [ref=f16e1158]
+              - cell "Edit Edit" [ref=f16e1159]:
+                - link "Edit Edit" [ref=f16e1161] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1162]:
+                    - img "Edit" [ref=f16e1163]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1164]:
+                - link "Copy Copy" [ref=f16e1166] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1167]:
+                    - img "Copy" [ref=f16e1168]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1169]:
+                - link "Delete Delete" [ref=f16e1171] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1172]:
+                    - img "Delete" [ref=f16e1173]
+                    - text: Delete
+              - cell "2" [ref=f16e1174]:
+                - generic [ref=f16e1175]: "2"
+              - cell "Maria Santos" [ref=f16e1176]:
+                - generic [ref=f16e1177]: Maria Santos
+              - cell "DRRM Coordinator" [ref=f16e1178]:
+                - generic [ref=f16e1179]: DRRM Coordinator
+              - cell "2026-01-08 14:10:59" [ref=f16e1180]:
+                - generic [ref=f16e1181]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1182]:
+                - generic [ref=f16e1183]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 3 Pedro Reyes Fire Safety Marshal 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1184]:
+              - cell [ref=f16e1185]:
+                - checkbox [ref=f16e1187]
+              - cell "Edit Edit" [ref=f16e1188]:
+                - link "Edit Edit" [ref=f16e1190] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1191]:
+                    - img "Edit" [ref=f16e1192]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1193]:
+                - link "Copy Copy" [ref=f16e1195] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1196]:
+                    - img "Copy" [ref=f16e1197]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1198]:
+                - link "Delete Delete" [ref=f16e1200] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1201]:
+                    - img "Delete" [ref=f16e1202]
+                    - text: Delete
+              - cell "3" [ref=f16e1203]:
+                - generic [ref=f16e1204]: "3"
+              - cell "Pedro Reyes" [ref=f16e1205]:
+                - generic [ref=f16e1206]: Pedro Reyes
+              - cell "Fire Safety Marshal" [ref=f16e1207]:
+                - generic [ref=f16e1208]: Fire Safety Marshal
+              - cell "2026-01-08 14:10:59" [ref=f16e1209]:
+                - generic [ref=f16e1210]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1211]:
+                - generic [ref=f16e1212]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 4 Ana Lopez Campaign Officer 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1213]:
+              - cell [ref=f16e1214]:
+                - checkbox [ref=f16e1216]
+              - cell "Edit Edit" [ref=f16e1217]:
+                - link "Edit Edit" [ref=f16e1219] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1220]:
+                    - img "Edit" [ref=f16e1221]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1222]:
+                - link "Copy Copy" [ref=f16e1224] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1225]:
+                    - img "Copy" [ref=f16e1226]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1227]:
+                - link "Delete Delete" [ref=f16e1229] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1230]:
+                    - img "Delete" [ref=f16e1231]
+                    - text: Delete
+              - cell "4" [ref=f16e1232]:
+                - generic [ref=f16e1233]: "4"
+              - cell "Ana Lopez" [ref=f16e1234]:
+                - generic [ref=f16e1235]: Ana Lopez
+              - cell "Campaign Officer" [ref=f16e1236]:
+                - generic [ref=f16e1237]: Campaign Officer
+              - cell "2026-01-08 14:10:59" [ref=f16e1238]:
+                - generic [ref=f16e1239]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1240]:
+                - generic [ref=f16e1241]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 5 Mark Villanueva Traffic Safety Officer 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1242]:
+              - cell [ref=f16e1243]:
+                - checkbox [ref=f16e1245]
+              - cell "Edit Edit" [ref=f16e1246]:
+                - link "Edit Edit" [ref=f16e1248] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1249]:
+                    - img "Edit" [ref=f16e1250]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1251]:
+                - link "Copy Copy" [ref=f16e1253] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1254]:
+                    - img "Copy" [ref=f16e1255]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1256]:
+                - link "Delete Delete" [ref=f16e1258] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1259]:
+                    - img "Delete" [ref=f16e1260]
+                    - text: Delete
+              - cell "5" [ref=f16e1261]:
+                - generic [ref=f16e1262]: "5"
+              - cell "Mark Villanueva" [ref=f16e1263]:
+                - generic [ref=f16e1264]: Mark Villanueva
+              - cell "Traffic Safety Officer" [ref=f16e1265]:
+                - generic [ref=f16e1266]: Traffic Safety Officer
+              - cell "2026-01-08 14:10:59" [ref=f16e1267]:
+                - generic [ref=f16e1268]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1269]:
+                - generic [ref=f16e1270]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 6 Liza Mendoza Community Organizer 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1271]:
+              - cell [ref=f16e1272]:
+                - checkbox [ref=f16e1274]
+              - cell "Edit Edit" [ref=f16e1275]:
+                - link "Edit Edit" [ref=f16e1277] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1278]:
+                    - img "Edit" [ref=f16e1279]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1280]:
+                - link "Copy Copy" [ref=f16e1282] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1283]:
+                    - img "Copy" [ref=f16e1284]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1285]:
+                - link "Delete Delete" [ref=f16e1287] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1288]:
+                    - img "Delete" [ref=f16e1289]
+                    - text: Delete
+              - cell "6" [ref=f16e1290]:
+                - generic [ref=f16e1291]: "6"
+              - cell "Liza Mendoza" [ref=f16e1292]:
+                - generic [ref=f16e1293]: Liza Mendoza
+              - cell "Community Organizer" [ref=f16e1294]:
+                - generic [ref=f16e1295]: Community Organizer
+              - cell "2026-01-08 14:10:59" [ref=f16e1296]:
+                - generic [ref=f16e1297]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1298]:
+                - generic [ref=f16e1299]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 7 Carlos Ramirez Disaster Preparedness Trainer 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1300]:
+              - cell [ref=f16e1301]:
+                - checkbox [ref=f16e1303]
+              - cell "Edit Edit" [ref=f16e1304]:
+                - link "Edit Edit" [ref=f16e1306] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1307]:
+                    - img "Edit" [ref=f16e1308]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1309]:
+                - link "Copy Copy" [ref=f16e1311] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1312]:
+                    - img "Copy" [ref=f16e1313]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1314]:
+                - link "Delete Delete" [ref=f16e1316] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1317]:
+                    - img "Delete" [ref=f16e1318]
+                    - text: Delete
+              - cell "7" [ref=f16e1319]:
+                - generic [ref=f16e1320]: "7"
+              - cell "Carlos Ramirez" [ref=f16e1321]:
+                - generic [ref=f16e1322]: Carlos Ramirez
+              - cell "Disaster Preparedness Trainer" [ref=f16e1323]:
+                - generic [ref=f16e1324]: Disaster Preparedness Trainer
+              - cell "2026-01-08 14:10:59" [ref=f16e1325]:
+                - generic [ref=f16e1326]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1327]:
+                - generic [ref=f16e1328]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 8 Grace Flores Health & Safety Officer 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1329]:
+              - cell [ref=f16e1330]:
+                - checkbox [ref=f16e1332]
+              - cell "Edit Edit" [ref=f16e1333]:
+                - link "Edit Edit" [ref=f16e1335] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1336]:
+                    - img "Edit" [ref=f16e1337]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1338]:
+                - link "Copy Copy" [ref=f16e1340] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1341]:
+                    - img "Copy" [ref=f16e1342]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1343]:
+                - link "Delete Delete" [ref=f16e1345] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1346]:
+                    - img "Delete" [ref=f16e1347]
+                    - text: Delete
+              - cell "8" [ref=f16e1348]:
+                - generic [ref=f16e1349]: "8"
+              - cell "Grace Flores" [ref=f16e1350]:
+                - generic [ref=f16e1351]: Grace Flores
+              - cell "Health & Safety Officer" [ref=f16e1352]:
+                - generic [ref=f16e1353]: Health & Safety Officer
+              - cell "2026-01-08 14:10:59" [ref=f16e1354]:
+                - generic [ref=f16e1355]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1356]:
+                - generic [ref=f16e1357]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 9 Joseph Lim Barangay Secretary 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1358]:
+              - cell [ref=f16e1359]:
+                - checkbox [ref=f16e1361]
+              - cell "Edit Edit" [ref=f16e1362]:
+                - link "Edit Edit" [ref=f16e1364] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1365]:
+                    - img "Edit" [ref=f16e1366]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1367]:
+                - link "Copy Copy" [ref=f16e1369] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1370]:
+                    - img "Copy" [ref=f16e1371]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1372]:
+                - link "Delete Delete" [ref=f16e1374] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1375]:
+                    - img "Delete" [ref=f16e1376]
+                    - text: Delete
+              - cell "9" [ref=f16e1377]:
+                - generic [ref=f16e1378]: "9"
+              - cell "Joseph Lim" [ref=f16e1379]:
+                - generic [ref=f16e1380]: Joseph Lim
+              - cell "Barangay Secretary" [ref=f16e1381]:
+                - generic [ref=f16e1382]: Barangay Secretary
+              - cell "2026-01-08 14:10:59" [ref=f16e1383]:
+                - generic [ref=f16e1384]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1385]:
+                - generic [ref=f16e1386]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 10 Noel Bautista Logistics Coordinator 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1387]:
+              - cell [ref=f16e1388]:
+                - checkbox [ref=f16e1390]
+              - cell "Edit Edit" [ref=f16e1391]:
+                - link "Edit Edit" [ref=f16e1393] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1394]:
+                    - img "Edit" [ref=f16e1395]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1396]:
+                - link "Copy Copy" [ref=f16e1398] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1399]:
+                    - img "Copy" [ref=f16e1400]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1401]:
+                - link "Delete Delete" [ref=f16e1403] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1404]:
+                    - img "Delete" [ref=f16e1405]
+                    - text: Delete
+              - cell "10" [ref=f16e1406]:
+                - generic [ref=f16e1407]: "10"
+              - cell "Noel Bautista" [ref=f16e1408]:
+                - generic [ref=f16e1409]: Noel Bautista
+              - cell "Logistics Coordinator" [ref=f16e1410]:
+                - generic [ref=f16e1411]: Logistics Coordinator
+              - cell "2026-01-08 14:10:59" [ref=f16e1412]:
+                - generic [ref=f16e1413]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1414]:
+                - generic [ref=f16e1415]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 11 Rhea Cruz Youth Coordinator 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1416]:
+              - cell [ref=f16e1417]:
+                - checkbox [ref=f16e1419]
+              - cell "Edit Edit" [ref=f16e1420]:
+                - link "Edit Edit" [ref=f16e1422] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1423]:
+                    - img "Edit" [ref=f16e1424]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1425]:
+                - link "Copy Copy" [ref=f16e1427] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1428]:
+                    - img "Copy" [ref=f16e1429]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1430]:
+                - link "Delete Delete" [ref=f16e1432] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1433]:
+                    - img "Delete" [ref=f16e1434]
+                    - text: Delete
+              - cell "11" [ref=f16e1435]:
+                - generic [ref=f16e1436]: "11"
+              - cell "Rhea Cruz" [ref=f16e1437]:
+                - generic [ref=f16e1438]: Rhea Cruz
+              - cell "Youth Coordinator" [ref=f16e1439]:
+                - generic [ref=f16e1440]: Youth Coordinator
+              - cell "2026-01-08 14:10:59" [ref=f16e1441]:
+                - generic [ref=f16e1442]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1443]:
+                - generic [ref=f16e1444]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 12 Alvin Garcia IT Support 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1445]:
+              - cell [ref=f16e1446]:
+                - checkbox [ref=f16e1448]
+              - cell "Edit Edit" [ref=f16e1449]:
+                - link "Edit Edit" [ref=f16e1451] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1452]:
+                    - img "Edit" [ref=f16e1453]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1454]:
+                - link "Copy Copy" [ref=f16e1456] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1457]:
+                    - img "Copy" [ref=f16e1458]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1459]:
+                - link "Delete Delete" [ref=f16e1461] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1462]:
+                    - img "Delete" [ref=f16e1463]
+                    - text: Delete
+              - cell "12" [ref=f16e1464]:
+                - generic [ref=f16e1465]: "12"
+              - cell "Alvin Garcia" [ref=f16e1466]:
+                - generic [ref=f16e1467]: Alvin Garcia
+              - cell "IT Support" [ref=f16e1468]:
+                - generic [ref=f16e1469]: IT Support
+              - cell "2026-01-08 14:10:59" [ref=f16e1470]:
+                - generic [ref=f16e1471]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1472]:
+                - generic [ref=f16e1473]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 13 Michelle Tan NGO Liaison 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1474]:
+              - cell [ref=f16e1475]:
+                - checkbox [ref=f16e1477]
+              - cell "Edit Edit" [ref=f16e1478]:
+                - link "Edit Edit" [ref=f16e1480] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1481]:
+                    - img "Edit" [ref=f16e1482]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1483]:
+                - link "Copy Copy" [ref=f16e1485] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1486]:
+                    - img "Copy" [ref=f16e1487]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1488]:
+                - link "Delete Delete" [ref=f16e1490] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1491]:
+                    - img "Delete" [ref=f16e1492]
+                    - text: Delete
+              - cell "13" [ref=f16e1493]:
+                - generic [ref=f16e1494]: "13"
+              - cell "Michelle Tan" [ref=f16e1495]:
+                - generic [ref=f16e1496]: Michelle Tan
+              - cell "NGO Liaison" [ref=f16e1497]:
+                - generic [ref=f16e1498]: NGO Liaison
+              - cell "2026-01-08 14:10:59" [ref=f16e1499]:
+                - generic [ref=f16e1500]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1501]:
+                - generic [ref=f16e1502]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 14 Robert Aquino Seminar Facilitator 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1503]:
+              - cell [ref=f16e1504]:
+                - checkbox [ref=f16e1506]
+              - cell "Edit Edit" [ref=f16e1507]:
+                - link "Edit Edit" [ref=f16e1509] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1510]:
+                    - img "Edit" [ref=f16e1511]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1512]:
+                - link "Copy Copy" [ref=f16e1514] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1515]:
+                    - img "Copy" [ref=f16e1516]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1517]:
+                - link "Delete Delete" [ref=f16e1519] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1520]:
+                    - img "Delete" [ref=f16e1521]
+                    - text: Delete
+              - cell "14" [ref=f16e1522]:
+                - generic [ref=f16e1523]: "14"
+              - cell "Robert Aquino" [ref=f16e1524]:
+                - generic [ref=f16e1525]: Robert Aquino
+              - cell "Seminar Facilitator" [ref=f16e1526]:
+                - generic [ref=f16e1527]: Seminar Facilitator
+              - cell "2026-01-08 14:10:59" [ref=f16e1528]:
+                - generic [ref=f16e1529]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1530]:
+                - generic [ref=f16e1531]: 2026-01-08 14:10:59
+            - row "Edit Edit Copy Copy Delete Delete 15 Karen Dizon Data Analyst 2026-01-08 14:10:59 2026-01-08 14:10:59" [ref=f16e1532]:
+              - cell [ref=f16e1533]:
+                - checkbox [ref=f16e1535]
+              - cell "Edit Edit" [ref=f16e1536]:
+                - link "Edit Edit" [ref=f16e1538] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1539]:
+                    - img "Edit" [ref=f16e1540]
+                    - text: Edit
+              - cell "Copy Copy" [ref=f16e1541]:
+                - link "Copy Copy" [ref=f16e1543] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1544]:
+                    - img "Copy" [ref=f16e1545]
+                    - text: Copy
+              - cell "Delete Delete" [ref=f16e1546]:
+                - link "Delete Delete" [ref=f16e1548] [cursor=pointer]:
+                  - /url: index.php
+                  - generic [ref=f16e1549]:
+                    - img "Delete" [ref=f16e1550]
+                    - text: Delete
+              - cell "15" [ref=f16e1551]:
+                - generic [ref=f16e1552]: "15"
+              - cell "Karen Dizon" [ref=f16e1553]:
+                - generic [ref=f16e1554]: Karen Dizon
+              - cell "Data Analyst" [ref=f16e1555]:
+                - generic [ref=f16e1556]: Data Analyst
+              - cell "2026-01-08 14:10:59" [ref=f16e1557]:
+                - generic [ref=f16e1558]: 2026-01-08 14:10:59
+              - cell "2026-01-08 14:10:59" [ref=f16e1559]:
+                - generic [ref=f16e1560]: 2026-01-08 14:10:59
+        - generic [ref=f16e1561]:
+          - img "With selected:" [ref=f16e1562]
+          - checkbox "Check all" [ref=f16e1563]
+          - generic [ref=f16e1564] [cursor=pointer]: Check all
+          - emphasis [ref=f16e1565]: "With selected:"
+          - button "Edit Edit" [ref=f16e1566] [cursor=pointer]:
+            - generic [ref=f16e1567]:
+              - img "Edit" [ref=f16e1568]
+              - text: Edit
+          - button "Copy Copy" [ref=f16e1569] [cursor=pointer]:
+            - generic [ref=f16e1570]:
+              - img "Copy" [ref=f16e1571]
+              - text: Copy
+          - button "Delete Delete" [ref=f16e1572] [cursor=pointer]:
+            - generic [ref=f16e1573]:
+              - img "Delete" [ref=f16e1574]
+              - text: Delete
+          - button "Export Export" [ref=f16e1575] [cursor=pointer]:
+            - generic [ref=f16e1576]:
+              - img "Export" [ref=f16e1577]
+              - text: Export
+      - table [ref=f16e1578]:
+        - rowgroup [ref=f16e1579]:
+          - 'row "Show all | Number of rows: 25 Filter rows: Sort by key: None" [ref=f16e1580]':
+            - cell [ref=f16e1581]
+            - cell "Show all" [ref=f16e1582]:
+              - generic [ref=f16e1583]:
+                - checkbox [ref=f16e1584]
+                - generic [ref=f16e1585]: Show all
+            - cell "|" [ref=f16e1586]:
+              - generic [ref=f16e1587]: "|"
+            - cell
+            - cell
+            - 'cell "Number of rows: 25" [ref=f16e1588]':
+              - generic [ref=f16e1589]:
+                - generic [ref=f16e1590]: "Number of rows:"
+                - combobox [ref=f16e1591]:
+                  - option "25" [selected]
+                  - option "50"
+                  - option "100"
+                  - option "250"
+                  - option "500"
+            - cell [ref=f16e1592]
+            - cell "Filter rows:" [ref=f16e1593]:
+              - text: "Filter rows:"
+              - textbox "Search this table" [ref=f16e1594]
+            - 'cell "Sort by key: None" [ref=f16e1595]':
+              - generic [ref=f16e1596]:
+                - text: "Sort by key:"
+                - combobox [ref=f16e1597]:
+                  - option "PRIMARY (ASC)"
+                  - option "PRIMARY (DESC)"
+                  - option "None" [selected]
+            - cell [ref=f16e1598]
+      - group "Query results operations" [ref=f16e1599]:
+        - generic [ref=f16e1600]: Query results operations
+        - button "Print Print" [ref=f16e1601] [cursor=pointer]:
+          - generic [ref=f16e1602]:
+            - img "Print" [ref=f16e1603]
+            - text: Print
+        - link "Copy to clipboard Copy to clipboard" [ref=f16e1604] [cursor=pointer]:
+          - /url: "#"
+          - generic [ref=f16e1605]:
+            - img "Copy to clipboard" [ref=f16e1606]
+            - text: Copy to clipboard
+        - link "Export Export" [ref=f16e1607] [cursor=pointer]:
+          - /url: index.php
+          - generic [ref=f16e1608]:
+            - img "Export" [ref=f16e1609]
+            - text: Export
+        - link "Display chart Display chart" [ref=f16e1610] [cursor=pointer]:
+          - /url: index.php
+          - generic [ref=f16e1611]:
+            - img "Display chart" [ref=f16e1612]
+            - text: Display chart
+        - link "Create view Create view" [ref=f16e1614] [cursor=pointer]:
+          - /url: index.php?route=/view/create
+          - generic [ref=f16e1615]:
+            - img "Create view" [ref=f16e1616]
+            - text: Create view
+      - generic [ref=f16e1617]:
+        - group "Bookmark this SQL query Bookmark this SQL query" [ref=f16e1618]:
+          - generic [ref=f16e1620]:
+            - img "Bookmark this SQL query" [ref=f16e1621]
+            - text: Bookmark this SQL query
+          - generic [ref=f16e1623]:
+            - text: "Label:"
+            - textbox "Label:" [ref=f16e1624]
+          - generic [ref=f16e1626]:
+            - checkbox "Let every user access this bookmark" [ref=f16e1627]
+            - text: Let every user access this bookmark
+        - group [ref=f16e1628]:
+          - button "Bookmark this SQL query" [ref=f16e1629] [cursor=pointer]
+  - link "Open new phpMyAdmin window" [ref=f16e342] [cursor=pointer]:
+    - /url: index.php?route=%2Ftable%2Fsql&db=LGU&table=campaign_department_reference_staff&server=1
+    - img "Open new phpMyAdmin window" [ref=f16e343]
+  - log [ref=f16e1630]
+  - log [ref=f16e1631]
+  - log [ref=f16e1632]
+  - log [ref=f16e1633]
+  - log [ref=f16e1634]
+  - log [ref=f16e1635]
+  - log [ref=f16e1636]
+  - log [ref=f16e1637]
+  - log [ref=f16e1638]
+  - log [ref=f16e1639]
+  - log [ref=f16e1640]
+  - log [ref=f16e1641]
+  - log [ref=f16e1642]
+  - log [ref=f16e1643]
+  - log [ref=f16e1644]
+  - log [ref=f16e1645]
+  - log [ref=f16e1646]
+  - log [ref=f16e1647]
+  - log [ref=f16e1648]
+  - log [ref=f16e1649]
+  - log [ref=f16e1650]

@@ -1,0 +1,358 @@
+- generic [ref=f14e1]:
+  - generic [ref=f14e2]:
+    - generic "Hide panel" [ref=f14e4] [cursor=pointer]: ←
+    - generic [ref=f14e5]:
+      - generic [ref=f14e6]:
+        - link "phpMyAdmin" [ref=f14e8] [cursor=pointer]:
+          - /url: index.php
+          - img "phpMyAdmin" [ref=f14e9]
+        - generic [ref=f14e10]:
+          - link "Home" [ref=f14e11] [cursor=pointer]:
+            - /url: index.php?route=/
+            - img "Home" [ref=f14e12]
+          - link "Log out" [ref=f14e13] [cursor=pointer]:
+            - /url: index.php?route=/logout
+            - img "Log out" [ref=f14e14]
+          - link "phpMyAdmin documentation" [ref=f14e15] [cursor=pointer]:
+            - /url: ./doc/html/index.html
+            - img "phpMyAdmin documentation" [ref=f14e16]
+          - link "MySQL Documentation" [ref=f14e17] [cursor=pointer]:
+            - /url: ./url.php?url=https%3A%2F%2Fdev.mysql.com%2Fdoc%2Frefman%2F8.0%2Fen%2Findex.html
+            - img "MySQL Documentation" [ref=f14e18]
+          - link "Navigation panel settings" [ref=f14e19] [cursor=pointer]:
+            - /url: "#"
+            - img "Navigation panel settings" [ref=f14e20]
+          - link "Reload navigation panel" [ref=f14e21] [cursor=pointer]:
+            - /url: "#"
+            - img "Reload navigation panel" [ref=f14e22]
+      - generic [ref=f14e23]:
+        - generic [ref=f14e24]:
+          - button "Recent" [ref=f14e26] [cursor=pointer]
+          - button "Favorites" [ref=f14e28] [cursor=pointer]
+        - list [ref=f14e29]:
+          - listitem [ref=f14e30]:
+            - generic [ref=f14e31]:
+              - link "Collapse all" [ref=f14e32] [cursor=pointer]:
+                - /url: "#"
+                - img "Collapse all" [ref=f14e33]
+              - link "Unlink from main panel" [ref=f14e34] [cursor=pointer]:
+                - /url: "#"
+                - img "Unlink from main panel" [ref=f14e35]
+        - list [ref=f14e37]:
+          - listitem [ref=f14e38]:
+            - link "New" [ref=f14e42] [cursor=pointer]:
+              - /url: index.php?route=/server/databases
+              - img "New" [ref=f14e43]
+            - link "New" [ref=f14e44] [cursor=pointer]:
+              - /url: index.php?route=/server/databases
+          - listitem [ref=f14e45]:
+            - link "Expand/Collapse" [ref=f14e49] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f14e50]
+            - link "Database operations" [ref=f14e52] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=disaster_training
+              - img "Database operations" [ref=f14e53]
+            - link "disaster_training" [ref=f14e54] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=disaster_training
+          - listitem [ref=f14e55]:
+            - link "Expand/Collapse" [ref=f14e59] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f14e60]
+            - link "Database operations" [ref=f14e62] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=emergency_response_test
+              - img "Database operations" [ref=f14e63]
+            - link "emergency_response_test" [ref=f14e64] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=emergency_response_test
+          - listitem [ref=f14e65]:
+            - link "Expand/Collapse" [ref=f14e69] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f14e70]
+            - link "Database operations" [ref=f14e72] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=emer_comm_test
+              - img "Database operations" [ref=f14e73]
+            - link "emer_comm_test" [ref=f14e74] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=emer_comm_test
+          - listitem [ref=f14e75]:
+            - link "Expand/Collapse" [ref=f14e79] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f14e80]
+            - link "Database operations" [ref=f14e82] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=fm
+              - img "Database operations" [ref=f14e83]
+            - link "fm" [ref=f14e84] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=fm
+            - link "Show hidden items" [ref=f14e86] [cursor=pointer]:
+              - /url: index.php?route=/navigation
+              - img "Show hidden items" [ref=f14e87]
+          - listitem [ref=f14e88]:
+            - link "Expand/Collapse" [ref=f14e92] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f14e93]
+            - link "Database operations" [ref=f14e95] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=information_schema
+              - img "Database operations" [ref=f14e96]
+            - link "information_schema" [ref=f14e97] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=information_schema
+          - listitem [ref=f14e98]:
+            - link "Expand/Collapse" [ref=f14e102] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f14e103]
+            - link "Database operations" [ref=f14e105] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=LGU
+              - img "Database operations" [ref=f14e106]
+            - link "LGU" [ref=f14e107] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=LGU
+            - link "Show hidden items" [ref=f14e109] [cursor=pointer]:
+              - /url: index.php?route=/navigation
+              - img "Show hidden items" [ref=f14e110]
+          - listitem [ref=f14e111]:
+            - link "Expand/Collapse" [ref=f14e115] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f14e116]
+            - link "Database operations" [ref=f14e118] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=lgu4_traffic_transport
+              - img "Database operations" [ref=f14e119]
+            - link "lgu4_traffic_transport" [ref=f14e120] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=lgu4_traffic_transport
+          - listitem [ref=f14e121]:
+            - link "Expand/Collapse" [ref=f14e125] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f14e126]
+            - link "Database operations" [ref=f14e128] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=mysql
+              - img "Database operations" [ref=f14e129]
+            - link "mysql" [ref=f14e130] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=mysql
+          - listitem [ref=f14e131]:
+            - link "Expand/Collapse" [ref=f14e135] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f14e136]
+            - link "Database operations" [ref=f14e138] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=performance_schema
+              - img "Database operations" [ref=f14e139]
+            - link "performance_schema" [ref=f14e140] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=performance_schema
+          - listitem [ref=f14e141]:
+            - link "Expand/Collapse" [ref=f14e145] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f14e146]
+            - link "Database operations" [ref=f14e148] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=phpmyadmin
+              - img "Database operations" [ref=f14e149]
+            - link "phpmyadmin" [ref=f14e150] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=phpmyadmin
+          - listitem [ref=f14e151]:
+            - link "Expand/Collapse" [ref=f14e154] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f14e155]
+            - link "Database operations" [ref=f14e157] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=sys
+              - img "Database operations" [ref=f14e158]
+            - link "sys" [ref=f14e159] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=sys
+  - generic [ref=f14e160]:
+    - navigation "breadcrumb" [ref=f14e161]:
+      - list [ref=f14e162]:
+        - listitem [ref=f14e163]:
+          - 'link "Server: localhost:3306" [ref=f14e164] [cursor=pointer]':
+            - /url: index.php?route=/
+        - listitem [ref=f14e165]:
+          - text: »
+          - 'link "Database: LGU" [ref=f14e166] [cursor=pointer]':
+            - /url: index.php?route=/database/structure&db=LGU
+        - listitem [ref=f14e167]:
+          - text: »
+          - 'link "Table: campaign_department_content_items" [ref=f14e168] [cursor=pointer]':
+            - /url: index.php?route=/sql&db=LGU&table=campaign_department_content_items
+    - navigation [ref=f14e170]:
+      - list [ref=f14e172]:
+        - listitem [ref=f14e173]:
+          - link "Browse Browse" [ref=f14e174] [cursor=pointer]:
+            - /url: index.php?route=/sql&db=LGU&table=campaign_department_content_items&pos=0
+            - img "Browse" [ref=f14e175]
+            - text: Browse
+        - listitem [ref=f14e176]:
+          - link "Structure Structure" [ref=f14e177] [cursor=pointer]:
+            - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_items
+            - img "Structure" [ref=f14e178]
+            - text: Structure
+        - listitem [ref=f14e179]:
+          - link "SQL SQL (current)" [ref=f14e180] [cursor=pointer]:
+            - /url: index.php?route=/table/sql&db=LGU&table=campaign_department_content_items
+            - img "SQL" [ref=f14e181]
+            - text: SQL
+            - generic [ref=f14e182]: (current)
+        - listitem [ref=f14e183]:
+          - link "Search Search" [ref=f14e184] [cursor=pointer]:
+            - /url: index.php?route=/table/search&db=LGU&table=campaign_department_content_items
+            - img "Search" [ref=f14e185]
+            - text: Search
+        - listitem [ref=f14e186]:
+          - link "Insert Insert" [ref=f14e187] [cursor=pointer]:
+            - /url: index.php?route=/table/change&db=LGU&table=campaign_department_content_items
+            - img "Insert" [ref=f14e188]
+            - text: Insert
+        - listitem [ref=f14e189]:
+          - link "Export Export" [ref=f14e190] [cursor=pointer]:
+            - /url: index.php?route=/table/export&db=LGU&table=campaign_department_content_items&single_table=true
+            - img "Export" [ref=f14e191]
+            - text: Export
+        - listitem [ref=f14e192]:
+          - link "Import Import" [ref=f14e193] [cursor=pointer]:
+            - /url: index.php?route=/table/import&db=LGU&table=campaign_department_content_items
+            - img "Import" [ref=f14e194]
+            - text: Import
+        - listitem [ref=f14e195]:
+          - link "Privileges Privileges" [ref=f14e196] [cursor=pointer]:
+            - /url: index.php?route=/server/privileges&db=LGU&table=campaign_department_content_items&checkprivsdb=LGU&checkprivstable=campaign_department_content_items&viewing_mode=table
+            - img "Privileges" [ref=f14e197]
+            - text: Privileges
+        - listitem [ref=f14e198]:
+          - button "More" [ref=f14e199] [cursor=pointer]
+  - generic [ref=f14e200]:
+    - img "Page-related settings" [ref=f14e202] [cursor=pointer]
+    - link "Click on the bar to scroll to top of page" [ref=f14e203] [cursor=pointer]:
+      - /url: "#"
+      - img "Click on the bar to scroll to top of page" [ref=f14e204]
+  - generic [ref=f14e205]:
+    - generic [ref=f14e207] [cursor=pointer]:
+      - img "SQL Query Console" [ref=f14e208]
+      - text: Console
+    - generic [ref=f14e209]:
+      - generic [ref=f14e211]: Press Ctrl+Enter to execute query
+      - generic: ">"
+    - generic [ref=f14e213]:
+      - generic [ref=f14e214] [cursor=pointer]: ascending
+      - generic [ref=f14e215] [cursor=pointer]: descending
+      - generic [ref=f14e216]: "Order:"
+      - generic [ref=f14e217] [cursor=pointer]: Debug SQL
+      - generic [ref=f14e218] [cursor=pointer]: Count
+      - generic [ref=f14e219] [cursor=pointer]: Execution order
+      - generic [ref=f14e220] [cursor=pointer]: Time taken
+      - generic [ref=f14e221]: "Order by:"
+      - generic [ref=f14e222] [cursor=pointer]: Group queries
+      - generic [ref=f14e223] [cursor=pointer]: Ungroup queries
+    - generic [ref=f14e226]:
+      - generic [ref=f14e227]:
+        - generic [ref=f14e228] [cursor=pointer]: Bookmarks
+        - generic [ref=f14e229] [cursor=pointer]: Refresh
+        - generic [ref=f14e230] [cursor=pointer]: Add
+      - generic [ref=f14e232]: No bookmarks
+      - generic [ref=f14e233]:
+        - generic [ref=f14e235] [cursor=pointer]: Add bookmark
+        - generic [ref=f14e236]:
+          - generic [ref=f14e237]:
+            - generic [ref=f14e238]:
+              - text: "Label:"
+              - textbox "Label:" [ref=f14e239]
+            - generic [ref=f14e240]:
+              - text: "Target database:"
+              - textbox "Target database:" [ref=f14e241]
+            - generic [ref=f14e242]:
+              - checkbox "Share this bookmark" [ref=f14e243]
+              - text: Share this bookmark
+            - button "OK" [ref=f14e244] [cursor=pointer]
+          - generic: ">"
+    - generic [ref=f14e245]:
+      - generic [ref=f14e246]:
+        - generic [ref=f14e247] [cursor=pointer]: Options
+        - generic [ref=f14e248] [cursor=pointer]: Set default
+      - generic [ref=f14e249]:
+        - generic [ref=f14e250]:
+          - checkbox "Always expand query messages" [ref=f14e251]
+          - text: Always expand query messages
+        - generic [ref=f14e252]:
+          - checkbox "Show query history at start" [ref=f14e253]
+          - text: Show query history at start
+        - generic [ref=f14e254]:
+          - checkbox "Show current browsing query" [ref=f14e255]
+          - text: Show current browsing query
+        - generic [ref=f14e256]:
+          - checkbox "Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings." [ref=f14e257]
+          - text: Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings.
+        - generic [ref=f14e258]:
+          - checkbox "Switch to dark theme" [ref=f14e259]
+          - text: Switch to dark theme
+  - generic [ref=f14e262]:
+    - generic [ref=f14e263]:
+      - text: Run SQL query/queries on table
+      - link "LGU.campaign_department_content_items" [ref=f14e264] [cursor=pointer]:
+        - /url: index.php?route=/sql&db=LGU&table=campaign_department_content_items
+      - text: ":"
+      - link "Documentation" [ref=f14e265] [cursor=pointer]:
+        - /url: ./url.php?url=https%3A%2F%2Fdev.mysql.com%2Fdoc%2Frefman%2F8.0%2Fen%2Fselect.html
+        - img "Documentation" [ref=f14e266]
+    - generic [ref=f14e267]:
+      - generic [ref=f14e269]:
+        - generic [ref=f14e270]:
+          - generic [ref=f14e272]:
+            - textbox [active] [ref=f14e273]
+            - generic [ref=f14e277]:
+              - generic [ref=f14e278]: "1"
+              - text: "SELECT * FROM `campaign_department_content_items` WHERE 1"
+          - toolbar [ref=f14e284]:
+            - group [ref=f14e285]:
+              - button "SELECT *" [ref=f14e286] [cursor=pointer]
+              - button "SELECT" [ref=f14e287] [cursor=pointer]
+              - button "INSERT" [ref=f14e288] [cursor=pointer]
+              - button "UPDATE" [ref=f14e289] [cursor=pointer]
+              - button "DELETE" [ref=f14e290] [cursor=pointer]
+            - group [ref=f14e291]:
+              - button "Clear" [ref=f14e292] [cursor=pointer]
+              - button "Format" [ref=f14e293] [cursor=pointer]
+            - button "Get auto-saved query" [ref=f14e294] [cursor=pointer]
+          - generic [ref=f14e296]:
+            - checkbox "Bind parameters Documentation" [ref=f14e297]
+            - generic [ref=f14e298]:
+              - text: Bind parameters
+              - link "Documentation" [ref=f14e299] [cursor=pointer]:
+                - /url: ./doc/html/faq.html#faq6-40
+                - img "Documentation" [ref=f14e300]
+        - generic [ref=f14e301]:
+          - generic [ref=f14e302]:
+            - generic [ref=f14e303]: Columns
+            - listbox "Columns" [ref=f14e304]:
+              - option "id" [ref=f14e305]
+              - option "campaign_id" [ref=f14e306]
+              - option "title" [ref=f14e307]
+              - option "body" [ref=f14e308]
+              - option "content_type" [ref=f14e309]
+              - option "hazard_category" [ref=f14e310]
+              - option "intended_audience_segment" [ref=f14e311]
+              - option "source" [ref=f14e312]
+              - option "approval_status" [ref=f14e313]
+              - option "version_number" [ref=f14e314]
+              - option "approved_by" [ref=f14e315]
+              - option "approval_notes" [ref=f14e316]
+              - option "date_uploaded" [ref=f14e317]
+              - option "visibility" [ref=f14e318]
+              - option "file_path" [ref=f14e319]
+              - option "file_reference" [ref=f14e320]
+              - option "created_by" [ref=f14e321]
+              - option "created_at" [ref=f14e322]
+              - option "updated_at" [ref=f14e323]
+          - button "<<" [ref=f14e324] [cursor=pointer]
+      - generic [ref=f14e325]:
+        - generic [ref=f14e327]: "Bookmark this SQL query:"
+        - textbox "Bookmark this SQL query:" [ref=f14e329]
+    - generic [ref=f14e331]:
+      - generic [ref=f14e333]:
+        - generic [ref=f14e334]: Delimiter
+        - generic [ref=f14e335]: Delimiter
+        - textbox "Delimiter" [ref=f14e336]: ;
+      - generic [ref=f14e338]:
+        - checkbox "Show this query here again" [ref=f14e339]
+        - generic [ref=f14e340]: Show this query here again
+      - generic [ref=f14e342]:
+        - checkbox "Retain query box" [ref=f14e343]
+        - generic [ref=f14e344]: Retain query box
+      - generic [ref=f14e346]:
+        - checkbox "Rollback when finished" [ref=f14e347]
+        - generic [ref=f14e348]: Rollback when finished
+      - generic [ref=f14e350]:
+        - checkbox "Enable foreign key checks" [checked] [ref=f14e351]
+        - generic [ref=f14e352]: Enable foreign key checks
+      - button "Go" [ref=f14e354] [cursor=pointer]
+  - link "Open new phpMyAdmin window" [ref=f14e356] [cursor=pointer]:
+    - /url: index.php?route=%2Ftable%2Fsql&db=LGU&table=campaign_department_content_items&server=1
+    - img "Open new phpMyAdmin window" [ref=f14e357]

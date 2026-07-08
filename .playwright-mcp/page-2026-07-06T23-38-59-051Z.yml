@@ -1,0 +1,25 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e10]:
+    - generic [ref=f2e11]:
+      - img "w68 Autoparts Logo" [ref=f2e12]
+      - generic [ref=f2e13]: w68 Autoparts & Service Center
+    - generic [ref=f2e15]:
+      - generic [ref=f2e16]:
+        - generic [ref=f2e17]: User-ID
+        - generic [ref=f2e18]:
+          - textbox "User-ID" [ref=f2e19]:
+            - /placeholder: Enter your User-ID
+          - generic:
+            - img
+      - generic [ref=f2e20]:
+        - generic [ref=f2e21]: Password
+        - generic [ref=f2e22]:
+          - textbox "Password" [ref=f2e23]:
+            - /placeholder: ••••••••
+          - generic:
+            - img
+          - button "Toggle password visibility" [ref=f2e24] [cursor=pointer]:
+            - img [ref=f2e25]
+      - button "Login" [ref=f2e28] [cursor=pointer]
+    - paragraph [ref=f2e29]: © 2025 w68 Autoparts & Service Center
+  - generic "Background slide indicators" [ref=f2e30]

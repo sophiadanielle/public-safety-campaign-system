@@ -1,0 +1,1924 @@
+- generic [active] [ref=f17e1]:
+  - generic [ref=f17e2]:
+    - generic "Hide panel" [ref=f17e4] [cursor=pointer]: ←
+    - generic [ref=f17e5]:
+      - generic [ref=f17e6]:
+        - link "phpMyAdmin" [ref=f17e8] [cursor=pointer]:
+          - /url: index.php
+          - img "phpMyAdmin" [ref=f17e9]
+        - generic [ref=f17e10]:
+          - link "Home" [ref=f17e11] [cursor=pointer]:
+            - /url: index.php?route=/
+            - img "Home" [ref=f17e12]
+          - link "Log out" [ref=f17e13] [cursor=pointer]:
+            - /url: index.php?route=/logout
+            - img "Log out" [ref=f17e14]
+          - link "phpMyAdmin documentation" [ref=f17e15] [cursor=pointer]:
+            - /url: ./doc/html/index.html
+            - img "phpMyAdmin documentation" [ref=f17e16]
+          - link "MySQL Documentation" [ref=f17e17] [cursor=pointer]:
+            - /url: ./url.php?url=https%3A%2F%2Fdev.mysql.com%2Fdoc%2Frefman%2F8.0%2Fen%2Findex.html
+            - img "MySQL Documentation" [ref=f17e18]
+          - link "Navigation panel settings" [ref=f17e19] [cursor=pointer]:
+            - /url: "#"
+            - img "Navigation panel settings" [ref=f17e20]
+          - link "Reload navigation panel" [ref=f17e21] [cursor=pointer]:
+            - /url: "#"
+            - img "Reload navigation panel" [ref=f17e22]
+      - generic [ref=f17e23]:
+        - generic [ref=f17e24]:
+          - button "Recent" [ref=f17e26] [cursor=pointer]
+          - button "Favorites" [ref=f17e28] [cursor=pointer]
+        - list [ref=f17e29]:
+          - listitem [ref=f17e30]:
+            - generic [ref=f17e31]:
+              - link "Collapse all" [ref=f17e32] [cursor=pointer]:
+                - /url: "#"
+                - img "Collapse all" [ref=f17e33]
+              - link "Unlink from main panel" [ref=f17e34] [cursor=pointer]:
+                - /url: "#"
+                - img "Unlink from main panel" [ref=f17e35]
+        - list [ref=f17e37]:
+          - listitem [ref=f17e38]:
+            - link "New" [ref=f17e42] [cursor=pointer]:
+              - /url: index.php?route=/server/databases
+              - img "New" [ref=f17e43]
+            - link "New" [ref=f17e44] [cursor=pointer]:
+              - /url: index.php?route=/server/databases
+          - listitem [ref=f17e45]:
+            - link "Expand/Collapse" [ref=f17e49] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f17e50]
+            - link "Database operations" [ref=f17e52] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=disaster_training
+              - img "Database operations" [ref=f17e53]
+            - link "disaster_training" [ref=f17e54] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=disaster_training
+          - listitem [ref=f17e55]:
+            - link "Expand/Collapse" [ref=f17e59] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f17e60]
+            - link "Database operations" [ref=f17e62] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=emergency_response_test
+              - img "Database operations" [ref=f17e63]
+            - link "emergency_response_test" [ref=f17e64] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=emergency_response_test
+          - listitem [ref=f17e65]:
+            - link "Expand/Collapse" [ref=f17e69] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f17e70]
+            - link "Database operations" [ref=f17e72] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=emer_comm_test
+              - img "Database operations" [ref=f17e73]
+            - link "emer_comm_test" [ref=f17e74] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=emer_comm_test
+          - listitem [ref=f17e75]:
+            - link "Expand/Collapse" [ref=f17e79] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f17e80]
+            - link "Database operations" [ref=f17e82] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=fm
+              - img "Database operations" [ref=f17e83]
+            - link "fm" [ref=f17e84] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=fm
+            - link "Show hidden items" [ref=f17e86] [cursor=pointer]:
+              - /url: index.php?route=/navigation
+              - img "Show hidden items" [ref=f17e87]
+          - listitem [ref=f17e88]:
+            - link "Expand/Collapse" [ref=f17e92] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f17e93]
+            - link "Database operations" [ref=f17e95] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=information_schema
+              - img "Database operations" [ref=f17e96]
+            - link "information_schema" [ref=f17e97] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=information_schema
+          - listitem [ref=f17e98]:
+            - link [ref=f17e102] [cursor=pointer]:
+              - /url: "#"
+            - link "Database operations" [ref=f17e104] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=LGU
+              - img "Database operations" [ref=f17e105]
+            - link "LGU" [ref=f17e106] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=LGU
+            - link "Show hidden items" [ref=f17e108] [cursor=pointer]:
+              - /url: index.php?route=/navigation
+              - img "Show hidden items" [ref=f17e109]
+            - list [ref=f17e111]:
+              - listitem [ref=f17e112]:
+                - generic [ref=f17e114]:
+                  - textbox "Type to filter these, Enter to search all" [ref=f17e115]
+                  - button "Clear fast filter" [ref=f17e116] [cursor=pointer]: X
+              - generic [ref=f17e117]:
+                - combobox [ref=f17e119]:
+                  - option "1" [selected]
+                  - option "2"
+                  - option "3"
+                - link ">" [ref=f17e120] [cursor=pointer]:
+                  - /url: index.php?route=/navigation
+                - link ">>" [ref=f17e121] [cursor=pointer]:
+                  - /url: index.php?route=/navigation
+              - listitem [ref=f17e122]:
+                - link "New" [ref=f17e126] [cursor=pointer]:
+                  - /url: index.php?route=/table/create&db=LGU
+                  - img "New" [ref=f17e127]
+                - link "New" [ref=f17e128] [cursor=pointer]:
+                  - /url: index.php?route=/table/create&db=LGU
+              - listitem [ref=f17e129]:
+                - link "Expand/Collapse" [ref=f17e133] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e134]
+                - link "Structure" [ref=f17e136] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=accident_cases
+                  - img "Structure" [ref=f17e137]
+                - link "accident_cases" [ref=f17e138] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=accident_cases
+              - listitem [ref=f17e139]:
+                - link "Expand/Collapse" [ref=f17e143] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e144]
+                - link "Structure" [ref=f17e146] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=accident_peoples
+                  - img "Structure" [ref=f17e147]
+                - link "accident_peoples" [ref=f17e148] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=accident_peoples
+              - listitem [ref=f17e149]:
+                - link "Expand/Collapse" [ref=f17e153] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e154]
+                - link "Structure" [ref=f17e156] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=accident_vehicles
+                  - img "Structure" [ref=f17e157]
+                - link "accident_vehicles" [ref=f17e158] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=accident_vehicles
+              - listitem [ref=f17e159]:
+                - link "Expand/Collapse" [ref=f17e163] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e164]
+                - link "Structure" [ref=f17e166] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=admins
+                  - img "Structure" [ref=f17e167]
+                - link "admins" [ref=f17e168] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=admins
+              - listitem [ref=f17e169]:
+                - link "Expand/Collapse" [ref=f17e173] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e174]
+                - link "Structure" [ref=f17e176] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=attachments
+                  - img "Structure" [ref=f17e177]
+                - link "attachments" [ref=f17e178] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=attachments
+              - listitem [ref=f17e179]:
+                - link "Expand/Collapse" [ref=f17e183] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e184]
+                - link "Structure" [ref=f17e186] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=audit_logs
+                  - img "Structure" [ref=f17e187]
+                - link "audit_logs" [ref=f17e188] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=audit_logs
+              - listitem [ref=f17e189]:
+                - link "Expand/Collapse" [ref=f17e193] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e194]
+                - link "Structure" [ref=f17e196] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=automated_reports_schedule
+                  - img "Structure" [ref=f17e197]
+                - link "automated_reports_schedule" [ref=f17e198] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=automated_reports_schedule
+              - listitem [ref=f17e199]:
+                - link "Expand/Collapse" [ref=f17e203] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e204]
+                - link "Structure" [ref=f17e206] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=barangay_officials
+                  - img "Structure" [ref=f17e207]
+                - link "barangay_officials" [ref=f17e208] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=barangay_officials
+              - listitem [ref=f17e209]:
+                - link "Expand/Collapse" [ref=f17e213] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e214]
+                - link "Structure" [ref=f17e216] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=bcpc_officers
+                  - img "Structure" [ref=f17e217]
+                - link "bcpc_officers" [ref=f17e218] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=bcpc_officers
+              - listitem [ref=f17e219]:
+                - link "Expand/Collapse" [ref=f17e223] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e224]
+                - link "Structure" [ref=f17e226] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=blotters
+                  - img "Structure" [ref=f17e227]
+                - link "blotters" [ref=f17e228] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=blotters
+              - listitem [ref=f17e229]:
+                - link "Expand/Collapse" [ref=f17e233] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e234]
+                - link "Structure" [ref=f17e236] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_budgets
+                  - img "Structure" [ref=f17e237]
+                - link "campaign_budgets" [ref=f17e238] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_budgets
+              - listitem [ref=f17e239]:
+                - link "Expand/Collapse" [ref=f17e243] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e244]
+                - link "Structure" [ref=f17e246] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_attachments
+                  - img "Structure" [ref=f17e247]
+                - link "campaign_department_attachments" [ref=f17e248] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_attachments
+              - listitem [ref=f17e249]:
+                - link "Expand/Collapse" [ref=f17e253] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e254]
+                - link "Structure" [ref=f17e256] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_attendance
+                  - img "Structure" [ref=f17e257]
+                - link "campaign_department_attendance" [ref=f17e258] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_attendance
+              - listitem [ref=f17e259]:
+                - link "Expand/Collapse" [ref=f17e263] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e264]
+                - link "Structure" [ref=f17e266] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_audience_members
+                  - img "Structure" [ref=f17e267]
+                - link "campaign_department_audience_members" [ref=f17e268] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_audience_members
+              - listitem [ref=f17e269]:
+                - link "Expand/Collapse" [ref=f17e273] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e274]
+                - link "Structure" [ref=f17e276] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_audience_segments
+                  - img "Structure" [ref=f17e277]
+                - link "campaign_department_audience_segments" [ref=f17e278] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_audience_segments
+              - listitem [ref=f17e279]:
+                - link "Expand/Collapse" [ref=f17e283] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e284]
+                - link "Structure" [ref=f17e286] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_audit_logs
+                  - img "Structure" [ref=f17e287]
+                - link "campaign_department_audit_logs" [ref=f17e288] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_audit_logs
+              - listitem [ref=f17e289]:
+                - link "Expand/Collapse" [ref=f17e293] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e294]
+                - link "Structure" [ref=f17e296] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_automl_predictions
+                  - img "Structure" [ref=f17e297]
+                - link "campaign_department_automl_predictions" [ref=f17e298] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_automl_predictions
+              - listitem [ref=f17e299]:
+                - link "Expand/Collapse" [ref=f17e303] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e304]
+                - link "Structure" [ref=f17e306] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_barangays
+                  - img "Structure" [ref=f17e307]
+                - link "campaign_department_barangays" [ref=f17e308] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_barangays
+              - listitem [ref=f17e309]:
+                - link "Expand/Collapse" [ref=f17e313] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e314]
+                - link "Structure" [ref=f17e316] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaigns
+                  - img "Structure" [ref=f17e317]
+                - link "campaign_department_campaigns" [ref=f17e318] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_campaigns
+              - listitem [ref=f17e319]:
+                - link "Expand/Collapse" [ref=f17e323] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e324]
+                - link "Structure" [ref=f17e326] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaign_audience
+                  - img "Structure" [ref=f17e327]
+                - link "campaign_department_campaign_audience" [ref=f17e328] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_campaign_audience
+              - listitem [ref=f17e329]:
+                - link "Expand/Collapse" [ref=f17e333] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e334]
+                - link "Structure" [ref=f17e336] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaign_content_items
+                  - img "Structure" [ref=f17e337]
+                - link "campaign_department_campaign_content_items" [ref=f17e338] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_campaign_content_items
+              - listitem [ref=f17e339]:
+                - link "Expand/Collapse" [ref=f17e343] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e344]
+                - link "Structure" [ref=f17e346] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaign_schedules
+                  - img "Structure" [ref=f17e347]
+                - link "campaign_department_campaign_schedules" [ref=f17e348] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_campaign_schedules
+              - listitem [ref=f17e349]:
+                - link "Expand/Collapse" [ref=f17e353] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e354]
+                - link "Structure" [ref=f17e356] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_items
+                  - img "Structure" [ref=f17e357]
+                - link "campaign_department_content_items" [ref=f17e358] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_content_items
+              - listitem [ref=f17e359]:
+                - link "Expand/Collapse" [ref=f17e363] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e364]
+                - link "Structure" [ref=f17e366] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_item_versions
+                  - img "Structure" [ref=f17e367]
+                - link "campaign_department_content_item_versions" [ref=f17e368] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_content_item_versions
+              - listitem [ref=f17e369]:
+                - link "Expand/Collapse" [ref=f17e373] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e374]
+                - link "Structure" [ref=f17e376] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_tags
+                  - img "Structure" [ref=f17e377]
+                - link "campaign_department_content_tags" [ref=f17e378] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_content_tags
+              - listitem [ref=f17e379]:
+                - link "Expand/Collapse" [ref=f17e383] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e384]
+                - link "Structure" [ref=f17e386] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_usage
+                  - img "Structure" [ref=f17e387]
+                - link "campaign_department_content_usage" [ref=f17e388] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_content_usage
+              - listitem [ref=f17e389]:
+                - link "Expand/Collapse" [ref=f17e393] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e394]
+                - link "Structure" [ref=f17e396] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_evaluation_reports
+                  - img "Structure" [ref=f17e397]
+                - link "campaign_department_evaluation_reports" [ref=f17e398] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_evaluation_reports
+              - listitem [ref=f17e399]:
+                - link "Expand/Collapse" [ref=f17e403] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e404]
+                - link "Structure" [ref=f17e406] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_events
+                  - img "Structure" [ref=f17e407]
+                - link "campaign_department_events" [ref=f17e408] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_events
+              - listitem [ref=f17e409]:
+                - link "Expand/Collapse" [ref=f17e413] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e414]
+                - link "Structure" [ref=f17e416] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_agency_coordination
+                  - img "Structure" [ref=f17e417]
+                - link "campaign_department_event_agency_coordination" [ref=f17e418] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_agency_coordination
+              - listitem [ref=f17e419]:
+                - link "Expand/Collapse" [ref=f17e423] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e424]
+                - link "Structure" [ref=f17e426] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_audience_segments
+                  - img "Structure" [ref=f17e427]
+                - link "campaign_department_event_audience_segments" [ref=f17e428] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_audience_segments
+              - listitem [ref=f17e429]:
+                - link "Expand/Collapse" [ref=f17e433] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e434]
+                - link "Structure" [ref=f17e436] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_audit_log
+                  - img "Structure" [ref=f17e437]
+                - link "campaign_department_event_audit_log" [ref=f17e438] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_audit_log
+              - listitem [ref=f17e439]:
+                - link "Expand/Collapse" [ref=f17e443] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e444]
+                - link "Structure" [ref=f17e446] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_conflicts
+                  - img "Structure" [ref=f17e447]
+                - link "campaign_department_event_conflicts" [ref=f17e448] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_conflicts
+              - listitem [ref=f17e449]:
+                - link "Expand/Collapse" [ref=f17e453] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e454]
+                - link "Structure" [ref=f17e456] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_facilitators
+                  - img "Structure" [ref=f17e457]
+                - link "campaign_department_event_facilitators" [ref=f17e458] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_facilitators
+              - listitem [ref=f17e459]:
+                - link "Expand/Collapse" [ref=f17e463] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e464]
+                - link "Structure" [ref=f17e466] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_integration_checkpoints
+                  - img "Structure" [ref=f17e467]
+                - link "campaign_department_event_integration_checkpoints" [ref=f17e468] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_integration_checkpoints
+              - listitem [ref=f17e469]:
+                - link "Expand/Collapse" [ref=f17e473] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e474]
+                - link "Structure" [ref=f17e476] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_feedback
+                  - img "Structure" [ref=f17e477]
+                - link "campaign_department_feedback" [ref=f17e478] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_feedback
+              - listitem [ref=f17e479]:
+                - link "Expand/Collapse" [ref=f17e483] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e484]
+                - link "Structure" [ref=f17e486] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_impact_metrics
+                  - img "Structure" [ref=f17e487]
+                - link "campaign_department_impact_metrics" [ref=f17e488] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_impact_metrics
+              - listitem [ref=f17e489]:
+                - link "Expand/Collapse" [ref=f17e493] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e494]
+                - link "Structure" [ref=f17e496] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_integration_logs
+                  - img "Structure" [ref=f17e497]
+                - link "campaign_department_integration_logs" [ref=f17e498] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_integration_logs
+              - listitem [ref=f17e499]:
+                - link "Expand/Collapse" [ref=f17e503] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e504]
+                - link "Structure" [ref=f17e506] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_notification_logs
+                  - img "Structure" [ref=f17e507]
+                - link "campaign_department_notification_logs" [ref=f17e508] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_notification_logs
+              - listitem [ref=f17e509]:
+                - link "Expand/Collapse" [ref=f17e513] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e514]
+                - link "Structure" [ref=f17e516] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_otp
+                  - img "Structure" [ref=f17e517]
+                - link "campaign_department_otp" [ref=f17e518] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_otp
+              - listitem [ref=f17e519]:
+                - link "Expand/Collapse" [ref=f17e523] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e524]
+                - link "Structure" [ref=f17e526] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_partners
+                  - img "Structure" [ref=f17e527]
+                - link "campaign_department_partners" [ref=f17e528] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_partners
+              - listitem [ref=f17e529]:
+                - link "Expand/Collapse" [ref=f17e533] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e534]
+                - link "Structure" [ref=f17e536] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_partner_engagements
+                  - img "Structure" [ref=f17e537]
+                - link "campaign_department_partner_engagements" [ref=f17e538] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_partner_engagements
+              - listitem [ref=f17e539]:
+                - link "Expand/Collapse" [ref=f17e543] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e544]
+                - link "Structure" [ref=f17e546] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_permissions
+                  - img "Structure" [ref=f17e547]
+                - link "campaign_department_permissions" [ref=f17e548] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_permissions
+              - listitem [ref=f17e549]:
+                - link "Expand/Collapse" [ref=f17e553] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e554]
+                - link "Structure" [ref=f17e556] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_reference_locations
+                  - img "Structure" [ref=f17e557]
+                - link "campaign_department_reference_locations" [ref=f17e558] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_reference_locations
+              - listitem [ref=f17e559]:
+                - link "Expand/Collapse" [ref=f17e563] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e564]
+                - link "Structure" [ref=f17e566] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_reference_staff
+                  - img "Structure" [ref=f17e567]
+                - link "campaign_department_reference_staff" [ref=f17e568] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_reference_staff
+              - listitem [ref=f17e569]:
+                - link "Expand/Collapse" [ref=f17e573] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e574]
+                - link "Structure" [ref=f17e576] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_roles
+                  - img "Structure" [ref=f17e577]
+                - link "campaign_department_roles" [ref=f17e578] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_roles
+              - listitem [ref=f17e579]:
+                - link "Expand/Collapse" [ref=f17e583] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e584]
+                - link "Structure" [ref=f17e586] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_role_permissions
+                  - img "Structure" [ref=f17e587]
+                - link "campaign_department_role_permissions" [ref=f17e588] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_role_permissions
+              - listitem [ref=f17e589]:
+                - link "Expand/Collapse" [ref=f17e593] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e594]
+                - link "Structure" [ref=f17e596] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_survey_aggregated_results
+                  - img "Structure" [ref=f17e597]
+                - link "campaign_department_survey_aggregated_results" [ref=f17e598] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_survey_aggregated_results
+              - listitem [ref=f17e599]:
+                - link "Expand/Collapse" [ref=f17e603] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e604]
+                - link "Structure" [ref=f17e606] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_survey_audit_log
+                  - img "Structure" [ref=f17e607]
+                - link "campaign_department_survey_audit_log" [ref=f17e608] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_survey_audit_log
+              - listitem [ref=f17e609]:
+                - link "Expand/Collapse" [ref=f17e613] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e614]
+                - link "Structure" [ref=f17e616] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_survey_questions
+                  - img "Structure" [ref=f17e617]
+                - link "campaign_department_survey_questions" [ref=f17e618] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_survey_questions
+              - listitem [ref=f17e619]:
+                - link "Expand/Collapse" [ref=f17e622] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f17e623]
+                - link "Structure" [ref=f17e625] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_survey_response_details
+                  - img "Structure" [ref=f17e626]
+                - link "campaign_department_survey_response_details" [ref=f17e627] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_survey_response_details
+          - listitem [ref=f17e628]:
+            - link "Expand/Collapse" [ref=f17e632] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f17e633]
+            - link "Database operations" [ref=f17e635] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=lgu4_traffic_transport
+              - img "Database operations" [ref=f17e636]
+            - link "lgu4_traffic_transport" [ref=f17e637] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=lgu4_traffic_transport
+          - listitem [ref=f17e638]:
+            - link "Expand/Collapse" [ref=f17e642] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f17e643]
+            - link "Database operations" [ref=f17e645] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=mysql
+              - img "Database operations" [ref=f17e646]
+            - link "mysql" [ref=f17e647] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=mysql
+          - listitem [ref=f17e648]:
+            - link "Expand/Collapse" [ref=f17e652] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f17e653]
+            - link "Database operations" [ref=f17e655] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=performance_schema
+              - img "Database operations" [ref=f17e656]
+            - link "performance_schema" [ref=f17e657] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=performance_schema
+          - listitem [ref=f17e658]:
+            - link "Expand/Collapse" [ref=f17e662] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f17e663]
+            - link "Database operations" [ref=f17e665] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=phpmyadmin
+              - img "Database operations" [ref=f17e666]
+            - link "phpmyadmin" [ref=f17e667] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=phpmyadmin
+          - listitem [ref=f17e668]:
+            - link "Expand/Collapse" [ref=f17e671] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f17e672]
+            - link "Database operations" [ref=f17e674] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=sys
+              - img "Database operations" [ref=f17e675]
+            - link "sys" [ref=f17e676] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=sys
+  - generic [ref=f17e677]:
+    - navigation "breadcrumb" [ref=f17e678]:
+      - list [ref=f17e679]:
+        - listitem [ref=f17e680]:
+          - 'link "Server: localhost:3306" [ref=f17e681] [cursor=pointer]':
+            - /url: index.php?route=/
+        - listitem [ref=f17e682]:
+          - text: »
+          - 'link "Database: LGU" [ref=f17e683] [cursor=pointer]':
+            - /url: index.php?route=/database/structure&db=LGU
+        - listitem [ref=f17e684]:
+          - text: »
+          - 'link "Table: campaign_department_campaigns" [ref=f17e685] [cursor=pointer]':
+            - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns
+    - navigation [ref=f17e687]:
+      - list [ref=f17e689]:
+        - listitem [ref=f17e690]:
+          - link "Browse Browse (current)" [ref=f17e691] [cursor=pointer]:
+            - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&pos=0
+            - img "Browse" [ref=f17e692]
+            - text: Browse
+            - generic [ref=f17e693]: (current)
+        - listitem [ref=f17e694]:
+          - link "Structure Structure" [ref=f17e695] [cursor=pointer]:
+            - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaigns
+            - img "Structure" [ref=f17e696]
+            - text: Structure
+        - listitem [ref=f17e697]:
+          - link "SQL SQL" [ref=f17e698] [cursor=pointer]:
+            - /url: index.php?route=/table/sql&db=LGU&table=campaign_department_campaigns
+            - img "SQL" [ref=f17e699]
+            - text: SQL
+        - listitem [ref=f17e700]:
+          - link "Search Search" [ref=f17e701] [cursor=pointer]:
+            - /url: index.php?route=/table/search&db=LGU&table=campaign_department_campaigns
+            - img "Search" [ref=f17e702]
+            - text: Search
+        - listitem [ref=f17e703]:
+          - link "Insert Insert" [ref=f17e704] [cursor=pointer]:
+            - /url: index.php?route=/table/change&db=LGU&table=campaign_department_campaigns
+            - img "Insert" [ref=f17e705]
+            - text: Insert
+        - listitem [ref=f17e706]:
+          - link "Export Export" [ref=f17e707] [cursor=pointer]:
+            - /url: index.php?route=/table/export&db=LGU&table=campaign_department_campaigns&single_table=true
+            - img "Export" [ref=f17e708]
+            - text: Export
+        - listitem [ref=f17e709]:
+          - link "Import Import" [ref=f17e710] [cursor=pointer]:
+            - /url: index.php?route=/table/import&db=LGU&table=campaign_department_campaigns
+            - img "Import" [ref=f17e711]
+            - text: Import
+        - listitem [ref=f17e712]:
+          - link "Privileges Privileges" [ref=f17e713] [cursor=pointer]:
+            - /url: index.php?route=/server/privileges&db=LGU&table=campaign_department_campaigns&checkprivsdb=LGU&checkprivstable=campaign_department_campaigns&viewing_mode=table
+            - img "Privileges" [ref=f17e714]
+            - text: Privileges
+        - listitem [ref=f17e715]:
+          - button "More" [ref=f17e716] [cursor=pointer]
+  - generic [ref=f17e717]:
+    - img "Page-related settings" [ref=f17e719] [cursor=pointer]
+    - link "Click on the bar to scroll to top of page" [ref=f17e720] [cursor=pointer]:
+      - /url: "#"
+      - img "Click on the bar to scroll to top of page" [ref=f17e721]
+  - generic [ref=f17e723]:
+    - generic [ref=f17e725] [cursor=pointer]:
+      - img "SQL Query Console" [ref=f17e726]
+      - text: Console
+    - generic [ref=f17e727]:
+      - generic [ref=f17e728]:
+        - generic [ref=f17e729]: Press Ctrl+Enter to execute query
+        - text: ">"
+      - generic [ref=f17e730]:
+        - text: ">"
+        - textbox [ref=f17e733]
+    - generic [ref=f17e740]:
+      - generic [ref=f17e741]:
+        - generic [ref=f17e742] [cursor=pointer]: ascending
+        - generic [ref=f17e743] [cursor=pointer]: descending
+        - generic [ref=f17e744]: "Order:"
+        - generic [ref=f17e745] [cursor=pointer]: Debug SQL
+        - generic [ref=f17e746] [cursor=pointer]: Execution order
+        - generic [ref=f17e747] [cursor=pointer]: Time taken
+        - generic [ref=f17e748]: "Order by:"
+        - generic [ref=f17e749] [cursor=pointer]: Group queries
+      - generic [ref=f17e751]: Some error occurred while getting SQL debug info.
+    - generic [ref=f17e752]:
+      - generic [ref=f17e753]:
+        - generic [ref=f17e754] [cursor=pointer]: Bookmarks
+        - generic [ref=f17e755] [cursor=pointer]: Refresh
+        - generic [ref=f17e756] [cursor=pointer]: Add
+      - generic [ref=f17e758]: No bookmarks
+      - generic [ref=f17e759]:
+        - generic [ref=f17e761] [cursor=pointer]: Add bookmark
+        - generic [ref=f17e762]:
+          - generic [ref=f17e763]:
+            - generic [ref=f17e764]:
+              - text: "Label:"
+              - textbox "Label:" [ref=f17e765]
+            - generic [ref=f17e766]:
+              - text: "Target database:"
+              - textbox "Target database:" [ref=f17e767]
+            - generic [ref=f17e768]:
+              - checkbox "Share this bookmark" [ref=f17e769]
+              - text: Share this bookmark
+            - button "OK" [ref=f17e770] [cursor=pointer]
+          - generic [ref=f17e771]:
+            - text: ">"
+            - textbox [ref=f17e774]
+    - generic [ref=f17e781]:
+      - generic [ref=f17e782]:
+        - generic [ref=f17e783] [cursor=pointer]: Options
+        - generic [ref=f17e784] [cursor=pointer]: Set default
+      - generic [ref=f17e785]:
+        - generic [ref=f17e786]:
+          - checkbox "Always expand query messages" [ref=f17e787]
+          - text: Always expand query messages
+        - generic [ref=f17e788]:
+          - checkbox "Show query history at start" [ref=f17e789]
+          - text: Show query history at start
+        - generic [ref=f17e790]:
+          - checkbox "Show current browsing query" [checked] [ref=f17e791]
+          - text: Show current browsing query
+        - generic [ref=f17e792]:
+          - checkbox "Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings." [ref=f17e793]
+          - text: Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings.
+        - generic [ref=f17e794]:
+          - checkbox "Switch to dark theme" [ref=f17e795]
+          - text: Switch to dark theme
+  - generic [ref=f17e797]:
+    - generic [ref=f17e798]:
+      - alert [ref=f17e799]: Showing rows 0 - 12 (13 total, Query took 0.0017 seconds.)
+      - code [ref=f17e801]:
+        - generic [ref=f17e802]:
+          - link "SELECT" [ref=f17e804] [cursor=pointer]:
+            - /url: ./url.php?url=https://dev.mysql.com/doc/refman/8.0/en/select.html
+          - text: "* FROM `campaign_department_campaigns`"
+      - generic [ref=f17e805]:
+        - generic [ref=f17e806]:
+          - checkbox "Profiling" [ref=f17e807]
+          - generic [ref=f17e808]: Profiling
+        - text: "["
+        - link "Edit inline" [ref=f17e809] [cursor=pointer]:
+          - /url: "#"
+        - text: "] ["
+        - link "Edit" [ref=f17e810] [cursor=pointer]:
+          - /url: index.php
+        - text: "] ["
+        - link "Explain SQL" [ref=f17e811] [cursor=pointer]:
+          - /url: index.php
+        - text: "] ["
+        - link "Create PHP code" [ref=f17e812] [cursor=pointer]:
+          - /url: index.php
+        - text: "] ["
+        - link "Refresh" [ref=f17e813] [cursor=pointer]:
+          - /url: index.php
+        - text: "]"
+    - table [ref=f17e814]:
+      - rowgroup [ref=f17e815]:
+        - 'row "Show all Show all | Number of rows: 25 Filter rows: Sort by key: None" [ref=f17e816]':
+          - cell [ref=f17e817]
+          - cell "Show all Show all" [ref=f17e818]:
+            - generic [ref=f17e819]:
+              - checkbox "Show all Show all" [ref=f17e820]
+              - generic [ref=f17e821]: Show all
+          - cell "|" [ref=f17e822]:
+            - generic [ref=f17e823]: "|"
+          - cell
+          - cell
+          - 'cell "Number of rows: 25" [ref=f17e824]':
+            - generic [ref=f17e825]:
+              - generic [ref=f17e826]: "Number of rows:"
+              - 'combobox "Number of rows: Number of rows:" [ref=f17e827]':
+                - option "25" [selected]
+                - option "50"
+                - option "100"
+                - option "250"
+                - option "500"
+          - cell [ref=f17e828]
+          - cell "Filter rows:" [ref=f17e829]:
+            - text: "Filter rows:"
+            - textbox "Search this table" [ref=f17e830]
+          - 'cell "Sort by key: None" [ref=f17e831]':
+            - generic [ref=f17e832]:
+              - text: "Sort by key:"
+              - combobox [ref=f17e833]:
+                - option "PRIMARY (ASC)"
+                - option "PRIMARY (DESC)"
+                - option "idx_campaigns_status (ASC)"
+                - option "idx_campaigns_status (DESC)"
+                - option "idx_campaigns_start_date (ASC)"
+                - option "idx_campaigns_start_date (DESC)"
+                - option "idx_campaigns_category (ASC)"
+                - option "idx_campaigns_category (DESC)"
+                - option "idx_campaigns_owner (ASC)"
+                - option "idx_campaigns_owner (DESC)"
+                - option "None" [selected]
+          - cell [ref=f17e834]
+    - button "Extra options" [ref=f17e837] [cursor=pointer]
+    - generic [ref=f17e838]:
+      - table [ref=f17e864]:
+        - rowgroup [ref=f17e865]:
+          - row "Full texts id title description category geographic_scope status start_date start_time end_date end_time draft_schedule_datetime ai_recommended_datetime final_schedule_datetime owner_id created_at updated_at objectives location assigned_staff barangay_target_zones budget staff_count materials_json" [ref=f17e866]:
+            - columnheader "Full texts" [ref=f17e867]:
+              - link "Full texts" [ref=f17e869] [cursor=pointer]:
+                - /url: index.php
+                - img "Full texts" [ref=f17e870]
+            - columnheader "id" [ref=f17e873]:
+              - link "id" [ref=f17e875] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60id%60+ASC&sql_signature=0d23ca962d6bc4040780d3ad8eeec987519bb873be7c68b298b9c5655914339c&session_max_rows=25&is_browse_distinct=0
+            - columnheader "title" [ref=f17e876]:
+              - link "title" [ref=f17e878] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60title%60+ASC&sql_signature=a1d82f073599d05a8ac6ab2ca117c3d891b76394468aa27edf0f7fe6472c98e6&session_max_rows=25&is_browse_distinct=0
+            - columnheader "description" [ref=f17e879]:
+              - link "description" [ref=f17e881] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60description%60+ASC&sql_signature=68d60ece10e1819dca6a5c146a7d4ada74e2b08dcf6f4ce108780928f6e1272e&session_max_rows=25&is_browse_distinct=0
+            - columnheader "category" [ref=f17e882]:
+              - link "category" [ref=f17e884] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60category%60+ASC&sql_signature=6437ca4668d658aea2c0ad66fa7a9f305b3ab15aaa279a57335ce5de88d69c19&session_max_rows=25&is_browse_distinct=0
+            - columnheader "geographic_scope" [ref=f17e885]:
+              - link "geographic_scope" [ref=f17e887] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60geographic_scope%60+ASC&sql_signature=ed9ed3c9270a2e77a9bcf2329c3db1d6c7e690e2bb19774252131905142ead12&session_max_rows=25&is_browse_distinct=0
+            - columnheader "status" [ref=f17e888]:
+              - link "status" [ref=f17e890] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60status%60+ASC&sql_signature=ef41871927520983a72cfa7a89c90ba6389fc58e8714ddad97e56eb077d1aa06&session_max_rows=25&is_browse_distinct=0
+            - columnheader "start_date" [ref=f17e891]:
+              - link "start_date" [ref=f17e893] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60start_date%60+DESC&sql_signature=54ebb08dc8c173ec0f4ca0c53ea3e1e4a6e5e10b7fe77da6b32f98e74dfed4a3&session_max_rows=25&is_browse_distinct=0
+            - columnheader "start_time" [ref=f17e894]:
+              - link "start_time" [ref=f17e896] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60start_time%60+DESC&sql_signature=2954d87f63ad6cb8fcf5efb720a1e21777f682876e5bc9d846f2cab524b92faa&session_max_rows=25&is_browse_distinct=0
+            - columnheader "end_date" [ref=f17e897]:
+              - link "end_date" [ref=f17e899] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60end_date%60+DESC&sql_signature=c06241e1dad4864bc8e47264edb6743b61e32755fe815091e27f47a55719781a&session_max_rows=25&is_browse_distinct=0
+            - columnheader "end_time" [ref=f17e900]:
+              - link "end_time" [ref=f17e902] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60end_time%60+DESC&sql_signature=c9d1c0eea2dca23409e51eed50c15dffdbf6ce81b9cd16b13b02bdab42328723&session_max_rows=25&is_browse_distinct=0
+            - columnheader "draft_schedule_datetime" [ref=f17e903]:
+              - link "draft_schedule_datetime" [ref=f17e905] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60draft_schedule_datetime%60+DESC&sql_signature=0a0ef72e0871887ded410404b6f7246fc85f6d0cf36a326619c86821820546ed&session_max_rows=25&is_browse_distinct=0
+            - columnheader "ai_recommended_datetime" [ref=f17e906]:
+              - link "ai_recommended_datetime" [ref=f17e908] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60ai_recommended_datetime%60+DESC&sql_signature=91ed67a2ab9b2aa9bf94fdc998288a0910e0767a469498d8a4752eb9d069ba5d&session_max_rows=25&is_browse_distinct=0
+            - columnheader "final_schedule_datetime" [ref=f17e909]:
+              - link "final_schedule_datetime" [ref=f17e911] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60final_schedule_datetime%60+DESC&sql_signature=6628e2db6219bb649eb6760aacbcf0e601c2d367628ffaaf8f011df483894921&session_max_rows=25&is_browse_distinct=0
+            - columnheader "owner_id" [ref=f17e912]:
+              - link "owner_id" [ref=f17e914] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60owner_id%60+ASC&sql_signature=de8f0a07d67196b697c9d478d376240510874dbd6b0311008827f9ac50843200&session_max_rows=25&is_browse_distinct=0
+            - columnheader "created_at" [ref=f17e915]:
+              - link "created_at" [ref=f17e917] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60created_at%60+DESC&sql_signature=b1f92a8e50c753d6a5f6149c050c49fee089fd059f21f43bf2915c79f3877652&session_max_rows=25&is_browse_distinct=0
+            - columnheader "updated_at" [ref=f17e918]:
+              - link "updated_at" [ref=f17e920] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60updated_at%60+DESC&sql_signature=54cc80770e2f15c7fbc01b5bd73ba4d112570d67dde1831c8cb85f2f620d9d5a&session_max_rows=25&is_browse_distinct=0
+            - columnheader "objectives" [ref=f17e921]:
+              - link "objectives" [ref=f17e923] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60objectives%60+ASC&sql_signature=cb1fe4916a322c4f07e313de4114bf7e6bf158f9a9fe59e0937bed967e7fcc18&session_max_rows=25&is_browse_distinct=0
+            - columnheader "location" [ref=f17e924]:
+              - link "location" [ref=f17e926] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60location%60+ASC&sql_signature=1dd908d938bb388761b81623f3a3dde35dbfb1e8b35726e4fd107f8d1ec3ae6d&session_max_rows=25&is_browse_distinct=0
+            - columnheader "assigned_staff" [ref=f17e927]:
+              - link "assigned_staff" [ref=f17e929] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60assigned_staff%60+ASC&sql_signature=d54359a47326e79c4ec25008d31fb0e9e0b38b9044f6cd84fee7dbda1007f572&session_max_rows=25&is_browse_distinct=0
+            - columnheader "barangay_target_zones" [ref=f17e930]:
+              - link "barangay_target_zones" [ref=f17e932] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60barangay_target_zones%60+ASC&sql_signature=840ef58a08d78599a270a6840f754dade3e69b80bc52e6bd374a4934fdcc21b0&session_max_rows=25&is_browse_distinct=0
+            - columnheader "budget" [ref=f17e933]:
+              - link "budget" [ref=f17e935] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60budget%60+ASC&sql_signature=4ce6ab269f7e53ded0bf50efe61222c383909dd14e800c2031ac1d4428fde639&session_max_rows=25&is_browse_distinct=0
+            - columnheader "staff_count" [ref=f17e936]:
+              - link "staff_count" [ref=f17e938] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60staff_count%60+ASC&sql_signature=7518c8aff81a75185fa0468c278967fade6d1903f86b19ad0878e80a8d73bd71&session_max_rows=25&is_browse_distinct=0
+            - rowheader "materials_json" [ref=f17e939]:
+              - link "materials_json" [ref=f17e941] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_campaigns&sql_query=SELECT+%2A+FROM+%60campaign_department_campaigns%60++%0AORDER+BY+%60campaign_department_campaigns%60.%60materials_json%60+ASC&sql_signature=558721c296ab160955751c3808845856d3cd996405bfb2a97cac29362beee3ac&session_max_rows=25&is_browse_distinct=0
+            - cell [ref=f17e942]
+        - rowgroup [ref=f17e943]:
+          - 'row "Edit Edit Copy Copy Delete Delete 1 Fire Safety Awareness Week 2025 Annual fire safety awareness campaign for resident... fire_safety Quezon City - Barangay 1-5 approved 2025-03-01 NULL 2025-03-07 NULL NULL 2026-03-02 09:00:00 NULL 1 2026-01-08 12:45:15 2026-02-25 07:17:58 Increase fire safety awareness, distribute fire sa... Barangay Hall - Barangay 1 [\"John Doe\", \"Jane Smith\", \"Bob Johnson\"] [\"Barangay 1\", \"Barangay 2\", \"Barangay 3\"] 50000.00 5 {\"flyers\": 500, \"banners\": 5, \"posters\": 100}" [ref=f17e944]':
+            - cell [ref=f17e945]:
+              - checkbox [ref=f17e947]
+            - cell "Edit Edit" [ref=f17e948]:
+              - link "Edit Edit" [ref=f17e950] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e951]:
+                  - img "Edit" [ref=f17e952]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e953]:
+              - link "Copy Copy" [ref=f17e955] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e956]:
+                  - img "Copy" [ref=f17e957]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e958]:
+              - link "Delete Delete" [ref=f17e960] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e961]:
+                  - img "Delete" [ref=f17e962]
+                  - text: Delete
+            - cell "1" [ref=f17e963]:
+              - generic [ref=f17e964]: "1"
+            - cell "Fire Safety Awareness Week 2025" [ref=f17e965]:
+              - generic [ref=f17e966]: Fire Safety Awareness Week 2025
+            - cell "Annual fire safety awareness campaign for resident..." [ref=f17e967]:
+              - generic "Original length 59" [ref=f17e968]: Annual fire safety awareness campaign for resident...
+            - cell "fire_safety" [ref=f17e969]:
+              - generic [ref=f17e970]: fire_safety
+            - cell "Quezon City - Barangay 1-5" [ref=f17e971]:
+              - generic [ref=f17e972]: Quezon City - Barangay 1-5
+            - cell "approved" [ref=f17e973]:
+              - generic [ref=f17e974]: approved
+            - cell "2025-03-01" [ref=f17e975]:
+              - generic [ref=f17e976]: 2025-03-01
+            - cell "NULL" [ref=f17e977]:
+              - emphasis [ref=f17e979]: "NULL"
+            - cell "2025-03-07" [ref=f17e980]:
+              - generic [ref=f17e981]: 2025-03-07
+            - cell "NULL" [ref=f17e982]:
+              - emphasis [ref=f17e984]: "NULL"
+            - cell "NULL" [ref=f17e985]:
+              - emphasis [ref=f17e987]: "NULL"
+            - cell "2026-03-02 09:00:00" [ref=f17e988]:
+              - generic [ref=f17e989]: 2026-03-02 09:00:00
+            - cell "NULL" [ref=f17e990]:
+              - emphasis [ref=f17e992]: "NULL"
+            - cell "1" [ref=f17e993]:
+              - link "1" [ref=f17e995] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=88152d134da65e7006091a5fc8921cc9e69b0cc2696021e28d091c1743edf158&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+1
+            - cell "2026-01-08 12:45:15" [ref=f17e996]:
+              - generic [ref=f17e997]: 2026-01-08 12:45:15
+            - cell "2026-02-25 07:17:58" [ref=f17e998]:
+              - generic [ref=f17e999]: 2026-02-25 07:17:58
+            - cell "Increase fire safety awareness, distribute fire sa..." [ref=f17e1000]:
+              - generic "Original length 85" [ref=f17e1001]: Increase fire safety awareness, distribute fire sa...
+            - cell "Barangay Hall - Barangay 1" [ref=f17e1002]:
+              - generic [ref=f17e1003]: Barangay Hall - Barangay 1
+            - cell "[\"John Doe\", \"Jane Smith\", \"Bob Johnson\"]" [ref=f17e1004]:
+              - generic [ref=f17e1005]: "[\"John Doe\", \"Jane Smith\", \"Bob Johnson\"]"
+            - cell "[\"Barangay 1\", \"Barangay 2\", \"Barangay 3\"]" [ref=f17e1006]:
+              - generic [ref=f17e1007]: "[\"Barangay 1\", \"Barangay 2\", \"Barangay 3\"]"
+            - cell "50000.00" [ref=f17e1008]:
+              - generic [ref=f17e1009]: "50000.00"
+            - cell "5" [ref=f17e1010]:
+              - generic [ref=f17e1011]: "5"
+            - 'cell "{\"flyers\": 500, \"banners\": 5, \"posters\": 100}" [ref=f17e1012]':
+              - generic [ref=f17e1013]: "{\"flyers\": 500, \"banners\": 5, \"posters\": 100}"
+          - 'row "Edit Edit Copy Copy Delete Delete 3 Flood Preparedness Campaign Campaign to prepare communities for flood season flood Quezon City - Low-lying Areas pending 2025-05-01 NULL 2025-05-31 NULL NULL 2026-03-02 09:00:00 NULL 2 2026-01-08 12:45:15 2026-02-24 07:01:03 Distribute flood safety information, identify evac... Multiple Locations [\"Ana Garcia\", \"Carlos Mendoza\"] [\"Barangay 1\", \"Barangay 2\"] 75000.00 8 {\"sandbags\": 200, \"information_kits\": 1000}" [ref=f17e1014]':
+            - cell [ref=f17e1015]:
+              - checkbox [ref=f17e1017]
+            - cell "Edit Edit" [ref=f17e1018]:
+              - link "Edit Edit" [ref=f17e1020] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1021]:
+                  - img "Edit" [ref=f17e1022]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e1023]:
+              - link "Copy Copy" [ref=f17e1025] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1026]:
+                  - img "Copy" [ref=f17e1027]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e1028]:
+              - link "Delete Delete" [ref=f17e1030] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1031]:
+                  - img "Delete" [ref=f17e1032]
+                  - text: Delete
+            - cell "3" [ref=f17e1033]:
+              - generic [ref=f17e1034]: "3"
+            - cell "Flood Preparedness Campaign" [ref=f17e1035]:
+              - generic [ref=f17e1036]: Flood Preparedness Campaign
+            - cell "Campaign to prepare communities for flood season" [ref=f17e1037]:
+              - generic [ref=f17e1038]: Campaign to prepare communities for flood season
+            - cell "flood" [ref=f17e1039]:
+              - generic [ref=f17e1040]: flood
+            - cell "Quezon City - Low-lying Areas" [ref=f17e1041]:
+              - generic [ref=f17e1042]: Quezon City - Low-lying Areas
+            - cell "pending" [ref=f17e1043]:
+              - generic [ref=f17e1044]: pending
+            - cell "2025-05-01" [ref=f17e1045]:
+              - generic [ref=f17e1046]: 2025-05-01
+            - cell "NULL" [ref=f17e1047]:
+              - emphasis [ref=f17e1049]: "NULL"
+            - cell "2025-05-31" [ref=f17e1050]:
+              - generic [ref=f17e1051]: 2025-05-31
+            - cell "NULL" [ref=f17e1052]:
+              - emphasis [ref=f17e1054]: "NULL"
+            - cell "NULL" [ref=f17e1055]:
+              - emphasis [ref=f17e1057]: "NULL"
+            - cell "2026-03-02 09:00:00" [ref=f17e1058]:
+              - generic [ref=f17e1059]: 2026-03-02 09:00:00
+            - cell "NULL" [ref=f17e1060]:
+              - emphasis [ref=f17e1062]: "NULL"
+            - cell "2" [ref=f17e1063]:
+              - link "2" [ref=f17e1065] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=23055ae26460912f2154819e6a804f32319dbe59d53b2803ac47b8ac43ab62ad&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+2
+            - cell "2026-01-08 12:45:15" [ref=f17e1066]:
+              - generic [ref=f17e1067]: 2026-01-08 12:45:15
+            - cell "2026-02-24 07:01:03" [ref=f17e1068]:
+              - generic [ref=f17e1069]: 2026-02-24 07:01:03
+            - cell "Distribute flood safety information, identify evac..." [ref=f17e1070]:
+              - generic "Original length 89" [ref=f17e1071]: Distribute flood safety information, identify evac...
+            - cell "Multiple Locations" [ref=f17e1072]:
+              - generic [ref=f17e1073]: Multiple Locations
+            - cell "[\"Ana Garcia\", \"Carlos Mendoza\"]" [ref=f17e1074]:
+              - generic [ref=f17e1075]: "[\"Ana Garcia\", \"Carlos Mendoza\"]"
+            - cell "[\"Barangay 1\", \"Barangay 2\"]" [ref=f17e1076]:
+              - generic [ref=f17e1077]: "[\"Barangay 1\", \"Barangay 2\"]"
+            - cell "75000.00" [ref=f17e1078]:
+              - generic [ref=f17e1079]: "75000.00"
+            - cell "8" [ref=f17e1080]:
+              - generic [ref=f17e1081]: "8"
+            - 'cell "{\"sandbags\": 200, \"information_kits\": 1000}" [ref=f17e1082]':
+              - generic [ref=f17e1083]: "{\"sandbags\": 200, \"information_kits\": 1000}"
+          - row "Edit Edit Copy Copy Delete Delete 10 Flood Evacuation Awareness Awareness program on flood evacuation routes and c... flood Quezon City scheduled 2025-07-01 NULL 2025-07-31 NULL 2026-02-23 09:00:00 2026-02-23 09:00:00 2026-02-23 09:00:00 1 2026-01-08 14:10:59 2026-02-20 10:40:31 NULL IBP Road Junction NULL NULL 42000.00 4 NULL" [ref=f17e1084]:
+            - cell [ref=f17e1085]:
+              - checkbox [ref=f17e1087]
+            - cell "Edit Edit" [ref=f17e1088]:
+              - link "Edit Edit" [ref=f17e1090] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1091]:
+                  - img "Edit" [ref=f17e1092]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e1093]:
+              - link "Copy Copy" [ref=f17e1095] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1096]:
+                  - img "Copy" [ref=f17e1097]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e1098]:
+              - link "Delete Delete" [ref=f17e1100] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1101]:
+                  - img "Delete" [ref=f17e1102]
+                  - text: Delete
+            - cell "10" [ref=f17e1103]:
+              - generic [ref=f17e1104]: "10"
+            - cell "Flood Evacuation Awareness" [ref=f17e1105]:
+              - generic [ref=f17e1106]: Flood Evacuation Awareness
+            - cell "Awareness program on flood evacuation routes and c..." [ref=f17e1107]:
+              - generic "Original length 57" [ref=f17e1108]: Awareness program on flood evacuation routes and c...
+            - cell "flood" [ref=f17e1109]:
+              - generic [ref=f17e1110]: flood
+            - cell "Quezon City" [ref=f17e1111]:
+              - generic [ref=f17e1112]: Quezon City
+            - cell "scheduled" [ref=f17e1113]:
+              - generic [ref=f17e1114]: scheduled
+            - cell "2025-07-01" [ref=f17e1115]:
+              - generic [ref=f17e1116]: 2025-07-01
+            - cell "NULL" [ref=f17e1117]:
+              - emphasis [ref=f17e1119]: "NULL"
+            - cell "2025-07-31" [ref=f17e1120]:
+              - generic [ref=f17e1121]: 2025-07-31
+            - cell "NULL" [ref=f17e1122]:
+              - emphasis [ref=f17e1124]: "NULL"
+            - cell "2026-02-23 09:00:00" [ref=f17e1125]:
+              - generic [ref=f17e1126]: 2026-02-23 09:00:00
+            - cell "2026-02-23 09:00:00" [ref=f17e1127]:
+              - generic [ref=f17e1128]: 2026-02-23 09:00:00
+            - cell "2026-02-23 09:00:00" [ref=f17e1129]:
+              - generic [ref=f17e1130]: 2026-02-23 09:00:00
+            - cell "1" [ref=f17e1131]:
+              - link "1" [ref=f17e1133] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=88152d134da65e7006091a5fc8921cc9e69b0cc2696021e28d091c1743edf158&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+1
+            - cell "2026-01-08 14:10:59" [ref=f17e1134]:
+              - generic [ref=f17e1135]: 2026-01-08 14:10:59
+            - cell "2026-02-20 10:40:31" [ref=f17e1136]:
+              - generic [ref=f17e1137]: 2026-02-20 10:40:31
+            - cell "NULL" [ref=f17e1138]:
+              - emphasis [ref=f17e1140]: "NULL"
+            - cell "IBP Road Junction" [ref=f17e1141]:
+              - generic [ref=f17e1142]: IBP Road Junction
+            - cell "NULL" [ref=f17e1143]:
+              - emphasis [ref=f17e1145]: "NULL"
+            - cell "NULL" [ref=f17e1146]:
+              - emphasis [ref=f17e1148]: "NULL"
+            - cell "42000.00" [ref=f17e1149]:
+              - generic [ref=f17e1150]: "42000.00"
+            - cell "4" [ref=f17e1151]:
+              - generic [ref=f17e1152]: "4"
+            - cell "NULL" [ref=f17e1153]:
+              - emphasis [ref=f17e1155]: "NULL"
+          - row "Edit Edit Copy Copy Delete Delete 11 Earthquake Go-Bag Campaign Encouraging households to prepare earthquake go-ba... earthquake Quezon City approved 2025-08-01 NULL 2025-08-31 NULL NULL 2026-06-22 09:00:00 NULL 1 2026-01-08 14:10:59 2026-06-16 13:05:28 NULL Holy Spirit Barangay Hall NULL NULL 28000.00 3 NULL" [ref=f17e1156]:
+            - cell [ref=f17e1157]:
+              - checkbox [ref=f17e1159]
+            - cell "Edit Edit" [ref=f17e1160]:
+              - link "Edit Edit" [ref=f17e1162] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1163]:
+                  - img "Edit" [ref=f17e1164]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e1165]:
+              - link "Copy Copy" [ref=f17e1167] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1168]:
+                  - img "Copy" [ref=f17e1169]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e1170]:
+              - link "Delete Delete" [ref=f17e1172] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1173]:
+                  - img "Delete" [ref=f17e1174]
+                  - text: Delete
+            - cell "11" [ref=f17e1175]:
+              - generic [ref=f17e1176]: "11"
+            - cell "Earthquake Go-Bag Campaign" [ref=f17e1177]:
+              - generic [ref=f17e1178]: Earthquake Go-Bag Campaign
+            - cell "Encouraging households to prepare earthquake go-ba..." [ref=f17e1179]:
+              - generic "Original length 53" [ref=f17e1180]: Encouraging households to prepare earthquake go-ba...
+            - cell "earthquake" [ref=f17e1181]:
+              - generic [ref=f17e1182]: earthquake
+            - cell "Quezon City" [ref=f17e1183]:
+              - generic [ref=f17e1184]: Quezon City
+            - cell "approved" [ref=f17e1185]:
+              - generic [ref=f17e1186]: approved
+            - cell "2025-08-01" [ref=f17e1187]:
+              - generic [ref=f17e1188]: 2025-08-01
+            - cell "NULL" [ref=f17e1189]:
+              - emphasis [ref=f17e1191]: "NULL"
+            - cell "2025-08-31" [ref=f17e1192]:
+              - generic [ref=f17e1193]: 2025-08-31
+            - cell "NULL" [ref=f17e1194]:
+              - emphasis [ref=f17e1196]: "NULL"
+            - cell "NULL" [ref=f17e1197]:
+              - emphasis [ref=f17e1199]: "NULL"
+            - cell "2026-06-22 09:00:00" [ref=f17e1200]:
+              - generic [ref=f17e1201]: 2026-06-22 09:00:00
+            - cell "NULL" [ref=f17e1202]:
+              - emphasis [ref=f17e1204]: "NULL"
+            - cell "1" [ref=f17e1205]:
+              - link "1" [ref=f17e1207] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=88152d134da65e7006091a5fc8921cc9e69b0cc2696021e28d091c1743edf158&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+1
+            - cell "2026-01-08 14:10:59" [ref=f17e1208]:
+              - generic [ref=f17e1209]: 2026-01-08 14:10:59
+            - cell "2026-06-16 13:05:28" [ref=f17e1210]:
+              - generic [ref=f17e1211]: 2026-06-16 13:05:28
+            - cell "NULL" [ref=f17e1212]:
+              - emphasis [ref=f17e1214]: "NULL"
+            - cell "Holy Spirit Barangay Hall" [ref=f17e1215]:
+              - generic [ref=f17e1216]: Holy Spirit Barangay Hall
+            - cell "NULL" [ref=f17e1217]:
+              - emphasis [ref=f17e1219]: "NULL"
+            - cell "NULL" [ref=f17e1220]:
+              - emphasis [ref=f17e1222]: "NULL"
+            - cell "28000.00" [ref=f17e1223]:
+              - generic [ref=f17e1224]: "28000.00"
+            - cell "3" [ref=f17e1225]:
+              - generic [ref=f17e1226]: "3"
+            - cell "NULL" [ref=f17e1227]:
+              - emphasis [ref=f17e1229]: "NULL"
+          - 'row "Edit Edit Copy Copy Delete Delete 25 Earthquake Drill and Preparedness Campaign NULL earthquake Barangay Project 6 scheduled 2026-03-09 15:15:00 2026-03-17 16:15:00 2026-02-23 09:00:00 2026-03-02 09:00:00 2026-02-23 09:00:00 1 2026-02-12 04:15:54 2026-02-24 07:01:06 NULL Barangay Hall [\"SK Chairperson\", \"DRRM Officer\"] [\"Balara Filters Area\"] 32340.00 32 {\"First Aid Kit\": 1, \"Leaflets / Flyers\": 1, \"Proj..." [ref=f17e1230]':
+            - cell [ref=f17e1231]:
+              - checkbox [ref=f17e1233]
+            - cell "Edit Edit" [ref=f17e1234]:
+              - link "Edit Edit" [ref=f17e1236] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1237]:
+                  - img "Edit" [ref=f17e1238]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e1239]:
+              - link "Copy Copy" [ref=f17e1241] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1242]:
+                  - img "Copy" [ref=f17e1243]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e1244]:
+              - link "Delete Delete" [ref=f17e1246] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1247]:
+                  - img "Delete" [ref=f17e1248]
+                  - text: Delete
+            - cell "25" [ref=f17e1249]:
+              - generic [ref=f17e1250]: "25"
+            - cell "Earthquake Drill and Preparedness Campaign" [ref=f17e1251]:
+              - generic [ref=f17e1252]: Earthquake Drill and Preparedness Campaign
+            - cell "NULL" [ref=f17e1253]:
+              - emphasis [ref=f17e1255]: "NULL"
+            - cell "earthquake" [ref=f17e1256]:
+              - generic [ref=f17e1257]: earthquake
+            - cell "Barangay Project 6" [ref=f17e1258]:
+              - generic [ref=f17e1259]: Barangay Project 6
+            - cell "scheduled" [ref=f17e1260]:
+              - generic [ref=f17e1261]: scheduled
+            - cell "2026-03-09" [ref=f17e1262]:
+              - generic [ref=f17e1263]: 2026-03-09
+            - cell "15:15:00" [ref=f17e1264]:
+              - generic [ref=f17e1265]: 15:15:00
+            - cell "2026-03-17" [ref=f17e1266]:
+              - generic [ref=f17e1267]: 2026-03-17
+            - cell "16:15:00" [ref=f17e1268]:
+              - generic [ref=f17e1269]: 16:15:00
+            - cell "2026-02-23 09:00:00" [ref=f17e1270]:
+              - generic [ref=f17e1271]: 2026-02-23 09:00:00
+            - cell "2026-03-02 09:00:00" [ref=f17e1272]:
+              - generic [ref=f17e1273]: 2026-03-02 09:00:00
+            - cell "2026-02-23 09:00:00" [ref=f17e1274]:
+              - generic [ref=f17e1275]: 2026-02-23 09:00:00
+            - cell "1" [ref=f17e1276]:
+              - link "1" [ref=f17e1278] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=88152d134da65e7006091a5fc8921cc9e69b0cc2696021e28d091c1743edf158&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+1
+            - cell "2026-02-12 04:15:54" [ref=f17e1279]:
+              - generic [ref=f17e1280]: 2026-02-12 04:15:54
+            - cell "2026-02-24 07:01:06" [ref=f17e1281]:
+              - generic [ref=f17e1282]: 2026-02-24 07:01:06
+            - cell "NULL" [ref=f17e1283]:
+              - emphasis [ref=f17e1285]: "NULL"
+            - cell "Barangay Hall" [ref=f17e1286]:
+              - generic [ref=f17e1287]: Barangay Hall
+            - cell "[\"SK Chairperson\", \"DRRM Officer\"]" [ref=f17e1288]:
+              - generic [ref=f17e1289]: "[\"SK Chairperson\", \"DRRM Officer\"]"
+            - cell "[\"Balara Filters Area\"]" [ref=f17e1290]:
+              - generic [ref=f17e1291]: "[\"Balara Filters Area\"]"
+            - cell "32340.00" [ref=f17e1292]:
+              - generic [ref=f17e1293]: "32340.00"
+            - cell "32" [ref=f17e1294]:
+              - generic [ref=f17e1295]: "32"
+            - 'cell "{\"First Aid Kit\": 1, \"Leaflets / Flyers\": 1, \"Proj..." [ref=f17e1296]':
+              - generic "Original length 101" [ref=f17e1297]: "{\"First Aid Kit\": 1, \"Leaflets / Flyers\": 1, \"Proj..."
+          - 'row "Edit Edit Copy Copy Delete Delete 27 Dengue Prevention and Clean-Up Drive test fire Barangay Batasan Hills draft 2026-02-12 06:07:00 2026-02-13 06:07:00 2026-02-23 09:00:00 2026-02-23 09:00:00 2026-02-23 09:00:00 1 2026-02-20 10:07:51 2026-02-21 15:39:48 test Barangay Hall [\"Barangay Captain\", \"Barangay Health Worker\"] [\"Sitio Veterans Village (Batasan Hills)\"] 12000.00 5 {\"Tarpaulin (3x6 ft)\": 1, \"Projector and Screen\": ..." [ref=f17e1298]':
+            - cell [ref=f17e1299]:
+              - checkbox [ref=f17e1301]
+            - cell "Edit Edit" [ref=f17e1302]:
+              - link "Edit Edit" [ref=f17e1304] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1305]:
+                  - img "Edit" [ref=f17e1306]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e1307]:
+              - link "Copy Copy" [ref=f17e1309] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1310]:
+                  - img "Copy" [ref=f17e1311]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e1312]:
+              - link "Delete Delete" [ref=f17e1314] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1315]:
+                  - img "Delete" [ref=f17e1316]
+                  - text: Delete
+            - cell "27" [ref=f17e1317]:
+              - generic [ref=f17e1318]: "27"
+            - cell "Dengue Prevention and Clean-Up Drive" [ref=f17e1319]:
+              - generic [ref=f17e1320]: Dengue Prevention and Clean-Up Drive
+            - cell "test" [ref=f17e1321]:
+              - generic [ref=f17e1322]: test
+            - cell "fire" [ref=f17e1323]:
+              - generic [ref=f17e1324]: fire
+            - cell "Barangay Batasan Hills" [ref=f17e1325]:
+              - generic [ref=f17e1326]: Barangay Batasan Hills
+            - cell "draft" [ref=f17e1327]:
+              - generic [ref=f17e1328]: draft
+            - cell "2026-02-12" [ref=f17e1329]:
+              - generic [ref=f17e1330]: 2026-02-12
+            - cell "06:07:00" [ref=f17e1331]:
+              - generic [ref=f17e1332]: 06:07:00
+            - cell "2026-02-13" [ref=f17e1333]:
+              - generic [ref=f17e1334]: 2026-02-13
+            - cell "06:07:00" [ref=f17e1335]:
+              - generic [ref=f17e1336]: 06:07:00
+            - cell "2026-02-23 09:00:00" [ref=f17e1337]:
+              - generic [ref=f17e1338]: 2026-02-23 09:00:00
+            - cell "2026-02-23 09:00:00" [ref=f17e1339]:
+              - generic [ref=f17e1340]: 2026-02-23 09:00:00
+            - cell "2026-02-23 09:00:00" [ref=f17e1341]:
+              - generic [ref=f17e1342]: 2026-02-23 09:00:00
+            - cell "1" [ref=f17e1343]:
+              - link "1" [ref=f17e1345] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=88152d134da65e7006091a5fc8921cc9e69b0cc2696021e28d091c1743edf158&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+1
+            - cell "2026-02-20 10:07:51" [ref=f17e1346]:
+              - generic [ref=f17e1347]: 2026-02-20 10:07:51
+            - cell "2026-02-21 15:39:48" [ref=f17e1348]:
+              - generic [ref=f17e1349]: 2026-02-21 15:39:48
+            - cell "test" [ref=f17e1350]:
+              - generic [ref=f17e1351]: test
+            - cell "Barangay Hall" [ref=f17e1352]:
+              - generic [ref=f17e1353]: Barangay Hall
+            - cell "[\"Barangay Captain\", \"Barangay Health Worker\"]" [ref=f17e1354]:
+              - generic [ref=f17e1355]: "[\"Barangay Captain\", \"Barangay Health Worker\"]"
+            - cell "[\"Sitio Veterans Village (Batasan Hills)\"]" [ref=f17e1356]:
+              - generic [ref=f17e1357]: "[\"Sitio Veterans Village (Batasan Hills)\"]"
+            - cell "12000.00" [ref=f17e1358]:
+              - generic [ref=f17e1359]: "12000.00"
+            - cell "5" [ref=f17e1360]:
+              - generic [ref=f17e1361]: "5"
+            - 'cell "{\"Tarpaulin (3x6 ft)\": 1, \"Projector and Screen\": ..." [ref=f17e1362]':
+              - generic "Original length 52" [ref=f17e1363]: "{\"Tarpaulin (3x6 ft)\": 1, \"Projector and Screen\": ..."
+          - row "Edit Edit Copy Copy Delete Delete 29 Road Safety for Students test road safety Barangay Batasan Hills scheduled 2026-02-22 09:29:00 2026-02-23 21:29:00 2026-02-23 09:00:00 2026-02-23 09:00:00 2026-02-23 09:00:00 6 2026-02-22 01:29:40 2026-02-22 01:50:29 test Barangay Hall [\"Barangay Captain\", \"DRRM Officer\"] [\"Balara Filters Area\"] 20000.00 2 []" [ref=f17e1364]:
+            - cell [ref=f17e1365]:
+              - checkbox [ref=f17e1367]
+            - cell "Edit Edit" [ref=f17e1368]:
+              - link "Edit Edit" [ref=f17e1370] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1371]:
+                  - img "Edit" [ref=f17e1372]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e1373]:
+              - link "Copy Copy" [ref=f17e1375] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1376]:
+                  - img "Copy" [ref=f17e1377]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e1378]:
+              - link "Delete Delete" [ref=f17e1380] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1381]:
+                  - img "Delete" [ref=f17e1382]
+                  - text: Delete
+            - cell "29" [ref=f17e1383]:
+              - generic [ref=f17e1384]: "29"
+            - cell "Road Safety for Students" [ref=f17e1385]:
+              - generic [ref=f17e1386]: Road Safety for Students
+            - cell "test" [ref=f17e1387]:
+              - generic [ref=f17e1388]: test
+            - cell "road safety" [ref=f17e1389]:
+              - generic [ref=f17e1390]: road safety
+            - cell "Barangay Batasan Hills" [ref=f17e1391]:
+              - generic [ref=f17e1392]: Barangay Batasan Hills
+            - cell "scheduled" [ref=f17e1393]:
+              - generic [ref=f17e1394]: scheduled
+            - cell "2026-02-22" [ref=f17e1395]:
+              - generic [ref=f17e1396]: 2026-02-22
+            - cell "09:29:00" [ref=f17e1397]:
+              - generic [ref=f17e1398]: 09:29:00
+            - cell "2026-02-23" [ref=f17e1399]:
+              - generic [ref=f17e1400]: 2026-02-23
+            - cell "21:29:00" [ref=f17e1401]:
+              - generic [ref=f17e1402]: 21:29:00
+            - cell "2026-02-23 09:00:00" [ref=f17e1403]:
+              - generic [ref=f17e1404]: 2026-02-23 09:00:00
+            - cell "2026-02-23 09:00:00" [ref=f17e1405]:
+              - generic [ref=f17e1406]: 2026-02-23 09:00:00
+            - cell "2026-02-23 09:00:00" [ref=f17e1407]:
+              - generic [ref=f17e1408]: 2026-02-23 09:00:00
+            - cell "6" [ref=f17e1409]:
+              - link "6" [ref=f17e1411] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=19e770078f4601390e83b4f795ec0307013374f1206e486b1934660dac6d7f5c&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+6
+            - cell "2026-02-22 01:29:40" [ref=f17e1412]:
+              - generic [ref=f17e1413]: 2026-02-22 01:29:40
+            - cell "2026-02-22 01:50:29" [ref=f17e1414]:
+              - generic [ref=f17e1415]: 2026-02-22 01:50:29
+            - cell "test" [ref=f17e1416]:
+              - generic [ref=f17e1417]: test
+            - cell "Barangay Hall" [ref=f17e1418]:
+              - generic [ref=f17e1419]: Barangay Hall
+            - cell "[\"Barangay Captain\", \"DRRM Officer\"]" [ref=f17e1420]:
+              - generic [ref=f17e1421]: "[\"Barangay Captain\", \"DRRM Officer\"]"
+            - cell "[\"Balara Filters Area\"]" [ref=f17e1422]:
+              - generic [ref=f17e1423]: "[\"Balara Filters Area\"]"
+            - cell "20000.00" [ref=f17e1424]:
+              - generic [ref=f17e1425]: "20000.00"
+            - cell "2" [ref=f17e1426]:
+              - generic [ref=f17e1427]: "2"
+            - cell "[]" [ref=f17e1428]:
+              - generic [ref=f17e1429]: "[]"
+          - row "Edit Edit Copy Copy Delete Delete 31 Fire Safety Awareness Week test fire Barangay Project 6 approved 2026-02-22 10:28:00 2026-02-22 22:28:00 2026-03-02 09:00:00 2026-03-02 09:00:00 2026-03-02 09:00:00 6 2026-02-22 02:29:03 2026-02-23 14:45:20 test Barangay Hall [\"Barangay Health Worker\"] [\"Kamias–E. Rodriguez Area\"] 2323.00 3 NULL" [ref=f17e1430]:
+            - cell [ref=f17e1431]:
+              - checkbox [ref=f17e1433]
+            - cell "Edit Edit" [ref=f17e1434]:
+              - link "Edit Edit" [ref=f17e1436] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1437]:
+                  - img "Edit" [ref=f17e1438]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e1439]:
+              - link "Copy Copy" [ref=f17e1441] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1442]:
+                  - img "Copy" [ref=f17e1443]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e1444]:
+              - link "Delete Delete" [ref=f17e1446] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1447]:
+                  - img "Delete" [ref=f17e1448]
+                  - text: Delete
+            - cell "31" [ref=f17e1449]:
+              - generic [ref=f17e1450]: "31"
+            - cell "Fire Safety Awareness Week" [ref=f17e1451]:
+              - generic [ref=f17e1452]: Fire Safety Awareness Week
+            - cell "test" [ref=f17e1453]:
+              - generic [ref=f17e1454]: test
+            - cell "fire" [ref=f17e1455]:
+              - generic [ref=f17e1456]: fire
+            - cell "Barangay Project 6" [ref=f17e1457]:
+              - generic [ref=f17e1458]: Barangay Project 6
+            - cell "approved" [ref=f17e1459]:
+              - generic [ref=f17e1460]: approved
+            - cell "2026-02-22" [ref=f17e1461]:
+              - generic [ref=f17e1462]: 2026-02-22
+            - cell "10:28:00" [ref=f17e1463]:
+              - generic [ref=f17e1464]: 10:28:00
+            - cell "2026-02-22" [ref=f17e1465]:
+              - generic [ref=f17e1466]: 2026-02-22
+            - cell "22:28:00" [ref=f17e1467]:
+              - generic [ref=f17e1468]: 22:28:00
+            - cell "2026-03-02 09:00:00" [ref=f17e1469]:
+              - generic [ref=f17e1470]: 2026-03-02 09:00:00
+            - cell "2026-03-02 09:00:00" [ref=f17e1471]:
+              - generic [ref=f17e1472]: 2026-03-02 09:00:00
+            - cell "2026-03-02 09:00:00" [ref=f17e1473]:
+              - generic [ref=f17e1474]: 2026-03-02 09:00:00
+            - cell "6" [ref=f17e1475]:
+              - link "6" [ref=f17e1477] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=19e770078f4601390e83b4f795ec0307013374f1206e486b1934660dac6d7f5c&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+6
+            - cell "2026-02-22 02:29:03" [ref=f17e1478]:
+              - generic [ref=f17e1479]: 2026-02-22 02:29:03
+            - cell "2026-02-23 14:45:20" [ref=f17e1480]:
+              - generic [ref=f17e1481]: 2026-02-23 14:45:20
+            - cell "test" [ref=f17e1482]:
+              - generic [ref=f17e1483]: test
+            - cell "Barangay Hall" [ref=f17e1484]:
+              - generic [ref=f17e1485]: Barangay Hall
+            - cell "[\"Barangay Health Worker\"]" [ref=f17e1486]:
+              - generic [ref=f17e1487]: "[\"Barangay Health Worker\"]"
+            - cell "[\"Kamias–E. Rodriguez Area\"]" [ref=f17e1488]:
+              - generic [ref=f17e1489]: "[\"Kamias–E. Rodriguez Area\"]"
+            - cell "2323.00" [ref=f17e1490]:
+              - generic [ref=f17e1491]: "2323.00"
+            - cell "3" [ref=f17e1492]:
+              - generic [ref=f17e1493]: "3"
+            - cell "NULL" [ref=f17e1494]:
+              - emphasis [ref=f17e1496]: "NULL"
+          - row "Edit Edit Copy Copy Delete Delete 32 Community Disaster Preparedness Orientation ok general Barangay Cubao scheduled 2026-02-22 19:28:00 2026-02-23 07:28:00 2026-02-25 15:00:00 2026-03-02 09:00:00 2026-02-25 15:00:00 6 2026-02-22 11:28:51 2026-02-23 14:44:08 ok Elementary School Grounds [\"Barangay Captain\", \"Barangay Health Worker\", \"Ba... [\"Payatas B Proper\"] 30000.00 3 NULL" [ref=f17e1497]:
+            - cell [ref=f17e1498]:
+              - checkbox [ref=f17e1500]
+            - cell "Edit Edit" [ref=f17e1501]:
+              - link "Edit Edit" [ref=f17e1503] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1504]:
+                  - img "Edit" [ref=f17e1505]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e1506]:
+              - link "Copy Copy" [ref=f17e1508] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1509]:
+                  - img "Copy" [ref=f17e1510]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e1511]:
+              - link "Delete Delete" [ref=f17e1513] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1514]:
+                  - img "Delete" [ref=f17e1515]
+                  - text: Delete
+            - cell "32" [ref=f17e1516]:
+              - generic [ref=f17e1517]: "32"
+            - cell "Community Disaster Preparedness Orientation" [ref=f17e1518]:
+              - generic [ref=f17e1519]: Community Disaster Preparedness Orientation
+            - cell "ok" [ref=f17e1520]:
+              - generic [ref=f17e1521]: ok
+            - cell "general" [ref=f17e1522]:
+              - generic [ref=f17e1523]: general
+            - cell "Barangay Cubao" [ref=f17e1524]:
+              - generic [ref=f17e1525]: Barangay Cubao
+            - cell "scheduled" [ref=f17e1526]:
+              - generic [ref=f17e1527]: scheduled
+            - cell "2026-02-22" [ref=f17e1528]:
+              - generic [ref=f17e1529]: 2026-02-22
+            - cell "19:28:00" [ref=f17e1530]:
+              - generic [ref=f17e1531]: 19:28:00
+            - cell "2026-02-23" [ref=f17e1532]:
+              - generic [ref=f17e1533]: 2026-02-23
+            - cell "07:28:00" [ref=f17e1534]:
+              - generic [ref=f17e1535]: 07:28:00
+            - cell "2026-02-25 15:00:00" [ref=f17e1536]:
+              - generic [ref=f17e1537]: 2026-02-25 15:00:00
+            - cell "2026-03-02 09:00:00" [ref=f17e1538]:
+              - generic [ref=f17e1539]: 2026-03-02 09:00:00
+            - cell "2026-02-25 15:00:00" [ref=f17e1540]:
+              - generic [ref=f17e1541]: 2026-02-25 15:00:00
+            - cell "6" [ref=f17e1542]:
+              - link "6" [ref=f17e1544] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=19e770078f4601390e83b4f795ec0307013374f1206e486b1934660dac6d7f5c&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+6
+            - cell "2026-02-22 11:28:51" [ref=f17e1545]:
+              - generic [ref=f17e1546]: 2026-02-22 11:28:51
+            - cell "2026-02-23 14:44:08" [ref=f17e1547]:
+              - generic [ref=f17e1548]: 2026-02-23 14:44:08
+            - cell "ok" [ref=f17e1549]:
+              - generic [ref=f17e1550]: ok
+            - cell "Elementary School Grounds" [ref=f17e1551]:
+              - generic [ref=f17e1552]: Elementary School Grounds
+            - cell "[\"Barangay Captain\", \"Barangay Health Worker\", \"Ba..." [ref=f17e1553]:
+              - generic "Original length 82" [ref=f17e1554]: "[\"Barangay Captain\", \"Barangay Health Worker\", \"Ba..."
+            - cell "[\"Payatas B Proper\"]" [ref=f17e1555]:
+              - generic [ref=f17e1556]: "[\"Payatas B Proper\"]"
+            - cell "30000.00" [ref=f17e1557]:
+              - generic [ref=f17e1558]: "30000.00"
+            - cell "3" [ref=f17e1559]:
+              - generic [ref=f17e1560]: "3"
+            - cell "NULL" [ref=f17e1561]:
+              - emphasis [ref=f17e1563]: "NULL"
+          - row "Edit Edit Copy Copy Delete Delete 35 Fire Safety Awareness Week NULL fire Barangay Payatas approved 2026-02-24 22:45:00 2026-03-06 10:45:00 2026-03-02 09:00:00 2026-06-29 09:00:00 2026-03-02 09:00:00 7 2026-02-24 14:49:48 2026-06-28 13:50:24 NULL Barangay Gymnasium [\"Barangay Tanod\", \"SK Chairperson\"] [\"Nagkaisang Nayon\"] 100000.00 1000 NULL" [ref=f17e1564]:
+            - cell [ref=f17e1565]:
+              - checkbox [ref=f17e1567]
+            - cell "Edit Edit" [ref=f17e1568]:
+              - link "Edit Edit" [ref=f17e1570] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1571]:
+                  - img "Edit" [ref=f17e1572]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e1573]:
+              - link "Copy Copy" [ref=f17e1575] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1576]:
+                  - img "Copy" [ref=f17e1577]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e1578]:
+              - link "Delete Delete" [ref=f17e1580] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1581]:
+                  - img "Delete" [ref=f17e1582]
+                  - text: Delete
+            - cell "35" [ref=f17e1583]:
+              - generic [ref=f17e1584]: "35"
+            - cell "Fire Safety Awareness Week" [ref=f17e1585]:
+              - generic [ref=f17e1586]: Fire Safety Awareness Week
+            - cell "NULL" [ref=f17e1587]:
+              - emphasis [ref=f17e1589]: "NULL"
+            - cell "fire" [ref=f17e1590]:
+              - generic [ref=f17e1591]: fire
+            - cell "Barangay Payatas" [ref=f17e1592]:
+              - generic [ref=f17e1593]: Barangay Payatas
+            - cell "approved" [ref=f17e1594]:
+              - generic [ref=f17e1595]: approved
+            - cell "2026-02-24" [ref=f17e1596]:
+              - generic [ref=f17e1597]: 2026-02-24
+            - cell "22:45:00" [ref=f17e1598]:
+              - generic [ref=f17e1599]: 22:45:00
+            - cell "2026-03-06" [ref=f17e1600]:
+              - generic [ref=f17e1601]: 2026-03-06
+            - cell "10:45:00" [ref=f17e1602]:
+              - generic [ref=f17e1603]: 10:45:00
+            - cell "2026-03-02 09:00:00" [ref=f17e1604]:
+              - generic [ref=f17e1605]: 2026-03-02 09:00:00
+            - cell "2026-06-29 09:00:00" [ref=f17e1606]:
+              - generic [ref=f17e1607]: 2026-06-29 09:00:00
+            - cell "2026-03-02 09:00:00" [ref=f17e1608]:
+              - generic [ref=f17e1609]: 2026-03-02 09:00:00
+            - cell "7" [ref=f17e1610]:
+              - link "7" [ref=f17e1612] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=d1e50bba963a35ee8a8fb15353186915ce1375ffbb5a5e748d02c15145a6b7ec&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+7
+            - cell "2026-02-24 14:49:48" [ref=f17e1613]:
+              - generic [ref=f17e1614]: 2026-02-24 14:49:48
+            - cell "2026-06-28 13:50:24" [ref=f17e1615]:
+              - generic [ref=f17e1616]: 2026-06-28 13:50:24
+            - cell "NULL" [ref=f17e1617]:
+              - emphasis [ref=f17e1619]: "NULL"
+            - cell "Barangay Gymnasium" [ref=f17e1620]:
+              - generic [ref=f17e1621]: Barangay Gymnasium
+            - cell "[\"Barangay Tanod\", \"SK Chairperson\"]" [ref=f17e1622]:
+              - generic [ref=f17e1623]: "[\"Barangay Tanod\", \"SK Chairperson\"]"
+            - cell "[\"Nagkaisang Nayon\"]" [ref=f17e1624]:
+              - generic [ref=f17e1625]: "[\"Nagkaisang Nayon\"]"
+            - cell "100000.00" [ref=f17e1626]:
+              - generic [ref=f17e1627]: "100000.00"
+            - cell "1000" [ref=f17e1628]:
+              - generic [ref=f17e1629]: "1000"
+            - cell "NULL" [ref=f17e1630]:
+              - emphasis [ref=f17e1632]: "NULL"
+          - row "Edit Edit Copy Copy Delete Delete 37 Fire Safety Awareness Week test fire Barangay Batasan Hills scheduled 2026-02-24 23:01:00 2026-02-24 11:01:00 2026-03-02 09:00:00 2026-07-06 09:00:00 2026-03-02 09:00:00 6 2026-02-24 15:01:59 2026-06-29 14:31:57 test Barangay Hall [\"Barangay Health Worker\"] [\"Fairview Center Mall Area\"] 12.00 2 NULL" [ref=f17e1633]:
+            - cell [ref=f17e1634]:
+              - checkbox [ref=f17e1636]
+            - cell "Edit Edit" [ref=f17e1637]:
+              - link "Edit Edit" [ref=f17e1639] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1640]:
+                  - img "Edit" [ref=f17e1641]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e1642]:
+              - link "Copy Copy" [ref=f17e1644] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1645]:
+                  - img "Copy" [ref=f17e1646]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e1647]:
+              - link "Delete Delete" [ref=f17e1649] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1650]:
+                  - img "Delete" [ref=f17e1651]
+                  - text: Delete
+            - cell "37" [ref=f17e1652]:
+              - generic [ref=f17e1653]: "37"
+            - cell "Fire Safety Awareness Week" [ref=f17e1654]:
+              - generic [ref=f17e1655]: Fire Safety Awareness Week
+            - cell "test" [ref=f17e1656]:
+              - generic [ref=f17e1657]: test
+            - cell "fire" [ref=f17e1658]:
+              - generic [ref=f17e1659]: fire
+            - cell "Barangay Batasan Hills" [ref=f17e1660]:
+              - generic [ref=f17e1661]: Barangay Batasan Hills
+            - cell "scheduled" [ref=f17e1662]:
+              - generic [ref=f17e1663]: scheduled
+            - cell "2026-02-24" [ref=f17e1664]:
+              - generic [ref=f17e1665]: 2026-02-24
+            - cell "23:01:00" [ref=f17e1666]:
+              - generic [ref=f17e1667]: 23:01:00
+            - cell "2026-02-24" [ref=f17e1668]:
+              - generic [ref=f17e1669]: 2026-02-24
+            - cell "11:01:00" [ref=f17e1670]:
+              - generic [ref=f17e1671]: 11:01:00
+            - cell "2026-03-02 09:00:00" [ref=f17e1672]:
+              - generic [ref=f17e1673]: 2026-03-02 09:00:00
+            - cell "2026-07-06 09:00:00" [ref=f17e1674]:
+              - generic [ref=f17e1675]: 2026-07-06 09:00:00
+            - cell "2026-03-02 09:00:00" [ref=f17e1676]:
+              - generic [ref=f17e1677]: 2026-03-02 09:00:00
+            - cell "6" [ref=f17e1678]:
+              - link "6" [ref=f17e1680] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=19e770078f4601390e83b4f795ec0307013374f1206e486b1934660dac6d7f5c&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+6
+            - cell "2026-02-24 15:01:59" [ref=f17e1681]:
+              - generic [ref=f17e1682]: 2026-02-24 15:01:59
+            - cell "2026-06-29 14:31:57" [ref=f17e1683]:
+              - generic [ref=f17e1684]: 2026-06-29 14:31:57
+            - cell "test" [ref=f17e1685]:
+              - generic [ref=f17e1686]: test
+            - cell "Barangay Hall" [ref=f17e1687]:
+              - generic [ref=f17e1688]: Barangay Hall
+            - cell "[\"Barangay Health Worker\"]" [ref=f17e1689]:
+              - generic [ref=f17e1690]: "[\"Barangay Health Worker\"]"
+            - cell "[\"Fairview Center Mall Area\"]" [ref=f17e1691]:
+              - generic [ref=f17e1692]: "[\"Fairview Center Mall Area\"]"
+            - cell "12.00" [ref=f17e1693]:
+              - generic [ref=f17e1694]: "12.00"
+            - cell "2" [ref=f17e1695]:
+              - generic [ref=f17e1696]: "2"
+            - cell "NULL" [ref=f17e1697]:
+              - emphasis [ref=f17e1699]: "NULL"
+          - row "Edit Edit Copy Copy Delete Delete 47 Crime Prevention Month NULL general Barangay Bagong Silangan scheduled 2026-02-25 11:41:00 2026-02-26 11:41:00 2026-03-02 09:00:00 2026-06-29 09:00:00 2026-03-02 09:00:00 7 2026-02-25 03:42:43 2026-06-28 14:39:13 NULL Covered Court [\"DRRM Officer\", \"NGO Partner Volunteer\"] [\"UP Academic Oval Area\"] 210000.00 21 NULL" [ref=f17e1700]:
+            - cell [ref=f17e1701]:
+              - checkbox [ref=f17e1703]
+            - cell "Edit Edit" [ref=f17e1704]:
+              - link "Edit Edit" [ref=f17e1706] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1707]:
+                  - img "Edit" [ref=f17e1708]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e1709]:
+              - link "Copy Copy" [ref=f17e1711] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1712]:
+                  - img "Copy" [ref=f17e1713]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e1714]:
+              - link "Delete Delete" [ref=f17e1716] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1717]:
+                  - img "Delete" [ref=f17e1718]
+                  - text: Delete
+            - cell "47" [ref=f17e1719]:
+              - generic [ref=f17e1720]: "47"
+            - cell "Crime Prevention Month" [ref=f17e1721]:
+              - generic [ref=f17e1722]: Crime Prevention Month
+            - cell "NULL" [ref=f17e1723]:
+              - emphasis [ref=f17e1725]: "NULL"
+            - cell "general" [ref=f17e1726]:
+              - generic [ref=f17e1727]: general
+            - cell "Barangay Bagong Silangan" [ref=f17e1728]:
+              - generic [ref=f17e1729]: Barangay Bagong Silangan
+            - cell "scheduled" [ref=f17e1730]:
+              - generic [ref=f17e1731]: scheduled
+            - cell "2026-02-25" [ref=f17e1732]:
+              - generic [ref=f17e1733]: 2026-02-25
+            - cell "11:41:00" [ref=f17e1734]:
+              - generic [ref=f17e1735]: 11:41:00
+            - cell "2026-02-26" [ref=f17e1736]:
+              - generic [ref=f17e1737]: 2026-02-26
+            - cell "11:41:00" [ref=f17e1738]:
+              - generic [ref=f17e1739]: 11:41:00
+            - cell "2026-03-02 09:00:00" [ref=f17e1740]:
+              - generic [ref=f17e1741]: 2026-03-02 09:00:00
+            - cell "2026-06-29 09:00:00" [ref=f17e1742]:
+              - generic [ref=f17e1743]: 2026-06-29 09:00:00
+            - cell "2026-03-02 09:00:00" [ref=f17e1744]:
+              - generic [ref=f17e1745]: 2026-03-02 09:00:00
+            - cell "7" [ref=f17e1746]:
+              - link "7" [ref=f17e1748] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=d1e50bba963a35ee8a8fb15353186915ce1375ffbb5a5e748d02c15145a6b7ec&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+7
+            - cell "2026-02-25 03:42:43" [ref=f17e1749]:
+              - generic [ref=f17e1750]: 2026-02-25 03:42:43
+            - cell "2026-06-28 14:39:13" [ref=f17e1751]:
+              - generic [ref=f17e1752]: 2026-06-28 14:39:13
+            - cell "NULL" [ref=f17e1753]:
+              - emphasis [ref=f17e1755]: "NULL"
+            - cell "Covered Court" [ref=f17e1756]:
+              - generic [ref=f17e1757]: Covered Court
+            - cell "[\"DRRM Officer\", \"NGO Partner Volunteer\"]" [ref=f17e1758]:
+              - generic [ref=f17e1759]: "[\"DRRM Officer\", \"NGO Partner Volunteer\"]"
+            - cell "[\"UP Academic Oval Area\"]" [ref=f17e1760]:
+              - generic [ref=f17e1761]: "[\"UP Academic Oval Area\"]"
+            - cell "210000.00" [ref=f17e1762]:
+              - generic [ref=f17e1763]: "210000.00"
+            - cell "21" [ref=f17e1764]:
+              - generic [ref=f17e1765]: "21"
+            - cell "NULL" [ref=f17e1766]:
+              - emphasis [ref=f17e1768]: "NULL"
+          - row "Edit Edit Copy Copy Delete Delete 48 crime prevention month test test fire Barangay Project 6 draft 2025-04-24 15:00:00 2026-08-11 07:00:00 NULL 2026-06-29 09:00:00 NULL 9 2026-06-25 00:58:12 2026-06-25 10:24:02 test Community Center [\"Barangay Captain\", \"Barangay Health Worker\", \"Ba... [\"North Fairview Subdivision\"] 50000.00 20 []" [ref=f17e1769]:
+            - cell [ref=f17e1770]:
+              - checkbox [ref=f17e1772]
+            - cell "Edit Edit" [ref=f17e1773]:
+              - link "Edit Edit" [ref=f17e1775] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1776]:
+                  - img "Edit" [ref=f17e1777]
+                  - text: Edit
+            - cell "Copy Copy" [ref=f17e1778]:
+              - link "Copy Copy" [ref=f17e1780] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1781]:
+                  - img "Copy" [ref=f17e1782]
+                  - text: Copy
+            - cell "Delete Delete" [ref=f17e1783]:
+              - link "Delete Delete" [ref=f17e1785] [cursor=pointer]:
+                - /url: index.php
+                - generic [ref=f17e1786]:
+                  - img "Delete" [ref=f17e1787]
+                  - text: Delete
+            - cell "48" [ref=f17e1788]:
+              - generic [ref=f17e1789]: "48"
+            - cell "crime prevention month test" [ref=f17e1790]:
+              - generic [ref=f17e1791]: crime prevention month test
+            - cell "test" [ref=f17e1792]:
+              - generic [ref=f17e1793]: test
+            - cell "fire" [ref=f17e1794]:
+              - generic [ref=f17e1795]: fire
+            - cell "Barangay Project 6" [ref=f17e1796]:
+              - generic [ref=f17e1797]: Barangay Project 6
+            - cell "draft" [ref=f17e1798]:
+              - generic [ref=f17e1799]: draft
+            - cell "2025-04-24" [ref=f17e1800]:
+              - generic [ref=f17e1801]: 2025-04-24
+            - cell "15:00:00" [ref=f17e1802]:
+              - generic [ref=f17e1803]: 15:00:00
+            - cell "2026-08-11" [ref=f17e1804]:
+              - generic [ref=f17e1805]: 2026-08-11
+            - cell "07:00:00" [ref=f17e1806]:
+              - generic [ref=f17e1807]: 07:00:00
+            - cell "NULL" [ref=f17e1808]:
+              - emphasis [ref=f17e1810]: "NULL"
+            - cell "2026-06-29 09:00:00" [ref=f17e1811]:
+              - generic [ref=f17e1812]: 2026-06-29 09:00:00
+            - cell "NULL" [ref=f17e1813]:
+              - emphasis [ref=f17e1815]: "NULL"
+            - cell "9" [ref=f17e1816]:
+              - link "9" [ref=f17e1818] [cursor=pointer]:
+                - /url: index.php?route=/sql&db=LGU&table=campaign_department_users&pos=0&sql_signature=b865291ce4eb2e25998706b555ee80ca797ce6a46327878bdb8fede201846038&sql_query=SELECT+%2A+FROM+%60LGU%60.%60campaign_department_users%60+WHERE+%60id%60+%3D+9
+            - cell "2026-06-25 00:58:12" [ref=f17e1819]:
+              - generic [ref=f17e1820]: 2026-06-25 00:58:12
+            - cell "2026-06-25 10:24:02" [ref=f17e1821]:
+              - generic [ref=f17e1822]: 2026-06-25 10:24:02
+            - cell "test" [ref=f17e1823]:
+              - generic [ref=f17e1824]: test
+            - cell "Community Center" [ref=f17e1825]:
+              - generic [ref=f17e1826]: Community Center
+            - cell "[\"Barangay Captain\", \"Barangay Health Worker\", \"Ba..." [ref=f17e1827]:
+              - generic "Original length 64" [ref=f17e1828]: "[\"Barangay Captain\", \"Barangay Health Worker\", \"Ba..."
+            - cell "[\"North Fairview Subdivision\"]" [ref=f17e1829]:
+              - generic [ref=f17e1830]: "[\"North Fairview Subdivision\"]"
+            - cell "50000.00" [ref=f17e1831]:
+              - generic [ref=f17e1832]: "50000.00"
+            - cell "20" [ref=f17e1833]:
+              - generic [ref=f17e1834]: "20"
+            - cell "[]" [ref=f17e1835]:
+              - generic [ref=f17e1836]: "[]"
+      - generic [ref=f17e1837]:
+        - img "With selected:" [ref=f17e1838]
+        - checkbox "Check all" [ref=f17e1839]
+        - generic [ref=f17e1840] [cursor=pointer]: Check all
+        - emphasis [ref=f17e1841]: "With selected:"
+        - button "Edit Edit" [ref=f17e1842] [cursor=pointer]:
+          - generic [ref=f17e1843]:
+            - img "Edit" [ref=f17e1844]
+            - text: Edit
+        - button "Copy Copy" [ref=f17e1845] [cursor=pointer]:
+          - generic [ref=f17e1846]:
+            - img "Copy" [ref=f17e1847]
+            - text: Copy
+        - button "Delete Delete" [ref=f17e1848] [cursor=pointer]:
+          - generic [ref=f17e1849]:
+            - img "Delete" [ref=f17e1850]
+            - text: Delete
+        - button "Export Export" [ref=f17e1851] [cursor=pointer]:
+          - generic [ref=f17e1852]:
+            - img "Export" [ref=f17e1853]
+            - text: Export
+    - table [ref=f17e1854]:
+      - rowgroup [ref=f17e1855]:
+        - 'row "Show all | Number of rows: 25 Filter rows: Sort by key: None" [ref=f17e1856]':
+          - cell [ref=f17e1857]
+          - cell "Show all" [ref=f17e1858]:
+            - generic [ref=f17e1859]:
+              - checkbox [ref=f17e1860]
+              - generic [ref=f17e1861]: Show all
+          - cell "|" [ref=f17e1862]:
+            - generic [ref=f17e1863]: "|"
+          - cell
+          - cell
+          - 'cell "Number of rows: 25" [ref=f17e1864]':
+            - generic [ref=f17e1865]:
+              - generic [ref=f17e1866]: "Number of rows:"
+              - combobox [ref=f17e1867]:
+                - option "25" [selected]
+                - option "50"
+                - option "100"
+                - option "250"
+                - option "500"
+          - cell [ref=f17e1868]
+          - cell "Filter rows:" [ref=f17e1869]:
+            - text: "Filter rows:"
+            - textbox "Search this table" [ref=f17e1870]
+          - 'cell "Sort by key: None" [ref=f17e1871]':
+            - generic [ref=f17e1872]:
+              - text: "Sort by key:"
+              - combobox [ref=f17e1873]:
+                - option "PRIMARY (ASC)"
+                - option "PRIMARY (DESC)"
+                - option "idx_campaigns_status (ASC)"
+                - option "idx_campaigns_status (DESC)"
+                - option "idx_campaigns_start_date (ASC)"
+                - option "idx_campaigns_start_date (DESC)"
+                - option "idx_campaigns_category (ASC)"
+                - option "idx_campaigns_category (DESC)"
+                - option "idx_campaigns_owner (ASC)"
+                - option "idx_campaigns_owner (DESC)"
+                - option "None" [selected]
+          - cell [ref=f17e1874]
+    - group "Query results operations" [ref=f17e1875]:
+      - generic [ref=f17e1876]: Query results operations
+      - button "Print Print" [ref=f17e1877] [cursor=pointer]:
+        - generic [ref=f17e1878]:
+          - img "Print" [ref=f17e1879]
+          - text: Print
+      - link "Copy to clipboard Copy to clipboard" [ref=f17e1880] [cursor=pointer]:
+        - /url: "#"
+        - generic [ref=f17e1881]:
+          - img "Copy to clipboard" [ref=f17e1882]
+          - text: Copy to clipboard
+      - link "Export Export" [ref=f17e1883] [cursor=pointer]:
+        - /url: index.php
+        - generic [ref=f17e1884]:
+          - img "Export" [ref=f17e1885]
+          - text: Export
+      - link "Display chart Display chart" [ref=f17e1886] [cursor=pointer]:
+        - /url: index.php
+        - generic [ref=f17e1887]:
+          - img "Display chart" [ref=f17e1888]
+          - text: Display chart
+      - link "Create view Create view" [ref=f17e1890] [cursor=pointer]:
+        - /url: index.php?route=/view/create
+        - generic [ref=f17e1891]:
+          - img "Create view" [ref=f17e1892]
+          - text: Create view
+    - generic [ref=f17e1893]:
+      - group "Bookmark this SQL query Bookmark this SQL query" [ref=f17e1894]:
+        - generic [ref=f17e1896]:
+          - img "Bookmark this SQL query" [ref=f17e1897]
+          - text: Bookmark this SQL query
+        - generic [ref=f17e1899]:
+          - text: "Label:"
+          - textbox "Label:" [ref=f17e1900]
+        - generic [ref=f17e1902]:
+          - checkbox "Let every user access this bookmark" [ref=f17e1903]
+          - text: Let every user access this bookmark
+      - group [ref=f17e1904]:
+        - button "Bookmark this SQL query" [ref=f17e1905] [cursor=pointer]
+  - link "Open new phpMyAdmin window" [ref=f17e1907] [cursor=pointer]:
+    - /url: index.php?route=%2Fsql&db=LGU&table=campaign_department_campaigns&server=1
+    - img "Open new phpMyAdmin window" [ref=f17e1908]
+  - log [ref=f17e1909]
+  - log [ref=f17e1910]
+  - log [ref=f17e1911]
+  - log [ref=f17e1912]
+  - log [ref=f17e1913]
+  - log [ref=f17e1914]
+  - log [ref=f17e1915]
+  - log [ref=f17e1916]
+  - log [ref=f17e1917]
+  - log [ref=f17e1918]
+  - log [ref=f17e1919]
+  - log [ref=f17e1920]
+  - log [ref=f17e1921]
+  - log [ref=f17e1922]
+  - log [ref=f17e1923]
+  - log [ref=f17e1924]
+  - log [ref=f17e1925]
+  - log [ref=f17e1926]
+  - log [ref=f17e1927]
+  - log [ref=f17e1928]
+  - log [ref=f17e1929]
+  - log [ref=f17e1930]
+  - log [ref=f17e1931]
+  - log [ref=f17e1932]
+  - log [ref=f17e1933]
+  - log [ref=f17e1934]
+  - log [ref=f17e1935]
+  - log [ref=f17e1936]
+  - log [ref=f17e1937]
+  - log [ref=f17e1938]
+  - log [ref=f17e1939]
+  - log [ref=f17e1940]
+  - log [ref=f17e1941]
+  - log [ref=f17e1942]
+  - log [ref=f17e1943]
+  - log [ref=f17e1944]
+  - log [ref=f17e1945]

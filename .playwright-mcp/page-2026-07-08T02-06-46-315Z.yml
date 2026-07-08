@@ -1,0 +1,879 @@
+- generic [ref=f9e1]:
+  - complementary [ref=f9e2]:
+    - link "Logo" [ref=f9e6] [cursor=pointer]:
+      - /url: /public/dashboard.php
+      - img "Logo" [ref=f9e7]
+    - navigation [ref=f9e9]:
+      - generic [ref=f9e10]:
+        - heading "Navigation" [level=3] [ref=f9e11]
+        - list [ref=f9e12]:
+          - listitem [ref=f9e13]:
+            - link " Dashboard " [ref=f9e14] [cursor=pointer]:
+              - /url: /public/dashboard.php
+              - generic [ref=f9e15]: 
+              - generic [ref=f9e16]: Dashboard
+              - generic [ref=f9e17]: 
+            - list:
+              - listitem:
+                - link " KPI Overview":
+                  - /url: /public/dashboard.php#kpi-overview
+                  - generic [ref=f9e18] [cursor=pointer]: 
+                  - generic: KPI Overview
+              - listitem:
+                - link " Campaign Planning":
+                  - /url: /public/dashboard.php#campaign-planning
+                  - generic [ref=f9e19] [cursor=pointer]: 
+                  - generic: Campaign Planning
+              - listitem:
+                - link " Event Readiness":
+                  - /url: /public/dashboard.php#event-readiness
+                  - generic [ref=f9e20] [cursor=pointer]: 
+                  - generic: Event Readiness
+              - listitem:
+                - link " Audience Coverage":
+                  - /url: /public/dashboard.php#audience-coverage
+                  - generic [ref=f9e21] [cursor=pointer]: 
+                  - generic: Audience Coverage
+              - listitem:
+                - link " Engagement & Impact":
+                  - /url: /public/dashboard.php#engagement-impact
+                  - generic [ref=f9e22] [cursor=pointer]: 
+                  - generic: Engagement & Impact
+              - listitem:
+                - link " Partners":
+                  - /url: /public/dashboard.php#partners-snapshot
+                  - generic [ref=f9e23] [cursor=pointer]: 
+                  - generic: Partners
+              - listitem:
+                - link " Content Repository":
+                  - /url: /public/dashboard.php#content-snapshot
+                  - generic [ref=f9e24] [cursor=pointer]: 
+                  - generic: Content Repository
+              - listitem:
+                - link " Alerts & Reminders":
+                  - /url: /public/dashboard.php#alerts-reminders
+                  - generic [ref=f9e25] [cursor=pointer]: 
+                  - generic: Alerts & Reminders
+          - listitem [ref=f9e26]:
+            - link " Campaigns " [ref=f9e27] [cursor=pointer]:
+              - /url: /public/campaigns.php
+              - generic [ref=f9e28]: 
+              - generic [ref=f9e29]: Campaigns
+              - generic [ref=f9e30]: 
+            - list [ref=f9e31]:
+              - listitem [ref=f9e32]:
+                - link " All Campaigns" [ref=f9e33] [cursor=pointer]:
+                  - /url: /public/campaigns.php#list-section
+                  - generic [ref=f9e34]: 
+                  - generic [ref=f9e35]: All Campaigns
+              - listitem [ref=f9e36]:
+                - link " Financial & Budgeting" [ref=f9e37] [cursor=pointer]:
+                  - /url: /public/campaigns.php#budgeting-section
+                  - generic [ref=f9e38]: 
+                  - generic [ref=f9e39]: Financial & Budgeting
+              - listitem [ref=f9e40]:
+                - link " AI-Powered Deployment Optimization" [ref=f9e41] [cursor=pointer]:
+                  - /url: /public/campaigns.php#automl-section
+                  - generic [ref=f9e42]: 
+                  - generic [ref=f9e43]: AI-Powered Deployment Optimization
+          - listitem [ref=f9e44]:
+            - link " Content " [ref=f9e45] [cursor=pointer]:
+              - /url: /public/content.php
+              - generic [ref=f9e46]: 
+              - generic [ref=f9e47]: Content
+              - generic [ref=f9e48]: 
+            - list:
+              - listitem:
+                - link " Content Library":
+                  - /url: /public/content.php#content-library
+                  - generic [ref=f9e49] [cursor=pointer]: 
+                  - generic: Content Library
+              - listitem:
+                - link " Templates":
+                  - /url: /public/content.php#templates
+                  - generic [ref=f9e50] [cursor=pointer]: 
+                  - generic: Templates
+              - listitem:
+                - link " Media Gallery":
+                  - /url: /public/content.php#media-gallery
+                  - generic [ref=f9e51] [cursor=pointer]: 
+                  - generic: Media Gallery
+              - listitem:
+                - link " Record Content Usage":
+                  - /url: /public/content.php#record-usage
+                  - generic [ref=f9e52] [cursor=pointer]: 
+                  - generic: Record Content Usage
+              - listitem:
+                - link " Content Usage History":
+                  - /url: /public/content.php#usage-history
+                  - generic [ref=f9e53] [cursor=pointer]: 
+                  - generic: Content Usage History
+          - listitem [ref=f9e54]:
+            - link " Segments " [ref=f9e55] [cursor=pointer]:
+              - /url: /public/segments.php
+              - generic [ref=f9e56]: 
+              - generic [ref=f9e57]: Segments
+              - generic [ref=f9e58]: 
+            - list:
+              - listitem:
+                - link " All Segments":
+                  - /url: /public/segments.php#segments-list
+                  - generic [ref=f9e59] [cursor=pointer]: 
+                  - generic: All Segments
+              - listitem:
+                - link " Audience Members":
+                  - /url: /public/segments.php#audience-members
+                  - generic [ref=f9e60] [cursor=pointer]: 
+                  - generic: Audience Members
+              - listitem:
+                - link " Segment Analytics":
+                  - /url: /public/segments.php#segment-analytics
+                  - generic [ref=f9e61] [cursor=pointer]: 
+                  - generic: Segment Analytics
+              - listitem:
+                - link " Import/Export":
+                  - /url: /public/segments.php#import-export
+                  - generic [ref=f9e62] [cursor=pointer]: 
+                  - generic: Import/Export
+          - listitem [ref=f9e63]:
+            - link " Events " [ref=f9e64] [cursor=pointer]:
+              - /url: /public/events.php
+              - generic [ref=f9e65]: 
+              - generic [ref=f9e66]: Events
+              - generic [ref=f9e67]: 
+            - list:
+              - listitem:
+                - link " All Events":
+                  - /url: /public/events.php#events-list
+                  - generic [ref=f9e68] [cursor=pointer]: 
+                  - generic: All Events
+              - listitem:
+                - link " Event Calendar":
+                  - /url: /public/events.php#event-calendar
+                  - generic [ref=f9e69] [cursor=pointer]: 
+                  - generic: Event Calendar
+              - listitem:
+                - link " Attendance Tracking":
+                  - /url: /public/events.php#attendance
+                  - generic [ref=f9e70] [cursor=pointer]: 
+                  - generic: Attendance Tracking
+              - listitem:
+                - link " Event Reports":
+                  - /url: /public/events.php#event-reports
+                  - generic [ref=f9e71] [cursor=pointer]: 
+                  - generic: Event Reports
+          - listitem [ref=f9e72]:
+            - link " Surveys " [ref=f9e73] [cursor=pointer]:
+              - /url: /public/surveys.php
+              - generic [ref=f9e74]: 
+              - generic [ref=f9e75]: Surveys
+              - generic [ref=f9e76]: 
+            - list:
+              - listitem:
+                - link " All Surveys":
+                  - /url: /public/surveys.php#surveys-list
+                  - generic [ref=f9e77] [cursor=pointer]: 
+                  - generic: All Surveys
+              - listitem:
+                - link " Responses":
+                  - /url: /public/surveys.php#responses
+                  - generic [ref=f9e78] [cursor=pointer]: 
+                  - generic: Responses
+              - listitem:
+                - link " Analytics":
+                  - /url: /public/surveys.php#survey-analytics
+                  - generic [ref=f9e79] [cursor=pointer]: 
+                  - generic: Analytics
+          - listitem [ref=f9e80]:
+            - link " Impact " [ref=f9e81] [cursor=pointer]:
+              - /url: /public/impact.php
+              - generic [ref=f9e82]: 
+              - generic [ref=f9e83]: Impact
+              - generic [ref=f9e84]: 
+            - list:
+              - listitem:
+                - link " Dashboard":
+                  - /url: /public/impact.php#impact-dashboard
+                  - generic [ref=f9e85] [cursor=pointer]: 
+                  - generic: Dashboard
+              - listitem:
+                - link " Evaluation Reports":
+                  - /url: /public/impact.php#evaluation-reports
+                  - generic [ref=f9e86] [cursor=pointer]: 
+                  - generic: Evaluation Reports
+              - listitem:
+                - link " Metrics Overview":
+                  - /url: /public/impact.php#metrics-overview
+                  - generic [ref=f9e87] [cursor=pointer]: 
+                  - generic: Metrics Overview
+              - listitem:
+                - link "Performance Analysis":
+                  - /url: /public/impact.php#performance-analysis
+                  - generic: Performance Analysis
+              - listitem:
+                - link " Export Data":
+                  - /url: /public/impact.php#export-data
+                  - generic [ref=f9e88] [cursor=pointer]: 
+                  - generic: Export Data
+          - listitem [ref=f9e89]:
+            - link " Partners " [ref=f9e90] [cursor=pointer]:
+              - /url: /public/partners.php
+              - generic [ref=f9e91]: 
+              - generic [ref=f9e92]: Partners
+              - generic [ref=f9e93]: 
+            - list:
+              - listitem:
+                - link " All Partners":
+                  - /url: /public/partners.php#partners-list
+                  - generic [ref=f9e94] [cursor=pointer]: 
+                  - generic: All Partners
+              - listitem:
+                - link " Partner Portal":
+                  - /url: /public/partners.php#partner-portal
+                  - generic [ref=f9e95] [cursor=pointer]: 
+                  - generic: Partner Portal
+              - listitem:
+                - link " Engagement History":
+                  - /url: /public/partners.php#engagement-history
+                  - generic [ref=f9e96] [cursor=pointer]: 
+                  - generic: Engagement History
+              - listitem:
+                - link " Assignments":
+                  - /url: /public/partners.php#assignments
+                  - generic [ref=f9e97] [cursor=pointer]: 
+                  - generic: Assignments
+  - banner [ref=f9e98]:
+    - generic [ref=f9e99]:
+      - text: 
+      - button "Toggle sidebar" [ref=f9e100] [cursor=pointer]:
+        - generic [ref=f9e101]: 
+      - generic [ref=f9e102]:
+        - generic: 
+        - textbox "Search..." [ref=f9e103]
+    - generic [ref=f9e104]:
+      - generic [ref=f9e105]:
+        - button "Notifications" [ref=f9e107] [cursor=pointer]:
+          - generic [ref=f9e108]: 
+        - button "Messages" [ref=f9e110] [cursor=pointer]:
+          - generic [ref=f9e111]: 
+      - generic [ref=f9e113] [cursor=pointer]:
+        - generic [ref=f9e114]:
+          - generic [ref=f9e115]: Just Dev
+          - generic [ref=f9e116]: Barangay Administrator
+        - img "Just Dev" [ref=f9e118]
+        - generic [ref=f9e119]: 
+  - text:       
+  - main [ref=f9e120]:
+    - main [ref=f9e122]:
+      - generic [ref=f9e123]:
+        - heading "Campaign Planning & Management" [level=1] [ref=f9e124]
+        - paragraph [ref=f9e125]: Plan, schedule, and track campaigns with timeline visualization, calendar views, and AI-powered optimization.
+      - generic [ref=f9e127]:
+        - text:    ▸ ▸ ▸ ▸ ▸ ▸    ▸ ▸  ▸ ▸ ▸ ▸ ▸   ✓
+        - generic [ref=f9e642]:
+          - generic [ref=f9e643]:
+            - heading " Add Staff" [level=2] [ref=f9e644]:
+              - generic [ref=f9e645]: 
+              - text: Add Staff
+            - button "×" [ref=f9e646] [cursor=pointer]
+          - generic [ref=f9e647]:
+            - generic [ref=f9e648]:
+              - generic [ref=f9e649]: Staff Name *
+              - textbox "e.g., Juan Dela Cruz" [ref=f9e650]
+            - generic [ref=f9e651]:
+              - generic [ref=f9e652]:
+                - generic [ref=f9e653]: 
+                - text: Position Mode
+              - generic [ref=f9e654]:
+                - generic [ref=f9e655] [cursor=pointer]:
+                  - radio "Select Existing" [checked] [ref=f9e656]
+                  - generic [ref=f9e657]: Select Existing
+                - generic [ref=f9e658] [cursor=pointer]:
+                  - radio "Add New" [ref=f9e659]
+                  - generic [ref=f9e660]: Add New
+            - generic [ref=f9e661]:
+              - generic [ref=f9e662]: Position / Role *
+              - combobox [ref=f9e663]:
+                - option "Select Position..." [selected]
+            - generic [ref=f9e664]:
+              - generic [ref=f9e665]: Quantity *
+              - spinbutton [ref=f9e666]: "1"
+              - paragraph [ref=f9e667]: Number of staff with this position/role.
+          - generic [ref=f9e668]:
+            - button "Cancel" [ref=f9e669] [cursor=pointer]
+            - button " Add Staff" [ref=f9e670] [cursor=pointer]:
+              - generic [ref=f9e671]: 
+              - text: Add Staff
+        - text:   +   
+        - generic [ref=f9e128]:
+          - generic [ref=f9e129]:
+            - heading "🤖 AI-Powered Deployment Optimization" [level=2] [ref=f9e130]
+            - generic [ref=f9e131]:
+              - generic [ref=f9e132]: Core Innovation
+              - button " Refresh" [ref=f9e466] [cursor=pointer]:
+                - generic [ref=f9e467]: 
+                - generic [ref=f9e468]: Refresh
+          - generic [ref=f9e136]:
+            - generic [ref=f9e138]:
+              - heading " AI-Powered Scheduling Intelligence" [level=3] [ref=f9e139]:
+                - generic [ref=f9e140]: 
+                - text: AI-Powered Scheduling Intelligence
+              - paragraph [ref=f9e141]:
+                - text: The scheduler analyzes historical campaign data, attendance trends, survey feedback, and event conflicts to recommend optimal deployment schedules.
+                - button "View How the AI Works" [ref=f9e142] [cursor=pointer]
+            - generic [ref=f9e144]:
+              - generic [ref=f9e145]:
+                - generic [ref=f9e146]:
+                  - text: ▸
+                  - generic [ref=f9e147]: 
+                  - text: Select Campaign *
+                - combobox "▸  Select Campaign *" [ref=f9e148] [cursor=pointer]:
+                  - option "Select Campaign" [selected]
+                  - option "48 - crime prevention month test"
+                  - option "47 - Crime Prevention Month"
+                  - option "37 - Fire Safety Awareness Week"
+                  - option "35 - Fire Safety Awareness Week"
+                  - option "32 - Community Disaster Preparedness Orientation"
+                  - option "31 - Fire Safety Awareness Week"
+                  - option "29 - Road Safety for Students"
+                  - option "27 - Dengue Prevention and Clean-Up Drive"
+                  - option "25 - Earthquake Drill and Preparedness Campaign"
+                  - option "11 - Earthquake Go-Bag Campaign"
+                  - option "10 - Flood Evacuation Awareness"
+                  - option "3 - Flood Preparedness Campaign"
+                  - option "1 - Fire Safety Awareness Week 2025"
+                - paragraph [ref=f9e149]: 13 campaign(s) available - Click dropdown to select
+                - paragraph [ref=f9e150]:
+                  - text: 💡 Campaigns are pulled from the
+                  - strong [ref=f9e151]: All Campaigns
+                  - text: section below. Conflict checking will compare with the
+                  - strong [ref=f9e152]: Events module
+                  - text: .
+              - generic [ref=f9e153]:
+                - generic [ref=f9e154]:
+                  - text: ▸
+                  - generic [ref=f9e155]: 
+                  - text: Target Segment (Optional)
+                - spinbutton "▸  Target Segment (Optional)" [ref=f9e156]
+                - paragraph [ref=f9e157]:
+                  - text: 💡 Segments are pulled from the
+                  - strong [ref=f9e158]: Segments module
+                  - text: . Leave empty for general audience analysis.
+              - button " Get AI Prediction" [disabled] [ref=f9e469]:
+                - generic [ref=f9e470]: 
+                - text: Get AI Prediction
+            - generic [ref=f9e162]:
+              - generic [ref=f9e164]: 
+              - heading "Ready for AI Analysis" [level=4] [ref=f9e165]
+              - paragraph [ref=f9e166]:
+                - text: Select a campaign above and click
+                - strong [ref=f9e167]: "\"Get AI Prediction\""
+                - text: to receive an AI-powered recommendation for the optimal deployment schedule.
+            - generic [ref=f9e168]:
+              - generic [ref=f9e169]:
+                - generic [ref=f9e171]: 
+                - generic [ref=f9e172]:
+                  - heading "AI Recommendation Generated" [level=4] [ref=f9e173]
+                  - paragraph [ref=f9e174]: Review the suggested schedule below and choose an action.
+              - generic [ref=f9e175]:
+                - generic [ref=f9e176]:
+                  - generic [ref=f9e177]:
+                    - generic [ref=f9e178]: 
+                    - strong [ref=f9e179]: Suggested Date & Time
+                  - generic [ref=f9e180]: "-"
+                - generic [ref=f9e181]:
+                  - generic [ref=f9e182]:
+                    - generic [ref=f9e183]: 
+                    - strong [ref=f9e184]: Confidence Score
+                  - generic [ref=f9e185]: "-"
+                  - paragraph [ref=f9e186]: Higher scores indicate stronger confidence in the recommendation based on historical data analysis.
+                - generic [ref=f9e187]:
+                  - generic [ref=f9e188]:
+                    - generic [ref=f9e189]: 
+                    - strong [ref=f9e190]: Model Source
+                  - generic [ref=f9e191]: "-"
+              - generic [ref=f9e193]:
+                - generic [ref=f9e194]: 
+                - generic [ref=f9e195]:
+                  - strong [ref=f9e196]: "AI Recommendation:"
+                  - generic [ref=f9e197]: Based on historical performance data
+              - generic [ref=f9e198]:
+                - button " Accept AI Recommendation" [ref=f9e199] [cursor=pointer]:
+                  - generic [ref=f9e200]: 
+                  - text: Accept AI Recommendation
+                - button " Check Conflicts" [ref=f9e201] [cursor=pointer]:
+                  - generic [ref=f9e202]: 
+                  - text: Check Conflicts
+                - button " Override Schedule" [ref=f9e203] [cursor=pointer]:
+                  - generic [ref=f9e204]: 
+                  - text: Override Schedule
+            - generic [ref=f9e205]:
+              - generic [ref=f9e206]:
+                - generic [ref=f9e207]:
+                  - heading " AI Recommended Campaigns from Crime Reports" [level=3] [ref=f9e208]:
+                    - generic [ref=f9e209]: 
+                    - text: AI Recommended Campaigns from Crime Reports
+                  - paragraph [ref=f9e210]: 83 report(s) grouped into 82 incident category/categories from direct crime analytics API; using rule-based fallback titles.
+                - button " Refresh Reports" [ref=f9e211] [cursor=pointer]:
+                  - generic [ref=f9e212]: 
+                  - text: Refresh Reports
+              - table [ref=f9e214]:
+                - rowgroup [ref=f9e215]:
+                  - row "Recommended Campaign Title Incident Title / Category Number of Reports Priority / Confidence Action" [ref=f9e216]:
+                    - columnheader "Recommended Campaign Title" [ref=f9e217]
+                    - columnheader "Incident Title / Category" [ref=f9e218]
+                    - columnheader "Number of Reports" [ref=f9e219]
+                    - columnheader "Priority / Confidence" [ref=f9e220]
+                    - columnheader "Action" [ref=f9e221]
+                - rowgroup [ref=f9e222]:
+                  - row "Community Awareness Campaign Against dawdwadwa dawdwadwa 2 Low Priority / Low Confidence  View" [ref=f9e471]:
+                    - cell "Community Awareness Campaign Against dawdwadwa" [ref=f9e472]
+                    - cell "dawdwadwa" [ref=f9e473]
+                    - cell "2" [ref=f9e474]
+                    - cell "Low Priority / Low Confidence" [ref=f9e475]:
+                      - generic [ref=f9e476]: Low Priority / Low Confidence
+                    - cell " View" [ref=f9e477]:
+                      - button " View" [ref=f9e478] [cursor=pointer]:
+                        - generic [ref=f9e479]: 
+                        - generic [ref=f9e480]: View
+                  - row "Community Awareness Campaign Against Assault at tricycle terminal Assault at tricycle terminal 1 Low Priority / Low Confidence  View" [ref=f9e481]:
+                    - cell "Community Awareness Campaign Against Assault at tricycle terminal" [ref=f9e482]
+                    - cell "Assault at tricycle terminal" [ref=f9e483]
+                    - cell "1" [ref=f9e484]
+                    - cell "Low Priority / Low Confidence" [ref=f9e485]:
+                      - generic [ref=f9e486]: Low Priority / Low Confidence
+                    - cell " View" [ref=f9e487]:
+                      - button " View" [ref=f9e488] [cursor=pointer]:
+                        - generic [ref=f9e489]: 
+                        - generic [ref=f9e490]: View
+                  - row "Community Awareness Campaign Against Assault by security guard Assault by security guard 1 Low Priority / Low Confidence  View" [ref=f9e491]:
+                    - cell "Community Awareness Campaign Against Assault by security guard" [ref=f9e492]
+                    - cell "Assault by security guard" [ref=f9e493]
+                    - cell "1" [ref=f9e494]
+                    - cell "Low Priority / Low Confidence" [ref=f9e495]:
+                      - generic [ref=f9e496]: Low Priority / Low Confidence
+                    - cell " View" [ref=f9e497]:
+                      - button " View" [ref=f9e498] [cursor=pointer]:
+                        - generic [ref=f9e499]: 
+                        - generic [ref=f9e500]: View
+                  - row "Community Awareness Campaign Against Assault due to road rage Assault due to road rage 1 Low Priority / Low Confidence  View" [ref=f9e501]:
+                    - cell "Community Awareness Campaign Against Assault due to road rage" [ref=f9e502]
+                    - cell "Assault due to road rage" [ref=f9e503]
+                    - cell "1" [ref=f9e504]
+                    - cell "Low Priority / Low Confidence" [ref=f9e505]:
+                      - generic [ref=f9e506]: Low Priority / Low Confidence
+                    - cell " View" [ref=f9e507]:
+                      - button " View" [ref=f9e508] [cursor=pointer]:
+                        - generic [ref=f9e509]: 
+                        - generic [ref=f9e510]: View
+                  - row "Community Awareness Campaign Against Assault during jogging Assault during jogging 1 Low Priority / Low Confidence  View" [ref=f9e511]:
+                    - cell "Community Awareness Campaign Against Assault during jogging" [ref=f9e512]
+                    - cell "Assault during jogging" [ref=f9e513]
+                    - cell "1" [ref=f9e514]
+                    - cell "Low Priority / Low Confidence" [ref=f9e515]:
+                      - generic [ref=f9e516]: Low Priority / Low Confidence
+                    - cell " View" [ref=f9e517]:
+                      - button " View" [ref=f9e518] [cursor=pointer]:
+                        - generic [ref=f9e519]: 
+                        - generic [ref=f9e520]: View
+                  - row "Community Awareness Campaign Against ATM skimming discovered ATM skimming discovered 1 Low Priority / Low Confidence  View" [ref=f9e521]:
+                    - cell "Community Awareness Campaign Against ATM skimming discovered" [ref=f9e522]
+                    - cell "ATM skimming discovered" [ref=f9e523]
+                    - cell "1" [ref=f9e524]
+                    - cell "Low Priority / Low Confidence" [ref=f9e525]:
+                      - generic [ref=f9e526]: Low Priority / Low Confidence
+                    - cell " View" [ref=f9e527]:
+                      - button " View" [ref=f9e528] [cursor=pointer]:
+                        - generic [ref=f9e529]: 
+                        - generic [ref=f9e530]: View
+                  - row "Community Awareness Campaign Against Bakery robbery Bakery robbery 1 Low Priority / Low Confidence  View" [ref=f9e531]:
+                    - cell "Community Awareness Campaign Against Bakery robbery" [ref=f9e532]
+                    - cell "Bakery robbery" [ref=f9e533]
+                    - cell "1" [ref=f9e534]
+                    - cell "Low Priority / Low Confidence" [ref=f9e535]:
+                      - generic [ref=f9e536]: Low Priority / Low Confidence
+                    - cell " View" [ref=f9e537]:
+                      - button " View" [ref=f9e538] [cursor=pointer]:
+                        - generic [ref=f9e539]: 
+                        - generic [ref=f9e540]: View
+                  - row "Community Awareness Campaign Against Bank robbery attempt Bank robbery attempt 1 Low Priority / Low Confidence  View" [ref=f9e541]:
+                    - cell "Community Awareness Campaign Against Bank robbery attempt" [ref=f9e542]
+                    - cell "Bank robbery attempt" [ref=f9e543]
+                    - cell "1" [ref=f9e544]
+                    - cell "Low Priority / Low Confidence" [ref=f9e545]:
+                      - generic [ref=f9e546]: Low Priority / Low Confidence
+                    - cell " View" [ref=f9e547]:
+                      - button " View" [ref=f9e548] [cursor=pointer]:
+                        - generic [ref=f9e549]: 
+                        - generic [ref=f9e550]: View
+                  - row "Community Awareness Campaign Against Bar brawl Bar brawl 1 Low Priority / Low Confidence  View" [ref=f9e551]:
+                    - cell "Community Awareness Campaign Against Bar brawl" [ref=f9e552]
+                    - cell "Bar brawl" [ref=f9e553]
+                    - cell "1" [ref=f9e554]
+                    - cell "Low Priority / Low Confidence" [ref=f9e555]:
+                      - generic [ref=f9e556]: Low Priority / Low Confidence
+                    - cell " View" [ref=f9e557]:
+                      - button " View" [ref=f9e558] [cursor=pointer]:
+                        - generic [ref=f9e559]: 
+                        - generic [ref=f9e560]: View
+                  - row "Community Awareness Campaign Against Bicycle theft near school Bicycle theft near school 1 Low Priority / Low Confidence  View" [ref=f9e561]:
+                    - cell "Community Awareness Campaign Against Bicycle theft near school" [ref=f9e562]
+                    - cell "Bicycle theft near school" [ref=f9e563]
+                    - cell "1" [ref=f9e564]
+                    - cell "Low Priority / Low Confidence" [ref=f9e565]:
+                      - generic [ref=f9e566]: Low Priority / Low Confidence
+                    - cell " View" [ref=f9e567]:
+                      - button " View" [ref=f9e568] [cursor=pointer]:
+                        - generic [ref=f9e569]: 
+                        - generic [ref=f9e570]: View
+              - generic [ref=f9e571]:
+                - generic [ref=f9e572]: Showing 1-10 of 82 recommendations
+                - generic [ref=f9e573]:
+                  - button "Prev" [disabled] [ref=f9e574]
+                  - button "1" [ref=f9e575] [cursor=pointer]
+                  - button "2" [ref=f9e576] [cursor=pointer]
+                  - button "3" [ref=f9e577] [cursor=pointer]
+                  - generic [ref=f9e578]: ...
+                  - button "9" [ref=f9e579] [cursor=pointer]
+                  - button "Next" [ref=f9e580] [cursor=pointer]
+        - generic [ref=f9e226]:
+          - generic [ref=f9e227]:
+            - heading "All Campaigns" [level=2] [ref=f9e228]
+            - generic [ref=f9e229]:
+              - button "+ Plan New Campaign" [ref=f9e230] [cursor=pointer]:
+                - generic [ref=f9e231]: +
+                - text: Plan New Campaign
+              - button " List" [ref=f9e232] [cursor=pointer]:
+                - generic [ref=f9e233]: 
+                - text: List
+              - button " Calendar" [ref=f9e234] [cursor=pointer]:
+                - generic [ref=f9e235]: 
+                - text: Calendar
+              - button " Resources" [ref=f9e236] [cursor=pointer]:
+                - generic [ref=f9e237]: 
+                - text: Resources
+              - button " View Archived" [ref=f9e238] [cursor=pointer]:
+                - generic [ref=f9e239]: 
+                - text: View Archived
+              - button " Refresh" [ref=f9e240] [cursor=pointer]:
+                - generic [ref=f9e241]: 
+                - text: Refresh
+          - generic [ref=f9e242]:
+            - paragraph [ref=f9e243]:
+              - text: Complete list of all campaigns. AI recommendations shown in the
+              - strong [ref=f9e244]: "\"AI Recommended\""
+              - text: column are generated using engagement data from the
+              - strong [ref=f9e245]: Surveys module
+              - text: and historical performance metrics.
+            - generic [ref=f9e246]:
+              - generic [ref=f9e248]:
+                - generic [ref=f9e249]: 
+                - textbox "Search campaigns by title..." [ref=f9e250]
+              - combobox [ref=f9e252] [cursor=pointer]:
+                - option "All Categories" [selected]
+                - option "Fire"
+                - option "Flood"
+                - option "Earthquake"
+                - option "Typhoon"
+                - option "Health"
+                - option "Emergency"
+              - combobox [ref=f9e254] [cursor=pointer]:
+                - option "All Statuses" [selected]
+                - option "Draft"
+                - option "Pending"
+                - option "Approved"
+                - option "Scheduled"
+                - option "Ongoing"
+                - option "Active"
+                - option "Completed"
+              - button " Clear" [ref=f9e255] [cursor=pointer]:
+                - generic [ref=f9e256]: 
+                - text: Clear
+            - table [ref=f9e258]:
+              - rowgroup [ref=f9e259]:
+                - row "ID Title Category Status Location Actions" [ref=f9e260]:
+                  - columnheader "ID" [ref=f9e261]
+                  - columnheader "Title" [ref=f9e262]
+                  - columnheader "Category" [ref=f9e263]
+                  - columnheader "Status" [ref=f9e264]
+                  - columnheader "Location" [ref=f9e265]
+                  - columnheader "Actions" [ref=f9e266]
+              - rowgroup [ref=f9e267]:
+                - row "48 crime prevention month test fire Draft Community Center View Edit Archive" [ref=f9e268]:
+                  - cell "48" [ref=f9e269]
+                  - cell "crime prevention month test" [ref=f9e270]
+                  - cell "fire" [ref=f9e271]
+                  - cell "Draft" [ref=f9e272]:
+                    - generic [ref=f9e273]: Draft
+                  - cell "Community Center" [ref=f9e274]
+                  - cell "View Edit Archive" [ref=f9e275]:
+                    - button "View" [ref=f9e276] [cursor=pointer]
+                    - button "Edit" [ref=f9e277] [cursor=pointer]
+                    - button "Archive" [ref=f9e278] [cursor=pointer]
+                - row "47 Crime Prevention Month general Scheduled Covered Court View Edit Close Archive" [ref=f9e279]:
+                  - cell "47" [ref=f9e280]
+                  - cell "Crime Prevention Month" [ref=f9e281]
+                  - cell "general" [ref=f9e282]
+                  - cell "Scheduled" [ref=f9e283]:
+                    - generic [ref=f9e284]: Scheduled
+                  - cell "Covered Court" [ref=f9e285]
+                  - cell "View Edit Close Archive" [ref=f9e286]:
+                    - button "View" [ref=f9e287] [cursor=pointer]
+                    - button "Edit" [ref=f9e288] [cursor=pointer]
+                    - button "Close" [ref=f9e289] [cursor=pointer]
+                    - button "Archive" [ref=f9e290] [cursor=pointer]
+                - row "37 Fire Safety Awareness Week fire Scheduled Barangay Hall View Edit Close Archive" [ref=f9e291]:
+                  - cell "37" [ref=f9e292]
+                  - cell "Fire Safety Awareness Week" [ref=f9e293]
+                  - cell "fire" [ref=f9e294]
+                  - cell "Scheduled" [ref=f9e295]:
+                    - generic [ref=f9e296]: Scheduled
+                  - cell "Barangay Hall" [ref=f9e297]
+                  - cell "View Edit Close Archive" [ref=f9e298]:
+                    - button "View" [ref=f9e299] [cursor=pointer]
+                    - button "Edit" [ref=f9e300] [cursor=pointer]
+                    - button "Close" [ref=f9e301] [cursor=pointer]
+                    - button "Archive" [ref=f9e302] [cursor=pointer]
+                - row "35 Fire Safety Awareness Week fire Approved Barangay Gymnasium View Edit Finalize Archive" [ref=f9e303]:
+                  - cell "35" [ref=f9e304]
+                  - cell "Fire Safety Awareness Week" [ref=f9e305]
+                  - cell "fire" [ref=f9e306]
+                  - cell "Approved" [ref=f9e307]:
+                    - generic [ref=f9e308]: Approved
+                  - cell "Barangay Gymnasium" [ref=f9e309]
+                  - cell "View Edit Finalize Archive" [ref=f9e310]:
+                    - button "View" [ref=f9e311] [cursor=pointer]
+                    - button "Edit" [ref=f9e312] [cursor=pointer]
+                    - button "Finalize" [ref=f9e313] [cursor=pointer]
+                    - button "Archive" [ref=f9e314] [cursor=pointer]
+                - row "32 Community Disaster Preparedness Orientation general Scheduled Elementary School Grounds View Edit Close Archive" [ref=f9e315]:
+                  - cell "32" [ref=f9e316]
+                  - cell "Community Disaster Preparedness Orientation" [ref=f9e317]
+                  - cell "general" [ref=f9e318]
+                  - cell "Scheduled" [ref=f9e319]:
+                    - generic [ref=f9e320]: Scheduled
+                  - cell "Elementary School Grounds" [ref=f9e321]
+                  - cell "View Edit Close Archive" [ref=f9e322]:
+                    - button "View" [ref=f9e323] [cursor=pointer]
+                    - button "Edit" [ref=f9e324] [cursor=pointer]
+                    - button "Close" [ref=f9e325] [cursor=pointer]
+                    - button "Archive" [ref=f9e326] [cursor=pointer]
+                - row "31 Fire Safety Awareness Week fire Approved Barangay Hall View Edit Finalize Archive" [ref=f9e327]:
+                  - cell "31" [ref=f9e328]
+                  - cell "Fire Safety Awareness Week" [ref=f9e329]
+                  - cell "fire" [ref=f9e330]
+                  - cell "Approved" [ref=f9e331]:
+                    - generic [ref=f9e332]: Approved
+                  - cell "Barangay Hall" [ref=f9e333]
+                  - cell "View Edit Finalize Archive" [ref=f9e334]:
+                    - button "View" [ref=f9e335] [cursor=pointer]
+                    - button "Edit" [ref=f9e336] [cursor=pointer]
+                    - button "Finalize" [ref=f9e337] [cursor=pointer]
+                    - button "Archive" [ref=f9e338] [cursor=pointer]
+                - row "29 Road Safety for Students road safety Scheduled Barangay Hall View Edit Close Archive" [ref=f9e339]:
+                  - cell "29" [ref=f9e340]
+                  - cell "Road Safety for Students" [ref=f9e341]
+                  - cell "road safety" [ref=f9e342]
+                  - cell "Scheduled" [ref=f9e343]:
+                    - generic [ref=f9e344]: Scheduled
+                  - cell "Barangay Hall" [ref=f9e345]
+                  - cell "View Edit Close Archive" [ref=f9e346]:
+                    - button "View" [ref=f9e347] [cursor=pointer]
+                    - button "Edit" [ref=f9e348] [cursor=pointer]
+                    - button "Close" [ref=f9e349] [cursor=pointer]
+                    - button "Archive" [ref=f9e350] [cursor=pointer]
+                - row "27 Dengue Prevention and Clean-Up Drive fire Draft Barangay Hall View Edit Archive" [ref=f9e351]:
+                  - cell "27" [ref=f9e352]
+                  - cell "Dengue Prevention and Clean-Up Drive" [ref=f9e353]
+                  - cell "fire" [ref=f9e354]
+                  - cell "Draft" [ref=f9e355]:
+                    - generic [ref=f9e356]: Draft
+                  - cell "Barangay Hall" [ref=f9e357]
+                  - cell "View Edit Archive" [ref=f9e358]:
+                    - button "View" [ref=f9e359] [cursor=pointer]
+                    - button "Edit" [ref=f9e360] [cursor=pointer]
+                    - button "Archive" [ref=f9e361] [cursor=pointer]
+                - row "25 Earthquake Drill and Preparedness Campaign earthquake Scheduled Barangay Hall View Edit Close Archive" [ref=f9e362]:
+                  - cell "25" [ref=f9e363]
+                  - cell "Earthquake Drill and Preparedness Campaign" [ref=f9e364]
+                  - cell "earthquake" [ref=f9e365]
+                  - cell "Scheduled" [ref=f9e366]:
+                    - generic [ref=f9e367]: Scheduled
+                  - cell "Barangay Hall" [ref=f9e368]
+                  - cell "View Edit Close Archive" [ref=f9e369]:
+                    - button "View" [ref=f9e370] [cursor=pointer]
+                    - button "Edit" [ref=f9e371] [cursor=pointer]
+                    - button "Close" [ref=f9e372] [cursor=pointer]
+                    - button "Archive" [ref=f9e373] [cursor=pointer]
+                - row "10 Flood Evacuation Awareness flood Scheduled IBP Road Junction View Edit Close Archive" [ref=f9e374]:
+                  - cell "10" [ref=f9e375]
+                  - cell "Flood Evacuation Awareness" [ref=f9e376]
+                  - cell "flood" [ref=f9e377]
+                  - cell "Scheduled" [ref=f9e378]:
+                    - generic [ref=f9e379]: Scheduled
+                  - cell "IBP Road Junction" [ref=f9e380]
+                  - cell "View Edit Close Archive" [ref=f9e381]:
+                    - button "View" [ref=f9e382] [cursor=pointer]
+                    - button "Edit" [ref=f9e383] [cursor=pointer]
+                    - button "Close" [ref=f9e384] [cursor=pointer]
+                    - button "Archive" [ref=f9e385] [cursor=pointer]
+            - generic [ref=f9e386]:
+              - button " Previous" [disabled] [ref=f9e387]:
+                - generic [ref=f9e388]: 
+                - text: Previous
+              - generic [ref=f9e389]: Page 1 of 2 (13 campaigns)
+              - button "Next " [ref=f9e390] [cursor=pointer]:
+                - text: Next
+                - generic [ref=f9e391]: 
+          - text:       
+        - generic [ref=f9e392]:
+          - generic [ref=f9e393]:
+            - heading "💰 Financial & Budgeting" [level=2] [ref=f9e394]
+            - generic [ref=f9e395]:
+              - button "+ Add Budget Line Items" [ref=f9e396] [cursor=pointer]:
+                - generic [ref=f9e397]: +
+                - text: Add Budget Line Items
+              - button " Refresh" [ref=f9e398] [cursor=pointer]:
+                - generic [ref=f9e399]: 
+                - text: Refresh
+          - paragraph [ref=f9e400]:
+            - text: Manage budget line items for campaigns. Track consumables and materials with funding source allocation. Budget data is connected to
+            - strong [ref=f9e401]: Resource Allocation
+            - text: for Materials Allocated.
+          - generic [ref=f9e402]:
+            - generic [ref=f9e403]:
+              - generic [ref=f9e404]:
+                - text: Total Budget
+                - button "" [ref=f9e405] [cursor=pointer]:
+                  - generic [ref=f9e406]: 
+              - generic [ref=f9e407]: ••••••
+            - generic [ref=f9e408]:
+              - generic [ref=f9e409]:
+                - text: Government Allocated
+                - button "" [ref=f9e410] [cursor=pointer]:
+                  - generic [ref=f9e411]: 
+              - generic [ref=f9e412]: ••••••
+            - generic [ref=f9e413]:
+              - generic [ref=f9e414]:
+                - text: Reimbursable
+                - button "" [ref=f9e415] [cursor=pointer]:
+                  - generic [ref=f9e416]: 
+              - generic [ref=f9e417]: ••••••
+            - generic [ref=f9e418]:
+              - generic [ref=f9e419]: Line Items
+              - generic [ref=f9e420]: "16"
+          - button " View Archived" [ref=f9e422] [cursor=pointer]:
+            - generic [ref=f9e423]: 
+            - text: View Archived
+          - table [ref=f9e425]:
+            - rowgroup [ref=f9e426]:
+              - row "Campaign Items Total Budget Funding Status Actions" [ref=f9e427]:
+                - columnheader "Campaign" [ref=f9e428]
+                - columnheader "Items" [ref=f9e429]
+                - columnheader "Total Budget" [ref=f9e430]
+                - columnheader "Funding" [ref=f9e431]
+                - columnheader "Status" [ref=f9e432]
+                - columnheader "Actions" [ref=f9e433]
+            - rowgroup [ref=f9e434]:
+              - 'row "#31 Fire Safety Awareness Week 1 item ₱276.00 Gov: ₱276.00 Active  View  Edit " [ref=f9e581]':
+                - cell "#31 Fire Safety Awareness Week" [ref=f9e582]
+                - cell "1 item" [ref=f9e583]:
+                  - generic [ref=f9e584]: 1 item
+                - cell "₱276.00" [ref=f9e585]
+                - 'cell "Gov: ₱276.00" [ref=f9e586]'
+                - cell "Active" [ref=f9e587]:
+                  - generic [ref=f9e588]: Active
+                - cell " View  Edit " [ref=f9e589]:
+                  - button " View" [ref=f9e590] [cursor=pointer]:
+                    - generic [ref=f9e591]: 
+                    - text: View
+                  - button " Edit" [ref=f9e592] [cursor=pointer]:
+                    - generic [ref=f9e593]: 
+                    - text: Edit
+                  - button "" [ref=f9e594] [cursor=pointer]:
+                    - generic [ref=f9e595]: 
+              - 'row "#32 Community Disaster Preparedness Orientation 9 items ₱310,667,216.00 Gov: ₱310,666,666.00 Reimb: ₱550.00 Active  View  Edit " [ref=f9e596]':
+                - cell "#32 Community Disaster Preparedness Orientation" [ref=f9e597]
+                - cell "9 items" [ref=f9e598]:
+                  - generic [ref=f9e599]: 9 items
+                - cell "₱310,667,216.00" [ref=f9e600]
+                - 'cell "Gov: ₱310,666,666.00 Reimb: ₱550.00" [ref=f9e601]':
+                  - text: "Gov: ₱310,666,666.00"
+                  - text: "Reimb: ₱550.00"
+                - cell "Active" [ref=f9e602]:
+                  - generic [ref=f9e603]: Active
+                - cell " View  Edit " [ref=f9e604]:
+                  - button " View" [ref=f9e605] [cursor=pointer]:
+                    - generic [ref=f9e606]: 
+                    - text: View
+                  - button " Edit" [ref=f9e607] [cursor=pointer]:
+                    - generic [ref=f9e608]: 
+                    - text: Edit
+                  - button "" [ref=f9e609] [cursor=pointer]:
+                    - generic [ref=f9e610]: 
+              - 'row "#35 Fire Safety Awareness Week 1 item ₱500.00 Reimb: ₱500.00 Active  View  Edit " [ref=f9e611]':
+                - cell "#35 Fire Safety Awareness Week" [ref=f9e612]
+                - cell "1 item" [ref=f9e613]:
+                  - generic [ref=f9e614]: 1 item
+                - cell "₱500.00" [ref=f9e615]
+                - 'cell "Reimb: ₱500.00" [ref=f9e616]'
+                - cell "Active" [ref=f9e617]:
+                  - generic [ref=f9e618]: Active
+                - cell " View  Edit " [ref=f9e619]:
+                  - button " View" [ref=f9e620] [cursor=pointer]:
+                    - generic [ref=f9e621]: 
+                    - text: View
+                  - button " Edit" [ref=f9e622] [cursor=pointer]:
+                    - generic [ref=f9e623]: 
+                    - text: Edit
+                  - button "" [ref=f9e624] [cursor=pointer]:
+                    - generic [ref=f9e625]: 
+              - 'row "#47 Crime Prevention Month 5 items ₱9,400.00 Gov: ₱200.00 Reimb: ₱9,200.00 Active  View  Edit " [ref=f9e626]':
+                - cell "#47 Crime Prevention Month" [ref=f9e627]
+                - cell "5 items" [ref=f9e628]:
+                  - generic [ref=f9e629]: 5 items
+                - cell "₱9,400.00" [ref=f9e630]
+                - 'cell "Gov: ₱200.00 Reimb: ₱9,200.00" [ref=f9e631]':
+                  - text: "Gov: ₱200.00"
+                  - text: "Reimb: ₱9,200.00"
+                - cell "Active" [ref=f9e632]:
+                  - generic [ref=f9e633]: Active
+                - cell " View  Edit " [ref=f9e634]:
+                  - button " View" [ref=f9e635] [cursor=pointer]:
+                    - generic [ref=f9e636]: 
+                    - text: View
+                  - button " Edit" [ref=f9e637] [cursor=pointer]:
+                    - generic [ref=f9e638]: 
+                    - text: Edit
+                  - button "" [ref=f9e639] [cursor=pointer]:
+                    - generic [ref=f9e640]: 
+        - generic [ref=f9e437]:
+          - generic [ref=f9e438]:
+            - heading " Staff" [level=2] [ref=f9e439]:
+              - generic [ref=f9e440]: 
+              - text: Staff
+            - generic [ref=f9e441]:
+              - button "+ Add Staff" [active] [ref=f9e442] [cursor=pointer]:
+                - generic [ref=f9e443]: +
+                - text: Add Staff
+              - button " Refresh" [ref=f9e444] [cursor=pointer]:
+                - generic [ref=f9e445]: 
+                - text: Refresh
+          - paragraph [ref=f9e446]: Manage staff positions and personnel for campaign deployment. Add new positions or select from existing roles and set the quantity needed.
+          - table [ref=f9e448]:
+            - rowgroup [ref=f9e449]:
+              - row "ID Name Position / Role Qty Actions" [ref=f9e450]:
+                - columnheader "ID" [ref=f9e451]
+                - columnheader "Name" [ref=f9e452]
+                - columnheader "Position / Role" [ref=f9e453]
+                - columnheader "Qty" [ref=f9e454]
+                - columnheader "Actions" [ref=f9e455]
+            - rowgroup [ref=f9e456]:
+              - row "Loading staff data..." [ref=f9e457]:
+                - cell "Loading staff data..." [ref=f9e458]
+        - text:  ▸   ▸    ✓     ▸  
+    - generic [ref=f9e460]:
+      - generic [ref=f9e461]:
+        - paragraph [ref=f9e462]: © 2026 Alertara LGU System – Quezon City
+        - paragraph [ref=f9e463]: For internal use only
+      - paragraph [ref=f9e465]: "Logged in as: Just Dev (Barangay Administrator)"

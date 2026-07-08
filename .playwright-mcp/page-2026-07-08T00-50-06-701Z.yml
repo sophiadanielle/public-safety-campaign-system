@@ -1,0 +1,796 @@
+- generic [active] [ref=f22e1]:
+  - generic [ref=f22e2]:
+    - generic "Hide panel" [ref=f22e4] [cursor=pointer]: ←
+    - generic [ref=f22e5]:
+      - generic [ref=f22e6]:
+        - link "phpMyAdmin" [ref=f22e8] [cursor=pointer]:
+          - /url: index.php
+          - img "phpMyAdmin" [ref=f22e9]
+        - generic [ref=f22e10]:
+          - link "Home" [ref=f22e11] [cursor=pointer]:
+            - /url: index.php?route=/
+            - img "Home" [ref=f22e12]
+          - link "Log out" [ref=f22e13] [cursor=pointer]:
+            - /url: index.php?route=/logout
+            - img "Log out" [ref=f22e14]
+          - link "phpMyAdmin documentation" [ref=f22e15] [cursor=pointer]:
+            - /url: ./doc/html/index.html
+            - img "phpMyAdmin documentation" [ref=f22e16]
+          - link "MySQL Documentation" [ref=f22e17] [cursor=pointer]:
+            - /url: ./url.php?url=https%3A%2F%2Fdev.mysql.com%2Fdoc%2Frefman%2F8.0%2Fen%2Findex.html
+            - img "MySQL Documentation" [ref=f22e18]
+          - link "Navigation panel settings" [ref=f22e19] [cursor=pointer]:
+            - /url: "#"
+            - img "Navigation panel settings" [ref=f22e20]
+          - link "Reload navigation panel" [ref=f22e21] [cursor=pointer]:
+            - /url: "#"
+            - img "Reload navigation panel" [ref=f22e22]
+      - generic [ref=f22e23]:
+        - generic [ref=f22e1026]:
+          - button "Recent" [ref=f22e1028] [cursor=pointer]
+          - button "Favorites" [ref=f22e1030] [cursor=pointer]
+        - list [ref=f22e1031]:
+          - listitem [ref=f22e1032]:
+            - generic [ref=f22e1033]:
+              - link "Collapse all" [ref=f22e1034] [cursor=pointer]:
+                - /url: "#"
+                - img "Collapse all" [ref=f22e1035]
+              - link "Unlink from main panel" [ref=f22e1036] [cursor=pointer]:
+                - /url: "#"
+                - img "Unlink from main panel" [ref=f22e1037]
+        - list [ref=f22e1039]:
+          - listitem [ref=f22e1040]:
+            - link "New" [ref=f22e1044] [cursor=pointer]:
+              - /url: index.php?route=/server/databases
+              - img "New" [ref=f22e1045]
+            - link "New" [ref=f22e1046] [cursor=pointer]:
+              - /url: index.php?route=/server/databases
+          - listitem [ref=f22e1047]:
+            - link "Expand/Collapse" [ref=f22e1051] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f22e1052]
+            - link "Database operations" [ref=f22e1054] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=disaster_training
+              - img "Database operations" [ref=f22e1055]
+            - link "disaster_training" [ref=f22e1056] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=disaster_training
+          - listitem [ref=f22e1057]:
+            - link "Expand/Collapse" [ref=f22e1061] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f22e1062]
+            - link "Database operations" [ref=f22e1064] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=emergency_response_test
+              - img "Database operations" [ref=f22e1065]
+            - link "emergency_response_test" [ref=f22e1066] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=emergency_response_test
+          - listitem [ref=f22e1067]:
+            - link "Expand/Collapse" [ref=f22e1071] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f22e1072]
+            - link "Database operations" [ref=f22e1074] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=emer_comm_test
+              - img "Database operations" [ref=f22e1075]
+            - link "emer_comm_test" [ref=f22e1076] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=emer_comm_test
+          - listitem [ref=f22e1077]:
+            - link "Expand/Collapse" [ref=f22e1081] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f22e1082]
+            - link "Database operations" [ref=f22e1084] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=fm
+              - img "Database operations" [ref=f22e1085]
+            - link "fm" [ref=f22e1086] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=fm
+            - link "Show hidden items" [ref=f22e1088] [cursor=pointer]:
+              - /url: index.php?route=/navigation
+              - img "Show hidden items" [ref=f22e1089]
+          - listitem [ref=f22e1090]:
+            - link "Expand/Collapse" [ref=f22e1094] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f22e1095]
+            - link "Database operations" [ref=f22e1097] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=information_schema
+              - img "Database operations" [ref=f22e1098]
+            - link "information_schema" [ref=f22e1099] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=information_schema
+          - listitem [ref=f22e1100]:
+            - link [ref=f22e1104] [cursor=pointer]:
+              - /url: "#"
+            - link "Database operations" [ref=f22e1106] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=LGU
+              - img "Database operations" [ref=f22e1107]
+            - link "LGU" [ref=f22e1108] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=LGU
+            - link "Show hidden items" [ref=f22e1110] [cursor=pointer]:
+              - /url: index.php?route=/navigation
+              - img "Show hidden items" [ref=f22e1111]
+            - list [ref=f22e1113]:
+              - listitem [ref=f22e1114]:
+                - generic [ref=f22e1116]:
+                  - textbox "Type to filter these, Enter to search all" [ref=f22e1117]
+                  - button "Clear fast filter" [ref=f22e1118] [cursor=pointer]: X
+              - generic [ref=f22e1119]:
+                - combobox [ref=f22e1121]:
+                  - option "1" [selected]
+                  - option "2"
+                  - option "3"
+                - link ">" [ref=f22e1122] [cursor=pointer]:
+                  - /url: index.php?route=/navigation
+                - link ">>" [ref=f22e1123] [cursor=pointer]:
+                  - /url: index.php?route=/navigation
+              - listitem [ref=f22e1124]:
+                - link "New" [ref=f22e1128] [cursor=pointer]:
+                  - /url: index.php?route=/table/create&db=LGU
+                  - img "New" [ref=f22e1129]
+                - link "New" [ref=f22e1130] [cursor=pointer]:
+                  - /url: index.php?route=/table/create&db=LGU
+              - listitem [ref=f22e1131]:
+                - link "Expand/Collapse" [ref=f22e1135] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1136]
+                - link "Structure" [ref=f22e1138] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=accident_cases
+                  - img "Structure" [ref=f22e1139]
+                - link "accident_cases" [ref=f22e1140] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=accident_cases
+              - listitem [ref=f22e1141]:
+                - link "Expand/Collapse" [ref=f22e1145] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1146]
+                - link "Structure" [ref=f22e1148] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=accident_peoples
+                  - img "Structure" [ref=f22e1149]
+                - link "accident_peoples" [ref=f22e1150] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=accident_peoples
+              - listitem [ref=f22e1151]:
+                - link "Expand/Collapse" [ref=f22e1155] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1156]
+                - link "Structure" [ref=f22e1158] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=accident_vehicles
+                  - img "Structure" [ref=f22e1159]
+                - link "accident_vehicles" [ref=f22e1160] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=accident_vehicles
+              - listitem [ref=f22e1161]:
+                - link "Expand/Collapse" [ref=f22e1165] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1166]
+                - link "Structure" [ref=f22e1168] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=admins
+                  - img "Structure" [ref=f22e1169]
+                - link "admins" [ref=f22e1170] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=admins
+              - listitem [ref=f22e1171]:
+                - link "Expand/Collapse" [ref=f22e1175] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1176]
+                - link "Structure" [ref=f22e1178] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=attachments
+                  - img "Structure" [ref=f22e1179]
+                - link "attachments" [ref=f22e1180] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=attachments
+              - listitem [ref=f22e1181]:
+                - link "Expand/Collapse" [ref=f22e1185] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1186]
+                - link "Structure" [ref=f22e1188] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=audit_logs
+                  - img "Structure" [ref=f22e1189]
+                - link "audit_logs" [ref=f22e1190] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=audit_logs
+              - listitem [ref=f22e1191]:
+                - link "Expand/Collapse" [ref=f22e1195] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1196]
+                - link "Structure" [ref=f22e1198] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=automated_reports_schedule
+                  - img "Structure" [ref=f22e1199]
+                - link "automated_reports_schedule" [ref=f22e1200] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=automated_reports_schedule
+              - listitem [ref=f22e1201]:
+                - link "Expand/Collapse" [ref=f22e1205] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1206]
+                - link "Structure" [ref=f22e1208] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=barangay_officials
+                  - img "Structure" [ref=f22e1209]
+                - link "barangay_officials" [ref=f22e1210] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=barangay_officials
+              - listitem [ref=f22e1211]:
+                - link "Expand/Collapse" [ref=f22e1215] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1216]
+                - link "Structure" [ref=f22e1218] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=bcpc_officers
+                  - img "Structure" [ref=f22e1219]
+                - link "bcpc_officers" [ref=f22e1220] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=bcpc_officers
+              - listitem [ref=f22e1221]:
+                - link "Expand/Collapse" [ref=f22e1225] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1226]
+                - link "Structure" [ref=f22e1228] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=blotters
+                  - img "Structure" [ref=f22e1229]
+                - link "blotters" [ref=f22e1230] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=blotters
+              - listitem [ref=f22e1231]:
+                - link "Expand/Collapse" [ref=f22e1235] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1236]
+                - link "Structure" [ref=f22e1238] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_budgets
+                  - img "Structure" [ref=f22e1239]
+                - link "campaign_budgets" [ref=f22e1240] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_budgets
+              - listitem [ref=f22e1241]:
+                - link "Expand/Collapse" [ref=f22e1245] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1246]
+                - link "Structure" [ref=f22e1248] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_attachments
+                  - img "Structure" [ref=f22e1249]
+                - link "campaign_department_attachments" [ref=f22e1250] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_attachments
+              - listitem [ref=f22e1251]:
+                - link "Expand/Collapse" [ref=f22e1255] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1256]
+                - link "Structure" [ref=f22e1258] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_attendance
+                  - img "Structure" [ref=f22e1259]
+                - link "campaign_department_attendance" [ref=f22e1260] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_attendance
+              - listitem [ref=f22e1261]:
+                - link "Expand/Collapse" [ref=f22e1265] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1266]
+                - link "Structure" [ref=f22e1268] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_audience_members
+                  - img "Structure" [ref=f22e1269]
+                - link "campaign_department_audience_members" [ref=f22e1270] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_audience_members
+              - listitem [ref=f22e1271]:
+                - link "Expand/Collapse" [ref=f22e1275] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1276]
+                - link "Structure" [ref=f22e1278] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_audience_segments
+                  - img "Structure" [ref=f22e1279]
+                - link "campaign_department_audience_segments" [ref=f22e1280] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_audience_segments
+              - listitem [ref=f22e1281]:
+                - link "Expand/Collapse" [ref=f22e1285] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1286]
+                - link "Structure" [ref=f22e1288] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_audit_logs
+                  - img "Structure" [ref=f22e1289]
+                - link "campaign_department_audit_logs" [ref=f22e1290] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_audit_logs
+              - listitem [ref=f22e1291]:
+                - link "Expand/Collapse" [ref=f22e1295] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1296]
+                - link "Structure" [ref=f22e1298] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_automl_predictions
+                  - img "Structure" [ref=f22e1299]
+                - link "campaign_department_automl_predictions" [ref=f22e1300] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_automl_predictions
+              - listitem [ref=f22e1301]:
+                - link "Expand/Collapse" [ref=f22e1305] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1306]
+                - link "Structure" [ref=f22e1308] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_barangays
+                  - img "Structure" [ref=f22e1309]
+                - link "campaign_department_barangays" [ref=f22e1310] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_barangays
+              - listitem [ref=f22e1311]:
+                - link "Expand/Collapse" [ref=f22e1315] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1316]
+                - link "Structure" [ref=f22e1318] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaigns
+                  - img "Structure" [ref=f22e1319]
+                - link "campaign_department_campaigns" [ref=f22e1320] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_campaigns
+              - listitem [ref=f22e1321]:
+                - link "Expand/Collapse" [ref=f22e1325] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1326]
+                - link "Structure" [ref=f22e1328] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaign_audience
+                  - img "Structure" [ref=f22e1329]
+                - link "campaign_department_campaign_audience" [ref=f22e1330] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_campaign_audience
+              - listitem [ref=f22e1331]:
+                - link "Expand/Collapse" [ref=f22e1335] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1336]
+                - link "Structure" [ref=f22e1338] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaign_content_items
+                  - img "Structure" [ref=f22e1339]
+                - link "campaign_department_campaign_content_items" [ref=f22e1340] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_campaign_content_items
+              - listitem [ref=f22e1341]:
+                - link "Expand/Collapse" [ref=f22e1345] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1346]
+                - link "Structure" [ref=f22e1348] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_campaign_schedules
+                  - img "Structure" [ref=f22e1349]
+                - link "campaign_department_campaign_schedules" [ref=f22e1350] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_campaign_schedules
+              - listitem [ref=f22e1351]:
+                - link "Expand/Collapse" [ref=f22e1355] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1356]
+                - link "Structure" [ref=f22e1358] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_items
+                  - img "Structure" [ref=f22e1359]
+                - link "campaign_department_content_items" [ref=f22e1360] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_content_items
+              - listitem [ref=f22e1361]:
+                - link "Expand/Collapse" [ref=f22e1365] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1366]
+                - link "Structure" [ref=f22e1368] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_item_versions
+                  - img "Structure" [ref=f22e1369]
+                - link "campaign_department_content_item_versions" [ref=f22e1370] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_content_item_versions
+              - listitem [ref=f22e1371]:
+                - link "Expand/Collapse" [ref=f22e1375] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1376]
+                - link "Structure" [ref=f22e1378] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_tags
+                  - img "Structure" [ref=f22e1379]
+                - link "campaign_department_content_tags" [ref=f22e1380] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_content_tags
+              - listitem [ref=f22e1381]:
+                - link "Expand/Collapse" [ref=f22e1385] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1386]
+                - link "Structure" [ref=f22e1388] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_content_usage
+                  - img "Structure" [ref=f22e1389]
+                - link "campaign_department_content_usage" [ref=f22e1390] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_content_usage
+              - listitem [ref=f22e1391]:
+                - link "Expand/Collapse" [ref=f22e1395] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1396]
+                - link "Structure" [ref=f22e1398] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_evaluation_reports
+                  - img "Structure" [ref=f22e1399]
+                - link "campaign_department_evaluation_reports" [ref=f22e1400] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_evaluation_reports
+              - listitem [ref=f22e1401]:
+                - link "Expand/Collapse" [ref=f22e1405] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1406]
+                - link "Structure" [ref=f22e1408] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_events
+                  - img "Structure" [ref=f22e1409]
+                - link "campaign_department_events" [ref=f22e1410] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_events
+              - listitem [ref=f22e1411]:
+                - link "Expand/Collapse" [ref=f22e1415] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1416]
+                - link "Structure" [ref=f22e1418] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_agency_coordination
+                  - img "Structure" [ref=f22e1419]
+                - link "campaign_department_event_agency_coordination" [ref=f22e1420] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_agency_coordination
+              - listitem [ref=f22e1421]:
+                - link "Expand/Collapse" [ref=f22e1425] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1426]
+                - link "Structure" [ref=f22e1428] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_audience_segments
+                  - img "Structure" [ref=f22e1429]
+                - link "campaign_department_event_audience_segments" [ref=f22e1430] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_audience_segments
+              - listitem [ref=f22e1431]:
+                - link "Expand/Collapse" [ref=f22e1435] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1436]
+                - link "Structure" [ref=f22e1438] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_audit_log
+                  - img "Structure" [ref=f22e1439]
+                - link "campaign_department_event_audit_log" [ref=f22e1440] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_audit_log
+              - listitem [ref=f22e1441]:
+                - link "Expand/Collapse" [ref=f22e1445] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1446]
+                - link "Structure" [ref=f22e1448] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_conflicts
+                  - img "Structure" [ref=f22e1449]
+                - link "campaign_department_event_conflicts" [ref=f22e1450] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_conflicts
+              - listitem [ref=f22e1451]:
+                - link "Expand/Collapse" [ref=f22e1455] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1456]
+                - link "Structure" [ref=f22e1458] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_facilitators
+                  - img "Structure" [ref=f22e1459]
+                - link "campaign_department_event_facilitators" [ref=f22e1460] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_facilitators
+              - listitem [ref=f22e1461]:
+                - link "Expand/Collapse" [ref=f22e1465] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1466]
+                - link "Structure" [ref=f22e1468] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_event_integration_checkpoints
+                  - img "Structure" [ref=f22e1469]
+                - link "campaign_department_event_integration_checkpoints" [ref=f22e1470] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_event_integration_checkpoints
+              - listitem [ref=f22e1471]:
+                - link "Expand/Collapse" [ref=f22e1475] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1476]
+                - link "Structure" [ref=f22e1478] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_feedback
+                  - img "Structure" [ref=f22e1479]
+                - link "campaign_department_feedback" [ref=f22e1480] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_feedback
+              - listitem [ref=f22e1481]:
+                - link "Expand/Collapse" [ref=f22e1485] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1486]
+                - link "Structure" [ref=f22e1488] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_impact_metrics
+                  - img "Structure" [ref=f22e1489]
+                - link "campaign_department_impact_metrics" [ref=f22e1490] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_impact_metrics
+              - listitem [ref=f22e1491]:
+                - link "Expand/Collapse" [ref=f22e1495] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1496]
+                - link "Structure" [ref=f22e1498] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_integration_logs
+                  - img "Structure" [ref=f22e1499]
+                - link "campaign_department_integration_logs" [ref=f22e1500] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_integration_logs
+              - listitem [ref=f22e1501]:
+                - link "Expand/Collapse" [ref=f22e1505] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1506]
+                - link "Structure" [ref=f22e1508] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_notification_logs
+                  - img "Structure" [ref=f22e1509]
+                - link "campaign_department_notification_logs" [ref=f22e1510] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_notification_logs
+              - listitem [ref=f22e1511]:
+                - link "Expand/Collapse" [ref=f22e1515] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1516]
+                - link "Structure" [ref=f22e1518] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_otp
+                  - img "Structure" [ref=f22e1519]
+                - link "campaign_department_otp" [ref=f22e1520] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_otp
+              - listitem [ref=f22e1521]:
+                - link "Expand/Collapse" [ref=f22e1525] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1526]
+                - link "Structure" [ref=f22e1528] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_partners
+                  - img "Structure" [ref=f22e1529]
+                - link "campaign_department_partners" [ref=f22e1530] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_partners
+              - listitem [ref=f22e1531]:
+                - link "Expand/Collapse" [ref=f22e1535] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1536]
+                - link "Structure" [ref=f22e1538] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_partner_engagements
+                  - img "Structure" [ref=f22e1539]
+                - link "campaign_department_partner_engagements" [ref=f22e1540] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_partner_engagements
+              - listitem [ref=f22e1541]:
+                - link "Expand/Collapse" [ref=f22e1545] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1546]
+                - link "Structure" [ref=f22e1548] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_permissions
+                  - img "Structure" [ref=f22e1549]
+                - link "campaign_department_permissions" [ref=f22e1550] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_permissions
+              - listitem [ref=f22e1551]:
+                - link "Expand/Collapse" [ref=f22e1555] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1556]
+                - link "Structure" [ref=f22e1558] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_reference_locations
+                  - img "Structure" [ref=f22e1559]
+                - link "campaign_department_reference_locations" [ref=f22e1560] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_reference_locations
+              - listitem [ref=f22e1561]:
+                - link "Expand/Collapse" [ref=f22e1565] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1566]
+                - link "Structure" [ref=f22e1568] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_reference_staff
+                  - img "Structure" [ref=f22e1569]
+                - link "campaign_department_reference_staff" [ref=f22e1570] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_reference_staff
+              - listitem [ref=f22e1571]:
+                - link "Expand/Collapse" [ref=f22e1575] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1576]
+                - link "Structure" [ref=f22e1578] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_roles
+                  - img "Structure" [ref=f22e1579]
+                - link "campaign_department_roles" [ref=f22e1580] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_roles
+              - listitem [ref=f22e1581]:
+                - link "Expand/Collapse" [ref=f22e1585] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1586]
+                - link "Structure" [ref=f22e1588] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_role_permissions
+                  - img "Structure" [ref=f22e1589]
+                - link "campaign_department_role_permissions" [ref=f22e1590] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_role_permissions
+              - listitem [ref=f22e1591]:
+                - link "Expand/Collapse" [ref=f22e1595] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1596]
+                - link "Structure" [ref=f22e1598] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_survey_aggregated_results
+                  - img "Structure" [ref=f22e1599]
+                - link "campaign_department_survey_aggregated_results" [ref=f22e1600] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_survey_aggregated_results
+              - listitem [ref=f22e1601]:
+                - link "Expand/Collapse" [ref=f22e1605] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1606]
+                - link "Structure" [ref=f22e1608] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_survey_audit_log
+                  - img "Structure" [ref=f22e1609]
+                - link "campaign_department_survey_audit_log" [ref=f22e1610] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_survey_audit_log
+              - listitem [ref=f22e1611]:
+                - link "Expand/Collapse" [ref=f22e1615] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1616]
+                - link "Structure" [ref=f22e1618] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_survey_questions
+                  - img "Structure" [ref=f22e1619]
+                - link "campaign_department_survey_questions" [ref=f22e1620] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_survey_questions
+              - listitem [ref=f22e1621]:
+                - link "Expand/Collapse" [ref=f22e1624] [cursor=pointer]:
+                  - /url: "#"
+                  - img "Expand/Collapse" [ref=f22e1625]
+                - link "Structure" [ref=f22e1627] [cursor=pointer]:
+                  - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_survey_response_details
+                  - img "Structure" [ref=f22e1628]
+                - link "campaign_department_survey_response_details" [ref=f22e1629] [cursor=pointer]:
+                  - /url: index.php?route=/sql&pos=0&db=LGU&table=campaign_department_survey_response_details
+          - listitem [ref=f22e1630]:
+            - link "Expand/Collapse" [ref=f22e1634] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f22e1635]
+            - link "Database operations" [ref=f22e1637] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=lgu4_traffic_transport
+              - img "Database operations" [ref=f22e1638]
+            - link "lgu4_traffic_transport" [ref=f22e1639] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=lgu4_traffic_transport
+          - listitem [ref=f22e1640]:
+            - link "Expand/Collapse" [ref=f22e1644] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f22e1645]
+            - link "Database operations" [ref=f22e1647] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=mysql
+              - img "Database operations" [ref=f22e1648]
+            - link "mysql" [ref=f22e1649] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=mysql
+          - listitem [ref=f22e1650]:
+            - link "Expand/Collapse" [ref=f22e1654] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f22e1655]
+            - link "Database operations" [ref=f22e1657] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=performance_schema
+              - img "Database operations" [ref=f22e1658]
+            - link "performance_schema" [ref=f22e1659] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=performance_schema
+          - listitem [ref=f22e1660]:
+            - link "Expand/Collapse" [ref=f22e1664] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f22e1665]
+            - link "Database operations" [ref=f22e1667] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=phpmyadmin
+              - img "Database operations" [ref=f22e1668]
+            - link "phpmyadmin" [ref=f22e1669] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=phpmyadmin
+          - listitem [ref=f22e1670]:
+            - link "Expand/Collapse" [ref=f22e1673] [cursor=pointer]:
+              - /url: "#"
+              - img "Expand/Collapse" [ref=f22e1674]
+            - link "Database operations" [ref=f22e1676] [cursor=pointer]:
+              - /url: index.php?route=/database/operations&db=sys
+              - img "Database operations" [ref=f22e1677]
+            - link "sys" [ref=f22e1678] [cursor=pointer]:
+              - /url: index.php?route=/database/structure&db=sys
+  - generic [ref=f22e160]:
+    - navigation "breadcrumb" [ref=f22e1679]:
+      - list [ref=f22e1680]:
+        - listitem [ref=f22e1681]:
+          - 'link "Server: localhost:3306" [ref=f22e1682] [cursor=pointer]':
+            - /url: index.php?route=/
+        - listitem [ref=f22e1683]:
+          - text: »
+          - 'link "Database: LGU" [ref=f22e1684] [cursor=pointer]':
+            - /url: index.php?route=/database/structure&db=LGU
+        - listitem [ref=f22e1685]:
+          - text: »
+          - 'link "Table: campaign_department_reference_staff" [ref=f22e1686] [cursor=pointer]':
+            - /url: index.php?route=/sql&db=LGU&table=campaign_department_reference_staff
+    - navigation [ref=f22e1688]:
+      - list [ref=f22e1690]:
+        - listitem [ref=f22e1691]:
+          - link "Browse Browse" [ref=f22e1692] [cursor=pointer]:
+            - /url: index.php?route=/sql&db=LGU&table=campaign_department_reference_staff&pos=0
+            - img "Browse" [ref=f22e1693]
+            - text: Browse
+        - listitem [ref=f22e1694]:
+          - link "Structure Structure" [ref=f22e1695] [cursor=pointer]:
+            - /url: index.php?route=/table/structure&db=LGU&table=campaign_department_reference_staff
+            - img "Structure" [ref=f22e1696]
+            - text: Structure
+        - listitem [ref=f22e1697]:
+          - link "SQL SQL" [ref=f22e1698] [cursor=pointer]:
+            - /url: index.php?route=/table/sql&db=LGU&table=campaign_department_reference_staff
+            - img "SQL" [ref=f22e1699]
+            - text: SQL
+        - listitem [ref=f22e1700]:
+          - link "Search Search" [ref=f22e1701] [cursor=pointer]:
+            - /url: index.php?route=/table/search&db=LGU&table=campaign_department_reference_staff
+            - img "Search" [ref=f22e1702]
+            - text: Search
+        - listitem [ref=f22e1703]:
+          - link "Insert Insert" [ref=f22e1704] [cursor=pointer]:
+            - /url: index.php?route=/table/change&db=LGU&table=campaign_department_reference_staff
+            - img "Insert" [ref=f22e1705]
+            - text: Insert
+        - listitem [ref=f22e1706]:
+          - link "Export Export" [ref=f22e1707] [cursor=pointer]:
+            - /url: index.php?route=/table/export&db=LGU&table=campaign_department_reference_staff&single_table=true
+            - img "Export" [ref=f22e1708]
+            - text: Export
+        - listitem [ref=f22e1709]:
+          - link "Import Import" [ref=f22e1710] [cursor=pointer]:
+            - /url: index.php?route=/table/import&db=LGU&table=campaign_department_reference_staff
+            - img "Import" [ref=f22e1711]
+            - text: Import
+        - listitem [ref=f22e1712]:
+          - link "Privileges Privileges" [ref=f22e1713] [cursor=pointer]:
+            - /url: index.php?route=/server/privileges&db=LGU&table=campaign_department_reference_staff&checkprivsdb=LGU&checkprivstable=campaign_department_reference_staff&viewing_mode=table
+            - img "Privileges" [ref=f22e1714]
+            - text: Privileges
+        - listitem [ref=f22e1715]:
+          - link "Operations Operations" [ref=f22e1716] [cursor=pointer]:
+            - /url: index.php?route=/table/operations&db=LGU&table=campaign_department_reference_staff
+            - img "Operations" [ref=f22e1717]
+            - text: Operations
+        - listitem [ref=f22e1718]:
+          - button "More" [ref=f22e1719] [cursor=pointer]
+  - generic [ref=f22e200]:
+    - img "Page-related settings" [ref=f22e202] [cursor=pointer]
+    - link "Click on the bar to scroll to top of page" [ref=f22e203] [cursor=pointer]:
+      - /url: "#"
+      - img "Click on the bar to scroll to top of page" [ref=f22e204]
+  - generic [ref=f22e205]:
+    - generic [ref=f22e206]:
+      - generic [ref=f22e207] [cursor=pointer]:
+        - img "SQL Query Console" [ref=f22e208]
+        - text: Console
+      - generic [ref=f22e998] [cursor=pointer]: Clear
+      - generic [ref=f22e999] [cursor=pointer]: History
+      - generic [ref=f22e1000] [cursor=pointer]: Options
+      - generic [ref=f22e1001] [cursor=pointer]: Bookmarks
+    - generic [ref=f22e209]:
+      - generic [ref=f22e210]:
+        - generic [ref=f22e211]: Press Ctrl+Enter to execute query
+        - text: "> >"
+        - generic [ref=f22e1720]:
+          - text: ">"
+          - generic [ref=f22e1721]: "ALTER TABLE `campaign_department_reference_staff` ADD `qty` INT UNSIGNED NOT NULL DEFAULT 1 AFTER `role`;"
+      - generic [ref=f22e1002]:
+        - text: ">"
+        - textbox [ref=f22e1005]
+    - generic [ref=f22e212]:
+      - generic [ref=f22e213]:
+        - generic [ref=f22e214] [cursor=pointer]: ascending
+        - generic [ref=f22e215] [cursor=pointer]: descending
+        - generic [ref=f22e216]: "Order:"
+        - generic [ref=f22e217] [cursor=pointer]: Debug SQL
+        - generic [ref=f22e219] [cursor=pointer]: Execution order
+        - generic [ref=f22e220] [cursor=pointer]: Time taken
+        - generic [ref=f22e221]: "Order by:"
+        - generic [ref=f22e222] [cursor=pointer]: Group queries
+      - generic [ref=f22e225]: Some error occurred while getting SQL debug info.
+    - generic [ref=f22e226]:
+      - generic [ref=f22e227]:
+        - generic [ref=f22e228] [cursor=pointer]: Bookmarks
+        - generic [ref=f22e229] [cursor=pointer]: Refresh
+        - generic [ref=f22e230] [cursor=pointer]: Add
+      - generic [ref=f22e232]: No bookmarks
+      - generic [ref=f22e233]:
+        - generic [ref=f22e235] [cursor=pointer]: Add bookmark
+        - generic [ref=f22e236]:
+          - generic [ref=f22e237]:
+            - generic [ref=f22e238]:
+              - text: "Label:"
+              - textbox "Label:" [ref=f22e239]
+            - generic [ref=f22e240]:
+              - text: "Target database:"
+              - textbox "Target database:" [ref=f22e241]
+            - generic [ref=f22e242]:
+              - checkbox "Share this bookmark" [ref=f22e243]
+              - text: Share this bookmark
+            - button "OK" [ref=f22e244] [cursor=pointer]
+          - generic [ref=f22e1012]:
+            - text: ">"
+            - textbox [ref=f22e1015]
+    - generic [ref=f22e245]:
+      - generic [ref=f22e246]:
+        - generic [ref=f22e247] [cursor=pointer]: Options
+        - generic [ref=f22e248] [cursor=pointer]: Set default
+      - generic [ref=f22e249]:
+        - generic [ref=f22e250]:
+          - checkbox "Always expand query messages" [ref=f22e251]
+          - text: Always expand query messages
+        - generic [ref=f22e252]:
+          - checkbox "Show query history at start" [ref=f22e253]
+          - text: Show query history at start
+        - generic [ref=f22e254]:
+          - checkbox "Show current browsing query" [checked] [ref=f22e255]
+          - text: Show current browsing query
+        - generic [ref=f22e256]:
+          - checkbox "Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings." [ref=f22e257]
+          - text: Execute queries on Enter and insert new line with Shift+Enter. To make this permanent, view settings.
+        - generic [ref=f22e258]:
+          - checkbox "Switch to dark theme" [ref=f22e259]
+          - text: Switch to dark theme
+  - generic [ref=f22e260]:
+    - button "Show query box" [ref=f22e1722] [cursor=pointer]
+    - generic [ref=f22e1724]:
+      - alert [ref=f22e1725]: MySQL returned an empty result set (i.e. zero rows). (Query took 0.0010 seconds.)
+      - code [ref=f22e1727]:
+        - generic [ref=f22e1728]:
+          - link "ALTER" [ref=f22e1730] [cursor=pointer]:
+            - /url: ./url.php?url=https://dev.mysql.com/doc/refman/8.0/en/alter-table.html
+          - link "TABLE" [ref=f22e1732] [cursor=pointer]:
+            - /url: ./url.php?url=https://dev.mysql.com/doc/refman/8.0/en/alter-table.html
+          - text: "`campaign_department_reference_staff` ADD `qty`"
+          - link "INT" [ref=f22e1734] [cursor=pointer]:
+            - /url: ./url.php?url=https://dev.mysql.com/doc/refman/8.0/en/numeric-types.html
+          - text: UNSIGNED
+          - link "NOT" [ref=f22e1736] [cursor=pointer]:
+            - /url: ./url.php?url=https://dev.mysql.com/doc/refman/8.0/en/logical-operators.html%23operator_not
+          - text: "NULL"
+          - link "DEFAULT" [ref=f22e1738] [cursor=pointer]:
+            - /url: ./url.php?url=https://dev.mysql.com/doc/refman/8.0/en/miscellaneous-functions.html%23function_default
+          - text: "1 AFTER `role`;"
+      - generic [ref=f22e1739]:
+        - text: "["
+        - link "Edit inline" [ref=f22e1740] [cursor=pointer]:
+          - /url: "#"
+        - text: "] ["
+        - link "Edit" [ref=f22e1741] [cursor=pointer]:
+          - /url: index.php
+        - text: "] ["
+        - link "Create PHP code" [ref=f22e1742] [cursor=pointer]:
+          - /url: index.php
+        - text: "]"
+  - link "Open new phpMyAdmin window" [ref=f22e342] [cursor=pointer]:
+    - /url: index.php?route=%2Ftable%2Fsql&db=LGU&table=campaign_department_reference_staff&server=1
+    - img "Open new phpMyAdmin window" [ref=f22e343]

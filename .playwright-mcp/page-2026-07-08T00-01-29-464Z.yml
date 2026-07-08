@@ -1,0 +1,65 @@
+- generic [ref=f1e5]:
+  - link "phpMyAdmin" [ref=f1e6] [cursor=pointer]:
+    - /url: ./url.php?url=https%3A%2F%2Fwww.phpmyadmin.net%2F
+    - img "phpMyAdmin" [ref=f1e7]
+  - heading "Welcome to phpMyAdmin" [level=1] [ref=f1e8]
+  - generic [ref=f1e10]:
+    - generic [ref=f1e11]: Language
+    - combobox "Language" [ref=f1e14]:
+      - option "Shqip - Albanian"
+      - option "العربية - Arabic"
+      - option "Հայերէն - Armenian"
+      - option "Azərbaycanca - Azerbaijani"
+      - option "বাংলা - Bangla"
+      - option "Беларуская - Belarusian"
+      - option "Български - Bulgarian"
+      - option "Català - Catalan"
+      - option "中文 - Chinese simplified"
+      - option "中文 - Chinese traditional"
+      - option "Čeština - Czech"
+      - option "Dansk - Danish"
+      - option "Nederlands - Dutch"
+      - option "English" [selected]
+      - option "English (United Kingdom)"
+      - option "Eesti - Estonian"
+      - option "Suomi - Finnish"
+      - option "Français - French"
+      - option "Galego - Galician"
+      - option "Deutsch - German"
+      - option "Ελληνικά - Greek"
+      - option "עברית - Hebrew"
+      - option "Magyar - Hungarian"
+      - option "Bahasa Indonesia - Indonesian"
+      - option "Interlingua"
+      - option "Italiano - Italian"
+      - option "日本語 - Japanese"
+      - option "Қазақ - Kazakh"
+      - option "한국어 - Korean"
+      - option "Norsk - Norwegian"
+      - option "Polski - Polish"
+      - option "Português - Portuguese"
+      - option "Português (Brasil) - Portuguese (Brazil)"
+      - option "Română - Romanian"
+      - option "Русский - Russian"
+      - option "සිංහල - Sinhala"
+      - option "Slovenčina - Slovak"
+      - option "Slovenščina - Slovenian"
+      - option "Español - Spanish"
+      - option "Svenska - Swedish"
+      - option "Türkçe - Turkish"
+      - option "Українська - Ukrainian"
+      - option "Tiếng Việt - Vietnamese"
+  - generic [ref=f1e16]:
+    - generic [ref=f1e17]:
+      - text: Log in
+      - link "Documentation" [ref=f1e18] [cursor=pointer]:
+        - /url: ./doc/html/index.html
+        - img "Documentation" [ref=f1e19]
+    - generic [ref=f1e20]:
+      - generic [ref=f1e21]:
+        - generic [ref=f1e22]: "Username:"
+        - textbox "Username:" [ref=f1e24]: root
+      - generic [ref=f1e25]:
+        - generic [ref=f1e26]: "Password:"
+        - textbox "Password:" [ref=f1e28]
+    - button "Log in" [ref=f1e30] [cursor=pointer]
