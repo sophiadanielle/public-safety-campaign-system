@@ -8983,6 +8983,8 @@ async function initializeCampaigns() {
             }
         }, 200);
         
+        loadStaffTable();
+        
         // Calendar will auto-refresh via refetchEvents() in loadCampaigns()
     } catch (err) {
         console.error('initializeCampaigns() - Error:', err);
