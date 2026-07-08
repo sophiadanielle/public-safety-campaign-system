@@ -106,7 +106,6 @@
                                     ['label' => 'All Segments', 'href' => '#segments-list', 'icon' => 'fa-list'],
                                     ['label' => 'Audience Members', 'href' => '#audience-members', 'icon' => 'fa-users'],
                                     ['label' => 'Segment Analytics', 'href' => '#segment-analytics', 'icon' => 'fa-chart-bar'],
-                                    ['label' => 'Import/Export', 'href' => '#import-export', 'icon' => 'fa-file-import'],
                                 ]
                             ],
                             'events.php' => [
