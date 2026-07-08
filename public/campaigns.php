@@ -1408,6 +1408,12 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             
             <!-- Modal Body -->
             <div style="padding: 24px;">
+                <!-- Staff Name -->
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Staff Name *</label>
+                    <input type="text" id="staffName" placeholder="e.g., Juan Dela Cruz" style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                </div>
+                
                 <!-- Position Mode Toggle -->
                 <div style="margin-bottom: 20px;">
                     <label style="font-weight: 600; margin-bottom: 8px; display: block; color: #0f172a;">
@@ -1433,11 +1439,11 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     </select>
                 </div>
                 
-                <!-- New Position / Name Input -->
+                <!-- New Position Input -->
                 <div id="newStaffPositionGroup" style="margin-bottom: 20px; display: none;">
-                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Staff Name *</label>
-                    <input type="text" id="newStaffName" placeholder="e.g., John Doe" style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
-                    <p style="margin: 6px 0 0 0; font-size: 12px; color: #64748b;">Enter a unique name for this staff member.</p>
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Staff Position *</label>
+                    <input type="text" id="newStaffPosition" placeholder="e.g., Barangay Captain" style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                    <p style="margin: 6px 0 0 0; font-size: 12px; color: #64748b;">Enter a new position/role for this staff member.</p>
                 </div>
                 
                 <!-- Quantity -->
@@ -6549,8 +6555,9 @@ function openAddStaffModal() {
     const modal = document.getElementById('staffModal');
     if (modal) {
         loadStaffRoles();
+        document.getElementById('staffName').value = '';
         document.getElementById('staffPositionSelect').value = '';
-        document.getElementById('newStaffName').value = '';
+        document.getElementById('newStaffPosition').value = '';
         document.getElementById('staffQty').value = 1;
         document.getElementById('staffStatus').style.display = 'none';
         toggleStaffPositionMode('existing');
@@ -6595,23 +6602,25 @@ async function saveNewStaff() {
     const mode = document.querySelector('input[name="staffPositionMode"]:checked')?.value;
     const qty = parseInt(document.getElementById('staffQty')?.value) || 1;
     
-    let name, role;
+    const name = document.getElementById('staffName')?.value?.trim();
+    if (!name) {
+        showStaffStatus('Please enter a staff name', 'error');
+        return;
+    }
     
+    let role;
     if (mode === 'existing') {
-        const select = document.getElementById('staffPositionSelect');
-        role = select?.value;
+        role = document.getElementById('staffPositionSelect')?.value;
         if (!role) {
             showStaffStatus('Please select a position/role', 'error');
             return;
         }
-        name = role;
     } else {
-        name = document.getElementById('newStaffName')?.value?.trim();
-        if (!name) {
-            showStaffStatus('Please enter a staff name', 'error');
+        role = document.getElementById('newStaffPosition')?.value?.trim();
+        if (!role) {
+            showStaffStatus('Please enter a staff position', 'error');
             return;
         }
-        role = name;
     }
     
     showStaffStatus('Saving...', 'success');
