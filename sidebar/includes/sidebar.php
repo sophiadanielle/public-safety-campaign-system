@@ -83,6 +83,7 @@
                                 'icon' => 'fa-bullhorn',
                                 'features' => [
                                     ['label' => 'All Campaigns', 'href' => '#list-section', 'icon' => 'fa-list'],
+                                    ['label' => 'Staff List', 'href' => '#staff-section', 'icon' => 'fa-users'],
                                     ['label' => 'Financial & Budgeting', 'href' => '#budgeting-section', 'icon' => 'fa-coins'],
                                     ['label' => 'AI-Powered Deployment Optimization', 'href' => '#automl-section', 'icon' => 'fa-robot'],
                                 ]
@@ -298,7 +299,7 @@
                                 // Viewer can only see read-only features
                                 $allowedFeatures = [
                                     'dashboard.php' => ['kpi-overview', 'engagement-impact'], // Limited dashboard features
-                                    'campaigns.php' => ['list-section'], // Only "All Campaigns", not "Plan New Campaign" or AI tools
+                                    'campaigns.php' => ['list-section', 'staff-section'], // Only "All Campaigns" + Staff List, not "Plan New Campaign" or AI tools
                                     'events.php' => ['events-list'], // Only "All Events", not create
                                     'surveys.php' => ['responses'], // Surveys: Only "Submit Response" section, no create/edit/analytics
                                     'impact.php' => ['impact-dashboard', 'evaluation-reports', 'metrics-overview'], // Read-only reports

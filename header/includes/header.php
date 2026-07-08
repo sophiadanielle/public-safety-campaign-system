@@ -47,7 +47,6 @@
                             $page = basename($_SERVER['PHP_SELF']);
                             $links = [
                                 'campaigns.php' => 'Campaigns',
-                                'campaigns.php#staff-section' => 'Staff List',
                                 'content.php' => 'Content',
                                 'segments.php' => 'Segments',
                                 'events.php' => 'Events',
