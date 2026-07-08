@@ -219,7 +219,7 @@ class AutocompleteController
         // And from reference_staff lookup table
         $stmt = $this->pdo->prepare('
             SELECT DISTINCT name, role
-            FROM reference_staff
+            FROM campaign_department_reference_staff
             WHERE name LIKE :query
                OR role LIKE :query
             ORDER BY name ASC

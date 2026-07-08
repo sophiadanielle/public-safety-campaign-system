@@ -329,6 +329,7 @@ if ($isApiRequest) {
         'budgets.php',
         'audit.php',
         'search.php',
+        'reference_staff.php',
     ];
 
     $allRoutes = [];
