@@ -2039,6 +2039,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 </tbody>
             </table>
         </div>
+        <div id="staffPagination" class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px;"></div>
     </section>
     <?php endif; ?>
 
@@ -6479,6 +6480,71 @@ async function deleteBudgetItem(id) {
 let staffRoles = [];
 
 // Load staff table
+let currentStaffPage = 1;
+const STAFF_PER_PAGE = 10;
+let allStaffData = [];
+
+function renderStaffTable() {
+    const tbody = document.getElementById('staffTable');
+    const pagination = document.getElementById('staffPagination');
+    if (!tbody) return;
+    
+    const start = (currentStaffPage - 1) * STAFF_PER_PAGE;
+    const end = Math.min(start + STAFF_PER_PAGE, allStaffData.length);
+    const pageData = allStaffData.slice(start, end);
+    const totalPages = Math.ceil(allStaffData.length / STAFF_PER_PAGE) || 1;
+    
+    tbody.innerHTML = '';
+    pageData.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="font-weight: 600; color: #6366f1;">${s.id}</td>
+            <td>${escapeHtml(s.name)}</td>
+            <td>${escapeHtml(s.role)}</td>
+            <td style="text-align: center; font-weight: 600;">${s.qty || 1}</td>
+            <td>
+                <button class="btn btn-danger" onclick="deleteStaffMember(${s.id})" style="padding: 4px 10px; font-size: 11px;" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    if (pagination) {
+        pagination.innerHTML = '';
+        if (allStaffData.length <= STAFF_PER_PAGE) return;
+        
+        const prev = document.createElement('button');
+        prev.className = 'btn btn-secondary';
+        prev.innerHTML = '&laquo; Prev';
+        prev.style.padding = '6px 12px';
+        prev.style.fontSize = '13px';
+        prev.disabled = currentStaffPage === 1;
+        prev.onclick = () => { if (currentStaffPage > 1) { currentStaffPage--; renderStaffTable(); } };
+        pagination.appendChild(prev);
+        
+        for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'btn' + (i === currentStaffPage ? ' btn-primary' : ' btn-secondary');
+            btn.textContent = i;
+            btn.style.padding = '6px 12px';
+            btn.style.fontSize = '13px';
+            btn.onclick = () => { currentStaffPage = i; renderStaffTable(); };
+            pagination.appendChild(btn);
+        }
+        
+        const next = document.createElement('button');
+        next.className = 'btn btn-secondary';
+        next.innerHTML = 'Next &raquo;';
+        next.style.padding = '6px 12px';
+        next.style.fontSize = '13px';
+        next.disabled = currentStaffPage === totalPages;
+        next.onclick = () => { if (currentStaffPage < totalPages) { currentStaffPage++; renderStaffTable(); } };
+        pagination.appendChild(next);
+    }
+}
+
 async function loadStaffTable() {
     const tbody = document.getElementById('staffTable');
     if (!tbody) return;
@@ -6496,29 +6562,16 @@ async function loadStaffTable() {
             return;
         }
         
-        const staff = data.data || data.staff || [];
+        allStaffData = data.data || data.staff || [];
+        currentStaffPage = 1;
         
-        if (staff.length === 0) {
+        if (allStaffData.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color: #64748b;">No staff members yet. Click "Add Staff" to add one.</td></tr>';
+            document.getElementById('staffPagination').innerHTML = '';
             return;
         }
         
-        tbody.innerHTML = '';
-        staff.forEach(s => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td style="font-weight: 600; color: #6366f1;">${s.id}</td>
-                <td>${escapeHtml(s.name)}</td>
-                <td>${escapeHtml(s.role)}</td>
-                <td style="text-align: center; font-weight: 600;">${s.qty || 1}</td>
-                <td>
-                    <button class="btn btn-danger" onclick="deleteStaffMember(${s.id})" style="padding: 4px 10px; font-size: 11px;" title="Delete">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+        renderStaffTable();
     } catch (err) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color: #ef4444;">Error: ' + err.message + '</td></tr>';
     }
