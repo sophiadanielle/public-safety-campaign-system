@@ -25,7 +25,7 @@ class ReferenceStaffController
         ');
         $staff = $stmt->fetchAll();
 
-        return ['data' => $staff];
+        return ['success' => true, 'data' => $staff];
     }
 
     public function store(?array $user, array $params = []): array
@@ -61,7 +61,7 @@ class ReferenceStaffController
 
         $id = (int) $this->pdo->lastInsertId();
 
-        return ['data' => ['id' => $id, 'name' => $name, 'role' => $role, 'qty' => $qty]];
+        return ['success' => true, 'data' => ['id' => $id, 'name' => $name, 'role' => $role, 'qty' => $qty]];
     }
 
     public function destroy(?array $user, array $params = []): array
@@ -80,7 +80,7 @@ class ReferenceStaffController
             return ['error' => 'Staff member not found'];
         }
 
-        return ['data' => ['deleted' => true]];
+        return ['success' => true, 'data' => ['deleted' => true]];
     }
 
     public function roles(?array $user, array $params = []): array
@@ -92,6 +92,6 @@ class ReferenceStaffController
         ');
         $roles = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-        return ['data' => $roles];
+        return ['success' => true, 'data' => $roles];
     }
 }
