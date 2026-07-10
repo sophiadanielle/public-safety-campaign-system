@@ -1702,93 +1702,60 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 </div>
             </div>
 
-            <div class="crime-ai-card" id="crimeAiRecommendationsCard">
+            <div class="crime-ai-card" id="aiRecommendationsCard">
                 <div class="crime-ai-toolbar">
                     <div>
                         <h3 style="margin: 0 0 6px 0; color: #0f172a; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                            <i class="fas fa-shield-alt" style="color: #667eea;"></i>
-                            AI Recommended Campaigns from Crime Reports
+                            <i class="fas fa-robot" style="color: #667eea;"></i>
+                            Smart AI Campaign Recommendations
                         </h3>
-                        <p id="crimeAiStatus" class="crime-ai-status" style="margin: 0;">
-                            Loading crime analytics recommendations...
+                        <p id="aiRecommendationsStatus" class="crime-ai-status" style="margin: 0;">
+                            Loading unified analytics from crime and disaster reports...
                         </p>
                     </div>
-                    <button type="button" class="btn btn-secondary" onclick="loadCrimeCampaignRecommendations(true)" style="display: inline-flex; align-items: center; gap: 6px; border: 2px solid #667eea; color: #667eea; background: white; font-weight: 700;">
-                        <i class="fas fa-sync-alt"></i>
-                        Refresh Reports
-                    </button>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div style="position: relative;">
+                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+                            <input type="text" id="aiRecSearchInput" placeholder="Search recommendations..." 
+                                style="padding: 8px 12px 8px 32px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px; width: 200px; background: white; outline: none;"
+                                onkeyup="filterAiRecommendations()" onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='#e2e8f0'">
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="loadAiRecommendations(true)" style="display: inline-flex; align-items: center; gap: 6px; border: 2px solid #667eea; color: #667eea; background: white; font-weight: 700;">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
+                    </div>
                 </div>
                 <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
-                    <table class="data-table" style="width: 100%; border-collapse: collapse; min-width: 760px;">
+                    <table class="data-table" style="width: 100%; border-collapse: collapse; min-width: 860px;">
                         <thead>
                             <tr style="background: #f8fafc;">
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Recommended Campaign Title</th>
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Incident Title / Category</th>
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap;">Number of Reports</th>
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Priority / Confidence</th>
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Action</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 50px;">#</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Campaign Title</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 90px;">Category</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Incident Category</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap; width: 110px;">Reports</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap; width: 130px;">Priority</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 80px;">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="crimeAiRecommendationsTable">
+                        <tbody id="aiRecommendationsTable">
                             <tr>
-                                <td colspan="5" style="padding: 28px; text-align: center; color: #64748b;">
+                                <td colspan="7" style="padding: 28px; text-align: center; color: #64748b;">
                                     <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
-                                    Loading recommendations...
+                                    Loading unified recommendations...
                                 </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <div id="crimeAiPagination" class="crime-ai-pagination" style="display: none;">
-                    <div id="crimeAiPaginationSummary" style="color: #64748b; font-size: 13px; font-weight: 600;"></div>
-                    <div id="crimeAiPaginationControls" class="crime-ai-page-controls"></div>
+                <div id="aiRecommendationsPagination" class="crime-ai-pagination" style="display: none;">
+                    <div id="aiRecommendationsPaginationSummary" style="color: #64748b; font-size: 13px; font-weight: 600;"></div>
+                    <div id="aiRecommendationsPaginationControls" class="crime-ai-page-controls"></div>
                 </div>
             </div>
         </div>
     </section>
-
-    <div class="crime-ai-card" id="disasterAiRecommendationsCard">
-        <div class="crime-ai-toolbar">
-            <div>
-                <h3 style="margin: 0 0 6px 0; color: #0f172a; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-exclamation-triangle" style="color: #dc2626;"></i>
-                    AI Recommended Campaigns from Disaster Alerts
-                </h3>
-                <p id="disasterAiStatus" class="crime-ai-status" style="margin: 0;">
-                    Loading disaster analytics recommendations...
-                </p>
-            </div>
-            <button type="button" class="btn btn-secondary" onclick="loadDisasterCampaignRecommendations(true)" style="display: inline-flex; align-items: center; gap: 6px; border: 2px solid #dc2626; color: #dc2626; background: white; font-weight: 700;">
-                <i class="fas fa-sync-alt"></i>
-                Refresh Disaster Reports
-            </button>
-        </div>
-        <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <table class="data-table" style="width: 100%; border-collapse: collapse; min-width: 760px;">
-                <thead>
-                    <tr style="background: #f8fafc;">
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Recommended Campaign Title</th>
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Disaster / Alert Category</th>
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap;">Number of Alerts</th>
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Priority / Confidence</th>
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="disasterAiRecommendationsTable">
-                    <tr>
-                        <td colspan="5" style="padding: 28px; text-align: center; color: #64748b;">
-                            <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
-                            Loading recommendations...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div id="disasterAiPagination" class="crime-ai-pagination" style="display: none;">
-            <div id="disasterAiPaginationSummary" style="color: #64748b; font-size: 13px; font-weight: 600;"></div>
-            <div id="disasterAiPaginationControls" class="crime-ai-page-controls"></div>
-        </div>
-    </div>
     <?php endif; // End RBAC: Hide AutoML section for Viewer ?>
 
     <!-- Campaigns List - Moved to top -->
@@ -2281,29 +2248,15 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
 // Get base path for API calls (path_helper already included in head)
 const basePath = '<?php echo $basePath; ?>';
 const apiBase = '<?php echo $apiPath; ?>';
-const crimeReportsApiUrl = 'https://crime-analytics.alertaraqc.com/api/crimes';
-const crimeRecommendationsProxyUrl = basePath + '/public/api/crime_campaign_recommendations.php';
-const disasterRecommendationsProxyUrl = basePath + '/public/api/crime_campaign_recommendations.php?source=disaster';
+const aiRecommendationsUrl = basePath + '/public/api/ai_recommendations.php';
 console.log('BASE PATH:', basePath);
 
-let crimeReportRecords = [];
-let crimeIncidentGroups = [];
-let crimeAiRecommendations = [];
-let crimeRecommendationChart = null;
-let crimeRecommendationsCurrentPage = 1;
+let aiRecommendations = [];
+let aiRecommendationsFiltered = [];
+let aiRecommendationsCurrentPage = 1;
+let aiRecommendationsChart = null;
 
-const crimeRecommendationsPageSize = 10;
-const disasterRecommendationsPageSize = 10;
-
-const crimePriorityThresholds = {
-    high: 10,
-    medium: 4
-};
-
-let disasterReportRecords = [];
-let disasterIncidentGroups = [];
-let disasterAiRecommendations = [];
-let disasterRecommendationsCurrentPage = 1;
+const aiRecommendationsPageSize = 10;
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -2314,196 +2267,55 @@ function escapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
-function isRecordArray(value) {
-    return Array.isArray(value) && value.some(item => item && typeof item === 'object' && !Array.isArray(item));
-}
-
-function normalizeCrimeRecords(payload, depth = 0) {
-    if (!payload || depth > 5) return [];
-
-    if (Array.isArray(payload)) {
-        if (isRecordArray(payload)) return payload.filter(item => item && typeof item === 'object' && !Array.isArray(item));
-
-        for (const item of payload) {
-            const nested = normalizeCrimeRecords(item, depth + 1);
-            if (nested.length) return nested;
-        }
-        return [];
+function getPriorityBadge(level, score) {
+    const s = Number(score || 0);
+    if (level === 'Critical' || s >= 70) {
+        return { className: 'priority-critical', label: 'Critical', color: '#dc2626' };
     }
-
-    if (typeof payload !== 'object') return [];
-
-    const preferredKeys = ['data', 'crimes', 'incidents', 'records', 'reports', 'results', 'items'];
-    for (const key of preferredKeys) {
-        if (Object.prototype.hasOwnProperty.call(payload, key)) {
-            const nested = normalizeCrimeRecords(payload[key], depth + 1);
-            if (nested.length) return nested;
-        }
+    if (level === 'High' || s >= 40) {
+        return { className: 'priority-high', label: 'High', color: '#ea580c' };
     }
-
-    for (const value of Object.values(payload)) {
-        const nested = normalizeCrimeRecords(value, depth + 1);
-        if (nested.length) return nested;
+    if (level === 'Medium' || s >= 20) {
+        return { className: 'priority-medium', label: 'Medium', color: '#ca8a04' };
     }
-
-    return [];
+    return { className: 'priority-low', label: 'Low', color: '#16a34a' };
 }
 
-function getIncidentTitle(record) {
-    const title = record?.incident_title || record?.incidentTitle || record?.title || record?.category?.category_name;
-    const normalized = String(title || '').trim();
-    return normalized || 'Uncategorized Incident';
-}
-
-function groupCrimeReports(records) {
-    const map = new Map();
-    records.forEach(record => {
-        const incidentTitle = getIncidentTitle(record);
-        if (!map.has(incidentTitle)) {
-            map.set(incidentTitle, {
-                incidentTitle,
-                count: 0,
-                reports: []
-            });
-        }
-        const group = map.get(incidentTitle);
-        group.count += 1;
-        group.reports.push(record);
-    });
-
-    return Array.from(map.values()).sort((a, b) => b.count - a.count || a.incidentTitle.localeCompare(b.incidentTitle));
-}
-
-function getCrimePriority(count) {
-    if (count >= crimePriorityThresholds.high) {
-        return { label: 'High Priority', className: 'priority-high', confidence: 'High Confidence' };
+function getCategoryBadge(source) {
+    if (source === 'disaster') {
+        return { className: 'badge-disaster', label: 'Disaster', icon: 'fa-exclamation-triangle', color: '#dc2626' };
     }
-    if (count >= crimePriorityThresholds.medium) {
-        return { label: 'Medium Priority', className: 'priority-medium', confidence: 'Moderate Confidence' };
-    }
-    return { label: 'Low Priority', className: 'priority-low', confidence: 'Low Confidence' };
+    return { className: 'badge-crime', label: 'Crime', icon: 'fa-shield-alt', color: '#667eea' };
 }
 
-function fallbackCampaignTitle(incidentTitle) {
-    return `Community Awareness Campaign Against ${incidentTitle}`;
-}
-
-function buildCrimeRecommendations(groups, aiTitles = []) {
-    const titleMap = new Map();
-    aiTitles.forEach(item => {
-        if (!item) return;
-        const incidentTitle = String(item.incident_title || item.incidentTitle || '').trim();
-        const title = String(item.recommended_campaign_title || item.recommendedCampaignTitle || '').trim();
-        if (incidentTitle && title) titleMap.set(incidentTitle, title);
-    });
-
-    return groups.map(group => {
-        const priority = getCrimePriority(group.count);
-        return {
-            ...group,
-            recommendedCampaignTitle: titleMap.get(group.incidentTitle) || fallbackCampaignTitle(group.incidentTitle),
-            priorityLabel: priority.label,
-            priorityClassName: priority.className,
-            confidenceLabel: priority.confidence
-        };
-    });
-}
-
-async function fetchCrimeReportsDirect() {
-    const response = await fetch(crimeReportsApiUrl, {
-        headers: { 'Accept': 'application/json' },
-        cache: 'no-store'
-    });
-    if (!response.ok) throw new Error(`Crime reports API returned HTTP ${response.status}`);
-    const payload = await response.json();
-    return {
-        payload,
-        records: normalizeCrimeRecords(payload),
-        source: 'direct'
-    };
-}
-
-async function fetchCrimeReportsProxy() {
-    const response = await fetch(crimeRecommendationsProxyUrl, {
-        headers: { 'Accept': 'application/json' },
-        cache: 'no-store'
-    });
-    if (!response.ok) throw new Error(`Reports proxy returned HTTP ${response.status}`);
-    const payload = await response.json();
-    if (payload && payload.success === false) {
-        throw new Error(payload.error || 'Reports proxy failed');
-    }
-    return {
-        payload,
-        records: payload.records || normalizeCrimeRecords(payload?.data || payload),
-        aiTitles: Array.isArray(payload?.recommendations) ? payload.recommendations : [],
-        source: 'proxy',
-        generatedBy: payload?.generated_by || 'fallback'
-    };
-}
-
-async function fetchCrimeAiTitles(groups) {
-    if (!groups.length) return { recommendations: [], generatedBy: 'none' };
-
-    try {
-        const response = await fetch(crimeRecommendationsProxyUrl, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                mode: 'titles',
-                data_source: 'merged',
-                groups: groups.map(group => ({
-                    incident_title: group.incidentTitle,
-                    report_count: group.count
-                }))
-            })
-        });
-        if (!response.ok) throw new Error(`AI title proxy returned HTTP ${response.status}`);
-        const payload = await response.json();
-        if (payload && payload.success === false) {
-            throw new Error(payload.error || 'AI title generation failed');
-        }
-        return {
-            recommendations: Array.isArray(payload?.recommendations) ? payload.recommendations : [],
-            generatedBy: payload?.generated_by || 'fallback'
-        };
-    } catch (err) {
-        console.warn('Gemini title enrichment unavailable; using fallback campaign titles.', err);
-        return { recommendations: [], generatedBy: 'fallback' };
-    }
-}
-
-function setCrimeAiStatus(message, isError = false) {
-    const status = document.getElementById('crimeAiStatus');
+function setAiStatus(message, isError = false) {
+    const status = document.getElementById('aiRecommendationsStatus');
     if (!status) return;
     status.textContent = message;
     status.style.color = isError ? '#b91c1c' : '#64748b';
 }
 
-function renderCrimeRecommendationsLoading() {
-    const tbody = document.getElementById('crimeAiRecommendationsTable');
+function renderAiRecommendationsLoading() {
+    const tbody = document.getElementById('aiRecommendationsTable');
     if (!tbody) return;
-    updateCrimeRecommendationsPagination(0);
+    updateAiRecommendationsPagination(0);
     tbody.innerHTML = `
         <tr>
-            <td colspan="5" style="padding: 28px; text-align: center; color: #64748b;">
+            <td colspan="7" style="padding: 28px; text-align: center; color: #64748b;">
                 <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
-                Loading recommendations...
+                Loading unified recommendations...
             </td>
         </tr>
     `;
 }
 
-function renderCrimeRecommendationsEmpty(message) {
-    const tbody = document.getElementById('crimeAiRecommendationsTable');
+function renderAiRecommendationsEmpty(message) {
+    const tbody = document.getElementById('aiRecommendationsTable');
     if (!tbody) return;
-    updateCrimeRecommendationsPagination(0);
+    updateAiRecommendationsPagination(0);
     tbody.innerHTML = `
         <tr>
-            <td colspan="5" style="padding: 28px; text-align: center; color: #64748b;">
+            <td colspan="7" style="padding: 28px; text-align: center; color: #64748b;">
                 <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
                 ${escapeHtml(message)}
             </td>
@@ -2511,23 +2323,38 @@ function renderCrimeRecommendationsEmpty(message) {
     `;
 }
 
-function updateCrimeRecommendationsPagination(totalItems) {
-    const pagination = document.getElementById('crimeAiPagination');
-    const summary = document.getElementById('crimeAiPaginationSummary');
-    const controls = document.getElementById('crimeAiPaginationControls');
+function filterAiRecommendations() {
+    const query = (document.getElementById('aiRecSearchInput')?.value || '').toLowerCase().trim();
+    if (!query) {
+        aiRecommendationsFiltered = [...aiRecommendations];
+    } else {
+        aiRecommendationsFiltered = aiRecommendations.filter(r =>
+            String(r.recommended_campaign_title || '').toLowerCase().includes(query) ||
+            String(r.incident_title || '').toLowerCase().includes(query) ||
+            String(r.source || '').toLowerCase().includes(query)
+        );
+    }
+    aiRecommendationsCurrentPage = 1;
+    renderAiRecommendationsTable();
+}
+
+function updateAiRecommendationsPagination(totalItems) {
+    const pagination = document.getElementById('aiRecommendationsPagination');
+    const summary = document.getElementById('aiRecommendationsPaginationSummary');
+    const controls = document.getElementById('aiRecommendationsPaginationControls');
     if (!pagination || !summary || !controls) return;
 
     controls.innerHTML = '';
 
-    if (totalItems <= crimeRecommendationsPageSize) {
+    if (totalItems <= aiRecommendationsPageSize) {
         pagination.style.display = 'none';
         return;
     }
 
-    const totalPages = Math.ceil(totalItems / crimeRecommendationsPageSize);
-    crimeRecommendationsCurrentPage = Math.min(Math.max(crimeRecommendationsCurrentPage, 1), totalPages);
-    const startItem = (crimeRecommendationsCurrentPage - 1) * crimeRecommendationsPageSize + 1;
-    const endItem = Math.min(startItem + crimeRecommendationsPageSize - 1, totalItems);
+    const totalPages = Math.ceil(totalItems / aiRecommendationsPageSize);
+    aiRecommendationsCurrentPage = Math.min(Math.max(aiRecommendationsCurrentPage, 1), totalPages);
+    const startItem = (aiRecommendationsCurrentPage - 1) * aiRecommendationsPageSize + 1;
+    const endItem = Math.min(startItem + aiRecommendationsPageSize - 1, totalItems);
 
     pagination.style.display = 'flex';
     summary.textContent = `Showing ${startItem}-${endItem} of ${totalItems.toLocaleString()} recommendations`;
@@ -2541,17 +2368,17 @@ function updateCrimeRecommendationsPagination(totalItems) {
         if (options.active) button.classList.add('active');
         button.addEventListener('click', () => {
             if (!button.disabled) {
-                setCrimeRecommendationsPage(page);
+                setAiRecommendationsPage(page);
             }
         });
         controls.appendChild(button);
     };
 
-    createButton('Prev', crimeRecommendationsCurrentPage - 1, { disabled: crimeRecommendationsCurrentPage === 1 });
+    createButton('Prev', aiRecommendationsCurrentPage - 1, { disabled: aiRecommendationsCurrentPage === 1 });
 
     const visiblePages = [];
-    const firstPage = Math.max(1, crimeRecommendationsCurrentPage - 2);
-    const lastPage = Math.min(totalPages, crimeRecommendationsCurrentPage + 2);
+    const firstPage = Math.max(1, aiRecommendationsCurrentPage - 2);
+    const lastPage = Math.min(totalPages, aiRecommendationsCurrentPage + 2);
     for (let page = firstPage; page <= lastPage; page++) {
         visiblePages.push(page);
     }
@@ -2570,56 +2397,79 @@ function updateCrimeRecommendationsPagination(totalItems) {
             dots.style.cssText = 'color: #94a3b8; padding: 0 4px; font-weight: 700;';
             controls.appendChild(dots);
         }
-        createButton(String(page), page, { active: page === crimeRecommendationsCurrentPage });
+        createButton(String(page), page, { active: page === aiRecommendationsCurrentPage });
         previousPage = page;
     });
 
-    createButton('Next', crimeRecommendationsCurrentPage + 1, { disabled: crimeRecommendationsCurrentPage === totalPages });
+    createButton('Next', aiRecommendationsCurrentPage + 1, { disabled: aiRecommendationsCurrentPage === totalPages });
 }
 
-function setCrimeRecommendationsPage(page) {
-    const totalPages = Math.max(1, Math.ceil(crimeAiRecommendations.length / crimeRecommendationsPageSize));
-    crimeRecommendationsCurrentPage = Math.min(Math.max(page, 1), totalPages);
-    renderCrimeRecommendationsTable(crimeAiRecommendations);
+function setAiRecommendationsPage(page) {
+    const totalPages = Math.max(1, Math.ceil(aiRecommendationsFiltered.length / aiRecommendationsPageSize));
+    aiRecommendationsCurrentPage = Math.min(Math.max(page, 1), totalPages);
+    renderAiRecommendationsTable();
 }
 
-function renderCrimeRecommendationsTable(recommendations) {
-    const tbody = document.getElementById('crimeAiRecommendationsTable');
+function renderAiRecommendationsTable() {
+    const tbody = document.getElementById('aiRecommendationsTable');
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    if (!recommendations.length) {
-        renderCrimeRecommendationsEmpty('No crime or disaster incident reports are available for recommendations.');
+    const items = aiRecommendationsFiltered;
+    if (!items.length) {
+        const msg = aiRecommendations.length ? 'No recommendations match your search.' : 'No incident reports are available for recommendations.';
+        updateAiRecommendationsPagination(0);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="padding: 28px; text-align: center; color: #64748b;">
+                    <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                    ${msg}
+                </td>
+            </tr>
+        `;
         return;
     }
 
-    const totalPages = Math.max(1, Math.ceil(recommendations.length / crimeRecommendationsPageSize));
-    crimeRecommendationsCurrentPage = Math.min(Math.max(crimeRecommendationsCurrentPage, 1), totalPages);
-    const startIndex = (crimeRecommendationsCurrentPage - 1) * crimeRecommendationsPageSize;
-    const pageRecommendations = recommendations.slice(startIndex, startIndex + crimeRecommendationsPageSize);
+    const totalPages = Math.max(1, Math.ceil(items.length / aiRecommendationsPageSize));
+    aiRecommendationsCurrentPage = Math.min(Math.max(aiRecommendationsCurrentPage, 1), totalPages);
+    const startIndex = (aiRecommendationsCurrentPage - 1) * aiRecommendationsPageSize;
+    const pageItems = items.slice(startIndex, startIndex + aiRecommendationsPageSize);
 
-    pageRecommendations.forEach((recommendation, pageIndex) => {
-        const recommendationIndex = startIndex + pageIndex;
+    pageItems.forEach((rec, pageIndex) => {
+        const globalIndex = startIndex + pageIndex;
         const row = document.createElement('tr');
         row.style.borderBottom = '1px solid #e2e8f0';
 
+        const rankCell = document.createElement('td');
+        rankCell.style.cssText = 'padding: 12px 14px; color: #64748b; font-weight: 700; font-size: 14px; vertical-align: middle;';
+        rankCell.textContent = String(globalIndex + 1);
+
         const titleCell = document.createElement('td');
         titleCell.style.cssText = 'padding: 12px 14px; color: #0f172a; font-weight: 700; line-height: 1.4;';
-        titleCell.textContent = recommendation.recommendedCampaignTitle;
+        titleCell.textContent = rec.recommended_campaign_title || 'N/A';
 
-        const incidentCell = document.createElement('td');
-        incidentCell.style.cssText = 'padding: 12px 14px; color: #475569;';
-        incidentCell.textContent = recommendation.incidentTitle;
+        const catCell = document.createElement('td');
+        catCell.style.cssText = 'padding: 12px 14px; vertical-align: middle;';
+        const catBadge = getCategoryBadge(rec.source || 'crime');
+        const catSpan = document.createElement('span');
+        catSpan.style.cssText = `display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: ${catBadge.color}15; color: ${catBadge.color}; border: 1px solid ${catBadge.color}30; text-transform: uppercase; letter-spacing: 0.3px;`;
+        catSpan.innerHTML = `<i class="fas ${catBadge.icon}"></i> ${catBadge.label}`;
+        catCell.appendChild(catSpan);
+
+        const incCell = document.createElement('td');
+        incCell.style.cssText = 'padding: 12px 14px; color: #475569; font-size: 13px;';
+        incCell.textContent = rec.incident_title || 'N/A';
 
         const countCell = document.createElement('td');
-        countCell.style.cssText = 'padding: 12px 14px; color: #0f172a; font-weight: 700; white-space: nowrap;';
-        countCell.textContent = recommendation.count.toLocaleString();
+        countCell.style.cssText = 'padding: 12px 14px; color: #0f172a; font-weight: 700; white-space: nowrap; font-size: 14px;';
+        countCell.textContent = (rec.report_count || 0).toLocaleString();
 
         const priorityCell = document.createElement('td');
         priorityCell.style.cssText = 'padding: 12px 14px;';
+        const prio = getPriorityBadge(rec.priority_level, rec.priority_score);
         const badge = document.createElement('span');
-        badge.className = `priority-badge ${recommendation.priorityClassName}`;
-        badge.textContent = `${recommendation.priorityLabel} / ${recommendation.confidenceLabel}`;
+        badge.style.cssText = `display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: ${prio.color}15; color: ${prio.color}; border: 1px solid ${prio.color}30;`;
+        badge.textContent = `${prio.label} (${Number(rec.priority_score || 0).toFixed(0)})`;
         priorityCell.appendChild(badge);
 
         const actionCell = document.createElement('td');
@@ -2627,491 +2477,155 @@ function renderCrimeRecommendationsTable(recommendations) {
         const viewButton = document.createElement('button');
         viewButton.type = 'button';
         viewButton.className = 'btn btn-primary';
-        viewButton.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: 13px;';
+        viewButton.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 12px;';
         viewButton.innerHTML = '<i class="fas fa-eye"></i><span>View</span>';
-        viewButton.addEventListener('click', () => openCrimeRecommendationModal(recommendationIndex));
+        viewButton.addEventListener('click', () => openAiRecommendationModal(globalIndex, items));
         actionCell.appendChild(viewButton);
 
-        row.append(titleCell, incidentCell, countCell, priorityCell, actionCell);
+        row.append(rankCell, titleCell, catCell, incCell, countCell, priorityCell, actionCell);
         tbody.appendChild(row);
     });
 
-    updateCrimeRecommendationsPagination(recommendations.length);
+    updateAiRecommendationsPagination(items.length);
 }
 
-async function loadCrimeCampaignRecommendations(forceRefresh = false) {
-    if (!forceRefresh && crimeAiRecommendations.length) {
-        renderCrimeRecommendationsTable(crimeAiRecommendations);
+async function loadAiRecommendations(forceRefresh = false) {
+    if (!forceRefresh && aiRecommendations.length) {
+        aiRecommendationsFiltered = [...aiRecommendations];
+        renderAiRecommendationsTable();
         return;
     }
 
-    renderCrimeRecommendationsLoading();
-    setCrimeAiStatus('Loading crime analytics reports...');
-    crimeRecommendationsCurrentPage = 1;
+    renderAiRecommendationsLoading();
+    setAiStatus('Loading compiled analytics from crime and disaster reports...');
+    aiRecommendationsCurrentPage = 1;
 
     try {
-        let reportResult;
-        try {
-            reportResult = await fetchCrimeReportsDirect();
-        } catch (directErr) {
-            console.warn('Direct crime report fetch failed; using local proxy.', directErr);
-            reportResult = await fetchCrimeReportsProxy();
+        const url = aiRecommendationsUrl + (forceRefresh ? '?refresh=1' : '');
+        const response = await fetch(url, {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`AI recommendations API returned HTTP ${response.status}`);
+        const payload = await response.json();
+        if (payload && payload.success === false) {
+            throw new Error(payload.error || 'AI recommendations endpoint failed');
         }
 
-        crimeReportRecords = reportResult.records || [];
-        crimeIncidentGroups = groupCrimeReports(crimeReportRecords);
+        aiRecommendations = Array.isArray(payload?.recommendations) ? payload.recommendations : [];
+        aiRecommendationsFiltered = [...aiRecommendations];
+        aiRecommendationsCurrentPage = 1;
+        renderAiRecommendationsTable();
 
-        const titleResult = reportResult.aiTitles
-            ? { recommendations: reportResult.aiTitles, generatedBy: reportResult.generatedBy || 'proxy' }
-            : await fetchCrimeAiTitles(crimeIncidentGroups);
-
-        crimeAiRecommendations = buildCrimeRecommendations(crimeIncidentGroups, titleResult.recommendations);
-        crimeRecommendationsCurrentPage = 1;
-        renderCrimeRecommendationsTable(crimeAiRecommendations);
-
-        if (!crimeAiRecommendations.length) {
-            setCrimeAiStatus('No crime reports with incident titles were found.');
+        if (!aiRecommendations.length) {
+            setAiStatus('No incident reports available for recommendations.');
             return;
         }
 
-        const sourceLabel = reportResult.source === 'direct' ? 'direct crime analytics API' : 'local PHP proxy';
-        const aiLabel = titleResult.generatedBy === 'gemini' ? 'Gemini AI titles' : 'rule-based fallback titles';
-        setCrimeAiStatus(`${crimeReportRecords.length.toLocaleString()} report(s) grouped into ${crimeIncidentGroups.length.toLocaleString()} incident category/categories from ${sourceLabel}; using ${aiLabel}.`);
+        const genLabel = payload.generated_by === 'gemini' ? 'Gemini AI titles' : payload.generated_by === 'cache' ? 'cached' : 'rule-based fallback titles';
+        setAiStatus(`${payload.total_records || 0} report(s) from crime + disaster APIs grouped into ${payload.total_groups || 0} incident categories; using ${genLabel}.`);
     } catch (err) {
-        console.error('Failed to load AI recommended campaigns from crime reports:', err);
-        renderCrimeRecommendationsEmpty('Unable to load crime report recommendations. Please try again.');
-        setCrimeAiStatus(err.message || 'Unable to load crime report recommendations.', true);
-    }
-}
-
-function getReportValue(record, keys) {
-    for (const key of keys) {
-        if (key.includes('.')) {
-            const value = key.split('.').reduce((current, part) => current && current[part], record);
-            if (value !== undefined && value !== null && String(value).trim() !== '') return value;
-        } else if (record && record[key] !== undefined && record[key] !== null && String(record[key]).trim() !== '') {
-            return record[key];
-        }
-    }
-    return 'N/A';
-}
-
-function getReportLocation(record) {
-    const pieces = [
-        getReportValue(record, ['barangay_name', 'barangay', 'barangay.name', 'barangay.barangay_name']),
-        getReportValue(record, ['address_details', 'address', 'location', 'place'])
-    ].filter(value => value !== 'N/A');
-    return pieces.length ? pieces.join(' - ') : 'N/A';
-}
-
-function getRelatedReports(recommendation) {
-    return crimeReportRecords.filter(record => getIncidentTitle(record) === recommendation.incidentTitle);
-}
-
-function renderRecommendationReports(recommendation) {
-    const tbody = document.getElementById('crimeRecommendationReportsBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    const reports = getRelatedReports(recommendation);
-    if (!reports.length) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" style="padding: 24px; text-align: center; color: #64748b;">No related reports found.</td>
-            </tr>
-        `;
-        return;
-    }
-
-    reports.forEach(report => {
-        const row = document.createElement('tr');
-        row.style.borderBottom = '1px solid #e2e8f0';
-
-        const values = [
-            getIncidentTitle(report),
-            getReportValue(report, ['incident_date', 'created_at', 'date', 'report_date', 'createdDate']),
-            getReportLocation(report),
-            getReportValue(report, ['incident_description', 'description', 'details', 'narrative', 'remarks']),
-            getReportValue(report, ['status', 'clearance_status', 'report_status'])
-        ];
-
-        values.forEach(value => {
-            const cell = document.createElement('td');
-            cell.style.cssText = 'padding: 10px 12px; color: #475569; vertical-align: top; font-size: 13px; line-height: 1.5;';
-            cell.textContent = String(value || 'N/A');
-            row.appendChild(cell);
-        });
-
-        tbody.appendChild(row);
-    });
-}
-
-function switchCrimeRecommendationTab(tabName) {
-    const chartPanel = document.getElementById('crimeRecommendationChartPanel');
-    const reportsPanel = document.getElementById('crimeRecommendationReportsPanel');
-    const chartTab = document.getElementById('crimeRecommendationChartTab');
-    const reportsTab = document.getElementById('crimeRecommendationReportsTab');
-
-    const showingChart = tabName === 'chart';
-    if (chartPanel) chartPanel.style.display = showingChart ? 'block' : 'none';
-    if (reportsPanel) reportsPanel.style.display = showingChart ? 'none' : 'block';
-    if (chartTab) chartTab.classList.toggle('active', showingChart);
-    if (reportsTab) reportsTab.classList.toggle('active', !showingChart);
-
-    if (showingChart) {
-        const index = Number(document.getElementById('crimeRecommendationModal')?.dataset.recommendationIndex || -1);
-        if (index >= 0 && crimeAiRecommendations[index]) {
-            renderCrimeRecommendationChart(crimeAiRecommendations[index]);
+        console.error('Failed to load AI recommendations:', err);
+        setAiStatus(err.message || 'Unable to load recommendations.', true);
+        const tbody = document.getElementById('aiRecommendationsTable');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="padding: 28px; text-align: center; color: #b91c1c;">
+                        <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                        Unable to load recommendations. Please try again.
+                    </td>
+                </tr>
+            `;
         }
     }
 }
 
-function renderCrimeRecommendationChart(recommendation) {
-    const canvas = document.getElementById('crimeRecommendationDonutChart');
-    const summary = document.getElementById('crimeRecommendationChartSummary');
-    if (!canvas) return;
+function openAiRecommendationModal(index, items) {
+    const rec = items[index];
+    if (!rec) return;
 
-    if (crimeRecommendationChart) {
-        crimeRecommendationChart.destroy();
-        crimeRecommendationChart = null;
-    }
+    closeAiRecommendationModal();
 
-    if (typeof Chart === 'undefined') {
-        if (summary) summary.textContent = 'Chart library is unavailable. Please refresh the page.';
-        return;
-    }
+    const prio = getPriorityBadge(rec.priority_level, rec.priority_score);
+    const catBadge = getCategoryBadge(rec.source || 'crime');
 
-    const labels = crimeIncidentGroups.map(group => group.incidentTitle);
-    const values = crimeIncidentGroups.map(group => group.count);
-    const total = values.reduce((sum, value) => sum + value, 0);
-    const selectedIndex = labels.indexOf(recommendation.incidentTitle);
-    const palette = ['#94a3b8', '#38bdf8', '#34d399', '#fbbf24', '#f87171', '#a78bfa', '#2dd4bf', '#fb7185'];
-    const colors = labels.map((_, index) => index === selectedIndex ? '#667eea' : palette[index % palette.length]);
-
-    const percentage = total > 0 ? ((recommendation.count / total) * 100).toFixed(1) : '0.0';
-    if (summary) {
-        summary.textContent = `${recommendation.incidentTitle}: ${recommendation.count.toLocaleString()} of ${total.toLocaleString()} report(s), ${percentage}% share.`;
-    }
-
-    crimeRecommendationChart = new Chart(canvas, {
-        type: 'doughnut',
-        data: {
-            labels,
-            datasets: [{
-                data: values,
-                backgroundColor: colors,
-                borderColor: '#ffffff',
-                borderWidth: 2,
-                hoverOffset: 10
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        boxWidth: 12,
-                        usePointStyle: true
-                    }
-                },
-                tooltip: {
-                    callbacks: {
-                        label: context => {
-                            const value = Number(context.raw || 0);
-                            const share = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
-                            return `${context.label}: ${value.toLocaleString()} report(s), ${share}%`;
-                        }
-                    }
-                }
-            },
-            cutout: '62%'
-        }
-    });
-}
-
-function closeCrimeRecommendationModal() {
-    if (crimeRecommendationChart) {
-        crimeRecommendationChart.destroy();
-        crimeRecommendationChart = null;
-    }
-    const modal = document.getElementById('crimeRecommendationModal');
-    if (modal) modal.remove();
-}
-
-function openCrimeRecommendationModal(index) {
-    const recommendation = crimeAiRecommendations[index];
-    if (!recommendation) return;
-
-    closeCrimeRecommendationModal();
-
-    const totalReports = crimeIncidentGroups.reduce((sum, group) => sum + group.count, 0);
-    const share = totalReports > 0 ? ((recommendation.count / totalReports) * 100).toFixed(1) : '0.0';
     const modal = document.createElement('div');
-    modal.id = 'crimeRecommendationModal';
-    modal.dataset.recommendationIndex = String(index);
+    modal.id = 'aiRecommendationModal';
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);';
 
     modal.innerHTML = `
-        <div style="background: white; border-radius: 14px; max-width: 980px; width: 100%; max-height: 92vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+        <div style="background: white; border-radius: 14px; max-width: 700px; width: 100%; max-height: 85vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
             <div style="background: linear-gradient(135deg, #667eea 0%, #4c8a89 100%); color: white; padding: 22px 26px; display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
                 <div>
-                    <div style="font-size: 12px; opacity: 0.9; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">AI Campaign Recommendation</div>
-                    <h2 style="margin: 0; font-size: 22px; font-weight: 800; line-height: 1.25;">${escapeHtml(recommendation.recommendedCampaignTitle)}</h2>
-                    <p style="margin: 8px 0 0 0; opacity: 0.95; font-size: 13px;">${escapeHtml(recommendation.incidentTitle)} - ${recommendation.count.toLocaleString()} report(s), ${share}% share</p>
+                    <div style="font-size: 12px; opacity: 0.9; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                        <i class="fas ${catBadge.icon}"></i> ${catBadge.label} Campaign Recommendation
+                    </div>
+                    <h2 style="margin: 0; font-size: 20px; font-weight: 800; line-height: 1.25;">${escapeHtml(rec.recommended_campaign_title)}</h2>
                 </div>
-                <button type="button" onclick="closeCrimeRecommendationModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center;">&times;</button>
+                <button type="button" onclick="closeAiRecommendationModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">&times;</button>
             </div>
-            <div style="padding: 18px 22px 0 22px; display: flex; gap: 8px; flex-wrap: wrap;">
-                <button type="button" id="crimeRecommendationChartTab" class="recommendation-modal-tab active" onclick="switchCrimeRecommendationTab('chart')">
-                    <i class="fas fa-chart-pie" style="margin-right: 6px;"></i>Data Visualization
-                </button>
-                <button type="button" id="crimeRecommendationReportsTab" class="recommendation-modal-tab" onclick="switchCrimeRecommendationTab('reports')">
-                    <i class="fas fa-table" style="margin-right: 6px;"></i>Reports
-                </button>
-            </div>
-            <div style="padding: 20px 22px 24px 22px; overflow-y: auto;">
-                <div id="crimeRecommendationChartPanel">
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
-                        <div id="crimeRecommendationChartSummary" style="color: #334155; font-size: 14px; font-weight: 700; margin-bottom: 14px;"></div>
-                        <div class="recommendation-chart-wrap">
-                            <canvas id="crimeRecommendationDonutChart"></canvas>
+            <div style="padding: 22px 26px; overflow-y: auto;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+                    <div style="background: #f8fafc; border-radius: 8px; padding: 14px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Incident Category</div>
+                        <div style="font-size: 14px; color: #0f172a; font-weight: 600;">${escapeHtml(rec.incident_title)}</div>
+                    </div>
+                    <div style="background: #f8fafc; border-radius: 8px; padding: 14px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Data Source</div>
+                        <div><span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; background: ${catBadge.color}15; color: ${catBadge.color}; border: 1px solid ${catBadge.color}30; text-transform: uppercase;">${catBadge.label}</span></div>
+                    </div>
+                    <div style="background: #f8fafc; border-radius: 8px; padding: 14px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Reports Analyzed</div>
+                        <div style="font-size: 20px; color: #0f172a; font-weight: 800;">${(rec.report_count || 0).toLocaleString()}</div>
+                    </div>
+                    <div style="background: #f8fafc; border-radius: 8px; padding: 14px; border: 1px solid #e2e8f0;">
+                        <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Priority Score</div>
+                        <div style="font-size: 18px; font-weight: 800; color: ${prio.color};">
+                            ${prio.label} (${Number(rec.priority_score || 0).toFixed(0)}/100)
                         </div>
                     </div>
                 </div>
-                <div id="crimeRecommendationReportsPanel" style="display: none;">
-                    <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
-                        <table class="data-table" style="width: 100%; border-collapse: collapse; min-width: 860px;">
-                            <thead>
-                                <tr style="background: #f8fafc;">
-                                    <th style="padding: 11px 12px; text-align: left; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Incident Title</th>
-                                    <th style="padding: 11px 12px; text-align: left; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Date / Created Date</th>
-                                    <th style="padding: 11px 12px; text-align: left; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Location / Barangay / Address</th>
-                                    <th style="padding: 11px 12px; text-align: left; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Description / Details</th>
-                                    <th style="padding: 11px 12px; text-align: left; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="crimeRecommendationReportsBody">
-                                <tr>
-                                    <td colspan="5" style="padding: 24px; text-align: center; color: #64748b;">Loading related reports...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-size: 11px; color: #0369a1; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+                        <i class="fas fa-lightbulb"></i> Recommended Campaign Title
+                    </div>
+                    <div style="font-size: 16px; color: #0c4a6e; font-weight: 700; line-height: 1.4;">${escapeHtml(rec.recommended_campaign_title)}</div>
+                </div>
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px;">
+                    <div style="font-size: 11px; color: #15803d; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+                        <i class="fas fa-cogs"></i> Scoring Breakdown
+                    </div>
+                    <div style="font-size: 13px; color: #166534; line-height: 1.7;">
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #dcfce7;">
+                            <span>Report Volume Score</span>
+                            <span style="font-weight: 700;">${(rec.report_count || 0) * 10} pts (${(rec.report_count || 0)} reports x 10)</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                            <span>Final Priority Score</span>
+                            <span style="font-weight: 700; color: ${prio.color};">${Number(rec.priority_score || 0).toFixed(0)}/100</span>
+                        </div>
                     </div>
                 </div>
+            </div>
+            <div style="padding: 14px 26px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: flex-end;">
+                <button onclick="closeAiRecommendationModal()" style="padding: 10px 24px; background: #4c8a89; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button>
             </div>
         </div>
     `;
 
     modal.addEventListener('click', event => {
-        if (event.target === modal) closeCrimeRecommendationModal();
+        if (event.target === modal) closeAiRecommendationModal();
     });
 
     document.body.appendChild(modal);
-    renderRecommendationReports(recommendation);
-    renderCrimeRecommendationChart(recommendation);
 }
 
-// ==================== DISASTER RECOMMENDATIONS ====================
-
-async function loadDisasterCampaignRecommendations(forceRefresh = false) {
-    if (!forceRefresh && disasterAiRecommendations.length) {
-        renderDisasterRecommendationsTable(disasterAiRecommendations);
-        return;
-    }
-
-    renderDisasterRecommendationsLoading();
-    setDisasterAiStatus('Loading disaster alert reports...');
-    disasterRecommendationsCurrentPage = 1;
-
-    try {
-        const res = await fetch(disasterRecommendationsProxyUrl, {
-            headers: { 'Accept': 'application/json' },
-            cache: 'no-store'
-        });
-        if (!res.ok) throw new Error(`Disaster API returned HTTP ${res.status}`);
-        const payload = await res.json();
-        if (payload && payload.success === false) throw new Error(payload.error || 'Disaster API failed');
-
-        disasterReportRecords = payload.records || [];
-        disasterIncidentGroups = groupCrimeReports(disasterReportRecords);
-
-        let titleResult;
-        if (Array.isArray(payload.recommendations) && payload.recommendations.length) {
-            titleResult = { recommendations: payload.recommendations, generatedBy: payload.generated_by || 'proxy' };
-        } else {
-            titleResult = await fetchDisasterAiTitles(disasterIncidentGroups);
-        }
-
-        disasterAiRecommendations = buildCrimeRecommendations(disasterIncidentGroups, titleResult.recommendations);
-        disasterRecommendationsCurrentPage = 1;
-        renderDisasterRecommendationsTable(disasterAiRecommendations);
-
-        if (!disasterAiRecommendations.length) {
-            setDisasterAiStatus('No disaster alerts with categories were found.');
-            return;
-        }
-
-        const aiLabel = titleResult.generatedBy === 'gemini' ? 'Gemini AI titles' : 'rule-based fallback titles';
-        setDisasterAiStatus(`${disasterReportRecords.length.toLocaleString()} disaster alert(s) grouped into ${disasterIncidentGroups.length.toLocaleString()} category/categories; using ${aiLabel}.`);
-    } catch (err) {
-        console.error('Failed to load disaster recommendations:', err);
-        renderDisasterRecommendationsEmpty('Unable to load disaster report recommendations. Please try again.');
-        setDisasterAiStatus(err.message || 'Unable to load disaster report recommendations.', true);
-    }
+function closeAiRecommendationModal() {
+    const modal = document.getElementById('aiRecommendationModal');
+    if (modal) modal.remove();
 }
 
-async function fetchDisasterAiTitles(groups) {
-    if (!groups.length) return { recommendations: [], generatedBy: 'none' };
-    try {
-        const res = await fetch(crimeRecommendationsProxyUrl, {
-            method: 'POST',
-            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                mode: 'titles',
-                source: 'disaster',
-                groups: groups.map(g => ({ incident_title: g.incidentTitle, report_count: g.count }))
-            })
-        });
-        if (!res.ok) throw new Error(`AI title proxy returned HTTP ${res.status}`);
-        const payload = await res.json();
-        if (payload && payload.success === false) throw new Error(payload.error || 'AI title generation failed');
-        return {
-            recommendations: Array.isArray(payload?.recommendations) ? payload.recommendations : [],
-            generatedBy: payload?.generated_by || 'fallback'
-        };
-    } catch (err) {
-        console.warn('Gemini title enrichment unavailable for disaster; using fallback.', err);
-        return { recommendations: [], generatedBy: 'fallback' };
-    }
-}
-
-function setDisasterAiStatus(message, isError = false) {
-    const status = document.getElementById('disasterAiStatus');
-    if (!status) return;
-    status.textContent = message;
-    status.style.color = isError ? '#b91c1c' : '#64748b';
-}
-
-function renderDisasterRecommendationsLoading() {
-    const tbody = document.getElementById('disasterAiRecommendationsTable');
-    if (!tbody) return;
-    updateDisasterRecommendationsPagination(0);
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="5" style="padding: 28px; text-align: center; color: #64748b;">
-                <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
-                Loading disaster recommendations...
-            </td>
-        </tr>
-    `;
-}
-
-function renderDisasterRecommendationsEmpty(message) {
-    const tbody = document.getElementById('disasterAiRecommendationsTable');
-    if (!tbody) return;
-    updateDisasterRecommendationsPagination(0);
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="5" style="padding: 28px; text-align: center; color: #64748b;">
-                <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
-                ${escapeHtml(message)}
-            </td>
-        </tr>
-    `;
-}
-
-function renderDisasterRecommendationsTable(recommendations) {
-    const tbody = document.getElementById('disasterAiRecommendationsTable');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-
-    if (!recommendations.length) {
-        renderDisasterRecommendationsEmpty('No disaster alerts are available for recommendations.');
-        return;
-    }
-
-    const totalPages = Math.max(1, Math.ceil(recommendations.length / disasterRecommendationsPageSize));
-    disasterRecommendationsCurrentPage = Math.min(Math.max(disasterRecommendationsCurrentPage, 1), totalPages);
-    const startIndex = (disasterRecommendationsCurrentPage - 1) * disasterRecommendationsPageSize;
-    const pageRecommendations = recommendations.slice(startIndex, startIndex + disasterRecommendationsPageSize);
-
-    pageRecommendations.forEach((recommendation, pageIndex) => {
-        const recommendationIndex = startIndex + pageIndex;
-        const row = document.createElement('tr');
-        row.style.borderBottom = '1px solid #e2e8f0';
-
-        const titleCell = document.createElement('td');
-        titleCell.style.cssText = 'padding: 12px 14px; color: #0f172a; font-weight: 700; line-height: 1.4;';
-        titleCell.textContent = recommendation.recommendedCampaignTitle;
-
-        const incidentCell = document.createElement('td');
-        incidentCell.style.cssText = 'padding: 12px 14px; color: #475569;';
-        incidentCell.textContent = recommendation.incidentTitle;
-
-        const countCell = document.createElement('td');
-        countCell.style.cssText = 'padding: 12px 14px; font-weight: 700; color: #0f172a; white-space: nowrap;';
-        countCell.textContent = recommendation.count.toLocaleString();
-
-        const badgeCell = document.createElement('td');
-        badgeCell.style.cssText = 'padding: 12px 14px;';
-        const badge = document.createElement('span');
-        badge.className = `priority-badge ${recommendation.priorityClassName}`;
-        badge.textContent = `${recommendation.priorityLabel} / ${recommendation.confidenceLabel}`;
-        badgeCell.appendChild(badge);
-
-        const actionCell = document.createElement('td');
-        actionCell.style.cssText = 'padding: 12px 14px;';
-        const viewButton = document.createElement('button');
-        viewButton.className = 'btn btn-sm';
-        viewButton.style.cssText = 'background: #667eea; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;';
-        viewButton.textContent = 'View Details';
-        viewButton.addEventListener('click', () => openCrimeRecommendationModal(recommendationIndex));
-        actionCell.appendChild(viewButton);
-
-        row.append(titleCell, incidentCell, countCell, badgeCell, actionCell);
-        tbody.appendChild(row);
-    });
-
-    updateDisasterRecommendationsPagination(recommendations.length);
-}
-
-function updateDisasterRecommendationsPagination(totalItems) {
-    const pagination = document.getElementById('disasterAiPagination');
-    const summary = document.getElementById('disasterAiPaginationSummary');
-    const controls = document.getElementById('disasterAiPaginationControls');
-    if (!pagination || !summary || !controls) return;
-
-    controls.innerHTML = '';
-
-    if (totalItems <= disasterRecommendationsPageSize) {
-        pagination.style.display = 'none';
-        return;
-    }
-
-    const totalPages = Math.ceil(totalItems / disasterRecommendationsPageSize);
-    disasterRecommendationsCurrentPage = Math.min(Math.max(disasterRecommendationsCurrentPage, 1), totalPages);
-    const startItem = (disasterRecommendationsCurrentPage - 1) * disasterRecommendationsPageSize + 1;
-    const endItem = Math.min(startItem + disasterRecommendationsPageSize - 1, totalItems);
-
-    pagination.style.display = 'flex';
-    summary.textContent = `Showing ${startItem}-${endItem} of ${totalItems.toLocaleString()} recommendations`;
-
-    const createButton = (label, page, options = {}) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'crime-ai-page-btn';
-        button.textContent = label;
-        button.disabled = Boolean(options.disabled);
-        if (options.active) button.classList.add('active');
-        button.addEventListener('click', () => {
-            if (!button.disabled) setDisasterRecommendationsPage(page);
-        });
-        controls.appendChild(button);
-    };
-
-    createButton('Prev', disasterRecommendationsCurrentPage - 1, { disabled: disasterRecommendationsCurrentPage === 1 });
 
     const visiblePages = [];
     const firstPage = Math.max(1, disasterRecommendationsCurrentPage - 2);
@@ -3123,26 +2637,6 @@ function updateDisasterRecommendationsPagination(totalItems) {
     let previousPage = 0;
     visiblePages.forEach(page => {
         if (previousPage && page - previousPage > 1) {
-            const dots = document.createElement('span');
-            dots.textContent = '...';
-            dots.style.cssText = 'color: #94a3b8; padding: 0 4px; font-weight: 700;';
-            controls.appendChild(dots);
-        }
-        createButton(String(page), page, { active: page === disasterRecommendationsCurrentPage });
-        previousPage = page;
-    });
-
-    createButton('Next', disasterRecommendationsCurrentPage + 1, { disabled: disasterRecommendationsCurrentPage === totalPages });
-}
-
-function setDisasterRecommendationsPage(page) {
-    const totalPages = Math.max(1, Math.ceil(disasterAiRecommendations.length / disasterRecommendationsPageSize));
-    disasterRecommendationsCurrentPage = Math.min(Math.max(page, 1), totalPages);
-    renderDisasterRecommendationsTable(disasterAiRecommendations);
-}
-
-// ==================== END DISASTER RECOMMENDATIONS ====================
-
 // Toast Notification Functions
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
@@ -9444,17 +8938,14 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         console.log('DOMContentLoaded - Initializing campaigns');
         initializeCampaigns();
-        loadCrimeCampaignRecommendations();
-        loadDisasterCampaignRecommendations();
+        loadAiRecommendations();
         
         // Make functions globally accessible after DOM loads
         window.handleGetPredictionClick = handleGetPredictionClick;
         window.getAutoMLPrediction = getAutoMLPrediction;
         window.refreshAutoMLCampaigns = refreshAutoMLCampaigns;
-        window.loadCrimeCampaignRecommendations = loadCrimeCampaignRecommendations;
-        window.loadDisasterCampaignRecommendations = loadDisasterCampaignRecommendations;
-        window.switchCrimeRecommendationTab = switchCrimeRecommendationTab;
-        window.closeCrimeRecommendationModal = closeCrimeRecommendationModal;
+        window.loadAiRecommendations = loadAiRecommendations;
+        window.closeAiRecommendationModal = closeAiRecommendationModal;
         console.log('Functions made globally accessible:', {
             handleGetPredictionClick: typeof window.handleGetPredictionClick,
             getAutoMLPrediction: typeof window.getAutoMLPrediction,
@@ -9469,14 +8960,11 @@ if (document.readyState === 'loading') {
     window.handleGetPredictionClick = handleGetPredictionClick;
     window.getAutoMLPrediction = getAutoMLPrediction;
     window.refreshAutoMLCampaigns = refreshAutoMLCampaigns;
-    window.loadCrimeCampaignRecommendations = loadCrimeCampaignRecommendations;
-    window.loadDisasterCampaignRecommendations = loadDisasterCampaignRecommendations;
-    window.switchCrimeRecommendationTab = switchCrimeRecommendationTab;
-    window.closeCrimeRecommendationModal = closeCrimeRecommendationModal;
+    window.loadAiRecommendations = loadAiRecommendations;
+    window.closeAiRecommendationModal = closeAiRecommendationModal;
     
     initializeCampaigns();
-    loadCrimeCampaignRecommendations();
-    loadDisasterCampaignRecommendations();
+    loadAiRecommendations();
 }
 
 // Also try to populate dropdown when the AutoML section becomes visible
