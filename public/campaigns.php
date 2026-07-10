@@ -1707,10 +1707,10 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     <div>
                         <h3 style="margin: 0 0 6px 0; color: #0f172a; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
                             <i class="fas fa-shield-alt" style="color: #667eea;"></i>
-                            AI Recommended Campaigns from Incident Reports
+                            AI Recommended Campaigns from Crime Reports
                         </h3>
                         <p id="crimeAiStatus" class="crime-ai-status" style="margin: 0;">
-                            Loading incident report analytics...
+                            Loading crime analytics recommendations...
                         </p>
                     </div>
                     <button type="button" class="btn btn-secondary" onclick="loadCrimeCampaignRecommendations(true)" style="display: inline-flex; align-items: center; gap: 6px; border: 2px solid #667eea; color: #667eea; background: white; font-weight: 700;">
@@ -1746,6 +1746,49 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             </div>
         </div>
     </section>
+
+    <div class="crime-ai-card" id="disasterAiRecommendationsCard">
+        <div class="crime-ai-toolbar">
+            <div>
+                <h3 style="margin: 0 0 6px 0; color: #0f172a; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-exclamation-triangle" style="color: #dc2626;"></i>
+                    AI Recommended Campaigns from Disaster Alerts
+                </h3>
+                <p id="disasterAiStatus" class="crime-ai-status" style="margin: 0;">
+                    Loading disaster analytics recommendations...
+                </p>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="loadDisasterCampaignRecommendations(true)" style="display: inline-flex; align-items: center; gap: 6px; border: 2px solid #dc2626; color: #dc2626; background: white; font-weight: 700;">
+                <i class="fas fa-sync-alt"></i>
+                Refresh Disaster Reports
+            </button>
+        </div>
+        <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <table class="data-table" style="width: 100%; border-collapse: collapse; min-width: 760px;">
+                <thead>
+                    <tr style="background: #f8fafc;">
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Recommended Campaign Title</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Disaster / Alert Category</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap;">Number of Alerts</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Priority / Confidence</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="disasterAiRecommendationsTable">
+                    <tr>
+                        <td colspan="5" style="padding: 28px; text-align: center; color: #64748b;">
+                            <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+                            Loading recommendations...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="disasterAiPagination" class="crime-ai-pagination" style="display: none;">
+            <div id="disasterAiPaginationSummary" style="color: #64748b; font-size: 13px; font-weight: 600;"></div>
+            <div id="disasterAiPaginationControls" class="crime-ai-page-controls"></div>
+        </div>
+    </div>
     <?php endif; // End RBAC: Hide AutoML section for Viewer ?>
 
     <!-- Campaigns List - Moved to top -->
@@ -2240,6 +2283,7 @@ const basePath = '<?php echo $basePath; ?>';
 const apiBase = '<?php echo $apiPath; ?>';
 const crimeReportsApiUrl = 'https://crime-analytics.alertaraqc.com/api/crimes';
 const crimeRecommendationsProxyUrl = basePath + '/public/api/crime_campaign_recommendations.php';
+const disasterRecommendationsProxyUrl = basePath + '/public/api/crime_campaign_recommendations.php?source=disaster';
 console.log('BASE PATH:', basePath);
 
 let crimeReportRecords = [];
@@ -2249,11 +2293,17 @@ let crimeRecommendationChart = null;
 let crimeRecommendationsCurrentPage = 1;
 
 const crimeRecommendationsPageSize = 10;
+const disasterRecommendationsPageSize = 10;
 
 const crimePriorityThresholds = {
     high: 10,
     medium: 4
 };
+
+let disasterReportRecords = [];
+let disasterIncidentGroups = [];
+let disasterAiRecommendations = [];
+let disasterRecommendationsCurrentPage = 1;
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -2596,16 +2646,16 @@ async function loadCrimeCampaignRecommendations(forceRefresh = false) {
     }
 
     renderCrimeRecommendationsLoading();
-    setCrimeAiStatus('Loading crime and disaster reports...');
+    setCrimeAiStatus('Loading crime analytics reports...');
     crimeRecommendationsCurrentPage = 1;
 
     try {
         let reportResult;
         try {
-            reportResult = await fetchCrimeReportsProxy();
-        } catch (proxyErr) {
-            console.warn('Proxy fetch failed; falling back to direct crime-only API.', proxyErr);
             reportResult = await fetchCrimeReportsDirect();
+        } catch (directErr) {
+            console.warn('Direct crime report fetch failed; using local proxy.', directErr);
+            reportResult = await fetchCrimeReportsProxy();
         }
 
         crimeReportRecords = reportResult.records || [];
@@ -2620,17 +2670,17 @@ async function loadCrimeCampaignRecommendations(forceRefresh = false) {
         renderCrimeRecommendationsTable(crimeAiRecommendations);
 
         if (!crimeAiRecommendations.length) {
-            setCrimeAiStatus('No incident reports were found.');
+            setCrimeAiStatus('No crime reports with incident titles were found.');
             return;
         }
 
-        const sourceLabel = reportResult.source === 'proxy' ? 'PHP proxy (crime + disaster)' : 'direct crime-only API';
-        const aiLabel = titleResult.generatedBy === 'gemini' ? 'Gemini AI titles' : 'smarter fallback titles';
+        const sourceLabel = reportResult.source === 'direct' ? 'direct crime analytics API' : 'local PHP proxy';
+        const aiLabel = titleResult.generatedBy === 'gemini' ? 'Gemini AI titles' : 'rule-based fallback titles';
         setCrimeAiStatus(`${crimeReportRecords.length.toLocaleString()} report(s) grouped into ${crimeIncidentGroups.length.toLocaleString()} incident category/categories from ${sourceLabel}; using ${aiLabel}.`);
     } catch (err) {
-        console.error('Failed to load AI recommended campaigns from reports:', err);
-        renderCrimeRecommendationsEmpty('Unable to load incident report recommendations. Please try again.');
-        setCrimeAiStatus(err.message || 'Unable to load incident report recommendations.', true);
+        console.error('Failed to load AI recommended campaigns from crime reports:', err);
+        renderCrimeRecommendationsEmpty('Unable to load crime report recommendations. Please try again.');
+        setCrimeAiStatus(err.message || 'Unable to load crime report recommendations.', true);
     }
 }
 
@@ -2862,6 +2912,236 @@ function openCrimeRecommendationModal(index) {
     renderRecommendationReports(recommendation);
     renderCrimeRecommendationChart(recommendation);
 }
+
+// ==================== DISASTER RECOMMENDATIONS ====================
+
+async function loadDisasterCampaignRecommendations(forceRefresh = false) {
+    if (!forceRefresh && disasterAiRecommendations.length) {
+        renderDisasterRecommendationsTable(disasterAiRecommendations);
+        return;
+    }
+
+    renderDisasterRecommendationsLoading();
+    setDisasterAiStatus('Loading disaster alert reports...');
+    disasterRecommendationsCurrentPage = 1;
+
+    try {
+        const res = await fetch(disasterRecommendationsProxyUrl, {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+        });
+        if (!res.ok) throw new Error(`Disaster API returned HTTP ${res.status}`);
+        const payload = await res.json();
+        if (payload && payload.success === false) throw new Error(payload.error || 'Disaster API failed');
+
+        disasterReportRecords = payload.records || [];
+        disasterIncidentGroups = groupCrimeReports(disasterReportRecords);
+
+        let titleResult;
+        if (Array.isArray(payload.recommendations) && payload.recommendations.length) {
+            titleResult = { recommendations: payload.recommendations, generatedBy: payload.generated_by || 'proxy' };
+        } else {
+            titleResult = await fetchDisasterAiTitles(disasterIncidentGroups);
+        }
+
+        disasterAiRecommendations = buildCrimeRecommendations(disasterIncidentGroups, titleResult.recommendations);
+        disasterRecommendationsCurrentPage = 1;
+        renderDisasterRecommendationsTable(disasterAiRecommendations);
+
+        if (!disasterAiRecommendations.length) {
+            setDisasterAiStatus('No disaster alerts with categories were found.');
+            return;
+        }
+
+        const aiLabel = titleResult.generatedBy === 'gemini' ? 'Gemini AI titles' : 'rule-based fallback titles';
+        setDisasterAiStatus(`${disasterReportRecords.length.toLocaleString()} disaster alert(s) grouped into ${disasterIncidentGroups.length.toLocaleString()} category/categories; using ${aiLabel}.`);
+    } catch (err) {
+        console.error('Failed to load disaster recommendations:', err);
+        renderDisasterRecommendationsEmpty('Unable to load disaster report recommendations. Please try again.');
+        setDisasterAiStatus(err.message || 'Unable to load disaster report recommendations.', true);
+    }
+}
+
+async function fetchDisasterAiTitles(groups) {
+    if (!groups.length) return { recommendations: [], generatedBy: 'none' };
+    try {
+        const res = await fetch(crimeRecommendationsProxyUrl, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                mode: 'titles',
+                source: 'disaster',
+                groups: groups.map(g => ({ incident_title: g.incidentTitle, report_count: g.count }))
+            })
+        });
+        if (!res.ok) throw new Error(`AI title proxy returned HTTP ${res.status}`);
+        const payload = await res.json();
+        if (payload && payload.success === false) throw new Error(payload.error || 'AI title generation failed');
+        return {
+            recommendations: Array.isArray(payload?.recommendations) ? payload.recommendations : [],
+            generatedBy: payload?.generated_by || 'fallback'
+        };
+    } catch (err) {
+        console.warn('Gemini title enrichment unavailable for disaster; using fallback.', err);
+        return { recommendations: [], generatedBy: 'fallback' };
+    }
+}
+
+function setDisasterAiStatus(message, isError = false) {
+    const status = document.getElementById('disasterAiStatus');
+    if (!status) return;
+    status.textContent = message;
+    status.style.color = isError ? '#b91c1c' : '#64748b';
+}
+
+function renderDisasterRecommendationsLoading() {
+    const tbody = document.getElementById('disasterAiRecommendationsTable');
+    if (!tbody) return;
+    updateDisasterRecommendationsPagination(0);
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="5" style="padding: 28px; text-align: center; color: #64748b;">
+                <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+                Loading disaster recommendations...
+            </td>
+        </tr>
+    `;
+}
+
+function renderDisasterRecommendationsEmpty(message) {
+    const tbody = document.getElementById('disasterAiRecommendationsTable');
+    if (!tbody) return;
+    updateDisasterRecommendationsPagination(0);
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="5" style="padding: 28px; text-align: center; color: #64748b;">
+                <i class="fas fa-info-circle" style="margin-right: 8px;"></i>
+                ${escapeHtml(message)}
+            </td>
+        </tr>
+    `;
+}
+
+function renderDisasterRecommendationsTable(recommendations) {
+    const tbody = document.getElementById('disasterAiRecommendationsTable');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!recommendations.length) {
+        renderDisasterRecommendationsEmpty('No disaster alerts are available for recommendations.');
+        return;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(recommendations.length / disasterRecommendationsPageSize));
+    disasterRecommendationsCurrentPage = Math.min(Math.max(disasterRecommendationsCurrentPage, 1), totalPages);
+    const startIndex = (disasterRecommendationsCurrentPage - 1) * disasterRecommendationsPageSize;
+    const pageRecommendations = recommendations.slice(startIndex, startIndex + disasterRecommendationsPageSize);
+
+    pageRecommendations.forEach((recommendation, pageIndex) => {
+        const recommendationIndex = startIndex + pageIndex;
+        const row = document.createElement('tr');
+        row.style.borderBottom = '1px solid #e2e8f0';
+
+        const titleCell = document.createElement('td');
+        titleCell.style.cssText = 'padding: 12px 14px; color: #0f172a; font-weight: 700; line-height: 1.4;';
+        titleCell.textContent = recommendation.recommendedCampaignTitle;
+
+        const incidentCell = document.createElement('td');
+        incidentCell.style.cssText = 'padding: 12px 14px; color: #475569;';
+        incidentCell.textContent = recommendation.incidentTitle;
+
+        const countCell = document.createElement('td');
+        countCell.style.cssText = 'padding: 12px 14px; font-weight: 700; color: #0f172a; white-space: nowrap;';
+        countCell.textContent = recommendation.count.toLocaleString();
+
+        const badgeCell = document.createElement('td');
+        badgeCell.style.cssText = 'padding: 12px 14px;';
+        const badge = document.createElement('span');
+        badge.className = `priority-badge ${recommendation.priorityClassName}`;
+        badge.textContent = `${recommendation.priorityLabel} / ${recommendation.confidenceLabel}`;
+        badgeCell.appendChild(badge);
+
+        const actionCell = document.createElement('td');
+        actionCell.style.cssText = 'padding: 12px 14px;';
+        const viewButton = document.createElement('button');
+        viewButton.className = 'btn btn-sm';
+        viewButton.style.cssText = 'background: #667eea; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;';
+        viewButton.textContent = 'View Details';
+        viewButton.addEventListener('click', () => openCrimeRecommendationModal(recommendationIndex));
+        actionCell.appendChild(viewButton);
+
+        row.append(titleCell, incidentCell, countCell, badgeCell, actionCell);
+        tbody.appendChild(row);
+    });
+
+    updateDisasterRecommendationsPagination(recommendations.length);
+}
+
+function updateDisasterRecommendationsPagination(totalItems) {
+    const pagination = document.getElementById('disasterAiPagination');
+    const summary = document.getElementById('disasterAiPaginationSummary');
+    const controls = document.getElementById('disasterAiPaginationControls');
+    if (!pagination || !summary || !controls) return;
+
+    controls.innerHTML = '';
+
+    if (totalItems <= disasterRecommendationsPageSize) {
+        pagination.style.display = 'none';
+        return;
+    }
+
+    const totalPages = Math.ceil(totalItems / disasterRecommendationsPageSize);
+    disasterRecommendationsCurrentPage = Math.min(Math.max(disasterRecommendationsCurrentPage, 1), totalPages);
+    const startItem = (disasterRecommendationsCurrentPage - 1) * disasterRecommendationsPageSize + 1;
+    const endItem = Math.min(startItem + disasterRecommendationsPageSize - 1, totalItems);
+
+    pagination.style.display = 'flex';
+    summary.textContent = `Showing ${startItem}-${endItem} of ${totalItems.toLocaleString()} recommendations`;
+
+    const createButton = (label, page, options = {}) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'crime-ai-page-btn';
+        button.textContent = label;
+        button.disabled = Boolean(options.disabled);
+        if (options.active) button.classList.add('active');
+        button.addEventListener('click', () => {
+            if (!button.disabled) setDisasterRecommendationsPage(page);
+        });
+        controls.appendChild(button);
+    };
+
+    createButton('Prev', disasterRecommendationsCurrentPage - 1, { disabled: disasterRecommendationsCurrentPage === 1 });
+
+    const visiblePages = [];
+    const firstPage = Math.max(1, disasterRecommendationsCurrentPage - 2);
+    const lastPage = Math.min(totalPages, disasterRecommendationsCurrentPage + 2);
+    for (let page = firstPage; page <= lastPage; page++) visiblePages.push(page);
+    if (!visiblePages.includes(1)) visiblePages.unshift(1);
+    if (!visiblePages.includes(totalPages)) visiblePages.push(totalPages);
+
+    let previousPage = 0;
+    visiblePages.forEach(page => {
+        if (previousPage && page - previousPage > 1) {
+            const dots = document.createElement('span');
+            dots.textContent = '...';
+            dots.style.cssText = 'color: #94a3b8; padding: 0 4px; font-weight: 700;';
+            controls.appendChild(dots);
+        }
+        createButton(String(page), page, { active: page === disasterRecommendationsCurrentPage });
+        previousPage = page;
+    });
+
+    createButton('Next', disasterRecommendationsCurrentPage + 1, { disabled: disasterRecommendationsCurrentPage === totalPages });
+}
+
+function setDisasterRecommendationsPage(page) {
+    const totalPages = Math.max(1, Math.ceil(disasterAiRecommendations.length / disasterRecommendationsPageSize));
+    disasterRecommendationsCurrentPage = Math.min(Math.max(page, 1), totalPages);
+    renderDisasterRecommendationsTable(disasterAiRecommendations);
+}
+
+// ==================== END DISASTER RECOMMENDATIONS ====================
 
 // Toast Notification Functions
 function showToast(message, type = 'success') {
@@ -9165,12 +9445,14 @@ if (document.readyState === 'loading') {
         console.log('DOMContentLoaded - Initializing campaigns');
         initializeCampaigns();
         loadCrimeCampaignRecommendations();
+        loadDisasterCampaignRecommendations();
         
         // Make functions globally accessible after DOM loads
         window.handleGetPredictionClick = handleGetPredictionClick;
         window.getAutoMLPrediction = getAutoMLPrediction;
         window.refreshAutoMLCampaigns = refreshAutoMLCampaigns;
         window.loadCrimeCampaignRecommendations = loadCrimeCampaignRecommendations;
+        window.loadDisasterCampaignRecommendations = loadDisasterCampaignRecommendations;
         window.switchCrimeRecommendationTab = switchCrimeRecommendationTab;
         window.closeCrimeRecommendationModal = closeCrimeRecommendationModal;
         console.log('Functions made globally accessible:', {
@@ -9188,11 +9470,13 @@ if (document.readyState === 'loading') {
     window.getAutoMLPrediction = getAutoMLPrediction;
     window.refreshAutoMLCampaigns = refreshAutoMLCampaigns;
     window.loadCrimeCampaignRecommendations = loadCrimeCampaignRecommendations;
+    window.loadDisasterCampaignRecommendations = loadDisasterCampaignRecommendations;
     window.switchCrimeRecommendationTab = switchCrimeRecommendationTab;
     window.closeCrimeRecommendationModal = closeCrimeRecommendationModal;
     
     initializeCampaigns();
     loadCrimeCampaignRecommendations();
+    loadDisasterCampaignRecommendations();
 }
 
 // Also try to populate dropdown when the AutoML section becomes visible

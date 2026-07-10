@@ -439,9 +439,11 @@ try {
     $mode = (string) ($requestBody['mode'] ?? ($_GET['mode'] ?? 'reports'));
     $requestMethod = (string) ($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
+    $source = (string) ($requestBody['source'] ?? ($_GET['source'] ?? 'crime'));
+
     if ($requestMethod === 'POST' && $mode === 'titles') {
         $groups = is_array($requestBody['groups'] ?? null) ? $requestBody['groups'] : [];
-        $recommendations = gemini_recommendations($groups, 'merged');
+        $recommendations = gemini_recommendations($groups, $source);
 
         json_response([
             'success' => true,
@@ -450,37 +452,36 @@ try {
         ]);
     }
 
-    // Fetch crime reports
-    $crimePayload = http_json_request(CRIME_REPORTS_API_URL);
-    $crimeRecords = normalize_records($crimePayload);
-
-    // Fetch disaster alerts
-    $disasterData = [];
-    $disasterRecords = [];
-    try {
+    if ($source === 'disaster') {
         $disasterData = http_json_request(DISASTER_API_URL);
         $disasterRecords = normalize_disaster_records($disasterData);
-    } catch (Throwable $disasterErr) {
-        error_log('Disaster API fetch failed (non-fatal): ' . $disasterErr->getMessage());
+        $groups = groups_from_records($disasterRecords);
+        $recommendations = gemini_recommendations($groups, 'disaster');
+
+        json_response([
+            'success' => true,
+            'source' => 'disaster',
+            'source_url' => DISASTER_API_URL,
+            'generated_by' => $recommendations ? 'gemini' : 'fallback',
+            'data' => $disasterData,
+            'records' => $disasterRecords,
+            'recommendations' => $recommendations ?: fallback_recommendations($groups),
+        ]);
     }
 
-    // Merge all records
-    $allRecords = array_merge($crimeRecords, $disasterRecords);
-    $groups = groups_from_records($allRecords);
-    $recommendations = gemini_recommendations($groups, 'merged');
+    // Default: Fetch crime reports only
+    $crimePayload = http_json_request(CRIME_REPORTS_API_URL);
+    $crimeRecords = normalize_records($crimePayload);
+    $groups = groups_from_records($crimeRecords);
+    $recommendations = gemini_recommendations($groups, 'crime');
 
     json_response([
         'success' => true,
-        'sources' => [
-            'crime' => CRIME_REPORTS_API_URL,
-            'disaster' => DISASTER_API_URL,
-        ],
+        'source' => 'crime',
+        'source_url' => CRIME_REPORTS_API_URL,
         'generated_by' => $recommendations ? 'gemini' : 'fallback',
-        'data' => [
-            'crime' => $crimePayload,
-            'disaster' => $disasterData,
-        ],
-        'records' => $allRecords,
+        'data' => $crimePayload,
+        'records' => $crimeRecords,
         'recommendations' => $recommendations ?: fallback_recommendations($groups),
     ]);
 } catch (Throwable $error) {
