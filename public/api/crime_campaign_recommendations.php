@@ -8,6 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
 const CRIME_REPORTS_API_URL = 'https://crime-analytics.alertaraqc.com/api/crimes';
+const DISASTER_API_URL = 'https://emergency-comm.alertaraqc.com/api/?api_key=EMERGENCY-SYSTEM-INTEGRATED-KEY-2026';
 
 function load_local_env(): void
 {
@@ -201,6 +202,30 @@ function normalize_records($payload, int $depth = 0): array
     return [];
 }
 
+function normalize_disaster_records(array $payload): array
+{
+    $records = [];
+
+    foreach (['disasters', 'alerts'] as $key) {
+        if (isset($payload[$key]) && is_array($payload[$key])) {
+            foreach ($payload[$key] as $item) {
+                if (!is_array($item)) continue;
+                $title = $item['title'] ?? $item['category'] ?? 'Uncategorized Disaster';
+                $records[] = [
+                    'incident_title' => is_string($title) ? trim($title) : 'Uncategorized Disaster',
+                    'incident_date' => $item['created_at'] ?? null,
+                    'description' => $item['message'] ?? '',
+                    'severity' => $item['severity'] ?? 'Medium',
+                    'status' => $item['status'] ?? 'active',
+                    'source' => 'disaster',
+                ];
+            }
+        }
+    }
+
+    return $records;
+}
+
 function incident_title(array $record): string
 {
     $title = $record['incident_title']
@@ -244,9 +269,44 @@ function groups_from_records(array $records): array
 function fallback_recommendations(array $groups): array
 {
     return array_map(static function (array $group): array {
+        $title = (string) ($group['incident_title'] ?? '');
+        $lower = strtolower($title);
+
+        $campaignTemplates = [
+            'earthquake' => 'Earthquake Preparedness and Safety Drill Campaign',
+            'flood' => 'Flood Risk Awareness and Evacuation Planning Initiative',
+            'weather' => 'Severe Weather Preparedness and Early Warning Campaign',
+            'fire' => 'Fire Prevention and Community Safety Awareness Program',
+            'theft' => 'Anti-Theft and Community Watch Initiative',
+            'robbery' => 'Community Safety Against Robbery Prevention Campaign',
+            'assault' => 'Violence Prevention and Personal Safety Awareness Campaign',
+            'murder' => 'Peace and Order Community Solidarity Campaign',
+            'drug' => 'Drug-Free Barangay Awareness and Prevention Campaign',
+            'traffic' => 'Traffic Safety and Road Accident Prevention Campaign',
+            'cyber' => 'Cybercrime Prevention and Digital Safety Awareness Campaign',
+            'disaster' => 'Disaster Risk Reduction and Community Resilience Campaign',
+            'covid' => 'Health Safety and Disease Prevention Community Campaign',
+            'dengue' => 'Dengue Prevention and Clean-Up Drive Campaign',
+            'landslide' => 'Landslide Risk Awareness and Pre-Evacuation Campaign',
+            'volcanic' => 'Volcanic Eruption Preparedness and Safety Campaign',
+            'typhoon' => 'Typhoon Preparedness and Community Resilience Campaign',
+            'kidnap' => 'Community Watch Against Kidnapping Awareness Campaign',
+            'vaccine' => 'Vaccination Awareness and Community Health Campaign',
+            'emergency' => 'Emergency Response Readiness and First Aid Campaign',
+        ];
+
+        foreach ($campaignTemplates as $keyword => $campaignTitle) {
+            if (strpos($lower, $keyword) !== false) {
+                return [
+                    'incident_title' => $title,
+                    'recommended_campaign_title' => $campaignTitle,
+                ];
+            }
+        }
+
         return [
-            'incident_title' => (string) ($group['incident_title'] ?? 'Uncategorized Incident'),
-            'recommended_campaign_title' => 'Community Awareness Campaign Against ' . (string) ($group['incident_title'] ?? 'Uncategorized Incident'),
+            'incident_title' => $title,
+            'recommended_campaign_title' => 'Community Awareness Campaign Against ' . $title,
         ];
     }, $groups);
 }
@@ -311,7 +371,7 @@ function parse_gemini_text(array $response): string
     return '';
 }
 
-function gemini_recommendations(array $groups): ?array
+function gemini_recommendations(array $groups, string $dataSource = 'crime'): ?array
 {
     $apiKey = get_env_value('GEMINI_API_KEY') ?? get_env_value('GOOGLE_GEMINI_API_KEY');
     if ($apiKey === null || !$groups) {
@@ -319,8 +379,29 @@ function gemini_recommendations(array $groups): ?array
     }
 
     $model = get_env_value('GEMINI_MODEL') ?? 'gemini-2.5-flash';
-    $limitedGroups = array_slice($groups, 0, 40);
-    $prompt = "Generate concise public-safety campaign titles from crime report incident groups. Return only a JSON array. Each item must have incident_title and recommended_campaign_title. Keep titles professional, specific, and suitable for a barangay public safety campaign.\n\nIncident groups:\n" . json_encode($limitedGroups, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    $limitedGroups = array_slice($groups, 0, 50);
+
+    $sourceLabel = $dataSource === 'merged' ? 'crime reports and disaster alerts' : 'incident reports';
+
+    $prompt = <<<PROMPT
+You are a public safety campaign strategist for a Philippine barangay (LGU). Analyze the compiled incident data below which includes crime reports AND disaster/emergency alerts.
+
+INSTRUCTIONS:
+- For EACH incident group, think about what specific, actionable public safety campaign would best address that issue.
+- DO NOT just prepend "Community Awareness Campaign Against" to the incident title.
+- Instead, create targeted, professional campaign titles that suggest a specific approach (e.g., "Earthquake Preparedness and Drill Initiative for Barangay Residents", "Fire Prevention and Safety Awareness Campaign", "Anti-Theft and Community Watch Program").
+- You can consolidate related incidents into broader campaigns when it makes sense.
+- Keep titles concise (5-15 words), professional, and suitable for a local government public safety campaign.
+
+Return ONLY a JSON array. Each item must have:
+- "incident_title": the original incident/disaster category name
+- "recommended_campaign_title": your intelligent campaign title
+
+Incident groups (incident_title => report_count):
+PROMPT;
+    foreach ($limitedGroups as $g) {
+        $prompt .= "\n- " . ($g['incident_title'] ?? 'Unknown') . ': ' . ($g['report_count'] ?? 0) . ' report(s)';
+    }
 
     try {
         $generateModel = str_starts_with($model, 'models/') ? substr($model, 7) : $model;
@@ -360,7 +441,7 @@ try {
 
     if ($requestMethod === 'POST' && $mode === 'titles') {
         $groups = is_array($requestBody['groups'] ?? null) ? $requestBody['groups'] : [];
-        $recommendations = gemini_recommendations($groups);
+        $recommendations = gemini_recommendations($groups, 'merged');
 
         json_response([
             'success' => true,
@@ -369,22 +450,43 @@ try {
         ]);
     }
 
-    $remotePayload = http_json_request(CRIME_REPORTS_API_URL);
-    $records = normalize_records($remotePayload);
-    $groups = groups_from_records($records);
-    $recommendations = gemini_recommendations($groups);
+    // Fetch crime reports
+    $crimePayload = http_json_request(CRIME_REPORTS_API_URL);
+    $crimeRecords = normalize_records($crimePayload);
+
+    // Fetch disaster alerts
+    $disasterData = [];
+    $disasterRecords = [];
+    try {
+        $disasterData = http_json_request(DISASTER_API_URL);
+        $disasterRecords = normalize_disaster_records($disasterData);
+    } catch (Throwable $disasterErr) {
+        error_log('Disaster API fetch failed (non-fatal): ' . $disasterErr->getMessage());
+    }
+
+    // Merge all records
+    $allRecords = array_merge($crimeRecords, $disasterRecords);
+    $groups = groups_from_records($allRecords);
+    $recommendations = gemini_recommendations($groups, 'merged');
 
     json_response([
         'success' => true,
-        'source' => CRIME_REPORTS_API_URL,
+        'sources' => [
+            'crime' => CRIME_REPORTS_API_URL,
+            'disaster' => DISASTER_API_URL,
+        ],
         'generated_by' => $recommendations ? 'gemini' : 'fallback',
-        'data' => $remotePayload,
+        'data' => [
+            'crime' => $crimePayload,
+            'disaster' => $disasterData,
+        ],
+        'records' => $allRecords,
         'recommendations' => $recommendations ?: fallback_recommendations($groups),
     ]);
 } catch (Throwable $error) {
-    error_log('Crime campaign recommendations proxy failed: ' . $error->getMessage());
+    error_log('Campaign recommendations proxy failed: ' . $error->getMessage());
     json_response([
         'success' => false,
-        'error' => 'Unable to load crime campaign recommendations at this time.',
+        'error' => 'Unable to load campaign recommendations at this time.',
     ], 502);
 }

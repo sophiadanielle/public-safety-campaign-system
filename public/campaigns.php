@@ -1707,10 +1707,10 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     <div>
                         <h3 style="margin: 0 0 6px 0; color: #0f172a; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
                             <i class="fas fa-shield-alt" style="color: #667eea;"></i>
-                            AI Recommended Campaigns from Crime Reports
+                            AI Recommended Campaigns from Incident Reports
                         </h3>
                         <p id="crimeAiStatus" class="crime-ai-status" style="margin: 0;">
-                            Loading crime analytics recommendations...
+                            Loading incident report analytics...
                         </p>
                     </div>
                     <button type="button" class="btn btn-secondary" onclick="loadCrimeCampaignRecommendations(true)" style="display: inline-flex; align-items: center; gap: 6px; border: 2px solid #667eea; color: #667eea; background: white; font-weight: 700;">
@@ -2378,14 +2378,14 @@ async function fetchCrimeReportsProxy() {
         headers: { 'Accept': 'application/json' },
         cache: 'no-store'
     });
-    if (!response.ok) throw new Error(`Crime reports proxy returned HTTP ${response.status}`);
+    if (!response.ok) throw new Error(`Reports proxy returned HTTP ${response.status}`);
     const payload = await response.json();
     if (payload && payload.success === false) {
-        throw new Error(payload.error || 'Crime reports proxy failed');
+        throw new Error(payload.error || 'Reports proxy failed');
     }
     return {
         payload,
-        records: normalizeCrimeRecords(payload?.data || payload),
+        records: payload.records || normalizeCrimeRecords(payload?.data || payload),
         aiTitles: Array.isArray(payload?.recommendations) ? payload.recommendations : [],
         source: 'proxy',
         generatedBy: payload?.generated_by || 'fallback'
@@ -2404,6 +2404,7 @@ async function fetchCrimeAiTitles(groups) {
             },
             body: JSON.stringify({
                 mode: 'titles',
+                data_source: 'merged',
                 groups: groups.map(group => ({
                     incident_title: group.incidentTitle,
                     report_count: group.count
@@ -2538,7 +2539,7 @@ function renderCrimeRecommendationsTable(recommendations) {
     tbody.innerHTML = '';
 
     if (!recommendations.length) {
-        renderCrimeRecommendationsEmpty('No incident reports are available for recommendations.');
+        renderCrimeRecommendationsEmpty('No crime or disaster incident reports are available for recommendations.');
         return;
     }
 
@@ -2595,16 +2596,16 @@ async function loadCrimeCampaignRecommendations(forceRefresh = false) {
     }
 
     renderCrimeRecommendationsLoading();
-    setCrimeAiStatus('Loading crime analytics reports...');
+    setCrimeAiStatus('Loading crime and disaster reports...');
     crimeRecommendationsCurrentPage = 1;
 
     try {
         let reportResult;
         try {
-            reportResult = await fetchCrimeReportsDirect();
-        } catch (directErr) {
-            console.warn('Direct crime report fetch failed; using local proxy.', directErr);
             reportResult = await fetchCrimeReportsProxy();
+        } catch (proxyErr) {
+            console.warn('Proxy fetch failed; falling back to direct crime-only API.', proxyErr);
+            reportResult = await fetchCrimeReportsDirect();
         }
 
         crimeReportRecords = reportResult.records || [];
@@ -2619,17 +2620,17 @@ async function loadCrimeCampaignRecommendations(forceRefresh = false) {
         renderCrimeRecommendationsTable(crimeAiRecommendations);
 
         if (!crimeAiRecommendations.length) {
-            setCrimeAiStatus('No crime reports with incident titles were found.');
+            setCrimeAiStatus('No incident reports were found.');
             return;
         }
 
-        const sourceLabel = reportResult.source === 'direct' ? 'direct crime analytics API' : 'local PHP proxy';
-        const aiLabel = titleResult.generatedBy === 'gemini' ? 'Gemini AI titles' : 'rule-based fallback titles';
+        const sourceLabel = reportResult.source === 'proxy' ? 'PHP proxy (crime + disaster)' : 'direct crime-only API';
+        const aiLabel = titleResult.generatedBy === 'gemini' ? 'Gemini AI titles' : 'smarter fallback titles';
         setCrimeAiStatus(`${crimeReportRecords.length.toLocaleString()} report(s) grouped into ${crimeIncidentGroups.length.toLocaleString()} incident category/categories from ${sourceLabel}; using ${aiLabel}.`);
     } catch (err) {
-        console.error('Failed to load AI recommended campaigns from crime reports:', err);
-        renderCrimeRecommendationsEmpty('Unable to load crime report recommendations. Please try again.');
-        setCrimeAiStatus(err.message || 'Unable to load crime report recommendations.', true);
+        console.error('Failed to load AI recommended campaigns from reports:', err);
+        renderCrimeRecommendationsEmpty('Unable to load incident report recommendations. Please try again.');
+        setCrimeAiStatus(err.message || 'Unable to load incident report recommendations.', true);
     }
 }
 
