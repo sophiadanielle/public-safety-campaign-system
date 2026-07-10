@@ -2541,6 +2541,8 @@ async function loadAiRecommendations(forceRefresh = false) {
     }
 }
 
+window.loadAiRecommendations = loadAiRecommendations;
+
 function openAiRecommendationModal(index, items) {
     const rec = items[index];
     if (!rec) return;
@@ -2626,17 +2628,6 @@ function closeAiRecommendationModal() {
     if (modal) modal.remove();
 }
 
-
-    const visiblePages = [];
-    const firstPage = Math.max(1, disasterRecommendationsCurrentPage - 2);
-    const lastPage = Math.min(totalPages, disasterRecommendationsCurrentPage + 2);
-    for (let page = firstPage; page <= lastPage; page++) visiblePages.push(page);
-    if (!visiblePages.includes(1)) visiblePages.unshift(1);
-    if (!visiblePages.includes(totalPages)) visiblePages.push(totalPages);
-
-    let previousPage = 0;
-    visiblePages.forEach(page => {
-        if (previousPage && page - previousPage > 1) {
 // Toast Notification Functions
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
@@ -7283,57 +7274,6 @@ async function loadCampaignContent() {
     }
 }
 
-// Load Campaign Content
-async function loadCampaignContent() {
-    const campaignId = parseInt(document.getElementById('content_campaign_id')?.value || activeCampaignId);
-    if (!campaignId) {
-        document.getElementById('contentTable').innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px;">Enter a Campaign ID to view linked content</td></tr>';
-        return;
-    }
-    
-    const tbody = document.getElementById('contentTable');
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px;">Loading...</td></tr>';
-    
-    try {
-        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId + '/content', {
-            headers: { 'Authorization': 'Bearer ' + getToken() }
-        });
-        const data = await res.json();
-        const contentItems = data.data || [];
-        
-        if (!contentItems.length) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px;">No content items linked to this campaign.</td></tr>';
-            return;
-        }
-        
-        tbody.innerHTML = '';
-        contentItems.forEach(item => {
-            const tr = document.createElement('tr');
-            const formatDateTime = (dt) => {
-                if (!dt) return '-';
-                try {
-                    const d = new Date(dt);
-                    if (isNaN(d.getTime())) return dt;
-                    return d.toLocaleString('en-US', {dateStyle: 'short', timeStyle: 'short'});
-                } catch (e) {
-                    return dt;
-                }
-            };
-            
-            tr.innerHTML = `
-                <td>${item.id}</td>
-                <td>${item.title || '-'}</td>
-                <td><span class="badge" style="background:#e0f2fe; color:#1d4ed8;">${item.content_type || 'text'}</span></td>
-                <td>${formatDateTime(item.created_at)}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-        
-    } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px; color:#dc2626;">Failed to load content: ' + err.message + '</td></tr>';
-    }
-}
-
 // Update status dropdown options based on current status and valid transitions
 // Matches backend validation rules in CampaignController.php
 function updateStatusOptions(currentStatus) {
@@ -8922,7 +8862,7 @@ function showCampaignHowItWorks() {
     
     const content = document.createElement('div');
     content.style.cssText = 'background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); max-width: 700px; max-height: 85vh; overflow-y: auto;';
-    content.innerHTML = tips + '<button onclick="this.closest(\'div[style*=\\\'position: fixed\\\']\').remove()" style="margin-top: 20px; padding: 10px 24px; background: #4c8a89; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600;">Got it!</button>';
+    content.innerHTML = tips + '<button type="button" style="margin-top: 20px; padding: 10px 24px; background: #4c8a89; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600;">Got it!</button>';
     content.onclick = function(e) {
         if (e.target.tagName === 'BUTTON') {
             document.body.removeChild(modal);
