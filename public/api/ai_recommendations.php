@@ -980,14 +980,11 @@ function ai_generate_titles_for_clusters(array $clusters): array
 
 function get_db_connection(): ?PDO
 {
-    $host = get_env_value('DB_HOST') ?? 'localhost';
-    $port = get_env_value('DB_PORT') ?? '3306';
-    $name = get_env_value('DB_NAME') ?? 'pscm';
-    $user = get_env_value('DB_USER') ?? 'root';
-    $pass = get_env_value('DB_PASSWORD') ?? '';
-
-    try {
-        error_log('AI Rec DB: connecting with host=' . $host . ' user=' . $user . ' db=' . $name . ' pass_set=' . ($pass !== '' ? 'yes' : 'no'));
+    $host = get_env_value('PROD_DB_HOST') ?? get_env_value('DB_HOST') ?? 'localhost';
+    $port = get_env_value('PROD_DB_PORT') ?? get_env_value('DB_PORT') ?? '3306';
+    $name = get_env_value('PROD_DB_NAME') ?? get_env_value('DB_NAME') ?? 'pscm';
+    $user = get_env_value('PROD_DB_USER') ?? get_env_value('DB_USER') ?? 'root';
+    $pass = get_env_value('PROD_DB_PASS') ?? get_env_value('DB_PASSWORD') ?? '';
         $pdo = new PDO(
             "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
             $user,
