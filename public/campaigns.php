@@ -1733,7 +1733,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                                 <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 50px;">#</th>
                                 <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Campaign Title</th>
                                 <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 90px;">Category</th>
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Incident Category</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Main Trend</th>
                                 <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap; width: 110px;">Reports</th>
                                 <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap; width: 130px;">Priority</th>
                                 <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 80px;">Action</th>
@@ -2329,9 +2329,9 @@ function filterAiRecommendations() {
         aiRecommendationsFiltered = [...aiRecommendations];
     } else {
         aiRecommendationsFiltered = aiRecommendations.filter(r =>
-            String(r.recommended_campaign_title || '').toLowerCase().includes(query) ||
-            String(r.incident_title || '').toLowerCase().includes(query) ||
-            String(r.source || '').toLowerCase().includes(query)
+            String(r.campaign_title || r.recommended_campaign_title || '').toLowerCase().includes(query) ||
+            String(r.main_trend || r.incident_title || '').toLowerCase().includes(query) ||
+            String(r.category || r.source || '').toLowerCase().includes(query)
         );
     }
     aiRecommendationsCurrentPage = 1;
@@ -2446,11 +2446,11 @@ function renderAiRecommendationsTable() {
 
         const titleCell = document.createElement('td');
         titleCell.style.cssText = 'padding: 12px 14px; color: #0f172a; font-weight: 700; line-height: 1.4;';
-        titleCell.textContent = rec.recommended_campaign_title || 'N/A';
+        titleCell.textContent = rec.campaign_title || rec.recommended_campaign_title || 'N/A';
 
         const catCell = document.createElement('td');
         catCell.style.cssText = 'padding: 12px 14px; vertical-align: middle;';
-        const catBadge = getCategoryBadge(rec.source || 'crime');
+        const catBadge = getCategoryBadge(rec.category || rec.source || 'crime');
         const catSpan = document.createElement('span');
         catSpan.style.cssText = `display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: ${catBadge.color}15; color: ${catBadge.color}; border: 1px solid ${catBadge.color}30; text-transform: uppercase; letter-spacing: 0.3px;`;
         catSpan.innerHTML = `<i class="fas ${catBadge.icon}"></i> ${catBadge.label}`;
@@ -2458,7 +2458,7 @@ function renderAiRecommendationsTable() {
 
         const incCell = document.createElement('td');
         incCell.style.cssText = 'padding: 12px 14px; color: #475569; font-size: 13px;';
-        incCell.textContent = rec.incident_title || 'N/A';
+        incCell.textContent = rec.main_trend || rec.incident_title || 'N/A';
 
         const countCell = document.createElement('td');
         countCell.style.cssText = 'padding: 12px 14px; color: #0f172a; font-weight: 700; white-space: nowrap; font-size: 14px;';
@@ -2522,8 +2522,9 @@ async function loadAiRecommendations(forceRefresh = false) {
             return;
         }
 
-        const genLabel = payload.generated_by === 'gemini' ? 'Gemini AI titles' : payload.generated_by === 'cache' ? 'cached' : 'rule-based fallback titles';
-        setAiStatus(`${payload.total_records || 0} report(s) from crime + disaster APIs grouped into ${payload.total_groups || 0} incident categories; using ${genLabel}.`);
+        const genLabel = payload.generated_by === 'gemini' ? 'Gemini AI titles' : payload.generated_by === 'cache' ? 'cached' : 'rule-based titles';
+        const testInfo = payload.test_records_filtered > 0 ? ` (${payload.test_records_filtered} test/mock records excluded)` : '';
+        setAiStatus(`${payload.valid_records || 0} valid reports grouped into ${payload.total_clusters || 0} campaign clusters; using ${genLabel}.${testInfo}`);
     } catch (err) {
         console.error('Failed to load AI recommendations:', err);
         setAiStatus(err.message || 'Unable to load recommendations.', true);
@@ -2550,68 +2551,156 @@ function openAiRecommendationModal(index, items) {
     closeAiRecommendationModal();
 
     const prio = getPriorityBadge(rec.priority_level, rec.priority_score);
-    const catBadge = getCategoryBadge(rec.source || 'crime');
+    const catBadge = getCategoryBadge(rec.category || rec.source || 'crime');
+
+    const reportList = Array.isArray(rec.cluster_report_ids) ? rec.cluster_report_ids : [];
+    const locations = Array.isArray(rec.affected_locations) ? rec.affected_locations : [];
+    const actions = Array.isArray(rec.ai_recommended_actions) ? rec.ai_recommended_actions : [];
+    const breakdown = rec.scoring_breakdown || {};
+
+    const reportsHtml = reportList.length > 0 ? reportList.map(r =>
+        `<tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 10px; font-size: 12px; color: #0f172a;">${escapeHtml(r.id || '')}</td>
+            <td style="padding: 6px 10px; font-size: 12px; color: #475569;">${escapeHtml(r.title || '')}</td>
+        </tr>`
+    ).join('') : '<tr><td colspan="2" style="padding: 10px; text-align: center; color: #94a3b8;">No report details available</td></tr>';
+
+    const locationsHtml = locations.length > 0
+        ? locations.map(l => `<span style="display: inline-block; background: #f1f5f9; padding: 3px 8px; border-radius: 12px; font-size: 11px; color: #475569; margin: 2px 4px 2px 0;">${escapeHtml(l)}</span>`).join('')
+        : '<span style="color: #94a3b8; font-size: 13px;">No location data</span>';
+
+    const actionsHtml = actions.length > 0
+        ? actions.map((a, i) => `<div style="display: flex; gap: 8px; padding: 4px 0;"><span style="color: #667eea; font-weight: 700;">${i + 1}.</span><span style="color: #0f172a; font-size: 13px;">${escapeHtml(a)}</span></div>`).join('')
+        : '<div style="color: #94a3b8; font-size: 13px;">No specific actions generated</div>';
+
+    const earliestDate = rec.earliest_date ? new Date(rec.earliest_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
+    const latestDate = rec.latest_date ? new Date(rec.latest_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
 
     const modal = document.createElement('div');
     modal.id = 'aiRecommendationModal';
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);';
 
     modal.innerHTML = `
-        <div style="background: white; border-radius: 14px; max-width: 700px; width: 100%; max-height: 85vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #4c8a89 100%); color: white; padding: 22px 26px; display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
-                <div>
-                    <div style="font-size: 12px; opacity: 0.9; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+        <div style="background: white; border-radius: 14px; max-width: 850px; width: 100%; max-height: 90vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #4c8a89 100%); color: white; padding: 20px 24px; display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <div style="font-size: 11px; opacity: 0.9; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
                         <i class="fas ${catBadge.icon}"></i> ${catBadge.label} Campaign Recommendation
                     </div>
-                    <h2 style="margin: 0; font-size: 20px; font-weight: 800; line-height: 1.25;">${escapeHtml(rec.recommended_campaign_title)}</h2>
+                    <h2 style="margin: 4px 0; font-size: 18px; font-weight: 800; line-height: 1.3;">${escapeHtml(rec.campaign_title || rec.recommended_campaign_title)}</h2>
+                    <div style="font-size: 13px; opacity: 0.85; margin-top: 4px;">${escapeHtml(rec.main_trend || rec.incident_title || '')}</div>
                 </div>
                 <button type="button" onclick="closeAiRecommendationModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">&times;</button>
             </div>
-            <div style="padding: 22px 26px; overflow-y: auto;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
-                    <div style="background: #f8fafc; border-radius: 8px; padding: 14px; border: 1px solid #e2e8f0;">
-                        <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Incident Category</div>
-                        <div style="font-size: 14px; color: #0f172a; font-weight: 600;">${escapeHtml(rec.incident_title)}</div>
+
+            <div style="padding: 20px 24px; overflow-y: auto;">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                    <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                        <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Reports</div>
+                        <div style="font-size: 24px; color: #0f172a; font-weight: 800; line-height: 1.2;">${(rec.report_count || 0).toLocaleString()}</div>
                     </div>
-                    <div style="background: #f8fafc; border-radius: 8px; padding: 14px; border: 1px solid #e2e8f0;">
-                        <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Data Source</div>
-                        <div><span style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; background: ${catBadge.color}15; color: ${catBadge.color}; border: 1px solid ${catBadge.color}30; text-transform: uppercase;">${catBadge.label}</span></div>
+                    <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                        <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Priority</div>
+                        <div style="font-size: 18px; font-weight: 800; color: ${prio.color}; line-height: 1.2;">${prio.label}</div>
+                        <div style="font-size: 11px; color: ${prio.color}; font-weight: 600;">${Number(rec.priority_score || 0).toFixed(0)}/100</div>
                     </div>
-                    <div style="background: #f8fafc; border-radius: 8px; padding: 14px; border: 1px solid #e2e8f0;">
-                        <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Reports Analyzed</div>
-                        <div style="font-size: 20px; color: #0f172a; font-weight: 800;">${(rec.report_count || 0).toLocaleString()}</div>
-                    </div>
-                    <div style="background: #f8fafc; border-radius: 8px; padding: 14px; border: 1px solid #e2e8f0;">
-                        <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Priority Score</div>
-                        <div style="font-size: 18px; font-weight: 800; color: ${prio.color};">
-                            ${prio.label} (${Number(rec.priority_score || 0).toFixed(0)}/100)
-                        </div>
+                    <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                        <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Period</div>
+                        <div style="font-size: 11px; color: #0f172a; font-weight: 600; line-height: 1.3;">${earliestDate}<br>to ${latestDate}</div>
                     </div>
                 </div>
+
                 <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
                     <div style="font-size: 11px; color: #0369a1; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
-                        <i class="fas fa-lightbulb"></i> Recommended Campaign Title
+                        <i class="fas fa-robot"></i> AI Campaign Strategy
                     </div>
-                    <div style="font-size: 16px; color: #0c4a6e; font-weight: 700; line-height: 1.4;">${escapeHtml(rec.recommended_campaign_title)}</div>
+                    <div style="font-size: 14px; color: #0c4a6e; font-weight: 600; line-height: 1.4; margin-bottom: 6px;">${escapeHtml(rec.campaign_title || rec.recommended_campaign_title)}</div>
+                    ${rec.description ? `<div style="font-size: 13px; color: #334155; line-height: 1.5;">${escapeHtml(rec.description)}</div>` : ''}
                 </div>
-                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px;">
-                    <div style="font-size: 11px; color: #15803d; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
-                        <i class="fas fa-cogs"></i> Scoring Breakdown
+
+                ${rec.ai_reasoning ? `
+                <div style="background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-size: 11px; color: #92400e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+                        <i class="fas fa-brain"></i> AI Reasoning
                     </div>
-                    <div style="font-size: 13px; color: #166534; line-height: 1.7;">
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #dcfce7;">
-                            <span>Report Volume Score</span>
-                            <span style="font-weight: 700;">${(rec.report_count || 0) * 10} pts (${(rec.report_count || 0)} reports x 10)</span>
+                    <div style="font-size: 13px; color: #713f12; line-height: 1.6;">${escapeHtml(rec.ai_reasoning)}</div>
+                </div>` : ''}
+
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-size: 11px; color: #15803d; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;">
+                        <i class="fas fa-cogs"></i> Priority Score Breakdown
+                    </div>
+                    <div style="font-size: 13px; line-height: 1.7;">
+                        <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #dcfce7;">
+                            <span style="color: #166534;">Severity Score (${breakdown.severity_weight !== undefined ? (breakdown.severity_weight * 100) + '%' : '40%'} weight)</span>
+                            <span style="font-weight: 700; color: #166534;">${Number(rec.severity_score || 0).toFixed(0)}/100</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
-                            <span>Final Priority Score</span>
-                            <span style="font-weight: 700; color: ${prio.color};">${Number(rec.priority_score || 0).toFixed(0)}/100</span>
+                        <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #dcfce7;">
+                            <span style="color: #166534;">Frequency Score (${breakdown.frequency_weight !== undefined ? (breakdown.frequency_weight * 100) + '%' : '25%'} weight)</span>
+                            <span style="font-weight: 700; color: #166534;">${Number(rec.frequency_score || 0).toFixed(0)}/100</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #dcfce7;">
+                            <span style="color: #166534;">Recency Score (${breakdown.recency_weight !== undefined ? (breakdown.recency_weight * 100) + '%' : '20%'} weight)</span>
+                            <span style="font-weight: 700; color: #166534;">${Number(rec.recency_score || 0).toFixed(0)}/100</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #dcfce7;">
+                            <span style="color: #166534;">Geographic Impact (${breakdown.geographic_weight !== undefined ? (breakdown.geographic_weight * 100) + '%' : '15%'} weight)</span>
+                            <span style="font-weight: 700; color: #166534;">${Number(rec.geographic_score || 0).toFixed(0)}/100</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 3px 0; font-size: 15px;">
+                            <span style="color: #166534; font-weight: 700;">Final Priority Score</span>
+                            <span style="font-weight: 800; color: ${prio.color};">${Number(rec.priority_score || 0).toFixed(0)}/100 (${prio.label})</span>
+                        </div>
+                        <div style="margin-top: 6px; font-size: 11px; color: #6b7280; border-top: 1px dashed #dcfce7; padding-top: 6px;">
+                            Formula: (Severity x 0.40) + (Frequency x 0.25) + (Recency x 0.20) + (Geographic x 0.15)
                         </div>
                     </div>
                 </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+                        <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+                            <i class="fas fa-map-marker-alt"></i> Affected Locations
+                        </div>
+                        <div>${locationsHtml}</div>
+                    </div>
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+                        <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+                            <i class="fas fa-users"></i> Target Audience
+                        </div>
+                        <div style="font-size: 13px; color: #0f172a; font-weight: 500;">${escapeHtml(rec.ai_target_audience || 'General public and community stakeholders')}</div>
+                    </div>
+                </div>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;">
+                        <i class="fas fa-clipboard-check"></i> Recommended Actions
+                    </div>
+                    ${actionsHtml}
+                </div>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+                    <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;">
+                        <i class="fas fa-list"></i> Supporting Reports (${reportList.length})
+                    </div>
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f1f5f9;">
+                                    <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0;">Report ID</th>
+                                    <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0;">Title</th>
+                                </tr>
+                            </thead>
+                            <tbody>${reportsHtml}</tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
-            <div style="padding: 14px 26px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: flex-end;">
-                <button onclick="closeAiRecommendationModal()" style="padding: 10px 24px; background: #4c8a89; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">Close</button>
+            <div style="padding: 12px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: flex-end; gap: 8px;">
+                <span style="font-size: 11px; color: #94a3b8; align-self: center;">Generated by ${escapeHtml(rec.generated_by || 'rule-based')}</span>
+                <button onclick="closeAiRecommendationModal()" style="padding: 8px 20px; background: #4c8a89; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Close</button>
             </div>
         </div>
     `;
