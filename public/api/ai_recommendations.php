@@ -7,6 +7,10 @@ error_reporting(E_ALL);
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+use App\Services\AiRecommendationSchemaService;
+
 function load_local_env(): void
 {
     $envPath = dirname(__DIR__, 2) . '/.env';
@@ -1011,14 +1015,18 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
         $upsertStmt = $pdo->prepare(
             "INSERT INTO campaign_department_ai_recommendations
             (category, campaign_title, main_trend, trend_key, description, report_count,
+             campaign_description, incident_category,
              cluster_report_ids, affected_locations, earliest_date, latest_date,
+             source_report_ids,
              severity_score, frequency_score, recency_score, geographic_score,
              priority_score, priority_level, scoring_breakdown,
              ai_reasoning, ai_recommended_actions, ai_target_audience,
              generated_by, recommendation_hash, data_snapshot, is_test_data)
             VALUES
             (:category, :campaign_title, :main_trend, :trend_key, :description, :report_count,
+             :campaign_description, :incident_category,
              :cluster_report_ids, :affected_locations, :earliest_date, :latest_date,
+             :source_report_ids,
              :severity_score, :frequency_score, :recency_score, :geographic_score,
              :priority_score, :priority_level, :scoring_breakdown,
              :ai_reasoning, :ai_recommended_actions, :ai_target_audience,
@@ -1027,8 +1035,11 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
              campaign_title = VALUES(campaign_title),
              main_trend = VALUES(main_trend),
              description = VALUES(description),
+             campaign_description = VALUES(campaign_description),
+             incident_category = VALUES(incident_category),
              report_count = VALUES(report_count),
              cluster_report_ids = VALUES(cluster_report_ids),
+             source_report_ids = VALUES(source_report_ids),
              affected_locations = VALUES(affected_locations),
              earliest_date = VALUES(earliest_date),
              latest_date = VALUES(latest_date),
@@ -1058,8 +1069,11 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
                 ':main_trend' => $rec['main_trend'],
                 ':trend_key' => $rec['trend_key'],
                 ':description' => $rec['description'] ?? null,
+                ':campaign_description' => $rec['description'] ?? null,
+                ':incident_category' => $rec['main_trend'] ?? $rec['trend_key'],
                 ':report_count' => $rec['report_count'],
                 ':cluster_report_ids' => json_encode($rec['cluster_report_ids']),
+                ':source_report_ids' => json_encode($rec['cluster_report_ids']),
                 ':affected_locations' => json_encode($rec['affected_locations']),
                 ':earliest_date' => $rec['earliest_date'],
                 ':latest_date' => $rec['latest_date'],
@@ -1183,6 +1197,9 @@ try {
     }
 
     $pdo = get_db_connection();
+    if ($pdo) {
+        AiRecommendationSchemaService::ensure($pdo);
+    }
 
     if (!$forceRefresh && $pdo) {
         $cached = load_cached_recommendations($pdo);

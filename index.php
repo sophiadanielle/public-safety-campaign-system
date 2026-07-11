@@ -330,6 +330,7 @@ if ($isApiRequest) {
         'audit.php',
         'search.php',
         'reference_staff.php',
+        'ai_recommendation_planning.php',
     ];
 
     $allRoutes = [];

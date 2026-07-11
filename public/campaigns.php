@@ -1724,6 +1724,10 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                             <i class="fas fa-sync-alt"></i>
                             Refresh
                         </button>
+                        <button type="button" id="aiRecBackfillBtn" class="btn btn-primary" onclick="backfillAiRecommendationPlans()" style="display: inline-flex; align-items: center; gap: 6px; background: #667eea; color: white; border: 2px solid #667eea; font-weight: 700;">
+                            <i class="fas fa-magic"></i>
+                            Generate Missing Plans
+                        </button>
                     </div>
                 </div>
                 <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
@@ -2544,7 +2548,10 @@ async function loadAiRecommendations(forceRefresh = false) {
 
 window.loadAiRecommendations = loadAiRecommendations;
 
-function openAiRecommendationModal(index, items) {
+const aiRecommendationDetailsUrl = basePath + '/public/api/ai_recommendation_details.php';
+const aiRecommendationGenerateUrl = basePath + '/public/api/ai_recommendation_detail_generate.php';
+
+async function openAiRecommendationModal(index, items) {
     const rec = items[index];
     if (!rec) return;
 
@@ -2553,10 +2560,123 @@ function openAiRecommendationModal(index, items) {
     const prio = getPriorityBadge(rec.priority_level, rec.priority_score);
     const catBadge = getCategoryBadge(rec.category || rec.source || 'crime');
 
+    const modal = document.createElement('div');
+    modal.id = 'aiRecommendationModal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);';
+
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 14px; max-width: 960px; width: 100%; max-height: 90vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #4c8a89 100%); color: white; padding: 16px 24px; display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <div style="font-size: 11px; opacity: 0.9; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                        <i class="fas ${catBadge.icon}"></i> ${catBadge.label} Campaign Recommendation
+                    </div>
+                    <h2 style="margin: 4px 0; font-size: 18px; font-weight: 800; line-height: 1.3;">${escapeHtml(rec.campaign_title || rec.recommended_campaign_title)}</h2>
+                    <div style="font-size: 13px; opacity: 0.85; margin-top: 4px;">${escapeHtml(rec.main_trend || rec.incident_title || '')}</div>
+                </div>
+                <button type="button" onclick="closeAiRecommendationModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">&times;</button>
+            </div>
+
+            <div style="display: flex; border-bottom: 1px solid #e2e8f0; background: #f8fafc; padding: 0 16px; gap: 4px;" id="aiRecModalTabs">
+                <button class="ai-rec-tab active" data-tab="overview" style="padding: 10px 14px; font-size: 12px; font-weight: 700; border: none; background: none; cursor: pointer; color: #667eea; border-bottom: 2px solid #667eea;">Overview</button>
+                <button class="ai-rec-tab" data-tab="budget" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent;">Budget</button>
+                <button class="ai-rec-tab" data-tab="staff" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent;">Staff</button>
+                <button class="ai-rec-tab" data-tab="partners" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent;">Partners</button>
+                <button class="ai-rec-tab" data-tab="schedule" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent;">Schedule</button>
+                <button class="ai-rec-tab" data-tab="reports" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent;">Reports</button>
+            </div>
+
+            <div id="aiRecModalBody" style="padding: 20px 24px; overflow-y: auto; min-height: 300px;">
+                <div style="text-align: center; padding: 40px; color: #94a3b8;">
+                    <i class="fas fa-spinner fa-pulse" style="font-size: 24px; margin-bottom: 12px;"></i>
+                    <div style="font-size: 14px;">Loading detailed recommendation data...</div>
+                </div>
+            </div>
+
+            <div style="padding: 12px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; gap: 12px; align-items: center;">
+                <span id="aiRecPlanStatus" style="font-size: 11px; color: #64748b;">Generated by ${escapeHtml(rec.generated_by || 'rule-based')}</span>
+                <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button id="aiRecGeneratePlanBtn" onclick="generateAiRecommendationPlan()" style="padding: 8px 14px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-magic"></i>
+                    Generate Campaign Plan
+                </button>
+                <button onclick="closeAiRecommendationModal()" style="padding: 8px 20px; background: #4c8a89; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    modal.addEventListener('click', event => {
+        if (event.target === modal) closeAiRecommendationModal();
+    });
+
+    document.body.appendChild(modal);
+
+    const tabBar = document.getElementById('aiRecModalTabs');
+    tabBar.addEventListener('click', function (e) {
+        const btn = e.target.closest('.ai-rec-tab');
+        if (!btn) return;
+        document.querySelectorAll('.ai-rec-tab').forEach(b => {
+            b.style.color = '#64748b';
+            b.style.borderBottom = '2px solid transparent';
+            b.style.fontWeight = '600';
+        });
+        btn.style.color = '#667eea';
+        btn.style.borderBottom = '2px solid #667eea';
+        btn.style.fontWeight = '700';
+        const tab = btn.getAttribute('data-tab');
+        window.__aiRecActiveTab = tab;
+        renderAiRecTab(tab, rec);
+    });
+
+    const detailsUrl = aiRecommendationDetailsUrl + '?id=' + (rec.id || 0);
+    window.__aiRecActive = { rec, index, items };
+    window.__aiRecActiveTab = 'overview';
+    try {
+        const resp = await fetch(detailsUrl, { headers: { 'Accept': 'application/json' } });
+        if (resp.ok) {
+            const payload = await resp.json();
+            window.__aiRecDetail = payload?.data || null;
+        } else {
+            const message = await readApiError(resp);
+            window.__aiRecDetailError = message || ('Details request failed with HTTP ' + resp.status);
+        }
+    } catch (e) {
+        console.warn('Could not load detailed recommendation data:', e);
+        window.__aiRecDetailError = e.message || 'Unable to load details';
+    }
+    updateAiRecPlanAction(rec);
+    renderAiRecTab('overview', rec);
+}
+
+function renderAiRecTab(tab, rec) {
+    const body = document.getElementById('aiRecModalBody');
+    if (!body) return;
+    const data = window.__aiRecDetail || {};
+    const summary = data?.summary || {};
+    const mergedRec = { ...rec, ...summary };
+
+    if (tab === 'overview') {
+        renderAiRecOverview(body, mergedRec, data);
+    } else if (tab === 'budget') {
+        renderAiRecBudgetTab(body, data);
+    } else if (tab === 'staff') {
+        renderAiRecStaffTab(body, data);
+    } else if (tab === 'partners') {
+        renderAiRecPartnersTab(body, data);
+    } else if (tab === 'schedule') {
+        renderAiRecScheduleTab(body, data);
+    } else if (tab === 'reports') {
+        renderAiRecReportsTab(body, data, mergedRec);
+    }
+}
+
+function renderAiRecOverview(body, rec, data) {
     const reportList = Array.isArray(rec.cluster_report_ids) ? rec.cluster_report_ids : [];
     const locations = Array.isArray(rec.affected_locations) ? rec.affected_locations : [];
     const actions = Array.isArray(rec.ai_recommended_actions) ? rec.ai_recommended_actions : [];
     const breakdown = rec.scoring_breakdown || {};
+    const prio = getPriorityBadge(rec.priority_level, rec.priority_score);
 
     const reportsHtml = reportList.length > 0 ? reportList.map(r =>
         `<tr style="border-bottom: 1px solid #f1f5f9;">
@@ -2576,145 +2696,630 @@ function openAiRecommendationModal(index, items) {
     const earliestDate = rec.earliest_date ? new Date(rec.earliest_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
     const latestDate = rec.latest_date ? new Date(rec.latest_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
 
-    const modal = document.createElement('div');
-    modal.id = 'aiRecommendationModal';
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);';
+    const summary = data?.summary || {};
+    const planStatus = summary.planning_status || 'not_generated';
+    const apprStatus = summary.approval_status || 'recommended';
+    const budgetValidation = summary.budget_validation_status || 'unchecked';
 
-    modal.innerHTML = `
-        <div style="background: white; border-radius: 14px; max-width: 850px; width: 100%; max-height: 90vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
-            <div style="background: linear-gradient(135deg, #667eea 0%, #4c8a89 100%); color: white; padding: 20px 24px; display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
-                <div style="flex: 1;">
-                    <div style="font-size: 11px; opacity: 0.9; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
-                        <i class="fas ${catBadge.icon}"></i> ${catBadge.label} Campaign Recommendation
-                    </div>
-                    <h2 style="margin: 4px 0; font-size: 18px; font-weight: 800; line-height: 1.3;">${escapeHtml(rec.campaign_title || rec.recommended_campaign_title)}</h2>
-                    <div style="font-size: 13px; opacity: 0.85; margin-top: 4px;">${escapeHtml(rec.main_trend || rec.incident_title || '')}</div>
-                </div>
-                <button type="button" onclick="closeAiRecommendationModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">&times;</button>
+    const statusBadge = planStatus === 'completed' ? '<span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Completed</span>'
+        : planStatus === 'completed_with_warnings' ? '<span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Completed with Warnings</span>'
+        : '<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Not Generated</span>';
+
+    const budgetStatusBadge = budgetValidation === 'verified' ? '<span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Verified</span>'
+        : budgetValidation === 'warning' ? '<span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Warning</span>'
+        : '<span style="background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;">Unchecked</span>';
+
+    body.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Reports</div>
+                <div style="font-size: 24px; color: #0f172a; font-weight: 800; line-height: 1.2;">${(rec.report_count || 0).toLocaleString()}</div>
             </div>
-
-            <div style="padding: 20px 24px; overflow-y: auto;">
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-                    <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
-                        <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Reports</div>
-                        <div style="font-size: 24px; color: #0f172a; font-weight: 800; line-height: 1.2;">${(rec.report_count || 0).toLocaleString()}</div>
-                    </div>
-                    <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
-                        <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Priority</div>
-                        <div style="font-size: 18px; font-weight: 800; color: ${prio.color}; line-height: 1.2;">${prio.label}</div>
-                        <div style="font-size: 11px; color: ${prio.color}; font-weight: 600;">${Number(rec.priority_score || 0).toFixed(0)}/100</div>
-                    </div>
-                    <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
-                        <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Period</div>
-                        <div style="font-size: 11px; color: #0f172a; font-weight: 600; line-height: 1.3;">${earliestDate}<br>to ${latestDate}</div>
-                    </div>
-                </div>
-
-                <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-                    <div style="font-size: 11px; color: #0369a1; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
-                        <i class="fas fa-robot"></i> AI Campaign Strategy
-                    </div>
-                    <div style="font-size: 14px; color: #0c4a6e; font-weight: 600; line-height: 1.4; margin-bottom: 6px;">${escapeHtml(rec.campaign_title || rec.recommended_campaign_title)}</div>
-                    ${rec.description ? `<div style="font-size: 13px; color: #334155; line-height: 1.5;">${escapeHtml(rec.description)}</div>` : ''}
-                </div>
-
-                ${rec.ai_reasoning ? `
-                <div style="background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-                    <div style="font-size: 11px; color: #92400e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
-                        <i class="fas fa-brain"></i> AI Reasoning
-                    </div>
-                    <div style="font-size: 13px; color: #713f12; line-height: 1.6;">${escapeHtml(rec.ai_reasoning)}</div>
-                </div>` : ''}
-
-                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-                    <div style="font-size: 11px; color: #15803d; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;">
-                        <i class="fas fa-cogs"></i> Priority Score Breakdown
-                    </div>
-                    <div style="font-size: 13px; line-height: 1.7;">
-                        <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #dcfce7;">
-                            <span style="color: #166534;">Severity Score (${breakdown.severity_weight !== undefined ? (breakdown.severity_weight * 100) + '%' : '40%'} weight)</span>
-                            <span style="font-weight: 700; color: #166534;">${Number(rec.severity_score || 0).toFixed(0)}/100</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #dcfce7;">
-                            <span style="color: #166534;">Frequency Score (${breakdown.frequency_weight !== undefined ? (breakdown.frequency_weight * 100) + '%' : '25%'} weight)</span>
-                            <span style="font-weight: 700; color: #166534;">${Number(rec.frequency_score || 0).toFixed(0)}/100</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #dcfce7;">
-                            <span style="color: #166534;">Recency Score (${breakdown.recency_weight !== undefined ? (breakdown.recency_weight * 100) + '%' : '20%'} weight)</span>
-                            <span style="font-weight: 700; color: #166534;">${Number(rec.recency_score || 0).toFixed(0)}/100</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #dcfce7;">
-                            <span style="color: #166534;">Geographic Impact (${breakdown.geographic_weight !== undefined ? (breakdown.geographic_weight * 100) + '%' : '15%'} weight)</span>
-                            <span style="font-weight: 700; color: #166534;">${Number(rec.geographic_score || 0).toFixed(0)}/100</span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; padding: 3px 0; font-size: 15px;">
-                            <span style="color: #166534; font-weight: 700;">Final Priority Score</span>
-                            <span style="font-weight: 800; color: ${prio.color};">${Number(rec.priority_score || 0).toFixed(0)}/100 (${prio.label})</span>
-                        </div>
-                        <div style="margin-top: 6px; font-size: 11px; color: #6b7280; border-top: 1px dashed #dcfce7; padding-top: 6px;">
-                            Formula: (Severity x 0.40) + (Frequency x 0.25) + (Recency x 0.20) + (Geographic x 0.15)
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
-                        <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
-                            <i class="fas fa-map-marker-alt"></i> Affected Locations
-                        </div>
-                        <div>${locationsHtml}</div>
-                    </div>
-                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
-                        <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
-                            <i class="fas fa-users"></i> Target Audience
-                        </div>
-                        <div style="font-size: 13px; color: #0f172a; font-weight: 500;">${escapeHtml(rec.ai_target_audience || 'General public and community stakeholders')}</div>
-                    </div>
-                </div>
-
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
-                    <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;">
-                        <i class="fas fa-clipboard-check"></i> Recommended Actions
-                    </div>
-                    ${actionsHtml}
-                </div>
-
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
-                    <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;">
-                        <i class="fas fa-list"></i> Supporting Reports (${reportList.length})
-                    </div>
-                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr style="background: #f1f5f9;">
-                                    <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0;">Report ID</th>
-                                    <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0;">Title</th>
-                                </tr>
-                            </thead>
-                            <tbody>${reportsHtml}</tbody>
-                        </table>
-                    </div>
-                </div>
-
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Priority</div>
+                <div style="font-size: 18px; font-weight: 800; color: ${prio.color}; line-height: 1.2;">${prio.label}</div>
+                <div style="font-size: 11px; color: ${prio.color}; font-weight: 600;">${Number(rec.priority_score || 0).toFixed(0)}/100</div>
             </div>
-            <div style="padding: 12px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: flex-end; gap: 8px;">
-                <span style="font-size: 11px; color: #94a3b8; align-self: center;">Generated by ${escapeHtml(rec.generated_by || 'rule-based')}</span>
-                <button onclick="closeAiRecommendationModal()" style="padding: 8px 20px; background: #4c8a89; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;">Close</button>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">Planning Status</div>
+                <div style="font-size: 13px; line-height: 1.2; margin-top: 4px;">${statusBadge}</div>
+                <div style="font-size: 10px; color: #64748b; margin-top: 4px;">Budget: ${budgetStatusBadge}</div>
+            </div>
+        </div>
+
+        <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div style="font-size: 11px; color: #0369a1; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+                <i class="fas fa-robot"></i> AI Campaign Strategy
+            </div>
+            <div style="font-size: 14px; color: #0c4a6e; font-weight: 600; line-height: 1.4; margin-bottom: 6px;">${escapeHtml(rec.campaign_title || rec.recommended_campaign_title)}</div>
+            ${rec.description ? `<div style="font-size: 13px; color: #334155; line-height: 1.5;">${escapeHtml(rec.description)}</div>` : ''}
+        </div>
+
+        ${rec.ai_reasoning ? `
+        <div style="background: #fefce8; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div style="font-size: 11px; color: #92400e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+                <i class="fas fa-brain"></i> AI Reasoning
+            </div>
+            <div style="font-size: 13px; color: #713f12; line-height: 1.6;">${escapeHtml(rec.ai_reasoning)}</div>
+        </div>` : ''}
+
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div style="font-size: 11px; color: #15803d; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;">
+                <i class="fas fa-cogs"></i> Priority Score Breakdown
+            </div>
+            <div style="font-size: 13px; line-height: 1.7;">
+                <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #dcfce7;">
+                    <span style="color: #166534;">Severity Score (${breakdown.severity_weight !== undefined ? (breakdown.severity_weight * 100) + '%' : '40%'} weight)</span>
+                    <span style="font-weight: 700; color: #166534;">${Number(rec.severity_score || 0).toFixed(0)}/100</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #dcfce7;">
+                    <span style="color: #166534;">Frequency Score (${breakdown.frequency_weight !== undefined ? (breakdown.frequency_weight * 100) + '%' : '25%'} weight)</span>
+                    <span style="font-weight: 700; color: #166534;">${Number(rec.frequency_score || 0).toFixed(0)}/100</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #dcfce7;">
+                    <span style="color: #166534;">Recency Score (${breakdown.recency_weight !== undefined ? (breakdown.recency_weight * 100) + '%' : '20%'} weight)</span>
+                    <span style="font-weight: 700; color: #166534;">${Number(rec.recency_score || 0).toFixed(0)}/100</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #dcfce7;">
+                    <span style="color: #166534;">Geographic Impact (${breakdown.geographic_weight !== undefined ? (breakdown.geographic_weight * 100) + '%' : '15%'} weight)</span>
+                    <span style="font-weight: 700; color: #166534;">${Number(rec.geographic_score || 0).toFixed(0)}/100</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 3px 0; font-size: 15px;">
+                    <span style="color: #166534; font-weight: 700;">Final Priority Score</span>
+                    <span style="font-weight: 800; color: ${prio.color};">${Number(rec.priority_score || 0).toFixed(0)}/100 (${prio.label})</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+                <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+                    <i class="fas fa-map-marker-alt"></i> Affected Locations
+                </div>
+                <div>${locationsHtml}</div>
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+                <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px;">
+                    <i class="fas fa-users"></i> Target Audience
+                </div>
+                <div style="font-size: 13px; color: #0f172a; font-weight: 500;">${escapeHtml(rec.ai_target_audience || 'General public and community stakeholders')}</div>
+            </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;">
+                <i class="fas fa-clipboard-check"></i> Recommended Actions
+            </div>
+            ${actionsHtml}
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+            <div style="font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 8px;">
+                <i class="fas fa-list"></i> Supporting Reports (${reportList.length})
+            </div>
+            <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0;">Report ID</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569; border-bottom: 1px solid #e2e8f0;">Title</th>
+                        </tr>
+                    </thead>
+                    <tbody>${reportsHtml}</tbody>
+                </table>
             </div>
         </div>
     `;
-
-    modal.addEventListener('click', event => {
-        if (event.target === modal) closeAiRecommendationModal();
-    });
-
-    document.body.appendChild(modal);
 }
+
+function renderAiRecBudgetTab(body, data) {
+    const budget = data?.budget || { items: [], total_estimated: '0', count: 0 };
+    const summary = data?.summary || {};
+    const budgetSummary = data?.budget_summary || { by_funding_source: [] };
+
+    const items = budget.items || [];
+    const totalEst = Number(budget.total_estimated || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const estBudget = summary.estimated_budget ? Number(summary.estimated_budget).toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'N/A';
+    const recBudget = summary.final_recommended_budget ? Number(summary.final_recommended_budget).toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'N/A';
+    const appBudget = summary.approved_budget ? Number(summary.approved_budget).toLocaleString(undefined, { minimumFractionDigits: 2 }) : 'Pending';
+    const apprStatus = summary.approval_status || 'recommended';
+    const valStatus = summary.budget_validation_status || 'unchecked';
+
+    const itemsHtml = items.length > 0 ? items.map(i => `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 10px; font-size: 12px; color: #0f172a;">${escapeHtml(i.item_name)}</td>
+            <td style="padding: 6px 10px; font-size: 11px; color: #64748b;">${escapeHtml(i.item_type || '')}</td>
+            <td style="padding: 6px 10px; font-size: 12px; color: #0f172a; text-align: right;">${Number(i.quantity || 0).toLocaleString()}</td>
+            <td style="padding: 6px 10px; font-size: 12px; color: #0f172a; text-align: right;">₱${Number(i.unit_cost || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+            <td style="padding: 6px 10px; font-size: 12px; font-weight: 700; color: #0f172a; text-align: right;">₱${Number(i.subtotal || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+            <td style="padding: 6px 10px; font-size: 11px; color: #64748b;">${escapeHtml(i.funding_source || '')}</td>
+        </tr>
+    `).join('') : '<tr><td colspan="6" style="padding: 20px; text-align: center; color: #94a3b8;">No budget items generated yet. Use the Generate action to create budget recommendations.</td></tr>';
+
+    const fundingHtml = budgetSummary.by_funding_source && budgetSummary.by_funding_source.length > 0
+        ? budgetSummary.by_funding_source.map(f => `
+            <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #e2e8f0; font-size: 12px;">
+                <span style="color: #475569;">${escapeHtml(f.funding_source)}</span>
+                <span style="font-weight: 700; color: #0f172a;">₱${Number(f.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} (${f.item_count} items)</span>
+            </div>
+        `).join('') : '';
+
+    body.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;">
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Estimated</div>
+                <div style="font-size: 16px; font-weight: 800; color: #0f172a;">₱${estBudget}</div>
+            </div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Recommended</div>
+                <div style="font-size: 16px; font-weight: 800; color: #667eea;">₱${recBudget}</div>
+            </div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Approved</div>
+                <div style="font-size: 16px; font-weight: 800; color: #16a34a;">₱${appBudget}</div>
+            </div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Status</div>
+                <div style="font-size: 12px; font-weight: 700; color: ${apprStatus === 'approved' ? '#16a34a' : apprStatus === 'rejected' ? '#dc2626' : '#ca8a04'}; margin-top: 4px;">${apprStatus}</div>
+                <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Validation: ${valStatus}</div>
+            </div>
+        </div>
+
+        ${fundingHtml ? `
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <div style="font-size: 11px; color: #475569; font-weight: 700; margin-bottom: 6px;">Funding Source Breakdown</div>
+            ${fundingHtml}
+        </div>` : ''}
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+            <div style="font-size: 11px; color: #475569; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">
+                Budget Line Items (${items.length})
+            </div>
+            <div style="max-height: 350px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Item</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Type</th>
+                            <th style="padding: 6px 10px; text-align: right; font-size: 11px; font-weight: 700; color: #475569;">Qty</th>
+                            <th style="padding: 6px 10px; text-align: right; font-size: 11px; font-weight: 700; color: #475569;">Unit Cost</th>
+                            <th style="padding: 6px 10px; text-align: right; font-size: 11px; font-weight: 700; color: #475569;">Subtotal</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>${itemsHtml}</tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function renderAiRecStaffTab(body, data) {
+    const staff = data?.staff || { participants: [], total: 0, confirmed: 0, unmatched: 0, conflicts: 0 };
+    const participants = staff.participants || [];
+
+    const itemsHtml = participants.length > 0 ? participants.map(p => {
+        const matchStyle = p.match_method === 'unmatched' ? 'color: #ea580c;' : p.match_method === 'name_match' ? 'color: #ca8a04;' : 'color: #16a34a;';
+        const availHtml = p.availability_status === 'Not Recorded'
+            ? '<span style="color: #94a3b8; font-size: 11px;">Not Recorded</span>'
+            : `<span style="font-size: 11px;">${escapeHtml(p.availability_status)}</span>`;
+        const conflictHtml = p.conflict_status === 'possible_conflict'
+            ? `<span style="color: #ea580c; font-size: 11px;" title="${escapeHtml(p.conflict_note || '')}">&#9888; Possible Conflict</span>`
+            : '<span style="color: #94a3b8; font-size: 11px;">None</span>';
+        const confirmHtml = p.is_confirmed
+            ? '<span style="color: #16a34a; font-size: 11px;">&#10003; Confirmed</span>'
+            : '<span style="color: #94a3b8; font-size: 11px;">Pending</span>';
+
+        return `<tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 10px; font-size: 12px; color: #0f172a;">${escapeHtml(p.staff_name_snapshot)}</td>
+            <td style="padding: 6px 10px; font-size: 12px; color: #475569;">${escapeHtml(p.staff_role_snapshot || '')}</td>
+            <td style="padding: 6px 10px; font-size: 11px; ${matchStyle}">${p.match_method}</td>
+            <td style="padding: 6px 10px;">${availHtml}</td>
+            <td style="padding: 6px 10px;">${conflictHtml}</td>
+            <td style="padding: 6px 10px;">${confirmHtml}</td>
+        </tr>`;
+    }).join('') : '<tr><td colspan="6" style="padding: 20px; text-align: center; color: #94a3b8;">No staff recommendations generated yet.</td></tr>';
+
+    body.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px;">
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Total</div>
+                <div style="font-size: 20px; font-weight: 800; color: #0f172a;">${staff.total}</div>
+            </div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Confirmed</div>
+                <div style="font-size: 20px; font-weight: 800; color: #16a34a;">${staff.confirmed}</div>
+            </div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Unmatched</div>
+                <div style="font-size: 20px; font-weight: 800; color: #ea580c;">${staff.unmatched}</div>
+            </div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Conflicts</div>
+                <div style="font-size: 20px; font-weight: 800; color: #ca8a04;">${staff.conflicts}</div>
+            </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+            <div style="font-size: 11px; color: #475569; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">
+                Recommended Staff (${participants.length})
+            </div>
+            <div style="max-height: 350px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Name</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Role</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Match</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Availability</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Conflict</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>${itemsHtml}</tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function renderAiRecPartnersTab(body, data) {
+    const partners = data?.partners || [];
+    const suggestions = data?.partner_suggestions || data?.suggestions || [];
+
+    const partnersHtml = partners.length > 0 ? partners.map(p => `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 10px; font-size: 12px; color: #0f172a;">${escapeHtml(p.partner_name_snapshot)}</td>
+            <td style="padding: 6px 10px; font-size: 11px; color: #64748b;">${escapeHtml(p.organization_type_snapshot || '')}</td>
+            <td style="padding: 6px 10px; font-size: 11px; color: #475569;">${escapeHtml(p.capability_match_basis || '')}</td>
+            <td style="padding: 6px 10px; font-size: 12px; color: #475569;">${escapeHtml(p.recommended_role || '')}</td>
+            <td style="padding: 6px 10px;">${p.is_confirmed ? '<span style="color: #16a34a; font-size: 11px;">&#10003;</span>' : '<span style="color: #94a3b8; font-size: 11px;">Pending</span>'}</td>
+        </tr>
+    `).join('') : '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #94a3b8;">No partner matches generated yet.</td></tr>';
+
+    const suggestionsHtml = suggestions.length > 0 ? suggestions.map(s => `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 6px 10px; font-size: 12px; color: #0f172a;">${escapeHtml(s.organization_type || 'General')}</td>
+            <td style="padding: 6px 10px; font-size: 11px; color: #475569;">${escapeHtml(s.capability_description || '')}</td>
+            <td style="padding: 6px 10px; font-size: 11px; color: #64748b;">${escapeHtml(s.rationale || '')}</td>
+            <td style="padding: 6px 10px; font-size: 12px; font-weight: 600; color: ${s.acquisition_priority === 'high' ? '#dc2626' : s.acquisition_priority === 'medium' ? '#ca8a04' : '#16a34a'};">${s.acquisition_priority}</td>
+            <td style="padding: 6px 10px; font-size: 11px; color: #64748b;">${escapeHtml(s.proposal_status || 'proposed')}</td>
+        </tr>
+    `).join('') : '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #94a3b8;">No new partner suggestions.</td></tr>';
+
+    body.innerHTML = `
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div style="font-size: 11px; color: #475569; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">
+                <i class="fas fa-handshake"></i> Matched Partners (${partners.length})
+            </div>
+            <div style="max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Name</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Type</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Match Basis</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Role</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>${partnersHtml}</tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px;">
+            <div style="font-size: 11px; color: #15803d; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">
+                <i class="fas fa-lightbulb"></i> New Partner Suggestions (${suggestions.length})
+            </div>
+            <div style="font-size: 12px; color: #475569; margin-bottom: 8px; font-style: italic;">Generic capability proposals — no auto-insert into partners table.</div>
+            <div style="max-height: 250px; overflow-y: auto; border: 1px solid #bbf7d0; border-radius: 6px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f0fdf4;">
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #166534;">Type</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #166534;">Capability</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #166534;">Rationale</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #166534;">Priority</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #166534;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>${suggestionsHtml}</tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function renderAiRecScheduleTab(body, data) {
+    const schedule = data?.schedule_phases || data?.schedule || { phases: [], total_phases: 0, total_budget: '0' };
+    const phases = schedule.phases || [];
+
+    const phasesHtml = phases.length > 0 ? phases.map((p, i) => {
+        const activities = Array.isArray(p.activities) ? p.activities : [];
+        const activitiesHtml = activities.length > 0
+            ? activities.map(a => `<li style="font-size: 12px; color: #475569; margin-bottom: 2px;">${escapeHtml(a)}</li>`).join('')
+            : '<li style="font-size: 12px; color: #94a3b8;">No activities listed</li>';
+        const pct = Math.round(((i + 1) / phases.length) * 100);
+        return `
+        <div style="margin-bottom: 12px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; background: ${i % 2 === 0 ? '#f8fafc' : '#fff'};">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div>
+                    <span style="background: #667eea; color: white; border-radius: 12px; padding: 2px 10px; font-size: 11px; font-weight: 700; margin-right: 8px;">Phase ${p.sprint_number}</span>
+                    <span style="font-size: 14px; font-weight: 700; color: #0f172a;">${escapeHtml(p.sprint_title)}</span>
+                </div>
+                <span style="font-size: 11px; color: #64748b;">
+                    ${p.start_date} &rarr; ${p.end_date}
+                    <span style="color: #94a3b8;">(${p.duration_days} days)</span>
+                </span>
+            </div>
+            ${p.objectives ? `<div style="font-size: 12px; color: #475569; margin-bottom: 4px;"><strong>Objectives:</strong> ${escapeHtml(p.objectives)}</div>` : ''}
+            <div style="margin-top: 4px;">
+                <strong style="font-size: 11px; color: #64748b;">Activities:</strong>
+                <ul style="margin: 4px 0 0 16px; padding: 0;">${activitiesHtml}</ul>
+            </div>
+            ${p.outputs ? `<div style="font-size: 11px; color: #64748b; margin-top: 4px;"><strong>Outputs:</strong> ${escapeHtml(p.outputs)}</div>` : ''}
+            <div style="margin-top: 6px; background: #e2e8f0; border-radius: 8px; height: 4px; overflow: hidden;">
+                <div style="background: linear-gradient(90deg, #667eea, #4c8a89); width: ${pct}%; height: 100%; border-radius: 8px;"></div>
+            </div>
+            <div style="font-size: 10px; color: #94a3b8; text-align: right; margin-top: 2px;">${p.status === 'confirmed' ? 'Confirmed' : 'Recommended - Pending Confirmation'}</div>
+        </div>`;
+    }).join('') : '<div style="text-align: center; padding: 40px; color: #94a3b8;">No schedule phases generated yet.</div>';
+
+    body.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Phases</div>
+                <div style="font-size: 20px; font-weight: 800; color: #0f172a;">${schedule.total_phases}</div>
+            </div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Total Budget</div>
+                <div style="font-size: 14px; font-weight: 800; color: #0f172a;">₱${Number(schedule.total_budget || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+            </div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Duration</div>
+                <div style="font-size: 14px; font-weight: 800; color: #0f172a;">${phases.length > 0 ? phases[0].start_date + ' to ' + phases[phases.length - 1].end_date : 'N/A'}</div>
+            </div>
+        </div>
+
+        ${phasesHtml}
+    `;
+}
+
+function renderAiRecReportsTab(body, data, rec = {}) {
+    const reports = data?.reports || { all: [], crime_count: 0, disaster_count: 0, total: 0 };
+    const allReports = Array.isArray(reports.all) ? reports.all : [];
+    const summary = data?.summary || {};
+    const warning = summary.planning_error_message || reports.warning || '';
+
+    const rowsHtml = allReports.length > 0 ? allReports.map(r => `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 6px 10px; font-size: 11px; color: #64748b;">${escapeHtml(r.external_report_id || r.source_local_id || '')}</td>
+                <td style="padding: 6px 10px; font-size: 11px; color: #64748b; text-transform: capitalize;">${escapeHtml(r.source_type || rec.category || '')}</td>
+                <td style="padding: 6px 10px; font-size: 12px; color: #0f172a;">${escapeHtml(r.incident_title)}</td>
+                <td style="padding: 6px 10px; font-size: 11px; color: #64748b;">${escapeHtml(r.category || '')}</td>
+                <td style="padding: 6px 10px; font-size: 11px; color: #475569;">${escapeHtml(r.severity || '')}</td>
+                <td style="padding: 6px 10px; font-size: 11px; color: #475569;">${escapeHtml(r.location || '')}</td>
+                <td style="padding: 6px 10px; font-size: 11px; color: #64748b;">${r.report_date || ''}</td>
+                <td style="padding: 6px 10px; font-size: 11px; color: #64748b;">${escapeHtml(r.incident_status || '')}</td>
+            </tr>
+        `).join('') : `<tr><td colspan="8" style="padding: 22px; text-align: center; color: #94a3b8;">${escapeHtml(warning || 'No stored supporting reports for this recommendation yet. Use Generate Campaign Plan to restore available report snapshots.')}</td></tr>`;
+
+    body.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Total Reports</div>
+                <div style="font-size: 20px; font-weight: 800; color: #0f172a;">${reports.total}</div>
+            </div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Crime</div>
+                <div style="font-size: 20px; font-weight: 800; color: #667eea;">${reports.crime_count}</div>
+            </div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Disaster</div>
+                <div style="font-size: 20px; font-weight: 800; color: #dc2626;">${reports.disaster_count}</div>
+            </div>
+        </div>
+
+        ${warning ? `<div style="background: #fef3c7; border: 1px solid #fde68a; color: #92400e; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 12px;">${escapeHtml(warning)}</div>` : ''}
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+            <div style="font-size: 11px; color: #475569; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">
+                <i class="fas fa-list"></i> Supporting Reports for This Recommendation (${allReports.length})
+            </div>
+            <div style="max-height: 380px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Report ID</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Source</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Title</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Category</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Severity</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Location</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Date</th>
+                            <th style="padding: 6px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #475569;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rowsHtml}</tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function updateAiRecPlanAction(rec) {
+    const data = window.__aiRecDetail || {};
+    const summary = data.summary || {};
+    const button = document.getElementById('aiRecGeneratePlanBtn');
+    const status = document.getElementById('aiRecPlanStatus');
+    const planStatus = summary.planning_status || rec.planning_status || 'not_generated';
+    const generatedBy = summary.generated_by || rec.generated_by || 'rule-based';
+    const hasGeneratedData = ['completed', 'completed_with_warnings'].includes(planStatus);
+
+    if (button) {
+        button.disabled = false;
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+        button.innerHTML = hasGeneratedData
+            ? '<i class="fas fa-sync-alt"></i> Recalculate Campaign Plan'
+            : '<i class="fas fa-magic"></i> Generate Campaign Plan';
+    }
+
+    if (status) {
+        const label = planStatus.replace(/_/g, ' ');
+        status.textContent = 'Generated by ' + generatedBy + ' | Planning: ' + label;
+    }
+}
+
+async function readApiError(response) {
+    try {
+        const payload = await response.json();
+        return payload.error || payload.message || JSON.stringify(payload);
+    } catch (e) {
+        try {
+            return await response.text();
+        } catch (inner) {
+            return response.statusText || 'Request failed';
+        }
+    }
+}
+
+async function reloadAiRecommendationDetails(rec) {
+    const detailsUrl = aiRecommendationDetailsUrl + '?id=' + (rec.id || 0) + '&_=' + Date.now();
+    const resp = await fetch(detailsUrl, { headers: { 'Accept': 'application/json' } });
+    if (!resp.ok) {
+        throw new Error(await readApiError(resp));
+    }
+    const payload = await resp.json();
+    window.__aiRecDetail = payload?.data || null;
+    delete window.__aiRecDetailError;
+    updateAiRecPlanAction(rec);
+    renderAiRecTab(window.__aiRecActiveTab || 'overview', rec);
+}
+
+async function generateAiRecommendationPlan() {
+    const active = window.__aiRecActive || {};
+    const rec = active.rec || {};
+    const data = window.__aiRecDetail || {};
+    const summary = data.summary || {};
+    const recommendationId = summary.id || rec.id;
+    const button = document.getElementById('aiRecGeneratePlanBtn');
+    const status = document.getElementById('aiRecPlanStatus');
+
+    if (!recommendationId) {
+        showErrorToast('Planning generation failed: missing recommendation ID.');
+        return;
+    }
+
+    const token = localStorage.getItem('jwtToken') || '';
+    if (!token.trim()) {
+        showErrorToast('Planning generation failed: unauthorized request. Please log in again.');
+        return;
+    }
+
+    const action = ['completed', 'completed_with_warnings'].includes(summary.planning_status || rec.planning_status)
+        ? 'recalculate'
+        : 'generate';
+
+    try {
+        if (button) {
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            button.style.cursor = 'wait';
+            button.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Generating...';
+        }
+        if (status) {
+            status.textContent = 'Generating campaign plan...';
+        }
+
+        const resp = await fetch(aiRecommendationGenerateUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': 'Bearer ' + token.trim()
+            },
+            body: JSON.stringify({ recommendation_id: recommendationId, action })
+        });
+
+        if (!resp.ok) {
+            throw new Error(await readApiError(resp));
+        }
+
+        const payload = await resp.json();
+        if (payload.error || payload.success === false) {
+            throw new Error(payload.error || payload.message || 'Planning generation failed.');
+        }
+
+        await reloadAiRecommendationDetails(rec);
+        showSuccessToast(action === 'recalculate' ? 'Campaign plan recalculated.' : 'Campaign plan generated.');
+    } catch (e) {
+        const message = e.message || 'Planning generation failed.';
+        showErrorToast('Planning generation failed: ' + message);
+        if (status) {
+            status.textContent = 'Planning generation failed: ' + message;
+        }
+        updateAiRecPlanAction(rec);
+    }
+}
+
+async function backfillAiRecommendationPlans() {
+    const button = document.getElementById('aiRecBackfillBtn');
+    const token = localStorage.getItem('jwtToken') || '';
+    if (!token.trim()) {
+        showErrorToast('Planning generation failed: unauthorized request. Please log in again.');
+        return;
+    }
+
+    try {
+        if (button) {
+            button.disabled = true;
+            button.style.opacity = '0.7';
+            button.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Generating...';
+        }
+
+        const resp = await fetch(aiRecommendationGenerateUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': 'Bearer ' + token.trim()
+            },
+            body: JSON.stringify({ action: 'backfill_missing' })
+        });
+
+        if (!resp.ok) {
+            throw new Error(await readApiError(resp));
+        }
+        const payload = await resp.json();
+        if (payload.error || payload.success === false) {
+            throw new Error(payload.error || payload.message || 'Backfill failed.');
+        }
+
+        showSuccessToast('Generated missing plans for ' + (payload.processed || 0) + ' recommendations.');
+        await loadAiRecommendations(false);
+    } catch (e) {
+        showErrorToast('Planning generation failed: ' + (e.message || 'Backfill failed.'));
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.style.opacity = '1';
+            button.innerHTML = '<i class="fas fa-magic"></i> Generate Missing Plans';
+        }
+    }
+}
+
+window.generateAiRecommendationPlan = generateAiRecommendationPlan;
+window.backfillAiRecommendationPlans = backfillAiRecommendationPlans;
 
 function closeAiRecommendationModal() {
     const modal = document.getElementById('aiRecommendationModal');
     if (modal) modal.remove();
+    delete window.__aiRecDetail;
+    delete window.__aiRecDetailError;
+    delete window.__aiRecActive;
+    delete window.__aiRecActiveTab;
 }
 
 // Toast Notification Functions
