@@ -985,6 +985,7 @@ function get_db_connection(): ?PDO
     $name = get_env_value('PROD_DB_NAME') ?? get_env_value('DB_NAME') ?? 'pscm';
     $user = get_env_value('PROD_DB_USER') ?? get_env_value('DB_USER') ?? 'root';
     $pass = get_env_value('PROD_DB_PASS') ?? get_env_value('DB_PASSWORD') ?? '';
+    try {
         $pdo = new PDO(
             "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
             $user,
