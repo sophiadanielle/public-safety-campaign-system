@@ -6513,13 +6513,6 @@ function showStaffStatus(message, type) {
     status.innerHTML = '<i class="fas ' + (type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle') + '" style="margin-right: 6px;"></i> ' + message;
 }
 
-// Escape HTML for safe rendering
-function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
-
 // Render budget table - grouped by campaign
 function renderBudgetTable() {
     const tbody = document.getElementById('budgetTable');
