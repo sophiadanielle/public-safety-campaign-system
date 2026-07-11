@@ -36,7 +36,7 @@ function load_local_env(): void
             $value = substr($value, 1, -1);
         }
 
-        if ($key !== '' && getenv($key) === false) {
+        if ($key !== '') {
             putenv($key . '=' . $value);
             $_ENV[$key] = $value;
         }
@@ -225,7 +225,7 @@ function incident_title(array $record): string
 
 function extract_report_id(array $record): string
 {
-    return (string) ($record['id'] ?? $record['incident_code'] ?? $record['code'] ?? spl_object_id($record));
+    return (string) ($record['id'] ?? $record['incident_code'] ?? $record['code'] ?? md5(serialize($record)));
 }
 
 function extract_severity_numeric(array $record): int
@@ -964,7 +964,7 @@ function ai_generate_titles_for_clusters(array $clusters): array
                 ],
             ],
             ['x-goog-api-key: ' . $apiKey],
-            15
+            30
         );
 
         $parsed = extract_json_from_text(parse_gemini_text($generateResponse));
