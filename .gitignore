@@ -2,3 +2,6 @@
 db.sql
 /vendor/
 *_api_full.json
+.playwright-mcp/
+campaigns-page.yml
+campaigns-screenshot.png
