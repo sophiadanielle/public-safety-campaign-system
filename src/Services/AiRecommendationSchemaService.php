@@ -104,6 +104,11 @@ class AiRecommendationSchemaService
         foreach ($columns as $name => $definition) {
             self::addColumnIfMissing($pdo, 'campaign_department_ai_recommendations', $name, $definition);
         }
+
+        self::tryExec($pdo, "ALTER TABLE campaign_department_ai_recommendations MODIFY planning_status VARCHAR(40) NOT NULL DEFAULT 'not_generated'");
+        self::tryExec($pdo, "ALTER TABLE campaign_department_ai_recommendations MODIFY approval_status VARCHAR(32) NOT NULL DEFAULT 'recommended'");
+        self::tryExec($pdo, "ALTER TABLE campaign_department_ai_recommendations MODIFY budget_validation_status VARCHAR(40) NOT NULL DEFAULT 'unchecked'");
+        self::tryExec($pdo, "ALTER TABLE campaign_department_ai_recommendations MODIFY incident_category VARCHAR(255) NULL");
     }
 
     private static function ensureChildTables(PDO $pdo): void
