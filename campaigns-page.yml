@@ -1,0 +1,90 @@
+- generic [active] [ref=e1]:
+  - complementary [ref=e2]:
+    - link "Logo" [ref=e6] [cursor=pointer]:
+      - /url: /public/dashboard.php
+      - img "Logo" [ref=e7]
+    - navigation [ref=e9]:
+      - list [ref=e11]:
+        - listitem [ref=e12]:
+          - link "" [ref=e13] [cursor=pointer]:
+            - /url: /public/dashboard.php
+          - text:        
+        - listitem [ref=e15]:
+          - link "" [ref=e16] [cursor=pointer]:
+            - /url: /public/campaigns.php
+          - text:    
+        - listitem [ref=e18]:
+          - link "" [ref=e19] [cursor=pointer]:
+            - /url: /public/content.php
+          - text:     
+        - listitem [ref=e21]:
+          - link "" [ref=e22] [cursor=pointer]:
+            - /url: /public/segments.php
+          - text:   
+        - listitem [ref=e24]:
+          - link "" [ref=e25] [cursor=pointer]:
+            - /url: /public/events.php
+          - text:    
+        - listitem [ref=e27]:
+          - link "" [ref=e28] [cursor=pointer]:
+            - /url: /public/surveys.php
+          - text:   
+        - listitem [ref=e30]:
+          - link "" [ref=e31] [cursor=pointer]:
+            - /url: /public/impact.php
+          - text:    
+        - listitem [ref=e33]:
+          - link "" [ref=e34] [cursor=pointer]:
+            - /url: /public/partners.php
+          - text:    
+  - banner [ref=e36]:
+    - generic [ref=e37]:
+      - text: 
+      - button "Toggle sidebar" [ref=e38] [cursor=pointer]:
+        - generic [ref=e39]: 
+      - generic [ref=e40]:
+        - generic: 
+        - textbox "Search..." [ref=e41]
+    - generic [ref=e42]:
+      - generic [ref=e43]:
+        - button "Notifications" [ref=e45] [cursor=pointer]:
+          - generic [ref=e46]: 
+        - button "Messages" [ref=e48] [cursor=pointer]:
+          - generic [ref=e49]: 
+      - generic [ref=e51] [cursor=pointer]:
+        - generic [ref=e52]:
+          - generic [ref=e53]: User
+          - generic [ref=e54]: User
+        - img "User" [ref=e56]
+        - generic [ref=e57]: 
+  - text:       
+  - main [ref=e58]:
+    - main [ref=e60]:
+      - generic [ref=e61]:
+        - heading "Campaign Planning & Management" [level=1] [ref=e62]
+        - paragraph [ref=e63]: Plan, schedule, and track campaigns with timeline visualization, calendar views, and AI-powered optimization.
+      - generic [ref=e65]:
+        - text:    ▸ ▸ ▸ ▸ ▸ ▸    ▸ ▸  ▸ ▸ ▸ ▸ ▸   ✓      +   
+        - generic [ref=e66]:
+          - generic [ref=e67]
+          - generic [ref=e74]
+        - generic [ref=e170]:
+          - generic [ref=e171]
+          - generic [ref=e186]
+          - text:       
+        - generic [ref=e220]:
+          - generic [ref=e221]
+          - paragraph [ref=e228]
+          - generic [ref=e230]
+          - button " View Archived" [ref=e250] [cursor=pointer]
+          - table [ref=e253]
+        - generic [ref=e265]:
+          - generic [ref=e266]
+          - paragraph [ref=e274]: Manage staff positions and personnel for campaign deployment. Add new positions or select from existing roles and set the quantity needed.
+          - table [ref=e276]
+        - text:  ▸   ▸    ✓     ▸  
+    - generic [ref=e288]:
+      - generic [ref=e289]:
+        - paragraph [ref=e290]: © 2026 Alertara LGU System – Quezon City
+        - paragraph [ref=e291]: For internal use only
+      - paragraph [ref=e293]: "Logged in as: User"

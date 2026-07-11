@@ -52,13 +52,13 @@ function json_response(array $payload, int $statusCode = 200): void
 
 function get_env_value(string $key): ?string
 {
-    $value = getenv($key);
-    if ($value !== false && trim((string) $value) !== '') {
-        return trim((string) $value);
+    if (isset($_ENV[$key]) && is_string($_ENV[$key]) && trim($_ENV[$key]) !== '') {
+        return trim($_ENV[$key]);
     }
 
-    if (isset($_ENV[$key]) && trim((string) $_ENV[$key]) !== '') {
-        return trim((string) $_ENV[$key]);
+    $value = getenv($key);
+    if ($value !== false && is_string($value) && trim($value) !== '') {
+        return trim($value);
     }
 
     return null;
@@ -987,6 +987,7 @@ function get_db_connection(): ?PDO
     $pass = get_env_value('DB_PASSWORD') ?? '';
 
     try {
+        error_log('AI Rec DB: connecting with host=' . $host . ' user=' . $user . ' db=' . $name . ' pass_set=' . ($pass !== '' ? 'yes' : 'no'));
         $pdo = new PDO(
             "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4",
             $user,
