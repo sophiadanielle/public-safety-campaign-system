@@ -197,7 +197,6 @@ class AiRecommendationSchemaService
         foreach ($participantColumns as $name => $definition) {
             self::addColumnIfMissing($pdo, 'campaign_ai_recommendation_participants', $name, $definition);
         }
-        self::tryExec($pdo, 'ALTER TABLE campaign_ai_recommendation_participants MODIFY staff_id INT NULL');
         self::tryExec($pdo, 'ALTER TABLE campaign_ai_recommendation_participants MODIFY staff_name_snapshot VARCHAR(255) NULL');
         self::tryExec($pdo, 'ALTER TABLE campaign_ai_recommendation_participants MODIFY staff_role_snapshot VARCHAR(255) NULL');
 
