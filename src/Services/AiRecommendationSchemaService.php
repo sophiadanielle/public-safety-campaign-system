@@ -121,6 +121,7 @@ class AiRecommendationSchemaService
                 description TEXT NULL,
                 category VARCHAR(120) NULL,
                 item_type VARCHAR(120) NULL,
+                unit_label VARCHAR(80) NULL,
                 quantity DECIMAL(12,2) NOT NULL DEFAULT 1.00,
                 unit_cost DECIMAL(14,2) NOT NULL DEFAULT 0.00,
                 sessions_or_days INT NOT NULL DEFAULT 1,
@@ -129,6 +130,8 @@ class AiRecommendationSchemaService
                 related_action TEXT NULL,
                 recommendation_reason TEXT NULL,
                 pricing_source VARCHAR(120) NULL,
+                pricing_confidence VARCHAR(40) NOT NULL DEFAULT 'medium',
+                calculation_basis TEXT NULL,
                 is_estimate TINYINT(1) NOT NULL DEFAULT 1,
                 validation_status VARCHAR(40) NOT NULL DEFAULT 'estimated',
                 sort_order INT NOT NULL DEFAULT 0,
@@ -145,8 +148,19 @@ class AiRecommendationSchemaService
                 staff_id INT NULL,
                 staff_name_snapshot VARCHAR(255) NULL,
                 staff_role_snapshot VARCHAR(255) NULL,
+                required_role VARCHAR(255) NULL,
+                required_qty INT NOT NULL DEFAULT 1,
+                matched_qty INT NOT NULL DEFAULT 0,
+                missing_qty INT NOT NULL DEFAULT 0,
+                selected_qty INT NOT NULL DEFAULT 0,
+                deployment_location VARCHAR(255) NULL,
+                assigned_activity TEXT NULL,
+                required_capability TEXT NULL,
                 match_method VARCHAR(60) NOT NULL DEFAULT 'unmatched',
                 recommendation_reason TEXT NULL,
+                staffing_priority VARCHAR(30) NOT NULL DEFAULT 'medium',
+                staffing_source VARCHAR(120) NULL,
+                confirmation_status VARCHAR(40) NOT NULL DEFAULT 'pending',
                 availability_status VARCHAR(60) NOT NULL DEFAULT 'Not Recorded',
                 conflict_status VARCHAR(60) NOT NULL DEFAULT 'unknown',
                 conflict_note TEXT NULL,
@@ -157,6 +171,32 @@ class AiRecommendationSchemaService
                 KEY idx_ai_participants_recommendation (recommendation_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         ");
+
+        $budgetItemColumns = [
+            'unit_label' => 'VARCHAR(80) NULL',
+            'pricing_confidence' => "VARCHAR(40) NOT NULL DEFAULT 'medium'",
+            'calculation_basis' => 'TEXT NULL',
+        ];
+        foreach ($budgetItemColumns as $name => $definition) {
+            self::addColumnIfMissing($pdo, 'campaign_ai_recommendation_budget_items', $name, $definition);
+        }
+
+        $participantColumns = [
+            'required_role' => 'VARCHAR(255) NULL',
+            'required_qty' => 'INT NOT NULL DEFAULT 1',
+            'matched_qty' => 'INT NOT NULL DEFAULT 0',
+            'missing_qty' => 'INT NOT NULL DEFAULT 0',
+            'selected_qty' => 'INT NOT NULL DEFAULT 0',
+            'deployment_location' => 'VARCHAR(255) NULL',
+            'assigned_activity' => 'TEXT NULL',
+            'required_capability' => 'TEXT NULL',
+            'staffing_priority' => "VARCHAR(30) NOT NULL DEFAULT 'medium'",
+            'staffing_source' => 'VARCHAR(120) NULL',
+            'confirmation_status' => "VARCHAR(40) NOT NULL DEFAULT 'pending'",
+        ];
+        foreach ($participantColumns as $name => $definition) {
+            self::addColumnIfMissing($pdo, 'campaign_ai_recommendation_participants', $name, $definition);
+        }
 
         $pdo->exec("
             CREATE TABLE IF NOT EXISTS campaign_ai_recommendation_partners (

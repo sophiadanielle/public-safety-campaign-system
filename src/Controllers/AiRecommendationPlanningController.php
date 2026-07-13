@@ -189,7 +189,6 @@ class AiRecommendationPlanningController
             }
 
             $this->pdo->prepare('DELETE FROM campaign_ai_recommendation_budget_items WHERE recommendation_id = ?')->execute([$recommendationId]);
-            $this->pdo->prepare('DELETE FROM campaign_ai_recommendation_participants WHERE recommendation_id = ?')->execute([$recommendationId]);
             $this->pdo->prepare('DELETE FROM campaign_ai_recommendation_partners WHERE recommendation_id = ?')->execute([$recommendationId]);
             $this->pdo->prepare('DELETE FROM campaign_ai_recommendation_partner_suggestions WHERE recommendation_id = ?')->execute([$recommendationId]);
             $this->pdo->prepare('DELETE FROM campaign_ai_recommendation_schedule_phases WHERE recommendation_id = ?')->execute([$recommendationId]);

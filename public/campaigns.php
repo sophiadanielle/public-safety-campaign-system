@@ -2565,7 +2565,7 @@ async function openAiRecommendationModal(index, items) {
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);';
 
     modal.innerHTML = `
-        <div style="background: white; border-radius: 14px; max-width: 960px; width: 100%; max-height: 90vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
+        <div style="background: white; border-radius: 14px; max-width: 1120px; width: 100%; max-height: 90vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
             <div style="background: linear-gradient(135deg, #667eea 0%, #4c8a89 100%); color: white; padding: 16px 24px; display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
                 <div style="flex: 1;">
                     <div style="font-size: 11px; opacity: 0.9; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
@@ -2577,13 +2577,13 @@ async function openAiRecommendationModal(index, items) {
                 <button type="button" onclick="closeAiRecommendationModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">&times;</button>
             </div>
 
-            <div style="display: flex; border-bottom: 1px solid #e2e8f0; background: #f8fafc; padding: 0 16px; gap: 4px;" id="aiRecModalTabs">
-                <button class="ai-rec-tab active" data-tab="overview" style="padding: 10px 14px; font-size: 12px; font-weight: 700; border: none; background: none; cursor: pointer; color: #667eea; border-bottom: 2px solid #667eea;">Overview</button>
-                <button class="ai-rec-tab" data-tab="budget" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent;">Budget</button>
-                <button class="ai-rec-tab" data-tab="staff" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent;">Staff</button>
-                <button class="ai-rec-tab" data-tab="partners" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent;">Partners</button>
-                <button class="ai-rec-tab" data-tab="schedule" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent;">Schedule</button>
-                <button class="ai-rec-tab" data-tab="reports" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent;">Reports</button>
+            <div style="display: flex; border-bottom: 1px solid #e2e8f0; background: #f8fafc; padding: 0 16px; gap: 4px; overflow-x: auto;" id="aiRecModalTabs">
+                <button class="ai-rec-tab active" data-tab="overview" style="padding: 10px 14px; font-size: 12px; font-weight: 700; border: none; background: none; cursor: pointer; color: #667eea; border-bottom: 2px solid #667eea; white-space: nowrap;">Overall Summary</button>
+                <button class="ai-rec-tab" data-tab="reports" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;">Reports</button>
+                <button class="ai-rec-tab" data-tab="locations" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;">Locations & Audience</button>
+                <button class="ai-rec-tab" data-tab="budget" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;">Budget Breakdown</button>
+                <button class="ai-rec-tab" data-tab="staff" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;">Participants & Partners</button>
+                <button class="ai-rec-tab" data-tab="schedule" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;">Date Sprint</button>
             </div>
 
             <div id="aiRecModalBody" style="padding: 20px 24px; overflow-y: auto; min-height: 300px;">
@@ -2658,6 +2658,8 @@ function renderAiRecTab(tab, rec) {
 
     if (tab === 'overview') {
         renderAiRecOverview(body, mergedRec, data);
+    } else if (tab === 'locations') {
+        renderAiRecLocationsTab(body, mergedRec, data);
     } else if (tab === 'budget') {
         renderAiRecBudgetTab(body, data);
     } else if (tab === 'staff') {
@@ -2812,7 +2814,81 @@ function renderAiRecOverview(body, rec, data) {
     `;
 }
 
-function renderAiRecBudgetTab(body, data) {
+function renderAiRecLocationsTab(body, rec, data) {
+    const locations = Array.isArray(rec.affected_locations) ? rec.affected_locations : [];
+    const audience = rec.ai_target_audience || 'General public and community stakeholders';
+    const actions = Array.isArray(rec.ai_recommended_actions) ? rec.ai_recommended_actions : [];
+    const reports = data?.reports || { all: [] };
+    const reportRows = Array.isArray(reports.all) ? reports.all : [];
+
+    const locationRows = locations.length > 0 ? locations.map((location, index) => {
+        const relatedReports = reportRows.filter(r => (r.location || r.barangay_or_area || '').toLowerCase().includes(String(location).toLowerCase())).length;
+        return `<tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 8px 10px; font-size: 12px; color: #0f172a; font-weight: 600;">${escapeHtml(location)}</td>
+            <td style="padding: 8px 10px; font-size: 12px; color: #475569;">${Math.max(1, Math.ceil(actions.length / Math.max(1, locations.length)))}</td>
+            <td style="padding: 8px 10px; font-size: 12px; color: #475569;">${relatedReports || 'Not separately tagged'}</td>
+            <td style="padding: 8px 10px; font-size: 12px; color: #64748b;">Affected location ${index + 1} for campaign deployment</td>
+        </tr>`;
+    }).join('') : '<tr><td colspan="4" style="padding: 20px; text-align: center; color: #94a3b8;">No location data available.</td></tr>';
+
+    const actionRows = actions.length > 0 ? actions.map((action, index) => `
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 8px 10px; font-size: 12px; color: #64748b;">${index + 1}</td>
+            <td style="padding: 8px 10px; font-size: 12px; color: #0f172a;">${escapeHtml(action)}</td>
+            <td style="padding: 8px 10px; font-size: 12px; color: #475569;">${escapeHtml(locations[index % Math.max(1, locations.length)] || 'Primary affected location')}</td>
+        </tr>
+    `).join('') : '<tr><td colspan="3" style="padding: 20px; text-align: center; color: #94a3b8;">No actions generated yet.</td></tr>';
+
+    body.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Locations</div>
+                <div style="font-size: 22px; font-weight: 800; color: #0f172a;">${locations.length}</div>
+            </div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Actions</div>
+                <div style="font-size: 22px; font-weight: 800; color: #667eea;">${actions.length}</div>
+            </div>
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Duration</div>
+                <div style="font-size: 16px; font-weight: 800; color: #0f172a;">${escapeHtml(rec.recommended_duration || 30)} days</div>
+            </div>
+        </div>
+        <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div style="font-size: 11px; color: #0369a1; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">Target Audience</div>
+            <div style="font-size: 14px; color: #0c4a6e; font-weight: 600;">${escapeHtml(audience)}</div>
+        </div>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+            <div style="font-size: 11px; color: #475569; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">Affected Locations</div>
+            <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 640px;">
+                    <thead><tr style="background: #f1f5f9;">
+                        <th style="padding: 8px 10px; text-align: left; font-size: 11px; color: #475569;">Location</th>
+                        <th style="padding: 8px 10px; text-align: left; font-size: 11px; color: #475569;">Planned Activities</th>
+                        <th style="padding: 8px 10px; text-align: left; font-size: 11px; color: #475569;">Tagged Reports</th>
+                        <th style="padding: 8px 10px; text-align: left; font-size: 11px; color: #475569;">Planning Note</th>
+                    </tr></thead>
+                    <tbody>${locationRows}</tbody>
+                </table>
+            </div>
+        </div>
+        <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+            <div style="font-size: 11px; color: #475569; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">Action Location Mapping</div>
+            <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 640px;">
+                    <thead><tr style="background: #f8fafc;">
+                        <th style="padding: 8px 10px; text-align: left; font-size: 11px; color: #475569;">#</th>
+                        <th style="padding: 8px 10px; text-align: left; font-size: 11px; color: #475569;">Recommended Action</th>
+                        <th style="padding: 8px 10px; text-align: left; font-size: 11px; color: #475569;">Primary Deployment Location</th>
+                    </tr></thead>
+                    <tbody>${actionRows}</tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function renderAiRecBudgetTabLegacy(body, data) {
     const budget = data?.budget || { items: [], total_estimated: '0', count: 0 };
     const summary = data?.summary || {};
     const budgetSummary = data?.budget_summary || { by_funding_source: [] };
@@ -2894,7 +2970,7 @@ function renderAiRecBudgetTab(body, data) {
     `;
 }
 
-function renderAiRecStaffTab(body, data) {
+function renderAiRecStaffTabLegacy(body, data) {
     const staff = data?.staff || { participants: [], total: 0, confirmed: 0, unmatched: 0, conflicts: 0 };
     const participants = staff.participants || [];
 
@@ -3147,6 +3223,237 @@ function renderAiRecReportsTab(body, data, rec = {}) {
         </div>
     `;
 }
+
+function aiRecMoney(value) {
+    if (value === null || value === undefined || value === '') return 'N/A';
+    return '₱' + Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function aiRecBadge(status) {
+    const s = String(status || 'Pending');
+    const lower = s.toLowerCase();
+    const color = lower.includes('approved') || lower.includes('confirmed') || lower.includes('within') ? '#166534'
+        : lower.includes('insufficient') || lower.includes('conflict') || lower.includes('unavailable') ? '#991b1b'
+        : lower.includes('warning') || lower.includes('pending') || lower.includes('estimated') ? '#92400e'
+        : '#475569';
+    const bg = color === '#166534' ? '#dcfce7' : color === '#991b1b' ? '#fee2e2' : color === '#92400e' ? '#fef3c7' : '#f1f5f9';
+    return `<span style="display:inline-block;background:${bg};color:${color};border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;">${escapeHtml(s)}</span>`;
+}
+
+function aiRecSummaryCard(label, value, color = '#0f172a') {
+    return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;min-width:0;">
+        <div style="font-size:10px;color:#94a3b8;font-weight:800;text-transform:uppercase;line-height:1.2;">${label}</div>
+        <div style="font-size:15px;color:${color};font-weight:800;margin-top:4px;overflow-wrap:anywhere;">${value}</div>
+    </div>`;
+}
+
+function aiRecSection(title, icon, content, open = true) {
+    return `<details ${open ? 'open' : ''} style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:12px;background:#fff;overflow:hidden;">
+        <summary style="cursor:pointer;padding:12px 14px;background:#f8fafc;font-size:12px;color:#334155;font-weight:800;text-transform:uppercase;letter-spacing:.2px;">
+            <i class="fas ${icon}"></i> ${title}
+        </summary>
+        <div style="padding:14px;">${content}</div>
+    </details>`;
+}
+
+function renderAiRecBudgetTab(body, data) {
+    const analysis = data?.budget_analysis || {};
+    const allocation = analysis.allocation || {};
+    const campaign = analysis.campaign_summary || {};
+    const lineItems = analysis.line_items || data?.budget?.items || [];
+    const categories = analysis.category_breakdown || [];
+    const actions = analysis.action_breakdown || [];
+    const locations = analysis.location_breakdown || [];
+    const staffCosts = analysis.staff_cost_impact || [];
+    const partnerImpact = analysis.partner_contribution_impact || { items: [] };
+    const contingency = analysis.contingency || {};
+    const warnings = analysis.warnings || [];
+
+    const lineRows = lineItems.length ? lineItems.map(item => `
+        <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:7px 9px;font-size:11px;color:#64748b;">${item.number || ''}</td>
+            <td style="padding:7px 9px;font-size:11px;color:#475569;">${escapeHtml(item.category || '')}</td>
+            <td style="padding:7px 9px;font-size:12px;color:#0f172a;font-weight:700;">${escapeHtml(item.item_name || '')}</td>
+            <td style="padding:7px 9px;font-size:11px;color:#64748b;min-width:180px;">${escapeHtml(item.description || '')}</td>
+            <td style="padding:7px 9px;font-size:11px;color:#475569;min-width:170px;">${escapeHtml(item.related_action || '')}</td>
+            <td style="padding:7px 9px;font-size:12px;text-align:right;">${Number(item.quantity || 0).toLocaleString('en-PH')}</td>
+            <td style="padding:7px 9px;font-size:11px;">${escapeHtml(item.unit || item.unit_label || '')}</td>
+            <td style="padding:7px 9px;font-size:12px;text-align:right;">${aiRecMoney(item.unit_cost)}</td>
+            <td style="padding:7px 9px;font-size:12px;text-align:right;">${escapeHtml(item.sessions_or_days || '1')}</td>
+            <td style="padding:7px 9px;font-size:12px;font-weight:800;text-align:right;">${aiRecMoney(item.subtotal)}</td>
+            <td style="padding:7px 9px;font-size:11px;">${escapeHtml(item.pricing_source || '')}</td>
+            <td style="padding:7px 9px;">${aiRecBadge(item.estimate_status || 'Estimated Only')}</td>
+            <td style="padding:7px 9px;">${aiRecBadge(item.validation_status || 'estimated')}</td>
+            <td style="padding:7px 9px;font-size:11px;color:#64748b;min-width:180px;">${escapeHtml(item.reason || item.calculation_basis || '')}</td>
+        </tr>`).join('') : '<tr><td colspan="14" style="padding:20px;text-align:center;color:#94a3b8;">No budget items generated yet. Use Generate Campaign Plan.</td></tr>';
+
+    const categoryRows = categories.length ? categories.map(c => `
+        <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:7px 10px;font-size:12px;font-weight:700;">${escapeHtml(c.category)}</td><td style="padding:7px 10px;text-align:right;">${aiRecMoney(c.total)}</td><td style="padding:7px 10px;text-align:right;">${c.percentage_of_total ?? 'N/A'}%</td><td style="padding:7px 10px;text-align:right;">${c.item_count}</td></tr>
+    `).join('') : '<tr><td colspan="4" style="padding:16px;text-align:center;color:#94a3b8;">No category breakdown.</td></tr>';
+
+    const actionHtml = actions.length ? actions.map(a => `
+        <div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;">
+                <div style="font-size:12px;color:#0f172a;font-weight:700;">${escapeHtml(a.action)}</div>
+                <div style="font-size:12px;color:#166534;font-weight:800;white-space:nowrap;">${aiRecMoney(a.action_budget_total)}</div>
+            </div>
+            <div style="margin-top:6px;">${(a.items || []).map(i => `<span style="display:inline-block;background:#f1f5f9;border-radius:999px;padding:3px 8px;font-size:11px;color:#475569;margin:2px;">${escapeHtml(i.item_name)} - ${aiRecMoney(i.subtotal)}</span>`).join('')}</div>
+        </div>`).join('') : '<div style="padding:14px;color:#94a3b8;text-align:center;">No action mapping available.</div>';
+
+    const locationRows = locations.length ? locations.map(l => `
+        <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:7px 10px;font-size:12px;font-weight:700;">${escapeHtml(l.location)}</td><td style="padding:7px 10px;text-align:right;">${l.activities}</td><td style="padding:7px 10px;text-align:right;">${l.staff_qty}</td><td style="padding:7px 10px;text-align:right;">${aiRecMoney(l.material_allocation)}</td><td style="padding:7px 10px;text-align:right;">${aiRecMoney(l.transportation_cost)}</td><td style="padding:7px 10px;text-align:right;">${aiRecMoney(l.other_cost)}</td><td style="padding:7px 10px;text-align:right;font-weight:800;">${aiRecMoney(l.total_estimated_cost)}</td><td style="padding:7px 10px;font-size:11px;color:#64748b;">${escapeHtml(l.basis || 'Estimated Distribution')}</td></tr>
+    `).join('') : '<tr><td colspan="8" style="padding:16px;text-align:center;color:#94a3b8;">No location distribution available.</td></tr>';
+
+    const staffRows = staffCosts.length ? staffCosts.map(s => `
+        <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:7px 10px;font-size:12px;font-weight:700;">${escapeHtml(s.staff_role)}</td><td style="padding:7px 10px;text-align:right;">${s.required_qty}</td><td style="padding:7px 10px;text-align:right;">${s.existing_matched_qty}</td><td style="padding:7px 10px;text-align:right;">${s.missing_qty}</td><td style="padding:7px 10px;text-align:right;">${s.deployment_days}</td><td style="padding:7px 10px;text-align:right;font-weight:800;">${aiRecMoney(s.estimated_support_cost)}</td><td style="padding:7px 10px;font-size:11px;color:#64748b;">${escapeHtml(s.cost_type)}</td></tr>
+    `).join('') : '<tr><td colspan="7" style="padding:16px;text-align:center;color:#94a3b8;">No staff cost impact yet.</td></tr>';
+
+    const partnerRows = (partnerImpact.items || []).length ? partnerImpact.items.map(p => `
+        <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:7px 10px;font-size:12px;font-weight:700;">${escapeHtml(p.partner)}</td><td style="padding:7px 10px;font-size:12px;">${escapeHtml(p.recommended_contribution || '')}</td><td style="padding:7px 10px;font-size:12px;">${escapeHtml(p.contribution_type || '')}</td><td style="padding:7px 10px;font-size:12px;">${escapeHtml(p.estimated_budget_impact || '')}</td><td style="padding:7px 10px;">${aiRecBadge(p.verification_status || 'Requires Confirmation')}</td></tr>
+    `).join('') : '<tr><td colspan="5" style="padding:16px;text-align:center;color:#94a3b8;">No partner contribution impact yet.</td></tr>';
+
+    const warningHtml = warnings.length ? warnings.map(w => `
+        <div style="background:${w.severity === 'danger' ? '#fee2e2' : w.severity === 'success' ? '#dcfce7' : '#fef3c7'};border:1px solid ${w.severity === 'danger' ? '#fecaca' : w.severity === 'success' ? '#bbf7d0' : '#fde68a'};border-radius:8px;padding:9px 10px;margin-bottom:8px;">
+            <div style="font-size:11px;font-weight:800;color:#334155;">${escapeHtml(w.status)}</div><div style="font-size:12px;color:#475569;">${escapeHtml(w.message)}</div>
+        </div>`).join('') : '<div style="padding:10px;color:#16a34a;font-size:12px;">No budget warnings detected.</div>';
+
+    body.innerHTML = `
+        ${aiRecSection('Government Allocation Summary', 'fa-landmark', `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;">
+            ${aiRecSummaryCard('Fiscal Year', allocation.fiscal_year ? escapeHtml(allocation.fiscal_year) : 'Unavailable')}
+            ${aiRecSummaryCard('Total Government Allocation', allocation.exists ? aiRecMoney(allocation.total_government_allocation) : 'Budget Data Unavailable')}
+            ${aiRecSummaryCard('Verified Official Commitments', allocation.commitment_data_available === false ? 'Unavailable' : aiRecMoney(allocation.verified_official_commitments))}
+            ${aiRecSummaryCard('Unresolved Potential Commitments', allocation.unresolved_potential_commitments ?? 'Unavailable')}
+            ${aiRecSummaryCard('Actual Spending', escapeHtml(allocation.actual_spending_label || 'Actual Spending Data Unavailable'))}
+            ${aiRecSummaryCard('Protected Reserve', aiRecMoney(allocation.protected_reserve))}
+            ${aiRecSummaryCard('Safe Available Budget', aiRecMoney(allocation.safe_available_budget), '#166534')}
+            ${aiRecSummaryCard('Proposed AI Campaign Budget', aiRecMoney(allocation.proposed_ai_campaign_budget), '#667eea')}
+            ${aiRecSummaryCard('Forecast Balance After Campaign', aiRecMoney(allocation.forecast_balance_after_campaign), '#0f766e')}
+        </div>`)}
+        ${aiRecSection('Campaign Budget Summary', 'fa-wallet', `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;">
+            ${aiRecSummaryCard('Estimated Campaign Need', aiRecMoney(campaign.estimated_campaign_need))}
+            ${aiRecSummaryCard('System Maximum Allowed', aiRecMoney(campaign.system_maximum_allowed))}
+            ${aiRecSummaryCard('Final Recommended Budget', aiRecMoney(campaign.final_recommended_budget), '#667eea')}
+            ${aiRecSummaryCard('Approved Budget', campaign.approved_budget ? aiRecMoney(campaign.approved_budget) : 'Pending')}
+            ${aiRecSummaryCard('Budget Gap', aiRecMoney(campaign.budget_gap), Number(campaign.budget_gap || 0) > 0 ? '#dc2626' : '#166534')}
+            ${aiRecSummaryCard('Budget Utilization', campaign.budget_utilization_percentage === null || campaign.budget_utilization_percentage === undefined ? 'N/A' : campaign.budget_utilization_percentage + '%')}
+            ${aiRecSummaryCard('Validation Status', aiRecBadge(campaign.validation_status))}
+            ${aiRecSummaryCard('Pricing Confidence', aiRecBadge(campaign.pricing_confidence))}
+            ${aiRecSummaryCard('Last Calculated', campaign.last_calculated_date ? escapeHtml(campaign.last_calculated_date) : 'Unavailable')}
+        </div>`)}
+        ${aiRecSection('Budget Warnings', 'fa-triangle-exclamation', warningHtml)}
+        ${aiRecSection('Detailed Line Items', 'fa-list-check', `<div style="max-height:390px;overflow:auto;border:1px solid #e2e8f0;border-radius:6px;"><table style="width:100%;border-collapse:collapse;min-width:1450px;"><thead><tr style="background:#f1f5f9;">${['#','Budget Category','Item Name','Description','Related Campaign Action','QTY','Unit','Unit Cost','Sessions / Days','Subtotal','Pricing Source','Estimate Status','Validation Status','Reason'].map(h => `<th style="padding:7px 9px;text-align:left;font-size:11px;color:#475569;">${h}</th>`).join('')}</tr></thead><tbody>${lineRows}</tbody></table></div>`)}
+        ${aiRecSection('Category Breakdown', 'fa-chart-pie', `<div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:6px;"><table style="width:100%;border-collapse:collapse;min-width:520px;"><thead><tr style="background:#f8fafc;"><th style="padding:7px 10px;text-align:left;font-size:11px;">Category</th><th style="padding:7px 10px;text-align:right;font-size:11px;">Category Total</th><th style="padding:7px 10px;text-align:right;font-size:11px;">% of Total</th><th style="padding:7px 10px;text-align:right;font-size:11px;">Line Items</th></tr></thead><tbody>${categoryRows}</tbody></table></div>`, false)}
+        ${aiRecSection('Action-to-Budget Mapping', 'fa-route', actionHtml, false)}
+        ${aiRecSection('Location Budget Distribution', 'fa-map-location-dot', `<div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:6px;"><table style="width:100%;border-collapse:collapse;min-width:900px;"><thead><tr style="background:#f8fafc;">${['Location','# Activities','Staff QTY','Material Allocation','Transportation Cost','Other Cost','Total','Basis'].map(h => `<th style="padding:7px 10px;text-align:left;font-size:11px;">${h}</th>`).join('')}</tr></thead><tbody>${locationRows}</tbody></table></div>`, false)}
+        ${aiRecSection('Staff Deployment Cost Impact', 'fa-users-gear', `<div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:6px;"><table style="width:100%;border-collapse:collapse;min-width:820px;"><thead><tr style="background:#f8fafc;">${['Staff Role','Required QTY','Existing Matched QTY','Missing QTY','Deployment Days','Estimated Support Cost','Cost Type'].map(h => `<th style="padding:7px 10px;text-align:left;font-size:11px;">${h}</th>`).join('')}</tr></thead><tbody>${staffRows}</tbody></table></div>`, false)}
+        ${aiRecSection('Partner Contribution Impact', 'fa-handshake', `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:10px;">${aiRecSummaryCard('Budget Before Confirmed Partner Contributions', aiRecMoney(partnerImpact.budget_before_confirmed_partner_contributions))}${aiRecSummaryCard('Budget After Confirmed Partner Contributions', aiRecMoney(partnerImpact.budget_after_confirmed_partner_contributions))}</div><div style="font-size:12px;color:#64748b;margin-bottom:8px;">${escapeHtml(partnerImpact.note || 'Unconfirmed partner support is not deducted.')}</div><div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:6px;"><table style="width:100%;border-collapse:collapse;min-width:820px;"><thead><tr style="background:#f8fafc;">${['Partner','Recommended Contribution','Contribution Type','Estimated Budget Impact','Verification Status'].map(h => `<th style="padding:7px 10px;text-align:left;font-size:11px;">${h}</th>`).join('')}</tr></thead><tbody>${partnerRows}</tbody></table></div>`, false)}
+        ${aiRecSection('Contingency', 'fa-shield-halved', `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:10px;">${aiRecSummaryCard('Contingency Percentage', (contingency.contingency_percentage ?? 0) + '%')}${aiRecSummaryCard('Contingency Amount', aiRecMoney(contingency.contingency_amount))}${aiRecSummaryCard('Reason', escapeHtml(contingency.reason || 'No contingency line item generated yet.'))}</div><div style="font-size:12px;color:#475569;">May cover: ${(contingency.may_cover || []).map(x => `<span style="display:inline-block;background:#f1f5f9;border-radius:999px;padding:3px 8px;margin:2px;">${escapeHtml(x)}</span>`).join('')}</div>`, false)}
+    `;
+}
+
+function buildAiRecPartnersSection(data) {
+    const partners = data?.partners || [];
+    const suggestions = data?.partner_suggestions || data?.suggestions || [];
+    const partnersHtml = partners.length ? partners.map(p => `
+        <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:7px 10px;font-size:12px;font-weight:700;">${escapeHtml(p.partner_name_snapshot || p.current_partner_name || '')}</td><td style="padding:7px 10px;font-size:11px;color:#64748b;">${escapeHtml(p.organization_type_snapshot || '')}</td><td style="padding:7px 10px;font-size:11px;color:#475569;">${escapeHtml(p.capability_match_basis || '')}</td><td style="padding:7px 10px;font-size:12px;">${escapeHtml(p.recommended_role || '')}</td><td style="padding:7px 10px;">${aiRecBadge(p.is_confirmed ? 'Confirmed' : 'Pending')}</td></tr>
+    `).join('') : '<tr><td colspan="5" style="padding:18px;text-align:center;color:#94a3b8;">No partner matches generated yet.</td></tr>';
+    const suggestionsHtml = suggestions.length ? suggestions.map(s => `
+        <tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:7px 10px;font-size:12px;font-weight:700;">${escapeHtml(s.organization_type || 'General')}</td><td style="padding:7px 10px;font-size:11px;">${escapeHtml(s.capability_description || '')}</td><td style="padding:7px 10px;font-size:11px;color:#64748b;">${escapeHtml(s.rationale || '')}</td><td style="padding:7px 10px;">${aiRecBadge(s.acquisition_priority || 'medium')}</td><td style="padding:7px 10px;font-size:11px;color:#64748b;">${escapeHtml(s.proposal_status || 'proposed')}</td></tr>
+    `).join('') : '<tr><td colspan="5" style="padding:18px;text-align:center;color:#94a3b8;">No new partner suggestions.</td></tr>';
+    return `
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-top:16px;">
+            <div style="font-size:11px;color:#475569;font-weight:800;text-transform:uppercase;margin-bottom:8px;"><i class="fas fa-handshake"></i> Existing Recommended Partners (${partners.length})</div>
+            <div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:6px;"><table style="width:100%;border-collapse:collapse;min-width:720px;"><thead><tr style="background:#f1f5f9;">${['Name','Type','Match Basis','Role','Status'].map(h => `<th style="padding:7px 10px;text-align:left;font-size:11px;color:#475569;">${h}</th>`).join('')}</tr></thead><tbody>${partnersHtml}</tbody></table></div>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px;margin-top:12px;">
+            <div style="font-size:11px;color:#15803d;font-weight:800;text-transform:uppercase;margin-bottom:8px;"><i class="fas fa-lightbulb"></i> New Partner Capability Recommendations (${suggestions.length})</div>
+            <div style="font-size:12px;color:#475569;margin-bottom:8px;font-style:italic;">Capability proposals only. They do not auto-insert partner records.</div>
+            <div style="overflow-x:auto;border:1px solid #bbf7d0;border-radius:6px;"><table style="width:100%;border-collapse:collapse;min-width:720px;"><thead><tr style="background:#f0fdf4;">${['Type','Capability','Rationale','Priority','Status'].map(h => `<th style="padding:7px 10px;text-align:left;font-size:11px;color:#166534;">${h}</th>`).join('')}</tr></thead><tbody>${suggestionsHtml}</tbody></table></div>
+        </div>`;
+}
+
+function renderAiRecStaffTab(body, data) {
+    const staff = data?.staffing || data?.staff?.staffing || data?.staff || {};
+    const summary = staff.summary || data?.staff?.summary || {};
+    const existing = staff.existing_staff || data?.staff?.existing || [];
+    const gaps = staff.missing_staff_requirements || data?.staff?.gaps || [];
+    const existingRows = existing.length ? existing.map(p => `
+        <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:7px 10px;font-size:12px;font-weight:700;color:#0f172a;">${escapeHtml(p.staff_name || '')}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#475569;">${escapeHtml(p.current_role || '')}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#0f172a;">${escapeHtml(p.recommended_campaign_role || '')}</td>
+            <td style="padding:7px 10px;text-align:right;font-size:12px;">${p.required_qty || 0}</td>
+            <td style="padding:7px 10px;text-align:right;font-size:12px;">${p.selected_qty || 0}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#64748b;">${escapeHtml(p.deployment_location || '')}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#475569;min-width:170px;">${escapeHtml(p.assigned_activity || '')}</td>
+            <td style="padding:7px 10px;">${aiRecBadge(p.match_method || 'Related Role Match')}</td>
+            <td style="padding:7px 10px;">${aiRecBadge(p.availability_status || 'Not Recorded')}</td>
+            <td style="padding:7px 10px;">${aiRecBadge(p.conflict_status === 'unknown' ? 'Unknown' : p.conflict_status)}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#64748b;min-width:180px;">${escapeHtml(p.recommendation_reason || '')}</td>
+            <td style="padding:7px 10px;">${aiRecBadge(p.confirmation_status || 'Pending')}</td>
+            <td style="padding:7px 10px;"><button type="button" onclick='openAiStaffingReviewForm(${JSON.stringify({ type: 'existing', role: p.recommended_campaign_role, name: p.staff_name }).replace(/'/g, '&apos;')})' style="border:none;background:#eef2ff;color:#4338ca;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;">Review</button></td>
+        </tr>`).join('') : '<tr><td colspan="13" style="padding:20px;text-align:center;color:#94a3b8;">No existing staff matches generated yet.</td></tr>';
+    const gapRows = gaps.length ? gaps.map(g => `
+        <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:7px 10px;font-size:12px;font-weight:700;color:#0f172a;">${escapeHtml(g.required_role || '')}</td>
+            <td style="padding:7px 10px;text-align:right;font-size:12px;">${g.required_qty || 0}</td>
+            <td style="padding:7px 10px;text-align:right;font-size:12px;">${g.existing_matched_qty || 0}</td>
+            <td style="padding:7px 10px;text-align:right;font-size:12px;font-weight:800;color:#dc2626;">${g.missing_qty || 0}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#475569;min-width:170px;">${escapeHtml(g.recommended_campaign_responsibility || '')}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#64748b;">${escapeHtml(g.deployment_location || '')}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#475569;min-width:160px;">${escapeHtml(g.required_capability || '')}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#64748b;min-width:170px;">${escapeHtml(g.reason_needed || '')}</td>
+            <td style="padding:7px 10px;">${aiRecBadge(g.priority || 'medium')}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#475569;">${escapeHtml(g.suggested_source || 'Add new Staff record')}</td>
+            <td style="padding:7px 10px;">${aiRecBadge(g.status || 'Pending Review')}</td>
+            <td style="padding:7px 10px;"><button type="button" onclick='openAiStaffingReviewForm(${JSON.stringify({ type: 'gap', role: g.required_role, missing: g.missing_qty, source: g.suggested_source }).replace(/'/g, '&apos;')})' style="border:none;background:#fef3c7;color:#92400e;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;">Create Request</button></td>
+        </tr>`).join('') : '<tr><td colspan="12" style="padding:20px;text-align:center;color:#94a3b8;">No missing staff requirements.</td></tr>';
+
+    body.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:16px;">
+            ${aiRecSummaryCard('Total Staff Required', summary.total_required ?? 0)}
+            ${aiRecSummaryCard('Existing Staff Matched', summary.existing_matched ?? 0, '#166534')}
+            ${aiRecSummaryCard('Missing Staff Required', summary.missing ?? 0, Number(summary.missing || 0) > 0 ? '#dc2626' : '#166534')}
+            ${aiRecSummaryCard('Confirmed Staff', summary.confirmed ?? 0, '#16a34a')}
+            ${aiRecSummaryCard('Roles With Shortages', summary.roles_with_shortages ?? 0, Number(summary.roles_with_shortages || 0) > 0 ? '#ca8a04' : '#166534')}
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:14px;">
+            <div style="font-size:11px;color:#475569;font-weight:800;text-transform:uppercase;margin-bottom:8px;">Recommended Staff from Existing Staff (${existing.length})</div>
+            <div style="overflow:auto;border:1px solid #e2e8f0;border-radius:6px;max-height:340px;"><table style="width:100%;border-collapse:collapse;min-width:1500px;"><thead><tr style="background:#f1f5f9;">${['Staff Name','Current Role','Recommended Campaign Role','Required QTY','Selected QTY','Deployment Location','Assigned Campaign Activity','Match Method','Availability','Conflict Status','Recommendation Reason','Confirmation Status','Action'].map(h => `<th style="padding:7px 10px;text-align:left;font-size:11px;color:#475569;">${h}</th>`).join('')}</tr></thead><tbody>${existingRows}</tbody></table></div>
+        </div>
+        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:14px;">
+            <div style="font-size:11px;color:#9a3412;font-weight:800;text-transform:uppercase;margin-bottom:8px;">Recommended Staffing Needs Not Yet Available in Staff (${gaps.length})</div>
+            <div style="font-size:12px;color:#9a3412;margin-bottom:8px;">These are staffing gaps, not fictional employees. Actions open a review form and do not create staff automatically.</div>
+            <div style="overflow:auto;border:1px solid #fed7aa;border-radius:6px;max-height:340px;"><table style="width:100%;border-collapse:collapse;min-width:1420px;"><thead><tr style="background:#ffedd5;">${['Required Staff Role','Required QTY','Existing Matched QTY','Missing QTY','Recommended Campaign Responsibility','Deployment Location','Required Skills or Capability','Reason Needed','Priority','Suggested Source','Status','Action'].map(h => `<th style="padding:7px 10px;text-align:left;font-size:11px;color:#9a3412;">${h}</th>`).join('')}</tr></thead><tbody>${gapRows}</tbody></table></div>
+        </div>
+        ${buildAiRecPartnersSection(data)}
+    `;
+}
+
+function openAiStaffingReviewForm(payload) {
+    const existing = document.getElementById('aiStaffingReviewModal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'aiStaffingReviewModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:10020;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = `<div style="background:white;border-radius:10px;max-width:520px;width:100%;box-shadow:0 20px 40px rgba(15,23,42,.25);overflow:hidden;">
+        <div style="padding:14px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:12px;"><strong style="font-size:14px;color:#0f172a;">Review Staffing ${payload?.type === 'gap' ? 'Request' : 'Assignment'}</strong><button type="button" onclick="document.getElementById('aiStaffingReviewModal')?.remove()" style="border:none;background:transparent;font-size:20px;cursor:pointer;color:#64748b;">&times;</button></div>
+        <div style="padding:18px;">
+            <label style="display:block;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Role</label>
+            <input value="${escapeHtml(payload?.role || '')}" readonly style="width:100%;padding:9px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:10px;">
+            ${payload?.name ? `<label style="display:block;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Existing Staff</label><input value="${escapeHtml(payload.name)}" readonly style="width:100%;padding:9px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:10px;">` : ''}
+            ${payload?.missing ? `<label style="display:block;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Missing QTY</label><input value="${escapeHtml(payload.missing)}" readonly style="width:100%;padding:9px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:10px;">` : ''}
+            <label style="display:block;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Review Notes</label>
+            <textarea placeholder="Add notes before creating an official staff record or request..." style="width:100%;min-height:90px;padding:9px;border:1px solid #e2e8f0;border-radius:6px;resize:vertical;"></textarea>
+            <div style="font-size:12px;color:#64748b;margin-top:10px;">This form is review-only in the AI recommendation modal. It does not automatically create fake staff records.</div>
+        </div>
+        <div style="padding:12px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:right;"><button type="button" onclick="document.getElementById('aiStaffingReviewModal')?.remove()" style="border:none;background:#4c8a89;color:white;border-radius:7px;padding:8px 14px;font-weight:700;cursor:pointer;">Done</button></div>
+    </div>`;
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+}
+
+window.openAiStaffingReviewForm = openAiStaffingReviewForm;
 
 function updateAiRecPlanAction(rec) {
     const data = window.__aiRecDetail || {};

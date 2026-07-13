@@ -57,6 +57,18 @@ class CampaignBudgetAllocationService
 
     public function getVerifiedCommitments(?int $excludeCampaignId = null): array
     {
+        if (!$this->tableExists('campaign_budgets')) {
+            return [
+                'total_committed' => '0.00',
+                'item_count' => 0,
+                'by_funding_source' => [],
+                'anomalies' => [],
+                'items' => [],
+                'data_available' => false,
+                'message' => 'Actual campaign budget commitment data unavailable',
+            ];
+        }
+
         $sql = "
             SELECT c.id AS campaign_id, c.title, cb.id AS budget_item_id,
                    cb.item_name, cb.item_type, cb.quantity, cb.unit_cost,
@@ -106,6 +118,7 @@ class CampaignBudgetAllocationService
             'by_funding_source' => $byFundingSource,
             'anomalies' => $anomalies,
             'items' => $items,
+            'data_available' => true,
         ];
     }
 
@@ -152,6 +165,15 @@ class CampaignBudgetAllocationService
         int $campaignId,
         string $safeAvailable
     ): array {
+        if (!$this->tableExists('campaign_budgets')) {
+            return $this->generateEstimatedBudgetFromRecommendation($recommendationId, [
+                'recommended_duration' => 30,
+                'report_count' => 1,
+                'ai_recommended_actions' => [],
+                'affected_locations' => [],
+            ]);
+        }
+
         $stmt = $this->pdo->prepare("
             SELECT id, item_name, item_type, quantity, unit_cost, funding_source
             FROM campaign_budgets
@@ -169,21 +191,27 @@ class CampaignBudgetAllocationService
             $lineTotal = bcmul((string) $item['quantity'], (string) $item['unit_cost'], 2);
 
             $stmt2 = $this->pdo->prepare('
-                INSERT INTO campaign_ai_recommendation_budget_items
-                    (recommendation_id, item_name, item_type, quantity, unit_cost, sessions_or_days,
-                     subtotal, funding_source, recommendation_reason, pricing_source, is_estimate, validation_status, sort_order)
-                VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, 0, ?, ?)
+            INSERT INTO campaign_ai_recommendation_budget_items
+                    (recommendation_id, item_name, item_type, unit_label, quantity, unit_cost, sessions_or_days,
+                     subtotal, funding_source, recommendation_reason, pricing_source, pricing_confidence,
+                     calculation_basis, is_estimate, validation_status, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ');
             $stmt2->execute([
                 $recommendationId,
                 $item['item_name'],
                 $item['item_type'],
+                $item['item_type'],
                 $item['quantity'],
                 $item['unit_cost'],
+                1,
                 $lineTotal,
                 $item['funding_source'] ?? 'government_allocated',
                 'Committed line item carried forward from campaign budget',
                 'campaign_budget',
+                'verified',
+                'Committed quantity x committed unit cost from campaign_budgets.',
+                0,
                 'unchecked',
                 count($generatedItems) + 1,
             ]);
@@ -232,6 +260,17 @@ class CampaignBudgetAllocationService
         $duration = max(7, (int) ($recommendation['recommended_duration'] ?? 30));
         $sessions = max(1, min(8, (int) ceil($reportCount / 3), $locationCount + 1));
         $audienceMultiplier = max(1, min(5, (int) ceil($reportCount / 5)));
+        $deploymentDays = max(1, min(14, (int) ceil($duration / 7)));
+        $priority = strtolower((string) ($recommendation['priority_level'] ?? 'medium'));
+        $priorityFactor = match ($priority) {
+            'critical' => 1.4,
+            'high' => 1.25,
+            'low' => 0.85,
+            default => 1.0,
+        };
+        $estimatedStaffQty = max(4, min(60, 1 + $locationCount + (int) ceil($locationCount * 2 * $priorityFactor) + (int) ceil($reportCount / 8)));
+        $materialsQty = max(100, $reportCount * 25, $locationCount * 100);
+        $actionCount = max(1, count($actions));
 
         $templates = [
             [
@@ -239,59 +278,126 @@ class CampaignBudgetAllocationService
                 'description' => 'Printed prevention, preparedness, and referral materials tied to the AI recommended actions.',
                 'category' => 'Educational materials',
                 'item_type' => 'materials',
-                'quantity' => (string) max(100, $reportCount * 25),
+                'unit_label' => 'copies',
+                'quantity' => (string) $materialsQty,
                 'unit_cost' => '8.00',
                 'sessions_or_days' => '1',
                 'related_action' => $actions[0] ?? null,
+                'pricing_confidence' => 'medium',
             ],
             [
                 'item_name' => 'Community information sessions',
                 'description' => 'Barangay-level sessions for the target audience and affected locations.',
                 'category' => 'Community sessions',
                 'item_type' => 'activity',
+                'unit_label' => 'session',
                 'quantity' => (string) $sessions,
                 'unit_cost' => '2500.00',
                 'sessions_or_days' => '1',
                 'related_action' => $actions[1] ?? ($actions[0] ?? null),
+                'pricing_confidence' => 'medium',
             ],
             [
                 'item_name' => 'Communication and public advisories',
                 'description' => 'SMS, online, and posted announcements for campaign reach and reminders.',
                 'category' => 'Communication',
                 'item_type' => 'communication',
+                'unit_label' => 'weekly notice set',
                 'quantity' => (string) $audienceMultiplier,
                 'unit_cost' => '1200.00',
                 'sessions_or_days' => (string) max(1, min(14, (int) ceil($duration / 7))),
                 'related_action' => $actions[2] ?? ($actions[0] ?? null),
+                'pricing_confidence' => 'medium',
             ],
             [
                 'item_name' => 'Coordination and transportation support',
                 'description' => 'Local coordination, mobility, and logistics support for affected areas.',
                 'category' => 'Transportation',
                 'item_type' => 'logistics',
+                'unit_label' => 'location-day',
                 'quantity' => (string) $locationCount,
                 'unit_cost' => '1500.00',
                 'sessions_or_days' => (string) $sessions,
                 'related_action' => $actions[3] ?? ($actions[0] ?? null),
+                'pricing_confidence' => 'medium',
+            ],
+            [
+                'item_name' => 'Staff deployment support',
+                'description' => 'Meal, local mobility, and field support for recommended staff deployment. This is not a salary estimate.',
+                'category' => 'Staff deployment support',
+                'item_type' => 'personnel_support',
+                'unit_label' => 'person-day',
+                'quantity' => (string) $estimatedStaffQty,
+                'unit_cost' => '250.00',
+                'sessions_or_days' => (string) $deploymentDays,
+                'related_action' => 'Deploy recommended campaign staff across affected locations',
+                'pricing_confidence' => 'low',
+            ],
+            [
+                'item_name' => 'Venue, sound system, and field setup',
+                'description' => 'Basic venue or field setup support for information sessions and campaign activities.',
+                'category' => 'Venue and field setup',
+                'item_type' => 'venue_setup',
+                'unit_label' => 'activity site',
+                'quantity' => (string) max(1, min($locationCount, $sessions)),
+                'unit_cost' => '1800.00',
+                'sessions_or_days' => '1',
+                'related_action' => $actions[1] ?? ($actions[0] ?? null),
+                'pricing_confidence' => 'low',
+            ],
+            [
+                'item_name' => 'Safety and emergency supplies',
+                'description' => 'Basic first-aid, safety, signage, and emergency readiness materials for field activities.',
+                'category' => 'Safety equipment',
+                'item_type' => 'supplies',
+                'unit_label' => 'kit',
+                'quantity' => (string) max(1, min(10, $locationCount)),
+                'unit_cost' => '2200.00',
+                'sessions_or_days' => '1',
+                'related_action' => 'Maintain safety readiness during campaign deployment',
+                'pricing_confidence' => 'medium',
             ],
             [
                 'item_name' => 'Documentation, monitoring, and evaluation',
                 'description' => 'Attendance, report documentation, outcome monitoring, and post-campaign review.',
                 'category' => 'Monitoring and evaluation',
                 'item_type' => 'documentation',
+                'unit_label' => 'campaign',
                 'quantity' => '1',
-                'unit_cost' => '3500.00',
+                'unit_cost' => (string) max(3500, min(12000, 2500 + ($actionCount * 500) + ($locationCount * 350))),
                 'sessions_or_days' => '1',
                 'related_action' => 'Monitor implementation and evaluate results',
+                'pricing_confidence' => 'medium',
             ],
         ];
 
+        $baseTotal = '0.00';
+        foreach ($templates as $item) {
+            $baseTotal = bcadd($baseTotal, bcmul(bcmul($item['quantity'], $item['unit_cost'], 2), $item['sessions_or_days'], 2), 2);
+        }
+        $contingencyPercent = bccomp($baseTotal, '0', 2) > 0 ? '10' : '0';
+        $contingencyAmount = bcadd(bcmul($baseTotal, '0.10', 4), '0', 2);
+        if (bccomp($contingencyAmount, '0', 2) > 0) {
+            $templates[] = [
+                'item_name' => 'Contingency for field changes',
+                'description' => 'Reserve inside the AI estimate for price changes, added transport, reprinting, weather delays, or emergency supplies.',
+                'category' => 'Contingency',
+                'item_type' => 'contingency',
+                'unit_label' => 'campaign',
+                'quantity' => '1',
+                'unit_cost' => $contingencyAmount,
+                'sessions_or_days' => '1',
+                'related_action' => 'Protect campaign implementation from small scope or price changes',
+                'pricing_confidence' => 'estimated',
+            ];
+        }
+
         $stmt = $this->pdo->prepare('
             INSERT INTO campaign_ai_recommendation_budget_items
-                (recommendation_id, item_name, description, category, item_type, quantity, unit_cost,
+                (recommendation_id, item_name, description, category, item_type, unit_label, quantity, unit_cost,
                  sessions_or_days, subtotal, funding_source, related_action, recommendation_reason,
-                 pricing_source, is_estimate, validation_status, sort_order)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                 pricing_source, pricing_confidence, calculation_basis, is_estimate, validation_status, sort_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
 
         $total = '0.00';
@@ -304,6 +410,7 @@ class CampaignBudgetAllocationService
                 $item['description'],
                 $item['category'],
                 $item['item_type'],
+                $item['unit_label'],
                 $item['quantity'],
                 $item['unit_cost'],
                 $item['sessions_or_days'],
@@ -312,6 +419,9 @@ class CampaignBudgetAllocationService
                 $item['related_action'],
                 'Deterministic estimate based on report volume, affected locations, duration, target audience, and recommended actions.',
                 'system_estimate',
+                $item['pricing_confidence'] ?? 'medium',
+                'Subtotal = quantity (' . $item['quantity'] . ') x unit cost (' . $item['unit_cost'] . ') x sessions/days (' . $item['sessions_or_days'] . ').',
+                1,
                 'estimated',
                 $index + 1,
             ]);
@@ -377,5 +487,16 @@ class CampaignBudgetAllocationService
             return (int) $env;
         }
         return self::RESERVE_PERCENT;
+    }
+
+    private function tableExists(string $table): bool
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT COUNT(*)
+            FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
+        ");
+        $stmt->execute([$table]);
+        return (int) $stmt->fetchColumn() > 0;
     }
 }

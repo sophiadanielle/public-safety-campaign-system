@@ -81,11 +81,14 @@ try {
                 'summary' => $summary,
                 'budget' => $viewService->getBudgetItems($recommendationId),
                 'budget_summary' => $viewService->getBudgetSummary($recommendationId),
+                'budget_analysis' => $viewService->getBudgetAnalysis($recommendationId),
             ];
         } elseif ($tab === 'staff') {
+            $staff = $viewService->getStaffParticipants($recommendationId);
             $response = [
                 'summary' => $summary,
-                'staff' => $viewService->getStaffParticipants($recommendationId),
+                'staff' => $staff,
+                'staffing' => $staff['staffing'] ?? null,
             ];
         } elseif ($tab === 'partners') {
             $response = [
@@ -108,6 +111,7 @@ try {
                 'summary' => $summary,
                 'budget' => $viewService->getBudgetItems($recommendationId),
                 'budget_summary' => $viewService->getBudgetSummary($recommendationId),
+                'budget_analysis' => $viewService->getBudgetAnalysis($recommendationId),
                 'staff' => $viewService->getStaffParticipants($recommendationId),
                 'partners' => $viewService->getMatchedPartners($recommendationId),
                 'partner_suggestions' => $viewService->getPartnerSuggestions($recommendationId),
@@ -118,6 +122,9 @@ try {
 
         if (isset($response['partner_suggestions'])) {
             $response['suggestions'] = $response['partner_suggestions'];
+        }
+        if (isset($response['staff']) && !isset($response['staffing'])) {
+            $response['staffing'] = $response['staff']['staffing'] ?? null;
         }
         if (isset($response['schedule_phases'])) {
             $response['schedule'] = $response['schedule_phases'];
