@@ -2577,13 +2577,13 @@ async function openAiRecommendationModal(index, items) {
                 <button type="button" onclick="closeAiRecommendationModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">&times;</button>
             </div>
 
-            <div style="display: flex; border-bottom: 1px solid #e2e8f0; background: #f8fafc; padding: 0 16px; gap: 4px; overflow-x: auto;" id="aiRecModalTabs">
-                <button class="ai-rec-tab active" data-tab="overview" style="padding: 10px 14px; font-size: 12px; font-weight: 700; border: none; background: none; cursor: pointer; color: #667eea; border-bottom: 2px solid #667eea; white-space: nowrap;">Overall Summary</button>
-                <button class="ai-rec-tab" data-tab="reports" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;">Reports</button>
-                <button class="ai-rec-tab" data-tab="locations" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;">Locations & Audience</button>
-                <button class="ai-rec-tab" data-tab="budget" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;">Budget Breakdown</button>
-                <button class="ai-rec-tab" data-tab="staff" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;">Participants & Partners</button>
-                <button class="ai-rec-tab" data-tab="schedule" style="padding: 10px 14px; font-size: 12px; font-weight: 600; border: none; background: none; cursor: pointer; color: #64748b; border-bottom: 2px solid transparent; white-space: nowrap;">Date Sprint</button>
+            <div style="display: flex; align-items: stretch; border-bottom: 1px solid #e2e8f0; background: #f8fafc; padding: 0 18px; gap: 6px; overflow-x: auto; overflow-y: hidden; min-height: 48px; height: 48px; flex: 0 0 auto;" id="aiRecModalTabs">
+                <button class="ai-rec-tab active" data-tab="overview" style="height: 48px; min-height: 48px; box-sizing: border-box; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; font-weight: 700; border: none; background: rgba(102,126,234,0.08); cursor: pointer; color: #667eea; border-bottom: 3px solid #667eea; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; appearance: none; border-radius: 0;">Overall Summary</button>
+                <button class="ai-rec-tab" data-tab="reports" style="height: 48px; min-height: 48px; box-sizing: border-box; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; appearance: none; border-radius: 0;">Reports</button>
+                <button class="ai-rec-tab" data-tab="locations" style="height: 48px; min-height: 48px; box-sizing: border-box; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; appearance: none; border-radius: 0;">Locations & Audience</button>
+                <button class="ai-rec-tab" data-tab="budget" style="height: 48px; min-height: 48px; box-sizing: border-box; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; appearance: none; border-radius: 0;">Budget Breakdown</button>
+                <button class="ai-rec-tab" data-tab="staff" style="height: 48px; min-height: 48px; box-sizing: border-box; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; appearance: none; border-radius: 0;">Participants & Partners</button>
+                <button class="ai-rec-tab" data-tab="schedule" style="height: 48px; min-height: 48px; box-sizing: border-box; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; appearance: none; border-radius: 0;">Date Sprint</button>
             </div>
 
             <div id="aiRecModalBody" style="padding: 20px 24px; overflow-y: auto; min-height: 300px;">
@@ -2618,12 +2618,14 @@ async function openAiRecommendationModal(index, items) {
         if (!btn) return;
         document.querySelectorAll('.ai-rec-tab').forEach(b => {
             b.style.color = '#64748b';
-            b.style.borderBottom = '2px solid transparent';
+            b.style.borderBottom = '3px solid transparent';
             b.style.fontWeight = '600';
+            b.style.background = 'transparent';
         });
         btn.style.color = '#667eea';
-        btn.style.borderBottom = '2px solid #667eea';
+        btn.style.borderBottom = '3px solid #667eea';
         btn.style.fontWeight = '700';
+        btn.style.background = 'rgba(102,126,234,0.08)';
         const tab = btn.getAttribute('data-tab');
         window.__aiRecActiveTab = tab;
         renderAiRecTab(tab, rec);
