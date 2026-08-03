@@ -39,6 +39,12 @@ return [
     ],
     [
         'method' => 'POST',
+        'path' => '/api/v1/ai-recommendations/accept',
+        'handler' => [AiRecommendationPlanningController::class, 'accept'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'POST',
         'path' => '/api/v1/ai-recommendations/reject',
         'handler' => [AiRecommendationPlanningController::class, 'reject'],
         'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],

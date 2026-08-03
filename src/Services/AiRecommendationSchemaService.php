@@ -98,6 +98,8 @@ class AiRecommendationSchemaService
             'approved_dates_by' => 'INT NULL',
             'approved_dates_at' => 'DATETIME NULL',
             'converted_campaign_id' => 'INT NULL',
+            'accepted_at' => 'DATETIME NULL',
+            'accepted_by' => 'INT NULL',
             'recommended_duration' => 'INT NOT NULL DEFAULT 30',
         ];
 

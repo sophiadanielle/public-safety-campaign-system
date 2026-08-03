@@ -323,6 +323,584 @@ class AiRecommendationPlanningController
         return ['success' => true, 'message' => 'Recommendation rejected', 'recommendation_id' => $recId];
     }
 
+    public function accept(?array $user, array $params = [], ?array $inputOverride = null): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+
+        $this->enforceAcceptPermissions($user);
+
+        AiRecommendationSchemaService::ensure($this->pdo);
+        $this->ensureBudgetTable($this->pdo);
+
+        $input = $inputOverride ?? (json_decode(file_get_contents('php://input'), true) ?? []);
+        $recommendationId = (int) ($input['recommendation_id'] ?? 0);
+
+        if ($recommendationId <= 0) {
+            http_response_code(422);
+            return ['error' => 'recommendation_id is required'];
+        }
+
+        try {
+            $this->pdo->beginTransaction();
+
+            $rec = $this->requireRecommendationForAccept($recommendationId);
+            $userId = $this->userId($user);
+
+            $campaignId = $this->insertAcceptedCampaign($rec, $userId);
+            $budgetItems = $this->insertAcceptedBudgetItems($recommendationId, $campaignId, $userId);
+            $staff = $this->insertAcceptedStaff($recommendationId, $userId);
+            $events = $this->insertAcceptedEvents($recommendationId, $campaignId, $userId, $rec);
+            $partners = $this->insertAcceptedPartners($recommendationId, $campaignId);
+
+            $stmt = $this->pdo->prepare("
+                UPDATE campaign_department_ai_recommendations
+                SET converted_campaign_id = ?, approval_status = 'accepted',
+                    accepted_at = NOW(), accepted_by = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$campaignId, $userId, $recommendationId]);
+
+            $this->logAudit(
+                $userId,
+                'ai_recommendation',
+                'accept',
+                $recommendationId,
+                [
+                    'campaign_id' => $campaignId,
+                    'budget_items' => $budgetItems,
+                    'staff_created' => $staff['created'],
+                    'events_created' => $events,
+                    'partners_created' => $partners,
+                ]
+            );
+
+            $this->pdo->commit();
+
+            return [
+                'success' => true,
+                'message' => 'Recommendation accepted and converted into a campaign',
+                'recommendation_id' => $recommendationId,
+                'campaign_id' => $campaignId,
+                'budget_items_created' => $budgetItems,
+                'staff_created' => $staff['created'],
+                'staff_skipped_existing' => $staff['skipped'],
+                'events_created' => $events,
+                'partners_created' => $partners,
+            ];
+        } catch (RuntimeException $e) {
+            $this->pdo->rollBack();
+            http_response_code(409);
+            return ['error' => $e->getMessage()];
+        } catch (\Throwable $e) {
+            $this->pdo->rollBack();
+            error_log('AI recommendation accept failed: ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Acceptance failed: ' . $e->getMessage()];
+        }
+    }
+
+    private function enforceAcceptPermissions(array $user): void
+    {
+        try {
+            $userRoleName = strtolower((string) (RoleMiddleware::getUserRole($user, $this->pdo) ?? ''));
+        } catch (\Exception $e) {
+            $userRoleName = '';
+        }
+
+        $roleId = (int) ($user['role_id'] ?? 0);
+        $directRole = strtolower((string) ($user['role'] ?? $user['user_type'] ?? ''));
+
+        if ($userRoleName === 'viewer' || $directRole === 'viewer' || str_contains($directRole, 'viewer')) {
+            http_response_code(403);
+            throw new RuntimeException('Viewer role is read-only. You cannot accept recommendations.');
+        }
+
+        if ($roleId === 1) {
+            return;
+        }
+
+        $allowedRoles = ['admin', 'staff', 'secretary', 'kagawad', 'captain', 'barangay administrator', 'barangay staff', 'system_admin', 'barangay_admin', 'campaign_creator'];
+        if (!$userRoleName || !in_array($userRoleName, $allowedRoles, true)) {
+            if (!$directRole || !in_array($directRole, $allowedRoles, true)) {
+                http_response_code(403);
+                throw new RuntimeException('Insufficient permissions. Only authorized LGU personnel can accept recommendations.');
+            }
+        }
+    }
+
+    private function requireRecommendationForAccept(int $id): array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM campaign_department_ai_recommendations WHERE id = ? LIMIT 1');
+        $stmt->execute([$id]);
+        $rec = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$rec) {
+            throw new RuntimeException('Recommendation not found');
+        }
+        if (!empty($rec['converted_campaign_id'])) {
+            throw new RuntimeException('This recommendation has already been accepted and converted into campaign #' . (int) $rec['converted_campaign_id']);
+        }
+        return $rec;
+    }
+
+    private function insertAcceptedCampaign(array $rec, ?int $userId): int
+    {
+        $locations = $this->decodeList($rec['affected_locations'] ?? null);
+        $locationText = $this->firstLocation($rec['affected_locations'] ?? null);
+        if ($locationText === null && count($locations) > 1) {
+            $locationText = implode(', ', array_slice($locations, 0, 2));
+        }
+
+        $startDate = $rec['effective_start_date'] ?? null;
+        $endDate = $rec['effective_end_date'] ?? null;
+
+        $phaseRange = $this->schedulePhaseRange($rec['id'] ?? 0);
+        if (!$startDate && $phaseRange['min']) {
+            $startDate = $phaseRange['min'];
+        }
+        if (!$endDate && $phaseRange['max']) {
+            $endDate = $phaseRange['max'];
+        }
+        if (!$startDate) {
+            $startDate = $this->dateOnly($rec['earliest_date'] ?? null) ?: date('Y-m-d', strtotime('+2 days'));
+        }
+        if (!$endDate) {
+            $duration = max(1, (int) ($rec['recommended_duration'] ?? 30));
+            $endDate = date('Y-m-d', strtotime($startDate . ' +' . $duration . ' days'));
+        }
+
+        $budget = $rec['final_recommended_budget'] ?? $rec['estimated_budget'] ?? null;
+        if ($budget !== null) {
+            $budget = (float) $budget;
+        }
+
+        $stmt = $this->pdo->prepare("
+            INSERT INTO campaign_department_campaigns
+                (title, description, category, geographic_scope, status,
+                 start_date, end_date, ai_recommended_datetime, owner_id,
+                 objectives, location, assigned_staff, barangay_target_zones,
+                 budget, staff_count)
+            VALUES (?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            trim((string) ($rec['campaign_title'] ?? '')),
+            $rec['campaign_description'] ?? $rec['description'] ?? null,
+            $rec['category'] ?? null,
+            'barangay',
+            $startDate,
+            $endDate,
+            $this->dateTimeValue($rec['planning_generated_at'] ?? null),
+            $userId,
+            $this->jsonOrNull($rec['ai_recommended_actions'] ?? null),
+            $locationText,
+            $this->assignedStaffSnapshot($rec['id'] ?? 0),
+            $this->jsonOrNull($locations),
+            $budget,
+            $this->countMatchedStaff($rec['id'] ?? 0),
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    private function assignedStaffSnapshot(int $recommendationId): ?string
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT staff_name_snapshot, staff_role_snapshot, required_role
+            FROM campaign_ai_recommendation_participants
+            WHERE recommendation_id = ?
+            ORDER BY id ASC
+        ");
+        $stmt->execute([$recommendationId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($rows)) {
+            return null;
+        }
+        $snapshot = [];
+        foreach ($rows as $row) {
+            $name = $row['staff_name_snapshot'] ?: ('AI Recommended - ' . $row['required_role']);
+            $snapshot[] = $name;
+        }
+        return json_encode($snapshot);
+    }
+
+    private function insertAcceptedBudgetItems(int $recommendationId, int $campaignId, ?int $userId): int
+    {
+        $stmt = $this->pdo->query("
+            SELECT * FROM campaign_ai_recommendation_budget_items
+            WHERE recommendation_id = " . (int) $recommendationId . "
+            ORDER BY sort_order ASC, id ASC
+        ");
+        $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($items)) {
+            return 0;
+        }
+
+        $insert = $this->pdo->prepare("
+            INSERT INTO campaign_budgets
+                (campaign_id, item_name, item_type, quantity, unit_cost, funding_source,
+                 notes, created_by, source_recommendation_id, category, item_description,
+                 sessions_or_days, unit_label, related_action, recommendation_reason,
+                 pricing_source, pricing_confidence, calculation_basis, is_estimate, sort_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        $count = 0;
+        foreach ($items as $item) {
+            $quantity = (int) round((float) ($item['quantity'] ?? 1));
+            if ($quantity < 1) {
+                $quantity = 1;
+            }
+            $insert->execute([
+                $campaignId,
+                trim((string) ($item['item_name'] ?? 'Budget item')),
+                $item['item_type'] ?? 'consumable',
+                $quantity,
+                (float) ($item['unit_cost'] ?? 0),
+                $item['funding_source'] ?? 'estimated_need',
+                $item['recommendation_reason'] ?? $item['description'] ?? null,
+                $userId,
+                $recommendationId,
+                $item['category'] ?? null,
+                $item['description'] ?? null,
+                $item['sessions_or_days'] ?? null,
+                $item['unit_label'] ?? null,
+                $item['related_action'] ?? null,
+                $item['recommendation_reason'] ?? null,
+                $item['pricing_source'] ?? null,
+                $item['pricing_confidence'] ?? null,
+                $item['calculation_basis'] ?? null,
+                $item['is_estimate'] !== null ? (int) $item['is_estimate'] : 1,
+                (int) ($item['sort_order'] ?? 0),
+            ]);
+            $count++;
+        }
+
+        return $count;
+    }
+
+    private function insertAcceptedStaff(int $recommendationId, ?int $userId): array
+    {
+        $stmt = $this->pdo->query("
+            SELECT * FROM campaign_ai_recommendation_participants
+            WHERE recommendation_id = " . (int) $recommendationId . "
+            ORDER BY id ASC
+        ");
+        $participants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $created = 0;
+        $skipped = 0;
+
+        $existsStmt = $this->pdo->prepare("
+            SELECT id FROM campaign_department_reference_staff
+            WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) AND LOWER(TRIM(role)) = LOWER(TRIM(?))
+            LIMIT 1
+        ");
+        $insertStmt = $this->pdo->prepare("
+            INSERT INTO campaign_department_reference_staff (name, role, qty)
+            VALUES (?, ?, ?)
+        ");
+        $updateParticipantStmt = $this->pdo->prepare("
+            UPDATE campaign_ai_recommendation_participants
+            SET staff_id = ?, match_method = 'auto_accepted', confirmation_status = 'confirmed',
+                is_confirmed = 1, confirmed_by = ?, confirmed_at = NOW()
+            WHERE id = ?
+        ");
+
+        foreach ($participants as $participant) {
+            if (!empty($participant['staff_id'])) {
+                continue;
+            }
+            $role = trim((string) ($participant['required_role'] ?? ''));
+            if ($role === '') {
+                continue;
+            }
+            $name = 'AI Recommended - ' . $role;
+            $qty = max(1, (int) ($participant['missing_qty'] ?? ($participant['required_qty'] ?? 1)));
+
+            $existsStmt->execute([$name, $role]);
+            $existing = $existsStmt->fetchColumn();
+
+            if ($existing) {
+                $updateParticipantStmt->execute([(int) $existing, $userId, (int) $participant['id']]);
+                $skipped++;
+                continue;
+            }
+
+            $insertStmt->execute([$name, $role, $qty]);
+            $newStaffId = (int) $this->pdo->lastInsertId();
+            $updateParticipantStmt->execute([$newStaffId, $userId, (int) $participant['id']]);
+            $created++;
+        }
+
+        return ['created' => $created, 'skipped' => $skipped];
+    }
+
+    private function insertAcceptedEvents(int $recommendationId, int $campaignId, ?int $userId, array $rec): int
+    {
+        $stmt = $this->pdo->query("
+            SELECT * FROM campaign_ai_recommendation_schedule_phases
+            WHERE recommendation_id = " . (int) $recommendationId . "
+            ORDER BY sprint_number ASC, sort_order ASC, id ASC
+        ");
+        $phases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($phases)) {
+            return 0;
+        }
+
+        $insert = $this->pdo->prepare("
+            INSERT INTO campaign_department_events
+                (event_name, event_title, event_type, event_description, description,
+                 hazard_focus, date, event_date, start_time, event_time, end_time,
+                 location, venue, starts_at, ends_at, event_status, linked_campaign_id,
+                 facilitators, logistics_json, created_by,
+                 ai_recommendation_id, ai_sprint_number, ai_objectives)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        $count = 0;
+        foreach ($phases as $phase) {
+            $startDate = $phase['start_date'] ?? null;
+            if (!$startDate) {
+                continue;
+            }
+            $endDate = $phase['end_date'] ?? $startDate;
+            $title = trim((string) ($phase['sprint_title'] ?? 'Campaign Activity'));
+
+            $phaseLocations = $this->decodeList($phase['locations'] ?? null);
+            $venue = is_scalar($phaseLocations[0] ?? null) ? (string) $phaseLocations[0] : null;
+
+            $insert->execute([
+                $title,
+                $title,
+                $this->eventTypeFromTitle($title),
+                $phase['objectives'] ?? null,
+                ($phase['objectives'] ?? '') . ($phase['activities'] ? "\n\nActivities:\n" . $phase['activities'] : ''),
+                $rec['incident_category'] ?? $rec['main_trend'] ?? $rec['category'] ?? null,
+                $startDate,
+                $startDate,
+                '09:00:00',
+                '09:00:00',
+                '17:00:00',
+                $venue,
+                $venue,
+                $startDate . ' 09:00:00',
+                $endDate . ' 17:00:00',
+                $campaignId,
+                $this->jsonOrNull($phase['assigned_staff'] ?? null),
+                $this->jsonOrNull($phase['assigned_partners'] ?? null),
+                $userId,
+                $recommendationId,
+                (int) ($phase['sprint_number'] ?? 0),
+                $phase['objectives'] ?? null,
+            ]);
+            $count++;
+        }
+
+        return $count;
+    }
+
+    private function insertAcceptedPartners(int $recommendationId, int $campaignId): int
+    {
+        $count = 0;
+
+        $matchedStmt = $this->pdo->query("
+            SELECT * FROM campaign_ai_recommendation_partners
+            WHERE recommendation_id = " . (int) $recommendationId . "
+            ORDER BY id ASC
+        ");
+        $matched = $matchedStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $insertPartner = $this->pdo->prepare("
+            INSERT INTO campaign_department_partners (name, organization_type, contact_details)
+            VALUES (?, ?, ?)
+        ");
+        $insertEngagement = $this->pdo->prepare("
+            INSERT INTO campaign_department_partner_engagements (partner_id, campaign_id, engagement_type, notes)
+            VALUES (?, ?, 'ai_recommended', ?)
+        ");
+        $updateMatched = $this->pdo->prepare("
+            UPDATE campaign_ai_recommendation_partners
+            SET partner_id = ?, is_confirmed = 1, confirmed_at = NOW()
+            WHERE id = ?
+        ");
+
+        foreach ($matched as $partner) {
+            $partnerId = (int) ($partner['partner_id'] ?? 0);
+            $orgType = $this->normalizePartnerOrgType($partner['organization_type_snapshot'] ?? null);
+            $name = trim((string) ($partner['partner_name_snapshot'] ?? '')) ?: 'AI Recommended - ' . ucfirst($orgType);
+            $details = $this->contactDetailsJson($partner['capability_match_basis'] ?? null, $partner['recommendation_reason'] ?? null);
+
+            if ($partnerId <= 0) {
+                $insertPartner->execute([$name, $orgType, $details]);
+                $partnerId = (int) $this->pdo->lastInsertId();
+                $updateMatched->execute([$partnerId, (int) $partner['id']]);
+            }
+
+            $insertEngagement->execute([$partnerId, $campaignId, $partner['recommendation_reason'] ?? null]);
+            $count++;
+        }
+
+        $suggestionStmt = $this->pdo->query("
+            SELECT * FROM campaign_ai_recommendation_partner_suggestions
+            WHERE recommendation_id = " . (int) $recommendationId . "
+              AND proposal_status = 'proposed' AND created_partner_id IS NULL
+            ORDER BY id ASC
+        ");
+        $suggestions = $suggestionStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $updateSuggestion = $this->pdo->prepare("
+            UPDATE campaign_ai_recommendation_partner_suggestions
+            SET created_partner_id = ?, proposal_status = 'created', reviewed_at = NOW()
+            WHERE id = ?
+        ");
+
+        foreach ($suggestions as $suggestion) {
+            $orgType = $this->normalizePartnerOrgType($suggestion['organization_type'] ?? null);
+            $name = 'AI Recommended - ' . ucfirst($orgType);
+            $details = $this->contactDetailsJson($suggestion['rationale'] ?? null, $suggestion['expected_contribution'] ?? null);
+            $insertPartner->execute([$name, $orgType, $details]);
+            $partnerId = (int) $this->pdo->lastInsertId();
+            $updateSuggestion->execute([$partnerId, (int) $suggestion['id']]);
+            $insertEngagement->execute([$partnerId, $campaignId, $suggestion['rationale'] ?? null]);
+            $count++;
+        }
+
+        return $count;
+    }
+
+    private function contactDetailsJson(?string $a, ?string $b): ?string
+    {
+        $parts = [];
+        if ($a) {
+            $parts[] = $a;
+        }
+        if ($b) {
+            $parts[] = $b;
+        }
+        return json_encode($parts);
+    }
+
+    private function eventTypeFromTitle(string $title): string
+    {
+        $lower = strtolower($title);
+        if (str_contains($lower, 'drill')) {
+            return 'drill';
+        }
+        if (str_contains($lower, 'seminar') || str_contains($lower, 'forum') || str_contains($lower, 'lecture') || str_contains($lower, 'training')) {
+            return 'seminar';
+        }
+        if (str_contains($lower, 'workshop') || str_contains($lower, 'demo')) {
+            return 'workshop';
+        }
+        if (str_contains($lower, 'orientation')) {
+            return 'orientation';
+        }
+        if (str_contains($lower, 'meeting') || str_contains($lower, 'coordination')) {
+            return 'meeting';
+        }
+        return 'other';
+    }
+
+    private function normalizePartnerOrgType(?string $type): string
+    {
+        $allowed = ['school', 'ngo', 'government', 'private', 'other'];
+        $normalized = strtolower(trim((string) $type));
+        return in_array($normalized, $allowed, true) ? $normalized : 'other';
+    }
+
+    private function schedulePhaseRange(int $recommendationId): array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT MIN(start_date) AS min_date, MAX(end_date) AS max_date
+            FROM campaign_ai_recommendation_schedule_phases
+            WHERE recommendation_id = ?
+        ");
+        $stmt->execute([$recommendationId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return ['min' => $row['min_date'] ?? null, 'max' => $row['max_date'] ?? null];
+    }
+
+    private function countMatchedStaff(int $recommendationId): int
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT COALESCE(SUM(matched_qty), 0) + COALESCE(SUM(missing_qty), 0)
+            FROM campaign_ai_recommendation_participants
+            WHERE recommendation_id = ?
+        ");
+        $stmt->execute([$recommendationId]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    private function jsonOrNull(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (is_array($value)) {
+            return json_encode(array_values($value));
+        }
+        $decoded = json_decode((string) $value, true);
+        if (json_last_error() === JSON_ERROR_NONE && $decoded !== null) {
+            return json_encode($decoded);
+        }
+        return json_encode([(string) $value]);
+    }
+
+    private function ensureBudgetTable(PDO $pdo): void
+    {
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS campaign_budgets (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    campaign_id INT NOT NULL,
+                    item_name VARCHAR(255) NOT NULL,
+                    item_type VARCHAR(50) NOT NULL DEFAULT 'consumable',
+                    quantity INT NOT NULL DEFAULT 1,
+                    unit_cost DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+                    funding_source VARCHAR(50) NOT NULL DEFAULT 'government_allocated',
+                    notes TEXT,
+                    is_archived TINYINT(1) NOT NULL DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    created_by INT,
+                    INDEX idx_campaign_id (campaign_id),
+                    INDEX idx_funding_source (funding_source),
+                    INDEX idx_is_archived (is_archived)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\Throwable $e) {
+            error_log('campaign_budgets ensure failed: ' . $e->getMessage());
+        }
+
+        $columns = [
+            'item_type' => "VARCHAR(50) NOT NULL DEFAULT 'consumable'",
+            'funding_source' => "VARCHAR(50) NOT NULL DEFAULT 'government_allocated'",
+            'source_recommendation_id' => 'INT NULL',
+            'category' => 'VARCHAR(120) NULL',
+            'item_description' => 'TEXT NULL',
+            'sessions_or_days' => 'INT NULL',
+            'unit_label' => 'VARCHAR(80) NULL',
+            'related_action' => 'TEXT NULL',
+            'recommendation_reason' => 'TEXT NULL',
+            'pricing_source' => 'VARCHAR(120) NULL',
+            'pricing_confidence' => 'VARCHAR(40) NULL',
+            'calculation_basis' => 'TEXT NULL',
+            'is_estimate' => 'TINYINT(1) NOT NULL DEFAULT 1',
+            'sort_order' => 'INT NOT NULL DEFAULT 0',
+        ];
+        foreach ($columns as $name => $definition) {
+            if (!$this->columnExists('campaign_budgets', $name)) {
+                try {
+                    $pdo->exec("ALTER TABLE campaign_budgets ADD COLUMN {$name} {$definition}");
+                } catch (\Throwable $e) {
+                    error_log('campaign_budgets column ' . $name . ' failed: ' . $e->getMessage());
+                }
+            }
+        }
+    }
+
     private function requireFinanceAdminAndExecute(?array $user, callable $fn): array
     {
         if (!$user) {
