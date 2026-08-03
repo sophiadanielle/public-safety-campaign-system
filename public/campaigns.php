@@ -3718,6 +3718,118 @@ async function generateAiRecommendationPlan() {
     }
 }
 
+function showAcceptAiRecConfirmModal(details, onConfirm) {
+    let existing = document.getElementById('aiRecConfirmModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'aiRecConfirmModal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.65); z-index: 20000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(6px); animation: fadeIn 0.2s ease-out;';
+
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 16px; max-width: 520px; width: 100%; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); border: 1px solid #e2e8f0;">
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 24px; text-align: center;">
+                <div style="width: 56px; height: 56px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 style="margin: 0 0 6px; font-size: 20px; font-weight: 700; color: white;">Accept AI Strategy?</h3>
+                <p style="margin: 0; font-size: 13px; color: rgba(255, 255, 255, 0.9);">Confirm converting this recommendation into an active campaign</p>
+            </div>
+            <div style="padding: 24px;">
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+                    <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Campaign Title</div>
+                    <div style="font-size: 15px; font-weight: 700; color: #0f172a; line-height: 1.4;">${escapeHtml(details.title)}</div>
+                </div>
+
+                <div style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 8px;">What will be generated:</div>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; background: #f1f5f9; padding: 8px 12px; border-radius: 8px;">
+                        <i class="fas fa-coins" style="color: #10b981;"></i>
+                        <span><strong>${details.budgetCount}</strong> budget line item(s) to <strong>Financial & Budgeting</strong></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; background: #f1f5f9; padding: 8px 12px; border-radius: 8px;">
+                        <i class="fas fa-user-plus" style="color: #6366f1;"></i>
+                        <span><strong>${details.staffToCreate}</strong> missing staff member(s) to <strong>Staff Roster</strong></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; background: #f1f5f9; padding: 8px 12px; border-radius: 8px;">
+                        <i class="fas fa-calendar-alt" style="color: #06b6d4;"></i>
+                        <span><strong>${details.phaseCount}</strong> activity event(s) to <strong>Events & Seminars</strong></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; background: #f1f5f9; padding: 8px 12px; border-radius: 8px;">
+                        <i class="fas fa-handshake" style="color: #f59e0b;"></i>
+                        <span><strong>${details.partnerCount}</strong> partner(s) to <strong>Partners List</strong></span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px;">
+                    <button id="aiRecConfirmCancel" style="flex: 1; padding: 12px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.2s;">
+                        Cancel
+                    </button>
+                    <button id="aiRecConfirmSubmit" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); transition: all 0.2s;">
+                        <i class="fas fa-check" style="margin-right: 6px;"></i> Confirm & Accept
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById('aiRecConfirmCancel').onclick = () => modal.remove();
+    document.getElementById('aiRecConfirmSubmit').onclick = () => {
+        modal.remove();
+        onConfirm();
+    };
+}
+
+function showAcceptAiRecSuccessModal(payload) {
+    let existing = document.getElementById('aiRecSuccessModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'aiRecSuccessModal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); z-index: 25000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(6px); animation: fadeIn 0.2s ease-out;';
+
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 16px; max-width: 500px; width: 100%; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4); text-align: center; border: 1px solid #e2e8f0;">
+            <div style="background: linear-gradient(135deg, #10b981 0%, #047857 100%); padding: 30px 24px; color: white;">
+                <div style="width: 64px; height: 64px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 32px;">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h3 style="margin: 0 0 6px; font-size: 22px; font-weight: 800; color: white;">Recommendation Accepted!</h3>
+                <p style="margin: 0; font-size: 14px; color: rgba(255, 255, 255, 0.9);">Campaign #${payload.campaign_id} created successfully</p>
+            </div>
+            <div style="padding: 24px;">
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: left;">
+                    <div style="font-weight: 700; color: #166534; font-size: 13px; margin-bottom: 8px;"><i class="fas fa-info-circle"></i> Summary of Created Items:</div>
+                    <ul style="margin: 0; padding-left: 20px; color: #15803d; font-size: 13px; line-height: 1.6;">
+                        <li><strong>${payload.budget_items_created || 0}</strong> budget line items added to Financial & Budgeting</li>
+                        <li><strong>${payload.staff_created || 0}</strong> missing staff members added to Staff Roster</li>
+                        <li><strong>${payload.events_created || 0}</strong> activity events added to Events & Seminars</li>
+                        <li><strong>${payload.partners_created || 0}</strong> partners linked</li>
+                    </ul>
+                </div>
+                <div style="font-size: 13px; color: #64748b; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fas fa-spinner fa-pulse" style="color: #10b981;"></i>
+                    <span>Reloading page to display updated campaigns...</span>
+                </div>
+                <button id="aiRecSuccessReloadBtn" style="width: 100%; padding: 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 15px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                    <i class="fas fa-sync-alt" style="margin-right: 8px;"></i> OK & Reload Page Now
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const reloadPage = () => {
+        window.location.reload();
+    };
+
+    document.getElementById('aiRecSuccessReloadBtn').onclick = reloadPage;
+    setTimeout(reloadPage, 2500);
+}
+
 async function acceptAiRecommendation() {
     const active = window.__aiRecActive || {};
     const rec = active.rec || {};
@@ -3732,16 +3844,6 @@ async function acceptAiRecommendation() {
         return;
     }
 
-    let isReaccept = false;
-    if (summary.converted_campaign_id || rec.converted_campaign_id) {
-        const reacceptOk = confirm('This recommendation was previously converted to Campaign #' + (summary.converted_campaign_id || rec.converted_campaign_id) + '.\n\nDo you want to re-accept and generate a new campaign with fresh budget items, staff, and events?');
-        if (!reacceptOk) {
-            updateAiRecPlanAction(rec);
-            return;
-        }
-        isReaccept = true;
-    }
-
     const token = localStorage.getItem('jwtToken') || '';
     if (!token.trim()) {
         showErrorToast('Acceptance failed: unauthorized request. Please log in again.');
@@ -3754,74 +3856,60 @@ async function acceptAiRecommendation() {
     const phaseCount = (data.schedule && Array.isArray(data.schedule.phases) ? data.schedule.phases.length : 0);
     const suggestions = Array.isArray(data.suggestions) ? data.suggestions.filter(s => s.proposal_status === 'proposed' && !s.created_partner_id) : [];
     const partnerCount = (Array.isArray(data.partners) ? data.partners.length : 0) + suggestions.length;
-
     const title = summary.campaign_title || rec.campaign_title || 'this recommendation';
-    if (!isReaccept) {
-        const ok = confirm(
-            'Accept this AI recommendation?\n\n' +
-            'Campaign: "' + title + '"\n\n' +
-            'This will insert:\n' +
-            '- ' + budgetCount + ' budget line item(s) into Financial & Budgeting\n' +
-            '- ' + staffToCreate + ' missing staff member(s) into the Staff roster\n' +
-            '- ' + phaseCount + ' event(s)/seminar(s) into Events & Seminars\n' +
-            '- ' + partnerCount + ' partner(s) into the Partners list\n\n' +
-            'The campaign will be created in All Campaigns with Draft status. Continue?'
-        );
-        if (!ok) return;
-    }
 
-    try {
-        if (acceptBtn) {
-            acceptBtn.disabled = true;
-            acceptBtn.style.opacity = '0.7';
-            acceptBtn.style.cursor = 'wait';
-            acceptBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Accepting...';
+    showAcceptAiRecConfirmModal({
+        title,
+        budgetCount,
+        staffToCreate,
+        phaseCount,
+        partnerCount
+    }, async () => {
+        try {
+            if (acceptBtn) {
+                acceptBtn.disabled = true;
+                acceptBtn.style.opacity = '0.7';
+                acceptBtn.style.cursor = 'wait';
+                acceptBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Accepting...';
+            }
+            if (status) {
+                status.textContent = 'Accepting recommendation and creating campaign...';
+            }
+
+            const resp = await fetch(aiRecommendationAcceptUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': 'Bearer ' + token.trim()
+                },
+                body: JSON.stringify({ recommendation_id: recommendationId, force: true, reaccept: true })
+            });
+
+            if (!resp.ok) {
+                throw new Error(await readApiError(resp));
+            }
+
+            const payload = await resp.json();
+            if (payload.error || payload.success === false) {
+                throw new Error(payload.error || payload.message || 'Acceptance failed.');
+            }
+
+            showAcceptAiRecSuccessModal(payload);
+        } catch (e) {
+            const message = e.message || 'Acceptance failed.';
+            showErrorToast('Acceptance failed: ' + message);
+            if (status) {
+                status.textContent = 'Acceptance failed: ' + message;
+            }
+            if (acceptBtn) {
+                acceptBtn.disabled = false;
+                acceptBtn.style.opacity = '1';
+                acceptBtn.style.cursor = 'pointer';
+                acceptBtn.innerHTML = '<i class="fas fa-check"></i> Accept Recommended';
+            }
         }
-        if (status) {
-            status.textContent = 'Accepting recommendation and creating campaign...';
-        }
-
-        const resp = await fetch(aiRecommendationAcceptUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': 'Bearer ' + token.trim()
-            },
-            body: JSON.stringify({ recommendation_id: recommendationId, force: true, reaccept: true })
-        });
-
-        if (!resp.ok) {
-            throw new Error(await readApiError(resp));
-        }
-
-        const payload = await resp.json();
-        if (payload.error || payload.success === false) {
-            throw new Error(payload.error || payload.message || 'Acceptance failed.');
-        }
-
-        await reloadAiRecommendationDetails(rec);
-        updateAiRecPlanAction(rec);
-
-        showSuccessToast(
-            'Accepted! Campaign #' + payload.campaign_id + ' created with ' +
-            (payload.budget_items_created || 0) + ' budget items, ' +
-            (payload.staff_created || 0) + ' staff, ' +
-            (payload.events_created || 0) + ' events, ' +
-            (payload.partners_created || 0) + ' partners.'
-        );
-
-        try { await loadCampaigns(); } catch (e) { console.warn('Campaign list refresh failed:', e); }
-        try { await loadBudgetData(); } catch (e) { console.warn('Budget list refresh failed:', e); }
-        try { await loadStaffTable(); } catch (e) { console.warn('Staff list refresh failed:', e); }
-    } catch (e) {
-        const message = e.message || 'Acceptance failed.';
-        showErrorToast('Acceptance failed: ' + message);
-        if (status) {
-            status.textContent = 'Acceptance failed: ' + message;
-        }
-        updateAiRecPlanAction(rec);
-    }
+    });
 }
 
 async function backfillAiRecommendationPlans() {
