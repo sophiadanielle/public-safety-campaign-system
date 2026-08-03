@@ -1115,11 +1115,15 @@ function load_cached_recommendations(PDO $pdo): ?array
 
         $recommendations = [];
         foreach ($rows as $row) {
-            $rec = json_decode($row['data_snapshot'], true);
-            if (is_array($rec) && isset($rec['trend_key'])) {
-                $rec['id'] = (int) $row['id'];
-                $recommendations[] = $rec;
+            $rec = json_decode((string) ($row['data_snapshot'] ?? ''), true);
+            if (!is_array($rec)) {
+                $rec = [];
             }
+            $rec['id'] = (int) $row['id'];
+            $rec['approval_status'] = $row['approval_status'] ?? 'recommended';
+            $rec['converted_campaign_id'] = !empty($row['converted_campaign_id']) ? (int) $row['converted_campaign_id'] : null;
+            $rec['planning_status'] = $row['planning_status'] ?? 'completed';
+            $recommendations[] = $rec;
         }
 
         return $recommendations;
