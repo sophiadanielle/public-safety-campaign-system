@@ -516,7 +516,7 @@ class AiRecommendationPlanningController
                  start_date, end_date, ai_recommended_datetime, owner_id,
                  objectives, location, assigned_staff, barangay_target_zones,
                  budget, staff_count)
-            VALUES (?, ?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, 'approved', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         $stmt->execute([
             trim((string) ($rec['campaign_title'] ?? '')),
