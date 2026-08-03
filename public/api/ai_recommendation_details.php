@@ -106,6 +106,11 @@ try {
                 'summary' => $summary,
                 'reports' => $viewService->getReportSnapshots($recommendationId),
             ];
+        } elseif ($tab === 'events') {
+            $response = [
+                'summary' => $summary,
+                'events' => $viewService->getEventAndSeminarRecommendations($recommendationId),
+            ];
         } else {
             $response = [
                 'summary' => $summary,
@@ -117,6 +122,7 @@ try {
                 'partner_suggestions' => $viewService->getPartnerSuggestions($recommendationId),
                 'schedule_phases' => $viewService->getSchedulePhases($recommendationId),
                 'reports' => $viewService->getReportSnapshots($recommendationId),
+                'events' => $viewService->getEventAndSeminarRecommendations($recommendationId),
             ];
         }
 

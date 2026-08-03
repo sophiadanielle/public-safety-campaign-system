@@ -312,6 +312,42 @@ class AiRecommendationViewService
         ];
     }
 
+    public function getEventAndSeminarRecommendations(int $recommendationId): array
+    {
+        $summary = $this->getSummary($recommendationId);
+        if (!$summary) {
+            return [
+                'summary' => [
+                    'existing_linked_events' => 0,
+                    'related_existing_events' => 0,
+                    'ai_recommended_events' => 0,
+                    'table_available' => false,
+                ],
+                'existing_events' => [],
+                'related_events' => [],
+                'recommended_events' => [],
+                'note' => 'Recommendation not found.',
+            ];
+        }
+
+        $existingEvents = $this->getExistingEventsForRecommendation($summary, true);
+        $relatedEvents = $this->getExistingEventsForRecommendation($summary, false);
+        $recommendedEvents = $this->buildRecommendedEventsForCampaign($summary, $existingEvents, $relatedEvents);
+
+        return [
+            'summary' => [
+                'existing_linked_events' => count($existingEvents),
+                'related_existing_events' => count($relatedEvents),
+                'ai_recommended_events' => count($recommendedEvents),
+                'table_available' => $this->tableExists('campaign_department_events'),
+            ],
+            'existing_events' => $existingEvents,
+            'related_events' => $relatedEvents,
+            'recommended_events' => $recommendedEvents,
+            'note' => 'AI recommended events are planning proposals only. They are not inserted into the Events & Seminars table until reviewed and created from the Events module.',
+        ];
+    }
+
     public function getBudgetAnalysis(int $recommendationId): array
     {
         $summary = $this->getSummary($recommendationId) ?? [];
@@ -453,6 +489,7 @@ class AiRecommendationViewService
             'suggestions' => $this->getPartnerSuggestions($recommendationId),
             'schedule' => $this->getSchedulePhases($recommendationId),
             'reports' => $this->getReportSnapshots($recommendationId),
+            'events' => $this->getEventAndSeminarRecommendations($recommendationId),
         ];
     }
 
@@ -730,6 +767,385 @@ class AiRecommendationViewService
         return $warnings;
     }
 
+    private function getExistingEventsForRecommendation(array $summary, bool $linkedOnly): array
+    {
+        if (!$this->tableExists('campaign_department_events')) {
+            return [];
+        }
+
+        $titleExpr = $this->coalesceExistingColumns('e', [
+            'event_title',
+            'event_name',
+            'name',
+        ], "'Untitled Event'");
+        $descriptionExpr = $this->coalesceExistingColumns('e', [
+            'event_description',
+            'description',
+        ], "NULL");
+        $eventTypeExpr = $this->hasColumn('campaign_department_events', 'event_type') ? 'e.event_type' : "'seminar'";
+        $dateExpr = $this->coalesceExistingColumns('e', [
+            'date',
+            'event_date',
+            'starts_at',
+        ], "NULL");
+        $startTimeExpr = $this->coalesceExistingColumns('e', [
+            'start_time',
+            'event_time',
+        ], "NULL");
+        if ($this->hasColumn('campaign_department_events', 'starts_at')) {
+            $startTimeExpr = "COALESCE({$startTimeExpr}, TIME(e.starts_at))";
+        }
+        $endTimeExpr = $this->coalesceExistingColumns('e', [
+            'end_time',
+            'ends_at',
+        ], "NULL");
+        if ($this->hasColumn('campaign_department_events', 'ends_at')) {
+            $endTimeExpr = "COALESCE({$endTimeExpr}, TIME(e.ends_at))";
+        }
+        $statusExpr = $this->coalesceExistingColumns('e', [
+            'event_status',
+            'status',
+        ], "'scheduled'");
+        $campaignExpr = $this->coalesceExistingColumns('e', [
+            'linked_campaign_id',
+            'campaign_id',
+        ], "NULL");
+        $hazardExpr = $this->hasColumn('campaign_department_events', 'hazard_focus') ? 'e.hazard_focus' : 'NULL';
+        $venueExpr = $this->hasColumn('campaign_department_events', 'venue') ? 'e.venue' : 'NULL';
+        $locationExpr = $this->hasColumn('campaign_department_events', 'location') ? 'e.location' : 'NULL';
+        $capacityExpr = $this->hasColumn('campaign_department_events', 'capacity') ? 'e.capacity' : 'NULL';
+        $attendanceExpr = $this->hasColumn('campaign_department_events', 'attendance_count') ? 'e.attendance_count' : '0';
+        $createdExpr = $this->hasColumn('campaign_department_events', 'created_at') ? 'e.created_at' : 'NULL';
+
+        $sql = "
+            SELECT e.id,
+                   {$titleExpr} AS event_title,
+                   {$eventTypeExpr} AS event_type,
+                   {$descriptionExpr} AS event_description,
+                   {$hazardExpr} AS hazard_focus,
+                   {$dateExpr} AS event_date,
+                   {$startTimeExpr} AS start_time,
+                   {$endTimeExpr} AS end_time,
+                   {$venueExpr} AS venue,
+                   {$locationExpr} AS location,
+                   {$statusExpr} AS event_status,
+                   {$campaignExpr} AS linked_campaign_id,
+                   {$capacityExpr} AS capacity,
+                   {$attendanceExpr} AS attendance_count,
+                   {$createdExpr} AS created_at
+            FROM campaign_department_events e
+        ";
+
+        $params = [];
+        $where = [];
+        if ($linkedOnly) {
+            $campaignId = (int) ($summary['converted_campaign_id'] ?? 0);
+            if ($campaignId <= 0) {
+                return [];
+            }
+            $where[] = "{$campaignExpr} = ?";
+            $params[] = $campaignId;
+        } else {
+            $terms = $this->eventSearchTerms($summary);
+            $likeParts = [];
+            foreach ($terms as $term) {
+                $likeParts[] = "LOWER(CONCAT_WS(' ', {$titleExpr}, {$eventTypeExpr}, {$descriptionExpr}, {$hazardExpr}, {$venueExpr}, {$locationExpr})) LIKE ?";
+                $params[] = '%' . mb_strtolower($term) . '%';
+            }
+            if (!empty($likeParts)) {
+                $where[] = '(' . implode(' OR ', $likeParts) . ')';
+            }
+            $campaignId = (int) ($summary['converted_campaign_id'] ?? 0);
+            if ($campaignId > 0) {
+                $where[] = "({$campaignExpr} IS NULL OR {$campaignExpr} != ?)";
+                $params[] = $campaignId;
+            }
+        }
+
+        $where[] = "LOWER(COALESCE({$statusExpr}, '')) != 'archived'";
+        $sql .= ' WHERE ' . implode(' AND ', $where);
+        $sql .= " ORDER BY {$dateExpr} DESC, {$startTimeExpr} DESC, e.id DESC LIMIT " . ($linkedOnly ? '20' : '12');
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            error_log('AI recommendation event lookup failed: ' . $e->getMessage());
+            return [];
+        }
+
+        return array_map(fn(array $row): array => $this->normalizeExistingEventRow($row, $summary), $rows);
+    }
+
+    private function normalizeExistingEventRow(array $row, array $summary): array
+    {
+        $score = $this->scoreExistingEventMatch($row, $summary);
+        return [
+            'event_id' => (int) $row['id'],
+            'event_title' => $row['event_title'],
+            'event_type' => $row['event_type'] ?: 'seminar',
+            'event_description' => $row['event_description'],
+            'hazard_focus' => $row['hazard_focus'],
+            'event_date' => $this->dateOnly($row['event_date'] ?? null),
+            'start_time' => $this->timeOnly($row['start_time'] ?? null),
+            'end_time' => $this->timeOnly($row['end_time'] ?? null),
+            'venue' => $row['venue'],
+            'location' => $row['location'],
+            'event_status' => $row['event_status'],
+            'linked_campaign_id' => $row['linked_campaign_id'] === null ? null : (int) $row['linked_campaign_id'],
+            'capacity' => $row['capacity'] === null ? null : (int) $row['capacity'],
+            'attendance_count' => (int) ($row['attendance_count'] ?? 0),
+            'match_score' => $score,
+            'match_basis' => $score >= 80 ? 'Linked campaign event' : ($score >= 45 ? 'Related event content match' : 'Event table record'),
+        ];
+    }
+
+    private function buildRecommendedEventsForCampaign(array $summary, array $existingEvents, array $relatedEvents): array
+    {
+        $actions = $this->normalList($summary['ai_recommended_actions'] ?? []);
+        $locations = $this->normalList($summary['affected_locations'] ?? []);
+        $audience = trim((string) ($summary['ai_target_audience'] ?? 'Community residents and stakeholders'));
+        $duration = max(7, (int) ($summary['recommended_duration'] ?? 30));
+        $priority = strtolower((string) ($summary['priority_level'] ?? 'medium'));
+        $categoryText = mb_strtolower(implode(' ', array_filter([
+            $summary['category'] ?? '',
+            $summary['incident_category'] ?? '',
+            $summary['main_trend'] ?? '',
+            $summary['campaign_title'] ?? '',
+            implode(' ', $actions),
+        ])));
+
+        if (empty($actions)) {
+            $actions = [
+                'Orient the community about the campaign and the current public safety trend.',
+                'Run a skills-based safety session for priority residents and stakeholders.',
+                'Evaluate learnings and document next actions after field implementation.',
+            ];
+        }
+        if (empty($locations)) {
+            $locations = ['Primary affected location'];
+        }
+
+        $baseDate = $this->eventPlanningStartDate($summary);
+        $templates = [
+            [
+                'event_type' => 'orientation',
+                'title' => 'Campaign Kickoff and Public Safety Orientation',
+                'objective' => 'Introduce the recommended campaign, explain the incident trend, and align residents on prevention actions.',
+                'action_index' => 0,
+                'offset_days' => 2,
+                'time' => '09:00',
+                'duration_hours' => 2,
+                'priority' => 'high',
+            ],
+            [
+                'event_type' => 'seminar',
+                'title' => $this->topicTitle($summary, 'Community Prevention Seminar'),
+                'objective' => 'Teach practical prevention, reporting, and referral steps based on the supporting reports.',
+                'action_index' => min(1, count($actions) - 1),
+                'offset_days' => max(5, (int) floor($duration * 0.25)),
+                'time' => '14:00',
+                'duration_hours' => 3,
+                'priority' => in_array($priority, ['high', 'critical'], true) ? 'high' : 'medium',
+            ],
+            [
+                'event_type' => preg_match('/disaster|fire|earthquake|flood|storm|evacuat|emergency/', $categoryText) ? 'drill' : 'workshop',
+                'title' => preg_match('/disaster|fire|earthquake|flood|storm|evacuat|emergency/', $categoryText)
+                    ? 'Preparedness Drill and Response Simulation'
+                    : 'Hands-on Community Safety Workshop',
+                'objective' => 'Practice the recommended campaign behavior with staff, partners, and residents before wider rollout.',
+                'action_index' => min(2, count($actions) - 1),
+                'offset_days' => max(8, (int) floor($duration * 0.5)),
+                'time' => '09:00',
+                'duration_hours' => 3,
+                'priority' => 'medium',
+            ],
+            [
+                'event_type' => 'seminar',
+                'title' => 'Partner and Volunteer Coordination Seminar',
+                'objective' => 'Coordinate partner roles, volunteer support, referral flow, materials, and field deployment responsibilities.',
+                'action_index' => min(3, count($actions) - 1),
+                'offset_days' => max(10, (int) floor($duration * 0.65)),
+                'time' => '13:30',
+                'duration_hours' => 2,
+                'priority' => 'medium',
+            ],
+            [
+                'event_type' => 'workshop',
+                'title' => 'Post-Campaign Learning and Improvement Workshop',
+                'objective' => 'Review attendance, incident feedback, staff notes, and next-step recommendations after campaign activities.',
+                'action_index' => count($actions) - 1,
+                'offset_days' => max(14, min($duration, $duration - 2)),
+                'time' => '10:00',
+                'duration_hours' => 2,
+                'priority' => 'low',
+            ],
+        ];
+
+        $eventCount = count($locations) >= 5 || in_array($priority, ['high', 'critical'], true) ? 5 : 4;
+        $templates = array_slice($templates, 0, $eventCount);
+        $recommendations = [];
+        foreach ($templates as $index => $template) {
+            $location = $locations[$index % count($locations)] ?: 'Primary affected location';
+            $date = (clone $baseDate)->modify('+' . (int) $template['offset_days'] . ' days');
+            $start = $template['time'];
+            $end = date('H:i', strtotime($start . ' +' . (int) $template['duration_hours'] . ' hours'));
+            $action = $actions[$template['action_index']] ?? $actions[0];
+            $hazardFocus = $summary['main_trend'] ?? $summary['incident_category'] ?? $summary['category'] ?? 'Public safety';
+
+            $recommendations[] = [
+                'sequence' => $index + 1,
+                'event_title' => $template['title'],
+                'event_type' => $template['event_type'],
+                'objective' => $template['objective'],
+                'recommended_campaign_action' => $action,
+                'hazard_focus' => $hazardFocus,
+                'target_audience' => $audience,
+                'recommended_date' => $date->format('Y-m-d'),
+                'start_time' => $start,
+                'end_time' => $end,
+                'duration_hours' => (int) $template['duration_hours'],
+                'recommended_venue_or_location' => $location,
+                'trainer_requirements' => $this->trainerRequirementForEvent($template['event_type'], $categoryText),
+                'equipment_requirements' => $this->equipmentRequirementForEvent($template['event_type'], $categoryText),
+                'volunteer_requirements' => $this->volunteerRequirementForEvent($locations, $priority),
+                'expected_output' => $this->expectedOutputForEvent($template['event_type']),
+                'priority' => $template['priority'],
+                'recommendation_reason' => $this->eventRecommendationReason($summary, $template, $existingEvents, $relatedEvents),
+                'status' => 'For Review',
+                'action' => 'Review in Events & Seminars',
+            ];
+        }
+
+        return $recommendations;
+    }
+
+    private function eventSearchTerms(array $summary): array
+    {
+        $terms = [];
+        foreach ([
+            $summary['campaign_title'] ?? '',
+            $summary['main_trend'] ?? '',
+            $summary['incident_category'] ?? '',
+            $summary['category'] ?? '',
+        ] as $term) {
+            $term = trim((string) $term);
+            if ($term !== '') {
+                $terms[] = $term;
+            }
+        }
+        foreach ($this->normalList($summary['affected_locations'] ?? []) as $location) {
+            if ($location !== '') {
+                $terms[] = $location;
+            }
+        }
+        return array_slice(array_values(array_unique($terms)), 0, 8);
+    }
+
+    private function scoreExistingEventMatch(array $row, array $summary): int
+    {
+        $score = 0;
+        $campaignId = (int) ($summary['converted_campaign_id'] ?? 0);
+        if ($campaignId > 0 && (int) ($row['linked_campaign_id'] ?? 0) === $campaignId) {
+            $score += 80;
+        }
+        $haystack = mb_strtolower(implode(' ', array_filter([
+            $row['event_title'] ?? '',
+            $row['event_type'] ?? '',
+            $row['event_description'] ?? '',
+            $row['hazard_focus'] ?? '',
+            $row['venue'] ?? '',
+            $row['location'] ?? '',
+        ])));
+        foreach ($this->eventSearchTerms($summary) as $term) {
+            if ($term !== '' && str_contains($haystack, mb_strtolower($term))) {
+                $score += 10;
+            }
+        }
+        return min(100, $score);
+    }
+
+    private function eventPlanningStartDate(array $summary): \DateTimeImmutable
+    {
+        foreach (['effective_start_date', 'earliest_date', 'created_at'] as $field) {
+            if (!empty($summary[$field])) {
+                $date = strtotime((string) $summary[$field]);
+                if ($date) {
+                    $candidate = new \DateTimeImmutable(date('Y-m-d', $date));
+                    $today = new \DateTimeImmutable(date('Y-m-d'));
+                    return $candidate < $today ? $today : $candidate;
+                }
+            }
+        }
+        return new \DateTimeImmutable(date('Y-m-d'));
+    }
+
+    private function topicTitle(array $summary, string $suffix): string
+    {
+        $topic = trim((string) ($summary['main_trend'] ?? $summary['incident_category'] ?? 'Public Safety'));
+        $topic = preg_replace('/\s+/', ' ', $topic) ?: 'Public Safety';
+        return $topic . ' ' . $suffix;
+    }
+
+    private function trainerRequirementForEvent(string $eventType, string $categoryText): string
+    {
+        if (str_contains($categoryText, 'fire')) {
+            return 'BFP/fire safety resource person, barangay safety officer, documentation staff';
+        }
+        if (preg_match('/disaster|earthquake|flood|storm|emergency|evacuat/', $categoryText)) {
+            return 'DRRM officer, emergency response facilitator, barangay safety officer';
+        }
+        if (preg_match('/crime|theft|robbery|assault|violence|drug|security/', $categoryText)) {
+            return 'Peace and order officer, barangay tanod lead, community policing partner';
+        }
+        if ($eventType === 'workshop') {
+            return 'Campaign coordinator, subject matter facilitator, documentation staff';
+        }
+        return 'Campaign lead, public safety facilitator, documentation staff';
+    }
+
+    private function equipmentRequirementForEvent(string $eventType, string $categoryText): string
+    {
+        $items = ['attendance sheets', 'printed handouts', 'sound system', 'presentation device'];
+        if ($eventType === 'drill') {
+            $items[] = 'scenario cards';
+            $items[] = 'safety markers';
+            $items[] = 'first-aid kit';
+        }
+        if (preg_match('/crime|theft|robbery|security/', $categoryText)) {
+            $items[] = 'incident reporting flowchart';
+            $items[] = 'hotline directory';
+        }
+        return implode(', ', array_unique($items));
+    }
+
+    private function volunteerRequirementForEvent(array $locations, string $priority): string
+    {
+        $qty = max(2, min(12, count($locations) * (in_array($priority, ['high', 'critical'], true) ? 2 : 1)));
+        return $qty . ' volunteer aides for registration, crowd guidance, materials distribution, and post-event documentation';
+    }
+
+    private function expectedOutputForEvent(string $eventType): string
+    {
+        return match ($eventType) {
+            'orientation' => 'Aligned participants, attendance record, shared campaign timeline',
+            'drill' => 'Completed practice scenario, response gaps list, follow-up safety actions',
+            'workshop' => 'Participant output sheets, skills practice notes, improvement actions',
+            default => 'Attendance record, learning checklist, questions and referral concerns',
+        };
+    }
+
+    private function eventRecommendationReason(array $summary, array $template, array $existingEvents, array $relatedEvents): string
+    {
+        $reportCount = (int) ($summary['report_count'] ?? 0);
+        $locationCount = count($this->normalList($summary['affected_locations'] ?? []));
+        $existingNote = count($existingEvents) > 0
+            ? ' Existing linked events are shown for comparison.'
+            : ' No linked event is currently recorded for this AI recommendation.';
+        return 'Recommended from ' . $reportCount . ' supporting report(s), ' . max(1, $locationCount) . ' affected location(s), campaign priority, and the selected campaign action. ' . $template['event_type'] . ' format fits the objective.' . $existingNote;
+    }
+
     private function overallPricingConfidence(array $lineItems): string
     {
         if (empty($lineItems)) {
@@ -786,6 +1202,77 @@ class AiRecommendationViewService
             return is_array($decoded) ? $decoded : $value;
         }
         return $value;
+    }
+
+    private function normalList(mixed $value): array
+    {
+        $decoded = $this->decodeJson($value);
+        if (is_array($decoded)) {
+            $items = [];
+            foreach ($decoded as $item) {
+                if (is_scalar($item)) {
+                    $text = trim((string) $item);
+                } elseif (is_array($item)) {
+                    $text = trim((string) ($item['name'] ?? $item['title'] ?? $item['location'] ?? $item['barangay'] ?? ''));
+                } else {
+                    $text = '';
+                }
+                if ($text !== '') {
+                    $items[] = $text;
+                }
+            }
+            return array_values(array_unique($items));
+        }
+
+        $text = trim((string) ($decoded ?? ''));
+        if ($text === '') {
+            return [];
+        }
+        return array_values(array_filter(array_map('trim', preg_split('/[,;\n]+/', $text) ?: [])));
+    }
+
+    private function dateOnly(mixed $value): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+        $time = strtotime((string) $value);
+        return $time ? date('Y-m-d', $time) : null;
+    }
+
+    private function timeOnly(mixed $value): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+        $time = strtotime((string) $value);
+        return $time ? date('H:i', $time) : null;
+    }
+
+    private function coalesceExistingColumns(string $alias, array $columns, string $fallback): string
+    {
+        $parts = [];
+        foreach ($columns as $column) {
+            if ($this->hasColumn('campaign_department_events', $column)) {
+                $parts[] = "{$alias}.{$column}";
+            }
+        }
+        if (empty($parts)) {
+            return $fallback;
+        }
+        $parts[] = $fallback;
+        return 'COALESCE(' . implode(', ', $parts) . ')';
+    }
+
+    private function tableExists(string $table): bool
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT COUNT(*)
+            FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
+        ");
+        $stmt->execute([$table]);
+        return (int) $stmt->fetchColumn() > 0;
     }
 
     private function hasColumn(string $table, string $column): bool

@@ -2583,6 +2583,7 @@ async function openAiRecommendationModal(index, items) {
                 <button class="ai-rec-tab" data-tab="locations" style="height: 48px; min-height: 48px; box-sizing: border-box; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; appearance: none; border-radius: 0;">Locations & Audience</button>
                 <button class="ai-rec-tab" data-tab="budget" style="height: 48px; min-height: 48px; box-sizing: border-box; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; appearance: none; border-radius: 0;">Budget Breakdown</button>
                 <button class="ai-rec-tab" data-tab="staff" style="height: 48px; min-height: 48px; box-sizing: border-box; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; appearance: none; border-radius: 0;">Participants & Partners</button>
+                <button class="ai-rec-tab" data-tab="events" style="height: 48px; min-height: 48px; box-sizing: border-box; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; appearance: none; border-radius: 0;">Events & Seminars</button>
                 <button class="ai-rec-tab" data-tab="schedule" style="height: 48px; min-height: 48px; box-sizing: border-box; padding: 0 14px; margin: 0; font-size: 12px; line-height: 1; font-weight: 600; border: none; background: transparent; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; appearance: none; border-radius: 0;">Date Sprint</button>
             </div>
 
@@ -2666,6 +2667,8 @@ function renderAiRecTab(tab, rec) {
         renderAiRecBudgetTab(body, data);
     } else if (tab === 'staff') {
         renderAiRecStaffTab(body, data);
+    } else if (tab === 'events') {
+        renderAiRecEventsTab(body, data);
     } else if (tab === 'partners') {
         renderAiRecPartnersTab(body, data);
     } else if (tab === 'schedule') {
@@ -3456,6 +3459,124 @@ function openAiStaffingReviewForm(payload) {
 }
 
 window.openAiStaffingReviewForm = openAiStaffingReviewForm;
+
+function renderAiRecEventsTab(body, data) {
+    const events = data?.events || {};
+    const summary = events.summary || {};
+    const existing = events.existing_events || [];
+    const related = events.related_events || [];
+    const recommended = events.recommended_events || [];
+
+    const existingRows = existing.length ? existing.map(e => `
+        <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:7px 10px;font-size:12px;font-weight:700;color:#0f172a;">#${e.event_id}</td>
+            <td style="padding:7px 10px;font-size:12px;font-weight:700;color:#0f172a;">${escapeHtml(e.event_title || 'Untitled')}</td>
+            <td style="padding:7px 10px;">${aiRecBadge(e.event_type || 'seminar')}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#475569;">${escapeHtml(e.event_date || 'No date')}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#475569;">${escapeHtml([e.start_time, e.end_time].filter(Boolean).join(' - ') || 'No time')}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#475569;">${escapeHtml(e.venue || e.location || '')}</td>
+            <td style="padding:7px 10px;">${aiRecBadge(e.event_status || 'scheduled')}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#64748b;">${escapeHtml(e.match_basis || '')}</td>
+        </tr>
+    `).join('') : '<tr><td colspan="8" style="padding:18px;text-align:center;color:#94a3b8;">No existing linked Events & Seminars records found for this campaign yet.</td></tr>';
+
+    const relatedRows = related.length ? related.map(e => `
+        <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:7px 10px;font-size:12px;font-weight:700;color:#0f172a;">#${e.event_id}</td>
+            <td style="padding:7px 10px;font-size:12px;font-weight:700;color:#0f172a;">${escapeHtml(e.event_title || 'Untitled')}</td>
+            <td style="padding:7px 10px;">${aiRecBadge(e.event_type || 'seminar')}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#475569;">${escapeHtml(e.hazard_focus || e.event_description || '')}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#475569;">${escapeHtml(e.event_date || 'No date')}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#475569;">${escapeHtml(e.venue || e.location || '')}</td>
+            <td style="padding:7px 10px;text-align:right;font-size:12px;color:#475569;">${e.match_score || 0}</td>
+        </tr>
+    `).join('') : '<tr><td colspan="7" style="padding:18px;text-align:center;color:#94a3b8;">No related existing events found from the Events & Seminars table.</td></tr>';
+
+    const recommendedRows = recommended.length ? recommended.map(e => {
+        const encoded = encodeURIComponent(JSON.stringify(e));
+        return `
+        <tr style="border-bottom:1px solid #f1f5f9;">
+            <td style="padding:7px 10px;font-size:11px;color:#64748b;">${e.sequence || ''}</td>
+            <td style="padding:7px 10px;font-size:12px;font-weight:800;color:#0f172a;min-width:190px;">${escapeHtml(e.event_title || '')}</td>
+            <td style="padding:7px 10px;">${aiRecBadge(e.event_type || 'seminar')}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#475569;">${escapeHtml(e.recommended_date || '')}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#475569;">${escapeHtml([e.start_time, e.end_time].filter(Boolean).join(' - '))}</td>
+            <td style="padding:7px 10px;font-size:12px;color:#475569;">${escapeHtml(e.recommended_venue_or_location || '')}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#475569;min-width:190px;">${escapeHtml(e.target_audience || '')}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#475569;min-width:210px;">${escapeHtml(e.recommended_campaign_action || '')}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#64748b;min-width:180px;">${escapeHtml(e.trainer_requirements || '')}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#64748b;min-width:180px;">${escapeHtml(e.equipment_requirements || '')}</td>
+            <td style="padding:7px 10px;">${aiRecBadge(e.priority || 'medium')}</td>
+            <td style="padding:7px 10px;font-size:11px;color:#64748b;min-width:220px;">${escapeHtml(e.recommendation_reason || '')}</td>
+            <td style="padding:7px 10px;"><button type="button" onclick="openAiEventReviewFormFromEncoded('${encoded}')" style="border:none;background:#eef2ff;color:#4338ca;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">Review Event</button></td>
+        </tr>`;
+    }).join('') : '<tr><td colspan="13" style="padding:18px;text-align:center;color:#94a3b8;">No AI event recommendations generated yet.</td></tr>';
+
+    body.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-bottom:16px;">
+            ${aiRecSummaryCard('Events Table', summary.table_available ? 'Available' : 'Unavailable', summary.table_available ? '#166534' : '#dc2626')}
+            ${aiRecSummaryCard('Linked Existing Events', summary.existing_linked_events ?? 0, '#0f766e')}
+            ${aiRecSummaryCard('Related Existing Events', summary.related_existing_events ?? 0, '#667eea')}
+            ${aiRecSummaryCard('AI Recommended Events', summary.ai_recommended_events ?? 0, '#ca8a04')}
+        </div>
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;color:#0c4a6e;">
+            ${escapeHtml(events.note || 'AI recommended events are planning proposals only and are not auto-created.')}
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:14px;">
+            <div style="font-size:11px;color:#475569;font-weight:800;text-transform:uppercase;margin-bottom:8px;"><i class="fas fa-calendar-check"></i> Existing Events & Seminars Linked to This Campaign (${existing.length})</div>
+            <div style="overflow:auto;border:1px solid #e2e8f0;border-radius:6px;max-height:260px;"><table style="width:100%;border-collapse:collapse;min-width:880px;"><thead><tr style="background:#f1f5f9;">${['ID','Event / Seminar','Type','Date','Time','Venue / Location','Status','Match Basis'].map(h => `<th style="padding:7px 10px;text-align:left;font-size:11px;color:#475569;">${h}</th>`).join('')}</tr></thead><tbody>${existingRows}</tbody></table></div>
+        </div>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin-bottom:14px;">
+            <div style="font-size:11px;color:#475569;font-weight:800;text-transform:uppercase;margin-bottom:8px;"><i class="fas fa-magnifying-glass"></i> Related Existing Events from Events & Seminars Table (${related.length})</div>
+            <div style="overflow:auto;border:1px solid #e2e8f0;border-radius:6px;max-height:260px;"><table style="width:100%;border-collapse:collapse;min-width:850px;"><thead><tr style="background:#f8fafc;">${['ID','Event / Seminar','Type','Focus / Description','Date','Venue / Location','Match Score'].map(h => `<th style="padding:7px 10px;text-align:left;font-size:11px;color:#475569;">${h}</th>`).join('')}</tr></thead><tbody>${relatedRows}</tbody></table></div>
+        </div>
+        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:14px;">
+            <div style="font-size:11px;color:#9a3412;font-weight:800;text-transform:uppercase;margin-bottom:8px;"><i class="fas fa-lightbulb"></i> AI Recommended Events & Seminars for This Campaign (${recommended.length})</div>
+            <div style="font-size:12px;color:#9a3412;margin-bottom:8px;">These recommendations are based on the campaign actions, affected locations, target audience, priority, duration, and supporting reports. Review first before creating an official Events & Seminars record.</div>
+            <div style="overflow:auto;border:1px solid #fed7aa;border-radius:6px;max-height:420px;"><table style="width:100%;border-collapse:collapse;min-width:1650px;"><thead><tr style="background:#ffedd5;">${['#','Recommended Event / Seminar','Type','Suggested Date','Time','Venue / Location','Target Audience','Related Campaign Action','Trainer Requirements','Equipment Requirements','Priority','Reason','Action'].map(h => `<th style="padding:7px 10px;text-align:left;font-size:11px;color:#9a3412;">${h}</th>`).join('')}</tr></thead><tbody>${recommendedRows}</tbody></table></div>
+        </div>
+    `;
+}
+
+function openAiEventReviewFormFromEncoded(encoded) {
+    try {
+        openAiEventReviewForm(JSON.parse(decodeURIComponent(encoded)));
+    } catch (e) {
+        showErrorToast('Unable to open event review data.');
+    }
+}
+
+function openAiEventReviewForm(eventData) {
+    const existing = document.getElementById('aiEventReviewModal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'aiEventReviewModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:10025;display:flex;align-items:center;justify-content:center;padding:20px;';
+    modal.innerHTML = `<div style="background:white;border-radius:10px;max-width:620px;width:100%;box-shadow:0 20px 40px rgba(15,23,42,.25);overflow:hidden;">
+        <div style="padding:14px 18px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:12px;"><strong style="font-size:14px;color:#0f172a;">Review AI Recommended Event</strong><button type="button" onclick="document.getElementById('aiEventReviewModal')?.remove()" style="border:none;background:transparent;font-size:20px;cursor:pointer;color:#64748b;">&times;</button></div>
+        <div style="padding:18px;max-height:70vh;overflow:auto;">
+            <label style="display:block;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Event / Seminar Title</label>
+            <input value="${escapeHtml(eventData?.event_title || '')}" readonly style="width:100%;padding:9px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:10px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div><label style="display:block;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Type</label><input value="${escapeHtml(eventData?.event_type || '')}" readonly style="width:100%;padding:9px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:10px;"></div>
+                <div><label style="display:block;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Suggested Date</label><input value="${escapeHtml(eventData?.recommended_date || '')}" readonly style="width:100%;padding:9px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:10px;"></div>
+            </div>
+            <label style="display:block;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Venue / Location</label>
+            <input value="${escapeHtml(eventData?.recommended_venue_or_location || '')}" readonly style="width:100%;padding:9px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:10px;">
+            <label style="display:block;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Objective</label>
+            <textarea readonly style="width:100%;min-height:70px;padding:9px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:10px;resize:vertical;">${escapeHtml(eventData?.objective || '')}</textarea>
+            <label style="display:block;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Requirements</label>
+            <textarea readonly style="width:100%;min-height:90px;padding:9px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:10px;resize:vertical;">Trainer: ${escapeHtml(eventData?.trainer_requirements || '')}\nEquipment: ${escapeHtml(eventData?.equipment_requirements || '')}\nVolunteers: ${escapeHtml(eventData?.volunteer_requirements || '')}</textarea>
+            <div style="font-size:12px;color:#64748b;">Review-only modal. To make this official, create it from the Events & Seminars module using these details.</div>
+        </div>
+        <div style="padding:12px 18px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:right;"><button type="button" onclick="document.getElementById('aiEventReviewModal')?.remove()" style="border:none;background:#4c8a89;color:white;border-radius:7px;padding:8px 14px;font-weight:700;cursor:pointer;">Done</button></div>
+    </div>`;
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    document.body.appendChild(modal);
+}
+
+window.openAiEventReviewFormFromEncoded = openAiEventReviewFormFromEncoded;
+window.openAiEventReviewForm = openAiEventReviewForm;
 
 function updateAiRecPlanAction(rec) {
     const data = window.__aiRecDetail || {};
