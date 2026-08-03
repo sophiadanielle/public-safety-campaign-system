@@ -2476,6 +2476,15 @@ function renderAiRecommendationsTable() {
         badge.textContent = `${prio.label} (${Number(rec.priority_score || 0).toFixed(0)})`;
         priorityCell.appendChild(badge);
 
+        const isAccepted = rec.converted_campaign_id || rec.approval_status === 'accepted';
+        if (isAccepted) {
+            const acceptedBadge = document.createElement('span');
+            const cId = rec.converted_campaign_id ? ' #' + rec.converted_campaign_id : '';
+            acceptedBadge.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #166534; border: 1px solid #86efac;';
+            acceptedBadge.innerHTML = `<i class="fas fa-check-circle"></i> ACCEPTED${cId}`;
+            priorityCell.appendChild(acceptedBadge);
+        }
+
         const actionCell = document.createElement('td');
         actionCell.style.cssText = 'padding: 12px 14px;';
         const viewButton = document.createElement('button');
