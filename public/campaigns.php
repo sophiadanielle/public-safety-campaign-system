@@ -3732,10 +3732,14 @@ async function acceptAiRecommendation() {
         return;
     }
 
+    let isReaccept = false;
     if (summary.converted_campaign_id || rec.converted_campaign_id) {
-        showWarningToast('This recommendation has already been accepted.');
-        updateAiRecPlanAction(rec);
-        return;
+        const reacceptOk = confirm('This recommendation was previously converted to Campaign #' + (summary.converted_campaign_id || rec.converted_campaign_id) + '.\n\nDo you want to re-accept and generate a new campaign with fresh budget items, staff, and events?');
+        if (!reacceptOk) {
+            updateAiRecPlanAction(rec);
+            return;
+        }
+        isReaccept = true;
     }
 
     const token = localStorage.getItem('jwtToken') || '';
@@ -3752,17 +3756,19 @@ async function acceptAiRecommendation() {
     const partnerCount = (Array.isArray(data.partners) ? data.partners.length : 0) + suggestions.length;
 
     const title = summary.campaign_title || rec.campaign_title || 'this recommendation';
-    const ok = confirm(
-        'Accept this AI recommendation?\n\n' +
-        'Campaign: "' + title + '"\n\n' +
-        'This will insert:\n' +
-        '- ' + budgetCount + ' budget line item(s) into Financial & Budgeting\n' +
-        '- ' + staffToCreate + ' missing staff member(s) into the Staff roster\n' +
-        '- ' + phaseCount + ' event(s)/seminar(s) into Events & Seminars\n' +
-        '- ' + partnerCount + ' partner(s) into the Partners list\n\n' +
-        'The campaign will be created in All Campaigns with Draft status. Continue?'
-    );
-    if (!ok) return;
+    if (!isReaccept) {
+        const ok = confirm(
+            'Accept this AI recommendation?\n\n' +
+            'Campaign: "' + title + '"\n\n' +
+            'This will insert:\n' +
+            '- ' + budgetCount + ' budget line item(s) into Financial & Budgeting\n' +
+            '- ' + staffToCreate + ' missing staff member(s) into the Staff roster\n' +
+            '- ' + phaseCount + ' event(s)/seminar(s) into Events & Seminars\n' +
+            '- ' + partnerCount + ' partner(s) into the Partners list\n\n' +
+            'The campaign will be created in All Campaigns with Draft status. Continue?'
+        );
+        if (!ok) return;
+    }
 
     try {
         if (acceptBtn) {
@@ -3782,7 +3788,7 @@ async function acceptAiRecommendation() {
                 'Accept': 'application/json',
                 'Authorization': 'Bearer ' + token.trim()
             },
-            body: JSON.stringify({ recommendation_id: recommendationId })
+            body: JSON.stringify({ recommendation_id: recommendationId, force: true, reaccept: true })
         });
 
         if (!resp.ok) {

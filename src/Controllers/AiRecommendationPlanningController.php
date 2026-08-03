@@ -334,9 +334,11 @@ class AiRecommendationPlanningController
 
         AiRecommendationSchemaService::ensure($this->pdo);
         $this->ensureBudgetTable($this->pdo);
+        $this->ensureEventsTable($this->pdo);
 
         $input = $inputOverride ?? (json_decode(file_get_contents('php://input'), true) ?? []);
         $recommendationId = (int) ($input['recommendation_id'] ?? 0);
+        $forceReaccept = !empty($input['force']) || !empty($input['reaccept']);
 
         if ($recommendationId <= 0) {
             http_response_code(422);
@@ -344,10 +346,32 @@ class AiRecommendationPlanningController
         }
 
         try {
-            $this->pdo->beginTransaction();
-
-            $rec = $this->requireRecommendationForAccept($recommendationId);
+            $rec = $this->requireRecommendationForAccept($recommendationId, true);
             $userId = $this->userId($user);
+
+            // Ensure planning items (budget, schedule, staff) exist before accepting
+            $budgetCount = (int) $this->pdo->query("SELECT COUNT(*) FROM campaign_ai_recommendation_budget_items WHERE recommendation_id = " . (int) $recommendationId)->fetchColumn();
+            $phaseCount = (int) $this->pdo->query("SELECT COUNT(*) FROM campaign_ai_recommendation_schedule_phases WHERE recommendation_id = " . (int) $recommendationId)->fetchColumn();
+
+            if ($budgetCount === 0 || $phaseCount === 0 || in_array($rec['planning_status'] ?? '', ['not_generated', 'failed'], true)) {
+                try {
+                    // Generate planning internally
+                    $camp = !empty($rec['converted_campaign_id']) ? $this->findCampaign((int) $rec['converted_campaign_id']) : null;
+                    $this->budgetAllocation->generateEstimatedBudgetFromRecommendation($recommendationId, $rec, $camp);
+                    $participants = $this->staffMatching->getRecommendedParticipantsFromRecommendation($rec, $camp);
+                    $this->staffMatching->storeParticipants($recommendationId, $participants);
+                    $matches = $this->partnerMatching->matchPartnersFromRecommendation($rec, $camp);
+                    $this->partnerMatching->storeMatches($recommendationId, $matches);
+                    $this->partnerMatching->storeSuggestions($recommendationId, $matches['suggestions']);
+                    $this->scheduleService->generateScheduleFromRecommendation($recommendationId, $rec, $camp);
+                    $this->pdo->prepare("UPDATE campaign_department_ai_recommendations SET planning_status = 'completed' WHERE id = ?")->execute([$recommendationId]);
+                    $rec = $this->requireRecommendationForAccept($recommendationId, true);
+                } catch (\Throwable $genErr) {
+                    error_log('On-the-fly planning generation error: ' . $genErr->getMessage());
+                }
+            }
+
+            $this->pdo->beginTransaction();
 
             $campaignId = $this->insertAcceptedCampaign($rec, $userId);
             $budgetItems = $this->insertAcceptedBudgetItems($recommendationId, $campaignId, $userId);
@@ -391,11 +415,19 @@ class AiRecommendationPlanningController
                 'partners_created' => $partners,
             ];
         } catch (RuntimeException $e) {
-            $this->pdo->rollBack();
-            http_response_code(409);
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            $code = http_response_code();
+            if ($code === 200 || $code < 400) {
+                $code = 400;
+            }
+            http_response_code($code);
             return ['error' => $e->getMessage()];
         } catch (\Throwable $e) {
-            $this->pdo->rollBack();
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
             error_log('AI recommendation accept failed: ' . $e->getMessage());
             http_response_code(500);
             return ['error' => 'Acceptance failed: ' . $e->getMessage()];
@@ -431,15 +463,17 @@ class AiRecommendationPlanningController
         }
     }
 
-    private function requireRecommendationForAccept(int $id): array
+    private function requireRecommendationForAccept(int $id, bool $allowReaccept = true): array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM campaign_department_ai_recommendations WHERE id = ? LIMIT 1');
         $stmt->execute([$id]);
         $rec = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$rec) {
+            http_response_code(444);
             throw new RuntimeException('Recommendation not found');
         }
-        if (!empty($rec['converted_campaign_id'])) {
+        if (!empty($rec['converted_campaign_id']) && !$allowReaccept) {
+            http_response_code(409);
             throw new RuntimeException('This recommendation has already been accepted and converted into campaign #' . (int) $rec['converted_campaign_id']);
         }
         return $rec;
@@ -651,12 +685,12 @@ class AiRecommendationPlanningController
 
         $insert = $this->pdo->prepare("
             INSERT INTO campaign_department_events
-                (event_name, event_title, event_type, event_description, description,
+                (name, event_name, event_title, title, event_type, event_description, description,
                  hazard_focus, date, event_date, start_time, event_time, end_time,
-                 location, venue, starts_at, ends_at, event_status, linked_campaign_id,
+                 location, venue, starts_at, ends_at, status, event_status, linked_campaign_id, campaign_id,
                  facilitators, logistics_json, created_by,
                  ai_recommendation_id, ai_sprint_number, ai_objectives)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', 'scheduled', ?, ?, ?, ?, ?, ?, ?, ?)
         ");
 
         $count = 0;
@@ -670,13 +704,16 @@ class AiRecommendationPlanningController
 
             $phaseLocations = $this->decodeList($phase['locations'] ?? null);
             $venue = is_scalar($phaseLocations[0] ?? null) ? (string) $phaseLocations[0] : null;
+            $desc = ($phase['objectives'] ?? '') . ($phase['activities'] ? "\n\nActivities:\n" . $phase['activities'] : '');
 
             $insert->execute([
                 $title,
                 $title,
+                $title,
+                $title,
                 $this->eventTypeFromTitle($title),
-                $phase['objectives'] ?? null,
-                ($phase['objectives'] ?? '') . ($phase['activities'] ? "\n\nActivities:\n" . $phase['activities'] : ''),
+                $desc,
+                $desc,
                 $rec['incident_category'] ?? $rec['main_trend'] ?? $rec['category'] ?? null,
                 $startDate,
                 $startDate,
@@ -687,6 +724,7 @@ class AiRecommendationPlanningController
                 $venue,
                 $startDate . ' 09:00:00',
                 $endDate . ' 17:00:00',
+                $campaignId,
                 $campaignId,
                 $this->jsonOrNull($phase['assigned_staff'] ?? null),
                 $this->jsonOrNull($phase['assigned_partners'] ?? null),
@@ -699,6 +737,91 @@ class AiRecommendationPlanningController
         }
 
         return $count;
+    }
+
+    private function ensureEventsTable(PDO $pdo): void
+    {
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS campaign_department_events (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255) NULL,
+                    event_name VARCHAR(255) NULL,
+                    event_title VARCHAR(255) NULL,
+                    title VARCHAR(255) NULL,
+                    event_type VARCHAR(100) NOT NULL DEFAULT 'seminar',
+                    description TEXT NULL,
+                    event_description TEXT NULL,
+                    hazard_focus VARCHAR(255) NULL,
+                    date DATE NULL,
+                    event_date DATE NULL,
+                    start_time TIME NULL DEFAULT '09:00:00',
+                    event_time TIME NULL DEFAULT '09:00:00',
+                    end_time TIME NULL DEFAULT '17:00:00',
+                    location VARCHAR(255) NULL,
+                    venue VARCHAR(255) NULL,
+                    starts_at DATETIME NULL,
+                    ends_at DATETIME NULL,
+                    status VARCHAR(50) NOT NULL DEFAULT 'scheduled',
+                    event_status VARCHAR(50) NOT NULL DEFAULT 'scheduled',
+                    linked_campaign_id INT NULL,
+                    campaign_id INT NULL,
+                    facilitators LONGTEXT NULL,
+                    logistics_json LONGTEXT NULL,
+                    created_by INT NULL,
+                    ai_recommendation_id INT NULL,
+                    ai_sprint_number INT NULL,
+                    ai_objectives TEXT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_events_linked_campaign (linked_campaign_id),
+                    INDEX idx_events_status (status),
+                    INDEX idx_events_date (event_date)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            ");
+        } catch (\Throwable $e) {
+            error_log('campaign_department_events table creation error: ' . $e->getMessage());
+        }
+
+        $columns = [
+            'name' => 'VARCHAR(255) NULL',
+            'event_name' => 'VARCHAR(255) NULL',
+            'event_title' => 'VARCHAR(255) NULL',
+            'title' => 'VARCHAR(255) NULL',
+            'event_type' => "VARCHAR(100) NOT NULL DEFAULT 'seminar'",
+            'description' => 'TEXT NULL',
+            'event_description' => 'TEXT NULL',
+            'hazard_focus' => 'VARCHAR(255) NULL',
+            'date' => 'DATE NULL',
+            'event_date' => 'DATE NULL',
+            'start_time' => "TIME NULL DEFAULT '09:00:00'",
+            'event_time' => "TIME NULL DEFAULT '09:00:00'",
+            'end_time' => "TIME NULL DEFAULT '17:00:00'",
+            'location' => 'VARCHAR(255) NULL',
+            'venue' => 'VARCHAR(255) NULL',
+            'starts_at' => 'DATETIME NULL',
+            'ends_at' => 'DATETIME NULL',
+            'status' => "VARCHAR(50) NOT NULL DEFAULT 'scheduled'",
+            'event_status' => "VARCHAR(50) NOT NULL DEFAULT 'scheduled'",
+            'linked_campaign_id' => 'INT NULL',
+            'campaign_id' => 'INT NULL',
+            'facilitators' => 'LONGTEXT NULL',
+            'logistics_json' => 'LONGTEXT NULL',
+            'created_by' => 'INT NULL',
+            'ai_recommendation_id' => 'INT NULL',
+            'ai_sprint_number' => 'INT NULL',
+            'ai_objectives' => 'TEXT NULL',
+        ];
+
+        foreach ($columns as $name => $definition) {
+            if (!$this->columnExists('campaign_department_events', $name)) {
+                try {
+                    $pdo->exec("ALTER TABLE campaign_department_events ADD COLUMN {$name} {$definition}");
+                } catch (\Throwable $e) {
+                    error_log('campaign_department_events column ' . $name . ' failed: ' . $e->getMessage());
+                }
+            }
+        }
     }
 
     private function insertAcceptedPartners(int $recommendationId, int $campaignId): int
