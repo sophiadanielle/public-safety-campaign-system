@@ -21,11 +21,6 @@ return [
     ],
     [
         'method' => 'GET',
-        'path' => '/api/v1/campaigns/public',
-        'handler' => [CampaignController::class, 'publicList'],
-    ],
-    [
-        'method' => 'GET',
         'path' => '/api/v1/campaigns/{id}',
         'handler' => [CampaignController::class, 'show'],
         'middleware' => JWTMiddleware::class,

@@ -79,48 +79,6 @@ class CampaignController
         }
     }
 
-    public function publicList(?array $user = null, array $params = []): array
-    {
-        try {
-            $sql = '
-                SELECT id, title, description, category, geographic_scope, status,
-                       start_date, end_date, objectives, location,
-                       assigned_staff, barangay_target_zones, budget, staff_count,
-                       created_at
-                FROM campaign_department_campaigns
-                ORDER BY created_at DESC
-            ';
-            $stmt = $this->pdo->query($sql);
-            $campaigns = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            $result = array_map(function ($c) {
-                return [
-                    'id' => (int) $c['id'],
-                    'title' => $c['title'],
-                    'description' => $c['description'],
-                    'category' => $c['category'],
-                    'geographic_scope' => $c['geographic_scope'],
-                    'status' => $c['status'],
-                    'start_date' => $c['start_date'],
-                    'end_date' => $c['end_date'],
-                    'objectives' => $c['objectives'],
-                    'location' => $c['location'],
-                    'assigned_staff' => $c['assigned_staff'],
-                    'barangay_target_zones' => $c['barangay_target_zones'],
-                    'budget' => $c['budget'],
-                    'staff_count' => $c['staff_count'] ? (int) $c['staff_count'] : null,
-                    'created_at' => $c['created_at'],
-                ];
-            }, $campaigns);
-
-            return ['campaigns' => $result, 'total' => count($result)];
-        } catch (\PDOException $e) {
-            error_log('CampaignController::publicList - Database error: ' . $e->getMessage());
-            http_response_code(500);
-            return ['error' => 'Database error'];
-        }
-    }
-
     public function index(?array $user, array $params = []): array
     {
         // RBAC: All authenticated users can view campaigns (read access)
@@ -1777,7 +1735,7 @@ class CampaignController
                     throw new RuntimeException('A Date Sprint phase has a start date after its end date.');
                 }
                 $sort++;
-                $sprint = max(1, (int)($phase['sprint_number'] ?? $sort));
+                $sprint = $sort; // Keep sprint numbers unique and ordered per campaign.
                 $duration = max(1, (int)floor((strtotime($end) - strtotime($start)) / 86400) + 1);
                 $phaseStartDates[] = $start;
                 $phaseEndDates[] = $end;
@@ -1823,7 +1781,7 @@ class CampaignController
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();
             error_log('CampaignController::saveManualPlanning - ' . $e->getMessage());
             http_response_code(500);
-            return ['error' => $e instanceof RuntimeException ? $e->getMessage() : 'Failed to save manual campaign plan. Apply manual_campaign_planner.sql and try again.'];
+            return ['error' => $e instanceof RuntimeException ? $e->getMessage() : 'Failed to save manual campaign plan: ' . $e->getMessage()];
         }
     }
 
