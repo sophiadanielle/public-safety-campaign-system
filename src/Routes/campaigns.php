@@ -108,6 +108,43 @@ return [
         'handler' => [CampaignController::class, 'destroy'],
         'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
     ],
+
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/campaigns/{id}/manual-planning',
+        'handler' => [CampaignController::class, 'manualPlanning'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/campaigns/{id}/manual-planning',
+        'handler' => [CampaignController::class, 'saveManualPlanning'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/campaigns/{id}/reports',
+        'handler' => [CampaignController::class, 'uploadManualReport'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/campaigns/{id}/reports/{rid}',
+        'handler' => [CampaignController::class, 'uploadManualReport'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'DELETE',
+        'path' => '/api/v1/campaigns/{id}/reports/{rid}',
+        'handler' => [CampaignController::class, 'deleteManualReport'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/manual-campaign-planner/options',
+        'handler' => [CampaignController::class, 'manualPlanningOptions'],
+        'middleware' => JWTMiddleware::class,
+    ],
 ];
 
 

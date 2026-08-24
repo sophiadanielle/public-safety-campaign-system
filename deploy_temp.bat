@@ -1,0 +1,1 @@
+@"C:\Program Files (x86)\Bitvise SSH Client\sexec.exe" root@72.60.209.226:22 -pw="YsqnXk6q#145" -hostKeyFp="rE3t9jaBE9gSPFS1iJAGFjSIIpI1EB0j+P+kBNGlH7g" cmd "cd /var/www/html/campaign && git pull origin main 2>&1"

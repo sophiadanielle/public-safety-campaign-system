@@ -1544,6 +1544,412 @@ class CampaignController
             return ['error' => 'Failed to delete campaign: ' . $e->getMessage()];
         }
     }
+
+    public function manualPlanningOptions(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        try {
+            $staff = $this->pdo->query('SELECT id, name, role, qty FROM campaign_department_reference_staff ORDER BY name ASC')->fetchAll(PDO::FETCH_ASSOC);
+            $partners = $this->pdo->query("SELECT id, name, organization_type FROM campaign_department_partners WHERE COALESCE(status,'active') <> 'archived' ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $segments = $this->pdo->query('SELECT id, segment_name, geographic_scope, location_reference, sector_type, risk_level, is_archived FROM campaign_department_audience_segments ORDER BY is_archived ASC, segment_name ASC')->fetchAll(PDO::FETCH_ASSOC);
+            return ['data' => ['reference_staff' => $staff, 'available_partners' => $partners, 'audience_segments' => $segments]];
+        } catch (\PDOException $e) {
+            error_log('CampaignController::manualPlanningOptions - ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Unable to load manual planner reference data'];
+        }
+    }
+
+    /**
+     * Return all data used by the 8-step manual campaign planner.
+     */
+    public function manualPlanning(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+
+        $campaignId = (int)($params['id'] ?? 0);
+        $this->findCampaign($campaignId);
+
+        try {
+            $reportsStmt = $this->pdo->prepare('SELECT * FROM campaign_department_campaign_reports WHERE campaign_id = :cid ORDER BY created_at DESC, id DESC');
+            $reportsStmt->execute(['cid' => $campaignId]);
+            $reports = $reportsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $budgetsStmt = $this->pdo->prepare("SELECT *, (quantity * unit_cost * COALESCE(NULLIF(sessions_or_days, 0), 1)) AS total_cost FROM campaign_budgets WHERE campaign_id = :cid AND COALESCE(is_archived,0)=0 ORDER BY sort_order ASC, id ASC");
+            $budgetsStmt->execute(['cid' => $campaignId]);
+            $budgets = $budgetsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $audienceStmt = $this->pdo->prepare('SELECT ca.segment_id, s.segment_name, s.sector_type, s.location_reference FROM campaign_department_campaign_audience ca LEFT JOIN campaign_department_audience_segments s ON s.id = ca.segment_id WHERE ca.campaign_id = :cid ORDER BY s.segment_name ASC');
+            $audienceStmt->execute(['cid' => $campaignId]);
+            $audiences = $audienceStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $participantsStmt = $this->pdo->prepare('SELECT * FROM campaign_department_campaign_participants WHERE campaign_id = :cid ORDER BY id ASC');
+            $participantsStmt->execute(['cid' => $campaignId]);
+            $participants = $participantsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $partnersStmt = $this->pdo->prepare("SELECT pe.id, pe.partner_id, pe.engagement_type, pe.notes, p.name AS partner_name, p.organization_type FROM campaign_department_partner_engagements pe LEFT JOIN campaign_department_partners p ON p.id = pe.partner_id WHERE pe.campaign_id = :cid AND pe.engagement_type = 'manual_planner' ORDER BY pe.id ASC");
+            $partnersStmt->execute(['cid' => $campaignId]);
+            $partnerRows = $partnersStmt->fetchAll(PDO::FETCH_ASSOC);
+            $partners = [];
+            foreach ($partnerRows as $row) {
+                $meta = [];
+                if (!empty($row['notes'])) {
+                    $decoded = json_decode((string)$row['notes'], true);
+                    if (is_array($decoded)) $meta = $decoded;
+                }
+                $partners[] = [
+                    'id' => (int)$row['id'],
+                    'partner_id' => (int)$row['partner_id'],
+                    'partner_name' => $row['partner_name'],
+                    'organization_type' => $row['organization_type'],
+                    'role' => $meta['role'] ?? '',
+                    'engagement_type' => $meta['engagement_type'] ?? 'collaboration',
+                    'notes' => $meta['notes'] ?? '',
+                ];
+            }
+
+            $phasesStmt = $this->pdo->prepare('SELECT * FROM campaign_department_campaign_schedule_phases WHERE campaign_id = :cid ORDER BY sort_order ASC, sprint_number ASC, id ASC');
+            $phasesStmt->execute(['cid' => $campaignId]);
+            $phases = $phasesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($phases as &$phase) {
+                foreach (['activities','assigned_staff','assigned_partners','locations','dependencies'] as $jsonField) {
+                    if (isset($phase[$jsonField]) && is_string($phase[$jsonField])) {
+                        $decoded = json_decode($phase[$jsonField], true);
+                        $phase[$jsonField] = is_array($decoded) ? $decoded : [];
+                    }
+                }
+            }
+            unset($phase);
+
+            $staff = $this->pdo->query('SELECT id, name, role, qty FROM campaign_department_reference_staff ORDER BY name ASC')->fetchAll(PDO::FETCH_ASSOC);
+            $availablePartners = $this->pdo->query("SELECT id, name, organization_type FROM campaign_department_partners WHERE COALESCE(status,'active') <> 'archived' ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+            $segments = $this->pdo->query('SELECT id, segment_name, geographic_scope, location_reference, sector_type, risk_level, is_archived FROM campaign_department_audience_segments ORDER BY is_archived ASC, segment_name ASC')->fetchAll(PDO::FETCH_ASSOC);
+
+            return ['data' => [
+                'reports' => $reports,
+                'budget_items' => $budgets,
+                'audiences' => $audiences,
+                'participants' => $participants,
+                'partners' => $partners,
+                'schedule_phases' => $phases,
+                'reference_staff' => $staff,
+                'available_partners' => $availablePartners,
+                'audience_segments' => $segments,
+            ]];
+        } catch (\PDOException $e) {
+            error_log('CampaignController::manualPlanning - ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => 'Manual campaign planner database tables are missing or unavailable. Apply manual_campaign_planner.sql first.'];
+        }
+    }
+
+    /** Save Steps 3-7 of the manual planner in one transaction. */
+    public function saveManualPlanning(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+
+        $campaignId = (int)($params['id'] ?? 0);
+        $this->findCampaign($campaignId);
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $budgetItems = is_array($input['budget_items'] ?? null) ? $input['budget_items'] : [];
+        $segmentIds = is_array($input['segment_ids'] ?? null) ? $input['segment_ids'] : [];
+        $participants = is_array($input['participants'] ?? null) ? $input['participants'] : [];
+        $partners = is_array($input['partners'] ?? null) ? $input['partners'] : [];
+        $phases = is_array($input['schedule_phases'] ?? null) ? $input['schedule_phases'] : [];
+        $userId = isset($user['id']) ? (int)$user['id'] : null;
+
+        try {
+            $this->pdo->beginTransaction();
+
+            // Target audience: the planner is authoritative for campaign audience assignments.
+            $stmt = $this->pdo->prepare('DELETE FROM campaign_department_campaign_audience WHERE campaign_id = :cid');
+            $stmt->execute(['cid' => $campaignId]);
+            $insertAudience = $this->pdo->prepare('INSERT INTO campaign_department_campaign_audience (campaign_id, segment_id) VALUES (:cid, :sid)');
+            foreach (array_values(array_unique(array_filter(array_map('intval', $segmentIds)))) as $segmentId) {
+                if ($segmentId > 0) $insertAudience->execute(['cid' => $campaignId, 'sid' => $segmentId]);
+            }
+
+            // Replace manual budget items only; AI-converted rows are preserved.
+            $stmt = $this->pdo->prepare('DELETE FROM campaign_budgets WHERE campaign_id = :cid AND source_recommendation_id IS NULL');
+            $stmt->execute(['cid' => $campaignId]);
+            $insertBudget = $this->pdo->prepare('INSERT INTO campaign_budgets (campaign_id,item_name,item_type,quantity,unit_cost,funding_source,notes,created_by,is_archived,category,item_description,sessions_or_days,unit_label,is_estimate,sort_order) VALUES (:cid,:name,:type,:qty,:cost,:funding,:notes,:uid,0,:category,:description,:sessions,:unit_label,0,:sort_order)');
+            $totalBudget = 0.0;
+            $sort = 0;
+            foreach ($budgetItems as $item) {
+                $name = trim((string)($item['item_name'] ?? ''));
+                if ($name === '') continue;
+                $qty = max(1, (int)($item['quantity'] ?? 1));
+                $cost = max(0, (float)($item['unit_cost'] ?? 0));
+                $sessions = max(1, (int)($item['sessions_or_days'] ?? 1));
+                $sort++;
+                $totalBudget += $qty * $cost * $sessions;
+                $insertBudget->execute([
+                    'cid' => $campaignId,
+                    'name' => $name,
+                    'type' => trim((string)($item['item_type'] ?? 'consumable')) ?: 'consumable',
+                    'qty' => $qty,
+                    'cost' => $cost,
+                    'funding' => trim((string)($item['funding_source'] ?? 'government_allocated')) ?: 'government_allocated',
+                    'notes' => trim((string)($item['notes'] ?? '')) ?: null,
+                    'uid' => $userId,
+                    'category' => trim((string)($item['category'] ?? '')) ?: null,
+                    'description' => trim((string)($item['item_description'] ?? '')) ?: null,
+                    'sessions' => $sessions,
+                    'unit_label' => trim((string)($item['unit_label'] ?? '')) ?: null,
+                    'sort_order' => $sort,
+                ]);
+            }
+
+            // Include any preserved AI-converted budget rows in the campaign-level compatibility total.
+            $totalStmt = $this->pdo->prepare('SELECT COALESCE(SUM(quantity * unit_cost * COALESCE(NULLIF(sessions_or_days,0),1)),0) FROM campaign_budgets WHERE campaign_id = :cid AND COALESCE(is_archived,0)=0');
+            $totalStmt->execute(['cid' => $campaignId]);
+            $totalBudget = (float)$totalStmt->fetchColumn();
+
+            // Manual participants.
+            $stmt = $this->pdo->prepare('DELETE FROM campaign_department_campaign_participants WHERE campaign_id = :cid');
+            $stmt->execute(['cid' => $campaignId]);
+            $insertParticipant = $this->pdo->prepare('INSERT INTO campaign_department_campaign_participants (campaign_id,staff_id,staff_name_snapshot,staff_role_snapshot,selected_qty,assigned_activity,deployment_location,notes,created_by) VALUES (:cid,:staff_id,:name,:role,:qty,:activity,:location,:notes,:uid)');
+            $staffNames = [];
+            $staffCount = 0;
+            foreach ($participants as $participant) {
+                $staffId = (int)($participant['staff_id'] ?? 0);
+                if ($staffId <= 0) continue;
+                $staffStmt = $this->pdo->prepare('SELECT name, role, qty FROM campaign_department_reference_staff WHERE id = :id LIMIT 1');
+                $staffStmt->execute(['id' => $staffId]);
+                $staffRow = $staffStmt->fetch(PDO::FETCH_ASSOC);
+                if (!$staffRow) continue;
+                $selectedQty = max(1, (int)($participant['selected_qty'] ?? 1));
+                $availableQty = max(1, (int)($staffRow['qty'] ?? 1));
+                $selectedQty = min($selectedQty, $availableQty);
+                $staffCount += $selectedQty;
+                $staffNames[] = $staffRow['name'];
+                $insertParticipant->execute([
+                    'cid' => $campaignId,
+                    'staff_id' => $staffId,
+                    'name' => $staffRow['name'],
+                    'role' => $staffRow['role'],
+                    'qty' => $selectedQty,
+                    'activity' => trim((string)($participant['assigned_activity'] ?? '')) ?: null,
+                    'location' => trim((string)($participant['deployment_location'] ?? '')) ?: null,
+                    'notes' => trim((string)($participant['notes'] ?? '')) ?: null,
+                    'uid' => $userId,
+                ]);
+            }
+
+            // Manual partner selections are stored in the existing engagements table and tagged safely.
+            $stmt = $this->pdo->prepare("DELETE FROM campaign_department_partner_engagements WHERE campaign_id = :cid AND engagement_type = 'manual_planner'");
+            $stmt->execute(['cid' => $campaignId]);
+            $insertPartner = $this->pdo->prepare("INSERT INTO campaign_department_partner_engagements (partner_id,campaign_id,event_id,engagement_type,notes) VALUES (:pid,:cid,NULL,'manual_planner',:notes)");
+            foreach ($partners as $partner) {
+                $partnerId = (int)($partner['partner_id'] ?? 0);
+                if ($partnerId <= 0) continue;
+                $meta = [
+                    'role' => trim((string)($partner['role'] ?? '')),
+                    'engagement_type' => trim((string)($partner['engagement_type'] ?? 'collaboration')) ?: 'collaboration',
+                    'notes' => trim((string)($partner['notes'] ?? '')),
+                ];
+                $insertPartner->execute(['pid' => $partnerId, 'cid' => $campaignId, 'notes' => json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
+            }
+
+            // Manual Date Sprint phases.
+            $stmt = $this->pdo->prepare('DELETE FROM campaign_department_campaign_schedule_phases WHERE campaign_id = :cid');
+            $stmt->execute(['cid' => $campaignId]);
+            $insertPhase = $this->pdo->prepare('INSERT INTO campaign_department_campaign_schedule_phases (campaign_id,sprint_number,sprint_title,start_date,end_date,duration_days,objectives,activities,assigned_staff,assigned_partners,locations,phase_budget,outputs,completion_criteria,dependencies,status,sort_order,created_by) VALUES (:cid,:sprint,:title,:start_date,:end_date,:duration,:objectives,:activities,:staff,:partners,:locations,:budget,:outputs,:criteria,:dependencies,:status,:sort_order,:uid)');
+            $phaseStartDates = [];
+            $phaseEndDates = [];
+            $sort = 0;
+            foreach ($phases as $phase) {
+                $title = trim((string)($phase['sprint_title'] ?? ''));
+                $start = trim((string)($phase['start_date'] ?? ''));
+                $end = trim((string)($phase['end_date'] ?? ''));
+                if ($title === '' || $start === '' || $end === '') continue;
+                if (strtotime($start) > strtotime($end)) {
+                    throw new RuntimeException('A Date Sprint phase has a start date after its end date.');
+                }
+                $sort++;
+                $sprint = max(1, (int)($phase['sprint_number'] ?? $sort));
+                $duration = max(1, (int)floor((strtotime($end) - strtotime($start)) / 86400) + 1);
+                $phaseStartDates[] = $start;
+                $phaseEndDates[] = $end;
+                $json = static fn($v) => json_encode(is_array($v) ? array_values($v) : [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $insertPhase->execute([
+                    'cid' => $campaignId,
+                    'sprint' => $sprint,
+                    'title' => $title,
+                    'start_date' => $start,
+                    'end_date' => $end,
+                    'duration' => $duration,
+                    'objectives' => trim((string)($phase['objectives'] ?? '')) ?: null,
+                    'activities' => $json($phase['activities'] ?? []),
+                    'staff' => $json($phase['assigned_staff'] ?? []),
+                    'partners' => $json($phase['assigned_partners'] ?? []),
+                    'locations' => $json($phase['locations'] ?? []),
+                    'budget' => max(0, (float)($phase['phase_budget'] ?? 0)),
+                    'outputs' => trim((string)($phase['outputs'] ?? '')) ?: null,
+                    'criteria' => trim((string)($phase['completion_criteria'] ?? '')) ?: null,
+                    'dependencies' => $json($phase['dependencies'] ?? []),
+                    'status' => in_array(($phase['status'] ?? 'planned'), ['planned','confirmed','completed'], true) ? $phase['status'] : 'planned',
+                    'sort_order' => $sort,
+                    'uid' => $userId,
+                ]);
+            }
+
+            $campaignUpdate = ['budget' => $totalBudget, 'staff_count' => $staffCount, 'assigned_staff' => $staffNames ? json_encode(array_values(array_unique($staffNames))) : null, 'cid' => $campaignId];
+            $dateSql = '';
+            if ($phaseStartDates && $phaseEndDates) {
+                sort($phaseStartDates);
+                sort($phaseEndDates);
+                $campaignUpdate['start_date'] = $phaseStartDates[0];
+                $campaignUpdate['end_date'] = $phaseEndDates[count($phaseEndDates)-1];
+                $dateSql = ', start_date = :start_date, end_date = :end_date';
+            }
+            $stmt = $this->pdo->prepare('UPDATE campaign_department_campaigns SET budget = :budget, staff_count = :staff_count, assigned_staff = :assigned_staff' . $dateSql . ', updated_at = CURRENT_TIMESTAMP WHERE id = :cid');
+            $stmt->execute($campaignUpdate);
+
+            $this->pdo->commit();
+            $this->logAudit($userId, 'campaign', 'manual_plan_update', $campaignId, ['budget_items' => count($budgetItems), 'participants' => count($participants), 'partners' => count($partners), 'schedule_phases' => count($phases)]);
+            return ['message' => 'Manual campaign plan saved', 'campaign_id' => $campaignId, 'budget_total' => $totalBudget, 'staff_count' => $staffCount];
+        } catch (\Throwable $e) {
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            error_log('CampaignController::saveManualPlanning - ' . $e->getMessage());
+            http_response_code(500);
+            return ['error' => $e instanceof RuntimeException ? $e->getMessage() : 'Failed to save manual campaign plan. Apply manual_campaign_planner.sql and try again.'];
+        }
+    }
+
+    /** Upload or replace a supporting report for Step 2. */
+    public function uploadManualReport(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        $campaignId = (int)($params['id'] ?? 0);
+        $this->findCampaign($campaignId);
+        $reportId = isset($params['rid']) ? (int)$params['rid'] : 0;
+        $title = trim((string)($_POST['report_title'] ?? ''));
+        $type = trim((string)($_POST['report_type'] ?? 'Other')) ?: 'Other';
+        $reportDate = trim((string)($_POST['report_date'] ?? '')) ?: null;
+        $location = trim((string)($_POST['location'] ?? '')) ?: null;
+        $description = trim((string)($_POST['description'] ?? '')) ?: null;
+        if ($title === '') {
+            http_response_code(422);
+            return ['error' => 'Report title is required'];
+        }
+
+        $existing = null;
+        if ($reportId > 0) {
+            $stmt = $this->pdo->prepare('SELECT * FROM campaign_department_campaign_reports WHERE id = :rid AND campaign_id = :cid LIMIT 1');
+            $stmt->execute(['rid' => $reportId, 'cid' => $campaignId]);
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$existing) {
+                http_response_code(404);
+                return ['error' => 'Report not found'];
+            }
+        }
+
+        $hasFile = isset($_FILES['report_file']) && is_array($_FILES['report_file']) && ($_FILES['report_file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        if (!$existing && !$hasFile) {
+            http_response_code(422);
+            return ['error' => 'A report file is required'];
+        }
+
+        $fileMeta = $existing ?: [];
+        if ($hasFile) {
+            $file = $_FILES['report_file'];
+            if (($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+                http_response_code(422);
+                return ['error' => 'File upload failed'];
+            }
+            if (($file['size'] ?? 0) > 10 * 1024 * 1024) {
+                http_response_code(422);
+                return ['error' => 'Report file must be 10 MB or smaller'];
+            }
+            $original = basename((string)$file['name']);
+            $ext = strtolower(pathinfo($original, PATHINFO_EXTENSION));
+            $allowed = ['pdf','doc','docx','xls','xlsx','csv','jpg','jpeg','png'];
+            if (!in_array($ext, $allowed, true)) {
+                http_response_code(422);
+                return ['error' => 'Unsupported report file type'];
+            }
+            $mime = function_exists('mime_content_type') ? (mime_content_type($file['tmp_name']) ?: ($file['type'] ?? 'application/octet-stream')) : ($file['type'] ?? 'application/octet-stream');
+            $stored = date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+            $relativeDir = 'public/uploads/campaign_reports/campaign_' . $campaignId;
+            $absoluteDir = dirname(__DIR__, 2) . '/' . $relativeDir;
+            if (!is_dir($absoluteDir) && !mkdir($absoluteDir, 0775, true) && !is_dir($absoluteDir)) {
+                throw new RuntimeException('Unable to create report upload directory');
+            }
+            $absolutePath = $absoluteDir . '/' . $stored;
+            if (!move_uploaded_file($file['tmp_name'], $absolutePath)) {
+                throw new RuntimeException('Unable to save uploaded report');
+            }
+            if ($existing && !empty($existing['file_path'])) {
+                $old = dirname(__DIR__, 2) . '/' . ltrim((string)$existing['file_path'], '/');
+                if (is_file($old)) @unlink($old);
+            }
+            $fileMeta = [
+                'original_file_name' => $original,
+                'stored_file_name' => $stored,
+                'file_path' => $relativeDir . '/' . $stored,
+                'mime_type' => $mime,
+                'file_size' => (int)$file['size'],
+            ];
+        }
+
+        if ($existing) {
+            $stmt = $this->pdo->prepare('UPDATE campaign_department_campaign_reports SET report_title=:title, report_type=:type, report_date=:report_date, location=:location, description=:description, original_file_name=:original, stored_file_name=:stored, file_path=:path, mime_type=:mime, file_size=:size, updated_at=CURRENT_TIMESTAMP WHERE id=:rid AND campaign_id=:cid');
+            $stmt->execute([
+                'title'=>$title,'type'=>$type,'report_date'=>$reportDate,'location'=>$location,'description'=>$description,
+                'original'=>$fileMeta['original_file_name'],'stored'=>$fileMeta['stored_file_name'],'path'=>$fileMeta['file_path'],'mime'=>$fileMeta['mime_type'] ?? null,'size'=>$fileMeta['file_size'] ?? 0,
+                'rid'=>$reportId,'cid'=>$campaignId
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare('INSERT INTO campaign_department_campaign_reports (campaign_id,report_title,report_type,report_date,location,description,original_file_name,stored_file_name,file_path,mime_type,file_size,uploaded_by) VALUES (:cid,:title,:type,:report_date,:location,:description,:original,:stored,:path,:mime,:size,:uid)');
+            $stmt->execute([
+                'cid'=>$campaignId,'title'=>$title,'type'=>$type,'report_date'=>$reportDate,'location'=>$location,'description'=>$description,
+                'original'=>$fileMeta['original_file_name'],'stored'=>$fileMeta['stored_file_name'],'path'=>$fileMeta['file_path'],'mime'=>$fileMeta['mime_type'] ?? null,'size'=>$fileMeta['file_size'] ?? 0,'uid'=>$user['id'] ?? null
+            ]);
+            $reportId = (int)$this->pdo->lastInsertId();
+        }
+
+        $stmt = $this->pdo->prepare('SELECT * FROM campaign_department_campaign_reports WHERE id = :rid');
+        $stmt->execute(['rid' => $reportId]);
+        return ['message' => $existing ? 'Report updated' : 'Report uploaded', 'data' => $stmt->fetch(PDO::FETCH_ASSOC)];
+    }
+
+    public function deleteManualReport(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+        $campaignId = (int)($params['id'] ?? 0);
+        $reportId = (int)($params['rid'] ?? 0);
+        $this->findCampaign($campaignId);
+        $stmt = $this->pdo->prepare('SELECT file_path FROM campaign_department_campaign_reports WHERE id=:rid AND campaign_id=:cid LIMIT 1');
+        $stmt->execute(['rid'=>$reportId,'cid'=>$campaignId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            http_response_code(404);
+            return ['error' => 'Report not found'];
+        }
+        $stmt = $this->pdo->prepare('DELETE FROM campaign_department_campaign_reports WHERE id=:rid AND campaign_id=:cid');
+        $stmt->execute(['rid'=>$reportId,'cid'=>$campaignId]);
+        $path = dirname(__DIR__, 2) . '/' . ltrim((string)$row['file_path'], '/');
+        if (is_file($path)) @unlink($path);
+        return ['message' => 'Report deleted'];
+    }
+
 }
 
 

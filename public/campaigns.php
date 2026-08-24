@@ -1231,15 +1231,14 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     // Forms are hidden via PHP conditionals below
     ?>
 
-    <!-- Plan New Campaign Modal -->
-    <?php if (!$isViewer): ?>
+    <!-- Plan New Campaign Modal / Shared View-Edit Planner -->
     <div id="planCampaignModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; overflow-y: auto; padding: 20px;">
         <div class="modal-content" style="background: white; max-width: 900px; margin: 20px auto; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative;">
             <!-- Modal Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 16px 16px 0 0;">
                 <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 10px;">
                     <i class="fas fa-bullhorn" style="color: #4c8a89;"></i>
-                    Plan New Campaign
+                    <span id="manualPlannerModalTitle">Plan New Campaign</span>
                 </h2>
                 <div style="display: flex; gap: 8px;">
                     <button type="button" class="btn btn-secondary" onclick="showCampaignHowItWorks()" style="padding: 8px 14px; font-size: 12px;">
@@ -1264,132 +1263,146 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     </div>
                 </div>
                 
+                <style>
+                    #planCampaignModal .modal-content { max-width: 1180px !important; }
+                    .manual-plan-tabs { display:flex; gap:8px; overflow-x:auto; padding:4px 0 14px; margin-bottom:18px; border-bottom:1px solid #e2e8f0; }
+                    .manual-plan-tab { border:1px solid #cbd5e1; background:#fff; color:#475569; border-radius:10px; padding:10px 12px; min-width:135px; cursor:pointer; font-size:12px; font-weight:700; white-space:nowrap; }
+                    .manual-plan-tab.active { background:#4c8a89; color:#fff; border-color:#4c8a89; }
+                    .manual-plan-tab.done { border-color:#86efac; background:#f0fdf4; color:#166534; }
+                    .manual-plan-step { display:none; }
+                    .manual-plan-step.active { display:block; }
+                    .planner-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+                    .planner-grid .full { grid-column:1/-1; }
+                    .planner-card { border:1px solid #e2e8f0; border-radius:12px; padding:16px; background:#fff; }
+                    .planner-card h3 { margin:0 0 12px; color:#0f172a; font-size:16px; }
+                    .planner-help { color:#64748b; font-size:12px; line-height:1.5; margin:0 0 14px; }
+                    .planner-table-wrap { overflow-x:auto; border:1px solid #e2e8f0; border-radius:10px; }
+                    .planner-table { width:100%; border-collapse:collapse; min-width:780px; font-size:12px; }
+                    .planner-table th { background:#f8fafc; color:#475569; text-align:left; padding:10px; border-bottom:1px solid #e2e8f0; }
+                    .planner-table td { padding:8px 10px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+                    .planner-table input,.planner-table select,.planner-table textarea { width:100%; box-sizing:border-box; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; }
+                    .planner-empty { padding:18px; text-align:center; color:#94a3b8; font-size:12px; }
+                    .planner-footer { position:sticky; bottom:-24px; background:#fff; border-top:1px solid #e2e8f0; margin:22px -24px -24px; padding:16px 24px; display:flex; justify-content:space-between; align-items:center; gap:12px; z-index:3; }
+                    .planner-footer-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+                    .review-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+                    .review-box { border:1px solid #e2e8f0; border-radius:10px; padding:14px; background:#f8fafc; }
+                    .review-box strong { display:block; color:#0f172a; margin-bottom:6px; }
+                    .required-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:999px; background:#fee2e2; color:#991b1b; font-size:11px; font-weight:700; }
+                    @media(max-width:800px){ .planner-grid,.review-grid{grid-template-columns:1fr;} .planner-grid .full{grid-column:auto;} }
+                </style>
                 <form id="planningForm">
-            <div class="form-grid">
-                <div class="form-field">
-                    <label for="title">Campaign Title *</label>
-                    <input type="text" class="standard-input" id="title" placeholder="Enter campaign title..." required style="width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:8px; font-size:14px;">
-                </div>
-                <div class="form-field">
-                    <label for="category">Category *</label>
-                    <select class="standard-select" id="category" required>
-                        <option value="">Select category...</option>
-                        <option value="fire">Fire</option>
-                        <option value="flood">Flood</option>
-                        <option value="earthquake">Earthquake</option>
-                        <option value="health">Health</option>
-                        <option value="road safety">Road Safety</option>
-                        <option value="general">General</option>
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label for="geographic_scope">Geographic Scope / Barangay</label>
-                    <select class="standard-select" id="geographic_scope">
-                        <option value="">Select barangay...</option>
-                    </select>
-                </div>
-                <!-- Status field is hidden - role-based workflow enforced in backend -->
-                <!-- Staff: Creates as Draft (automatic) -->
-                <!-- Secretary: Can forward Draft → Pending via button in campaign details -->
-                <!-- Kagawad: Can review but cannot change status -->
-                <!-- Captain: Can approve Pending → Approved via button in campaign details -->
-                <input type="hidden" id="status" value="draft">
-                
-                <div class="form-field">
-                    <label for="start_datetime">Start Date & Time *</label>
-                    <input id="start_datetime" type="datetime-local">
-                    <input id="start_date" type="hidden">
-                    <input id="start_time" type="hidden">
-                </div>
-                <div class="form-field">
-                    <label for="end_datetime">End Date & Time *</label>
-                    <input id="end_datetime" type="datetime-local">
-                    <input id="end_date" type="hidden">
-                    <input id="end_time" type="hidden">
-                </div>
-                <div class="form-field" id="final_schedule_field" style="display: none;">
-                    <label for="final_schedule_display" style="display: flex; align-items: center; gap: 6px; font-weight: 600;">
-                        <i class="fas fa-calendar-check" style="color: #10b981;"></i>
-                        Final Schedule (Generated via AI Optimization)
-                    </label>
-                    <div id="final_schedule_display" style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 14px 16px; color: #065f46; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                        <i class="fas fa-clock" style="color: #10b981;"></i>
-                        <span id="final_schedule_value">-</span>
+                    <input type="hidden" id="status" value="draft">
+                    <input type="hidden" id="start_date"><input type="hidden" id="start_time"><input type="hidden" id="end_date"><input type="hidden" id="end_time">
+
+                    <div class="manual-plan-tabs" id="manualPlanTabs">
+                        <button type="button" class="manual-plan-tab active" data-step="1" onclick="manualGoToStep(1)">1. Overall Summary</button>
+                        <button type="button" class="manual-plan-tab" data-step="2" onclick="manualGoToStep(2)">2. Reports</button>
+                        <button type="button" class="manual-plan-tab" data-step="3" onclick="manualGoToStep(3)">3. Locations & Audience</button>
+                        <button type="button" class="manual-plan-tab" data-step="4" onclick="manualGoToStep(4)">4. Budget Breakdown</button>
+                        <button type="button" class="manual-plan-tab" data-step="5" onclick="manualGoToStep(5)">5. Participants</button>
+                        <button type="button" class="manual-plan-tab" data-step="6" onclick="manualGoToStep(6)">6. Partners</button>
+                        <button type="button" class="manual-plan-tab" data-step="7" onclick="manualGoToStep(7)">7. Date Sprint</button>
+                        <button type="button" class="manual-plan-tab" data-step="8" onclick="manualGoToStep(8)">8. Review & Submit</button>
                     </div>
-                    <small style="display: block; margin-top: 6px; color: #64748b; font-size: 12px; line-height: 1.5;">
-                        <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
-                        This schedule was generated through the AI-Powered Deployment Optimization workflow.
-                    </small>
-                </div>
-                <div class="form-field">
-                    <label for="location">Location</label>
-                    <select class="standard-select" id="location">
-                        <option value="">Select location...</option>
-                        <option value="Barangay Hall">Barangay Hall</option>
-                        <option value="Covered Court">Covered Court</option>
-                        <option value="Barangay Gymnasium">Barangay Gymnasium</option>
-                        <option value="Elementary School Grounds">Elementary School Grounds</option>
-                        <option value="High School Auditorium">High School Auditorium</option>
-                        <option value="Multi-purpose Hall">Multi-purpose Hall</option>
-                        <option value="Community Center">Community Center</option>
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label for="budget" style="display: flex; align-items: center; gap: 8px;">
-                        Budget (PHP)
-                        <button type="button" id="toggleBudgetBtn" onclick="toggleBudgetVisibility()" style="background: #e2e8f0; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;" title="Show/Hide Budget">
-                            <i class="fas fa-eye-slash" id="budgetEyeIcon"></i>
-                        </button>
-                    </label>
-                    <input id="budget" type="number" step="0.01" placeholder="50000.00" style="display: none;">
-                    <div id="budgetHiddenPlaceholder" style="padding: 12px 16px; background: #f1f5f9; border: 2px solid #e2e8f0; border-radius: 12px; color: #64748b; font-size: 14px;">••••••</div>
-                </div>
-                <div class="form-field">
-                    <label for="staff_count">Staff Count</label>
-                    <input id="staff_count" type="number" placeholder="5">
-                </div>
-                <div class="form-field">
-                    <label for="barangay_zones">Barangay Target Zones</label>
-                    <select class="standard-select" id="barangay_zones">
-                        <option value="">Select barangay zone...</option>
-                    </select>
-                </div>
-                <div class="form-field full-width">
-                    <label for="objectives">Objectives</label>
-                    <textarea id="objectives" rows="3" placeholder="Primary objectives and goals for this campaign..."></textarea>
-                </div>
-                <div class="form-field full-width">
-                    <label for="description">Description</label>
-                    <textarea id="description" rows="3" placeholder="Detailed description of the campaign..."></textarea>
-                </div>
-                <div class="form-field full-width" style="margin-bottom: 24px;">
-                    <label for="assigned_staff" style="display: flex; align-items: center; gap: 6px; margin-bottom: 10px; font-weight: 600;">
-                        <i class="fas fa-users" style="color: #667eea;"></i>
-                        Assigned Staff
-                    </label>
-                    <div class="multi-select-container assigned-staff-select">
-                        <div class="multi-select-tags" id="assigned_staff_tags"></div>
-                        <select class="multi-select-dropdown" id="assigned_staff" name="assigned_staff[]" multiple size="3">
-                        </select>
+
+                    <section class="manual-plan-step active" data-step="1">
+                        <div class="planner-card">
+                            <h3><i class="fas fa-file-alt" style="color:#4c8a89"></i> Overall Summary</h3>
+                            <p class="planner-help">Enter the campaign details manually. The campaign remains <strong>Draft</strong> and still follows the existing Secretary/Captain approval workflow.</p>
+                            <div class="planner-grid">
+                                <div class="form-field"><label for="title">Campaign Title *</label><input type="text" id="title" required placeholder="Enter campaign title..."></div>
+                                <div class="form-field"><label for="category">Category *</label><input id="category" list="manualCategoryOptions" required placeholder="e.g. Crime, Disaster, Fire Safety"><datalist id="manualCategoryOptions"><option value="crime"><option value="disaster"><option value="fire"><option value="flood"><option value="earthquake"><option value="health"><option value="road safety"><option value="general"></datalist></div>
+                                <div class="form-field"><label for="start_datetime">Start Date & Time</label><input id="start_datetime" type="datetime-local"></div>
+                                <div class="form-field"><label for="end_datetime">End Date & Time</label><input id="end_datetime" type="datetime-local"></div>
+                                <div class="form-field full"><label for="objectives">Objectives *</label><textarea id="objectives" rows="4" placeholder="Primary objectives and goals..."></textarea></div>
+                                <div class="form-field full"><label for="description">Description *</label><textarea id="description" rows="4" placeholder="Detailed campaign description..."></textarea></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="manual-plan-step" data-step="2">
+                        <div class="planner-card">
+                            <h3><i class="fas fa-upload" style="color:#0ea5e9"></i> Supporting Reports <span class="required-chip">At least 1 required</span></h3>
+                            <p class="planner-help">Upload the reports used as evidence for this manual plan. Supported: PDF, DOC/DOCX, XLS/XLSX, CSV, JPG/JPEG, PNG. Maximum 10 MB each.</p>
+                            <div class="planner-grid" style="margin-bottom:14px;">
+                                <div class="form-field"><label>Report Title *</label><input id="manual_report_title" type="text" placeholder="e.g. Crime Incident Assessment"></div>
+                                <div class="form-field"><label>Report Type *</label><select id="manual_report_type"><option>Crime Report</option><option>Disaster Report</option><option>Incident Report</option><option>Assessment</option><option>Survey</option><option>Other</option></select></div>
+                                <div class="form-field"><label>Report Date</label><input id="manual_report_date" type="date"></div>
+                                <div class="form-field"><label>Location / Barangay</label><input id="manual_report_location" type="text" placeholder="Barangay / area"></div>
+                                <div class="form-field full"><label>Description / Notes</label><textarea id="manual_report_description" rows="2"></textarea></div>
+                                <div class="form-field full"><label>File <span id="manualReportFileRequirement">*</span></label><input id="manual_report_file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png"></div>
+                            </div>
+                            <div style="display:flex; gap:8px; margin-bottom:14px;"><button type="button" data-planner-edit-action="1" class="btn btn-primary" onclick="manualAddOrUpdateReport()"><i class="fas fa-upload"></i> <span id="manualReportSaveText">Add Report</span></button><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualResetReportEditor()">Clear</button></div>
+                            <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>File</th><th>Title</th><th>Type</th><th>Date</th><th>Location</th><th>Actions</th></tr></thead><tbody id="manualReportsBody"></tbody></table></div>
+                        </div>
+                    </section>
+
+                    <section class="manual-plan-step" data-step="3">
+                        <div class="planner-card">
+                            <h3><i class="fas fa-map-marker-alt" style="color:#ef4444"></i> Locations & Target Audience</h3>
+                            <div class="planner-grid">
+                                <div class="form-field"><label for="geographic_scope">Primary Barangay / Geographic Scope *</label><select id="geographic_scope"><option value="">Select barangay...</option></select></div>
+                                <div class="form-field"><label for="location">Campaign Location *</label><select id="location"><option value="">Select location...</option><option>Barangay Hall</option><option>Covered Court</option><option>Barangay Gymnasium</option><option>Elementary School Grounds</option><option>High School Auditorium</option><option>Multi-purpose Hall</option><option>Community Center</option></select></div>
+                                <div class="form-field full"><label for="barangay_zones">Target Zones</label><select id="barangay_zones" multiple size="5"></select><small class="planner-help">Ctrl/Command-click to select multiple zones.</small></div>
+                                <div class="form-field full"><label for="manual_target_segments">Target Audience *</label><select id="manual_target_segments" multiple size="7"></select><small class="planner-help">Audience segments come from the existing Segments module.</small></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="manual-plan-step" data-step="4">
+                        <div class="planner-card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div><h3><i class="fas fa-coins" style="color:#f59e0b"></i> Budget Breakdown <span class="required-chip">At least 1 item</span></h3><p class="planner-help">The total is synchronized back to the campaign's existing Budget field.</p></div><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddBudgetRow()"><i class="fas fa-plus"></i> Add Budget Item</button></div>
+                            <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Item *</th><th>Category</th><th>Qty</th><th>Unit</th><th>Unit Cost</th><th>Days/Sessions</th><th>Funding</th><th>Notes</th><th></th></tr></thead><tbody id="manualBudgetBody"></tbody></table></div>
+                            <div style="text-align:right;margin-top:12px;font-size:16px;font-weight:800;color:#166534;">Total: ₱<span id="manualBudgetTotal">0.00</span></div>
+                            <input id="budget" type="hidden"><input id="staff_count" type="hidden">
+                        </div>
+                    </section>
+
+                    <section class="manual-plan-step" data-step="5">
+                        <div class="planner-card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div><h3><i class="fas fa-users" style="color:#667eea"></i> Participants <span class="required-chip">At least 1 participant</span></h3><p class="planner-help">Select from <code>campaign_department_reference_staff</code>. Quantity is limited by the available QTY in Staff.</p></div><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddParticipantRow()"><i class="fas fa-plus"></i> Add Participant</button></div>
+                            <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Staff *</th><th>Available</th><th>Qty</th><th>Assigned Activity</th><th>Deployment Location</th><th>Notes</th><th></th></tr></thead><tbody id="manualParticipantsBody"></tbody></table></div>
+                        </div>
+                    </section>
+
+                    <section class="manual-plan-step" data-step="6">
+                        <div class="planner-card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div><h3><i class="fas fa-handshake" style="color:#14b8a6"></i> Partners</h3><p class="planner-help">Partners are optional and reuse the existing Partners and Partner Engagements tables.</p></div><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddPartnerRow()"><i class="fas fa-plus"></i> Add Partner</button></div>
+                            <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Partner *</th><th>Engagement Type</th><th>Role / Contribution</th><th>Notes</th><th></th></tr></thead><tbody id="manualPartnersBody"></tbody></table></div>
+                        </div>
+                    </section>
+
+                    <section class="manual-plan-step" data-step="7">
+                        <div class="planner-card">
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div><h3><i class="fas fa-calendar-alt" style="color:#8b5cf6"></i> Date Sprint <span class="required-chip">At least 1 sprint</span></h3><p class="planner-help">Create the campaign phases manually. Sprint dates become the campaign's effective start/end date.</p></div><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddPhaseRow()"><i class="fas fa-plus"></i> Add Sprint</button></div>
+                            <div class="planner-table-wrap"><table class="planner-table" style="min-width:1200px"><thead><tr><th>#</th><th>Sprint Title *</th><th>Start *</th><th>End *</th><th>Objectives</th><th>Activities</th><th>Locations</th><th>Budget</th><th>Outputs</th><th></th></tr></thead><tbody id="manualPhasesBody"></tbody></table></div>
+                        </div>
+                    </section>
+
+                    <section class="manual-plan-step" data-step="8">
+                        <div class="planner-card">
+                            <h3><i class="fas fa-check-double" style="color:#10b981"></i> Review & Submit</h3>
+                            <p class="planner-help">Review Steps 1–7. Completing this plan does not approve the campaign; it remains in the normal governance workflow.</p>
+                            <div id="manualReviewValidation" style="margin-bottom:14px;"></div>
+                            <div class="review-grid" id="manualReviewGrid"></div>
+                        </div>
+                    </section>
+
+                    <div id="createStatus" class="status-text" style="display:none;margin-top:14px;"></div>
+                    <div class="planner-footer">
+                        <div><span id="manualStepLabel" style="font-size:12px;color:#64748b;font-weight:700;">Step 1 of 8</span></div>
+                        <div class="planner-footer-actions">
+                            <button type="button" id="manualPrevBtn" class="btn btn-secondary" onclick="manualPreviousStep()" style="display:none;"><i class="fas fa-arrow-left"></i> Previous</button>
+                            <button type="button" id="manualSaveDraftBtn" class="btn btn-secondary" onclick="manualSaveDraft()"><i class="fas fa-save"></i> Save Draft</button>
+                            <button type="button" id="manualNextBtn" class="btn btn-primary" onclick="manualNextStep()">Next <i class="fas fa-arrow-right"></i></button>
+                            <button type="submit" id="manualSubmitBtn" class="btn btn-primary" style="display:none;"><i class="fas fa-check"></i> Complete Campaign Plan</button>
+                            <button type="button" class="btn btn-secondary" onclick="closePlanCampaignModal()">Close</button>
+                        </div>
                     </div>
-                    <small style="color: #94a3b8; font-size: 12px; margin-top: 8px; display: block; line-height: 1.5;">
-                        <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
-                        Select multiple staff members. Selected items will appear as tags above.
-                    </small>
-                </div>
-            </div>
-            
-            <div class="btn-group" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
-                <button type="submit" class="btn btn-primary">Create Campaign</button>
-                <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
-                <button type="button" class="btn btn-secondary" onclick="closePlanCampaignModal()">Cancel</button>
-            </div>
-            <div id="createStatus" class="status-text" style="display:none;"></div>
-        </form>
+                </form>
             </div><!-- End Modal Body -->
         </div><!-- End Modal Content -->
     </div><!-- End Modal Overlay -->
-    <?php endif; // End RBAC: Hide planning modal for Viewer ?>
 
     <!-- Add Staff Modal -->
     <?php if (!$isViewer): ?>
@@ -4518,7 +4531,9 @@ const SAMPLE_MATERIALS = [
 // Populate native select options (For standard dropdowns only)
 function populateStandardSelect(selectId, options) {
     const select = document.getElementById(selectId);
-    if (!select || !Array.isArray(options)) return;
+    // Manual planner now uses text inputs/datalists for some formerly-select fields.
+    // Only mutate real SELECT elements so legacy initialization cannot break the wizard.
+    if (!select || select.tagName !== 'SELECT' || !Array.isArray(options)) return;
     
     // Clear existing options except the first placeholder
     const placeholder = select.querySelector('option[value=""]');
@@ -4701,466 +4716,380 @@ window.addEventListener('load', function() {
     }
 });
 
-// Form handling
-document.getElementById('planningForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const createStatusEl = document.getElementById('createStatus');
-    createStatusEl.style.display = 'block';
-    createStatusEl.className = 'status-text';
-    
-    // Check if token exists before proceeding
-    const currentToken = getToken();
-    console.log('Campaign creation - Token check:', currentToken ? 'EXISTS (length: ' + currentToken.length + ')' : 'MISSING');
-    if (!currentToken || currentToken.trim() === '') {
-        console.error('Campaign creation - No token found');
-        createStatusEl.textContent = 'Authorization token missing. Please log in again.';
-        createStatusEl.className = 'status-text error';
-        // Redirect to login after 2 seconds
-        setTimeout(() => {
-            window.location.href = basePath + '/login.php';
-        }, 2000);
-        return;
+// Manual 8-step Campaign Planner
+let manualPlannerState = {
+    campaignId: null,
+    mode: 'create',
+    step: 1,
+    options: { reference_staff: [], available_partners: [], audience_segments: [] },
+    reportsExisting: [],
+    reportDrafts: [],
+    reportEdit: null
+};
+
+function manualEscapeHtml(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+}
+
+async function manualApiJson(url, options = {}) {
+    options.headers = options.headers || {};
+    options.headers['Authorization'] = 'Bearer ' + getToken();
+    const res = await fetch(url, options);
+    const text = await res.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { error: text || 'Invalid server response' }; }
+    if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+    return data;
+}
+
+function manualSetModalTitle() {
+    const title = document.getElementById('manualPlannerModalTitle');
+    if (!title) return;
+    title.textContent = manualPlannerState.mode === 'view' ? 'View Campaign Plan' : (manualPlannerState.mode === 'edit' ? 'Edit Campaign Plan' : 'Plan New Campaign');
+}
+
+function manualPopulateSimpleOptions() {
+    const barangay = document.getElementById('geographic_scope');
+    if (barangay) {
+        const current = barangay.value;
+        const list = (typeof SAMPLE_BARANGAYS !== 'undefined' && Array.isArray(SAMPLE_BARANGAYS)) ? SAMPLE_BARANGAYS : [];
+        barangay.innerHTML = '<option value="">Select barangay...</option>' + list.map(v => `<option value="${manualEscapeHtml(v)}">${manualEscapeHtml(v)}</option>`).join('');
+        if (current) barangay.value = current;
     }
-    
-    createStatusEl.textContent = 'Creating...';
-    
-    try {
-        // Get values from comboboxes (supports multi-select)
-        // Barangay zones (multi-select combobox)
-        const barangayZonesEl = document.getElementById('barangay_zones');
-        let barangayZones = [];
-        if (barangayZonesEl && typeof barangayZonesEl.getSelectedValues === 'function') {
-            barangayZones = barangayZonesEl.getSelectedValues();
-        } else if (barangayZonesEl?.value) {
-            barangayZones = barangayZonesEl.value.split(',').map(s => s.trim()).filter(Boolean);
-        }
-        
-        // Assigned staff (multi-select combobox)
-        const assignedStaffEl = document.getElementById('assigned_staff');
-        let assignedStaff = [];
-        if (assignedStaffEl && typeof assignedStaffEl.getSelectedValues === 'function') {
-            assignedStaff = assignedStaffEl.getSelectedValues();
-        } else if (assignedStaffEl?.value) {
-            const staffInput = assignedStaffEl.value.trim();
-            assignedStaff = staffInput ? staffInput.split(',').map(s => s.trim()).filter(Boolean) : [];
-        }
-        
-        // Materials (multi-select combobox - convert to JSON object)
-        const materialsEl = document.getElementById('materials_json');
-        let materialsJson = {};
-        if (materialsEl && typeof materialsEl.getSelectedValues === 'function') {
-            const materialsList = materialsEl.getSelectedValues();
-            materialsList.forEach(mat => {
-                materialsJson[mat] = 1; // Default quantity
-            });
-        } else if (materialsEl?.value) {
-            const materialsInput = materialsEl.value.trim();
-            if (materialsInput) {
-                if (materialsInput.startsWith('{')) {
-                    try {
-                        materialsJson = JSON.parse(materialsInput);
-                    } catch (e) {
-                        const materialsList = materialsInput.split(',').map(s => s.trim()).filter(Boolean);
-                        materialsList.forEach(mat => {
-                            materialsJson[mat] = 1;
-                        });
-                    }
-                } else {
-                    const materialsList = materialsInput.split(',').map(s => s.trim()).filter(Boolean);
-                    materialsList.forEach(mat => {
-                        const match = mat.match(/^(.+?)\s*\((\d+)\)$/);
-                        if (match) {
-                            materialsJson[match[1].trim()] = parseInt(match[2]);
-                        } else {
-                            materialsJson[mat] = 1;
-                        }
-                    });
-                }
-            }
-        }
-        
-        // Get single-select combobox values
-        const titleEl = document.getElementById('title');
-        const title = (titleEl && typeof titleEl.getSelectedValues === 'function') 
-            ? titleEl.getSelectedValues() 
-            : titleEl?.value.trim() || '';
-        
-        const locationEl = document.getElementById('location');
-        const location = (locationEl && typeof locationEl.getSelectedValues === 'function') 
-            ? locationEl.getSelectedValues() 
-            : locationEl?.value.trim() || null;
-        
-        // Get geographic scope (single-select combobox)
-        const geographicScopeEl = document.getElementById('geographic_scope');
-        const geographicScope = (geographicScopeEl && typeof geographicScopeEl.getSelectedValues === 'function') 
-            ? geographicScopeEl.getSelectedValues() 
-            : geographicScopeEl?.value.trim() || null;
-
-        // Category (single-select combobox)
-        const categoryEl = document.getElementById('category');
-        const category = (categoryEl && typeof categoryEl.getSelectedValues === 'function')
-            ? categoryEl.getSelectedValues()
-            : (categoryEl?.value.trim() || null);
-
-        // Status (single-select combobox)
-        const statusEl = document.getElementById('status');
-        const status = (statusEl && typeof statusEl.getSelectedValues === 'function')
-            ? statusEl.getSelectedValues()
-            : (statusEl?.value.trim() || 'draft');
-
-        // Ensure we're using actual form values, not defaults or arrays
-        // Handle single-select comboboxes that might return arrays
-        let titleValue = title;
-        if (Array.isArray(title)) {
-            titleValue = title.length > 0 ? title[0] : '';
-        } else if (typeof title === 'string') {
-            titleValue = title.trim();
-        } else {
-            titleValue = '';
-        }
-        
-        let categoryValue = category;
-        if (Array.isArray(category)) {
-            categoryValue = category.length > 0 ? category[0] : null;
-        } else if (typeof category === 'string') {
-            categoryValue = category.trim() || null;
-        } else {
-            categoryValue = null;
-        }
-        
-        let geographicScopeValue = geographicScope;
-        if (Array.isArray(geographicScope)) {
-            geographicScopeValue = geographicScope.length > 0 ? geographicScope[0] : null;
-        } else if (typeof geographicScope === 'string') {
-            geographicScopeValue = geographicScope.trim() || null;
-        } else {
-            geographicScopeValue = null;
-        }
-        
-        let locationValue = location;
-        if (Array.isArray(location)) {
-            locationValue = location.length > 0 ? location[0] : null;
-        } else if (typeof location === 'string') {
-            locationValue = location.trim() || null;
-        } else {
-            locationValue = null;
-        }
-        
-        let statusValue = status;
-        if (Array.isArray(status)) {
-            statusValue = status.length > 0 ? status[0] : 'draft';
-        } else if (typeof status === 'string') {
-            statusValue = status.trim() || 'draft';
-        } else {
-            statusValue = 'draft';
-        }
-
-        // Get actual form field values (not defaults)
-        const descriptionValue = document.getElementById('description').value.trim();
-        const objectivesValue = document.getElementById('objectives').value.trim();
-        const startDateValue = document.getElementById('start_date').value;
-        const startTimeValue = document.getElementById('start_time').value;
-        const endDateValue = document.getElementById('end_date').value;
-        const endTimeValue = document.getElementById('end_time').value;
-        // NOTE: draft_schedule_datetime is NOT set during initial creation per sequence diagram
-        // Schedule should ONLY be set after user requests AI recommendation and confirms it (Step 9)
-        const budgetInput = document.getElementById('budget').value.trim();
-        const staffCountInput = document.getElementById('staff_count').value.trim();
-
-        // GOVERNANCE WORKFLOW: Staff can ONLY create Draft campaigns
-        // Status is enforced in backend, but we always send 'draft' from frontend
-        // Secretary and Captain actions are handled via separate API endpoints/buttons
-        const finalStatusValue = 'draft'; // Always draft for new campaigns - workflow enforced backend
-
-        const payload = {
-            title: titleValue,
-            description: descriptionValue || null,
-            category: categoryValue,
-            geographic_scope: geographicScopeValue,
-            status: finalStatusValue, // Always 'draft' - workflow enforced backend
-            start_date: startDateValue || null,
-            start_time: startTimeValue || null,
-            end_date: endDateValue || null,
-            end_time: endTimeValue || null,
-            // draft_schedule_datetime: REMOVED - Schedule must be set via AI recommendation flow (Steps 3-9)
-            objectives: objectivesValue || null,
-            location: locationValue,
-            assigned_staff: assignedStaff.length > 0 ? assignedStaff : null,
-            barangay_target_zones: barangayZones.length > 0 ? barangayZones : null,
-            budget: budgetInput ? parseFloat(budgetInput) : null,
-            staff_count: staffCountInput ? parseInt(staffCountInput) : null,
-            materials_json: Object.keys(materialsJson).length > 0 ? materialsJson : null,
-        };
-        
-        // Log individual field values for debugging
-        console.log('=== FORM FIELD VALUES DEBUG ===');
-        console.log('start_time element:', document.getElementById('start_time'));
-        console.log('start_time value:', startTimeValue);
-        console.log('end_time element:', document.getElementById('end_time'));
-        console.log('end_time value:', endTimeValue);
-        console.log('barangay_zones element:', document.getElementById('barangay_zones'));
-        console.log('barangay_zones value:', barangayZones);
-        console.log('=== END FIELD VALUES DEBUG ===');
-        
-        // Log the actual payload to verify real data is being sent
-        console.log('Campaign creation - Payload (actual form values):', JSON.stringify(payload, null, 2));
-        
-        if (!payload.title) {
-            createStatusEl.textContent = 'Title is required.';
-            createStatusEl.className = 'status-text error';
-            return;
-        }
-        
-        const token = getToken();
-        // TASK 4: PROVE TOKEN PRESENCE ON REQUEST
-        console.log('=== TASK 4 PROOF: Campaign creation request ===');
-        console.log('TASK 4: Token variable value:', token ? 'EXISTS (length: ' + token.length + ')' : 'NULL/EMPTY');
-        console.log('TASK 4: Token first 30 chars:', token ? token.substring(0, 30) + '...' : 'N/A');
-        
-        const authHeader = 'Bearer ' + (token ? token.trim() : '');
-        console.log('=== TASK 4 PROOF: Authorization header value ===');
-        console.log('TASK 4: Authorization header:', authHeader ? authHeader.substring(0, 50) + '...' : 'EMPTY');
-        console.log('TASK 4: Authorization header length:', authHeader.length);
-        
-        console.log('Campaign creation - Making API call with token (length:', token ? token.length : 0 + ')');
-        console.log('Campaign creation - API URL:', apiBase + '/api/v1/campaigns');
-        
-        const res = await fetch(apiBase + '/api/v1/campaigns', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': authHeader
-            },
-            body: JSON.stringify(payload)
-        });
-        
-        console.log('Campaign creation - Response status:', res.status);
-        console.log('Campaign creation - Response URL:', res.url);
-        
-        // Check if response is JSON and parse it
-        let data = {};
-        try {
-            const contentType = res.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) {
-                const responseText = await res.clone().text();
-                console.log('Campaign creation - Raw response:', responseText);
-                data = JSON.parse(responseText);
-                console.log('Campaign creation - Parsed response data:', data);
-            } else {
-                const text = await res.text();
-                console.error('Campaign creation - Non-JSON response:', text);
-                data = { error: text || 'Server returned non-JSON response' };
-            }
-        } catch (parseError) {
-            console.error('Campaign creation - Parse error:', parseError);
-            // Try to get error message from response
-            try {
-                const text = await res.text();
-                data = { error: text || parseError.message };
-            } catch (e) {
-                data = { error: parseError.message || 'Unable to parse server response' };
-            }
-            createStatusEl.textContent = 'Error: ' + data.error;
-            createStatusEl.className = 'status-text error';
-            return;
-        }
-        
-        if (!res.ok) {
-            console.error('Campaign creation - API error:', res.status, data);
-            
-            // Handle 502 Bad Gateway - verify if campaign was actually created
-            if (res.status === 502) {
-                console.warn('502 Bad Gateway - Verifying if campaign was created...');
-                createStatusEl.textContent = 'Server error. Verifying campaign creation...';
-                createStatusEl.className = 'status-text';
-                
-                // Wait and check if campaign was created by refreshing the list
-                setTimeout(async () => {
-                    try {
-                        // Refresh the campaign list to check
-                        await refreshAllCampaignViews();
-                        showToast('Server encountered an error. Please check if your campaign appears in the list.', 'warning');
-                        clearForm();
-                        closePlanCampaignModal();
-                    } catch (e) {
-                        showToast('Server error. Please refresh the page and check your campaigns.', 'error');
-                    }
-                }, 1000);
-                return;
-            }
-            
-            // Handle 401 Unauthorized specifically
-            if (res.status === 401) {
-                console.error('Campaign creation - 401 Unauthorized error');
-                // Try to use cached user data - don't redirect immediately
-                const cachedUser = localStorage.getItem('currentUser');
-                if (cachedUser) {
-                    console.log('Token may be expired, but user is logged in. Please refresh the page.');
-                    createStatusEl.textContent = 'Session expired. Please refresh the page and try again.';
-                    createStatusEl.className = 'status-text error';
-                } else {
-                    createStatusEl.textContent = 'Authorization token missing or expired. Please log in again.';
-                    createStatusEl.className = 'status-text error';
-                    localStorage.removeItem('jwtToken');
-                    setTimeout(() => {
-                        window.location.href = basePath + '/login.php';
-                    }, 2000);
-                }
-                return;
-            }
-            
-            // Handle other error cases
-            if (data && data.error) {
-                const errorMsg = data.error.toLowerCase();
-                if (errorMsg.includes('authorization') || errorMsg.includes('token')) {
-                    createStatusEl.textContent = 'Authorization token missing or expired. Please log in again.';
-                    createStatusEl.className = 'status-text error';
-                    localStorage.removeItem('jwtToken');
-                    setTimeout(() => {
-                        window.location.href = basePath + '/login.php';
-                    }, 2000);
-                } else {
-                    createStatusEl.textContent = data.error || 'Failed to create campaign.';
-                    createStatusEl.className = 'status-text error';
-                }
-            } else {
-                createStatusEl.textContent = 'Failed to create campaign. Status: ' + res.status;
-                createStatusEl.className = 'status-text error';
-            }
-            return;
-        }
-        
-        createStatusEl.textContent = 'Campaign created successfully!';
-        createStatusEl.className = 'status-text success';
-        
-        // Show toast notification
-        showSuccessToast('Campaign created successfully!');
-        
-        // Log the created campaign data to verify what was saved
-        console.log('Campaign created - Response data:', data);
-        if (data.campaign) {
-            console.log('Saved campaign values:');
-            console.log('- start_time:', data.campaign.start_time);
-            console.log('- end_time:', data.campaign.end_time);
-            console.log('- barangay_target_zones:', data.campaign.barangay_target_zones);
-        }
-        
-        clearForm();
-        // Close the modal after successful creation
-        closePlanCampaignModal();
-        // FIX: Use centralized refresh to ensure all views update
-        refreshAllCampaignViews();
-    } catch (err) {
-        createStatusEl.textContent = 'Network error. Please try again.';
-        createStatusEl.className = 'status-text error';
+    const zones = document.getElementById('barangay_zones');
+    if (zones) {
+        const list = (typeof SAMPLE_BARANGAY_ZONES !== 'undefined' && Array.isArray(SAMPLE_BARANGAY_ZONES)) ? SAMPLE_BARANGAY_ZONES : [];
+        zones.innerHTML = list.map(v => `<option value="${manualEscapeHtml(v)}">${manualEscapeHtml(v)}</option>`).join('');
     }
-});
+}
+
+async function manualLoadOptions() {
+    const data = await manualApiJson(apiBase + '/api/v1/manual-campaign-planner/options');
+    manualPlannerState.options = data.data || manualPlannerState.options;
+    manualPopulateReferenceOptions();
+}
+
+function manualPopulateReferenceOptions() {
+    const segmentSelect = document.getElementById('manual_target_segments');
+    if (segmentSelect) {
+        const selected = manualSelectedValues('manual_target_segments');
+        segmentSelect.innerHTML = (manualPlannerState.options.audience_segments || []).map(s => {
+            const archived = Number(s.is_archived || 0) === 1 ? ' [Archived]' : '';
+            const detail = [s.sector_type, s.location_reference].filter(Boolean).join(' • ');
+            return `<option value="${Number(s.id)}">${manualEscapeHtml(s.segment_name)}${archived}${detail ? ' — ' + manualEscapeHtml(detail) : ''}</option>`;
+        }).join('');
+        manualSelectValues('manual_target_segments', selected);
+    }
+    document.querySelectorAll('.mp-staff').forEach(select => {
+        const selected = select.value;
+        select.innerHTML = manualStaffOptions(selected);
+        select.value = selected;
+        manualParticipantStaffChanged(select);
+    });
+    document.querySelectorAll('.mpar-partner').forEach(select => {
+        const selected = select.value;
+        select.innerHTML = manualPartnerOptions(selected);
+        select.value = selected;
+    });
+}
+
+function manualSelectedValues(id) {
+    const el = document.getElementById(id);
+    if (!el) return [];
+    return Array.from(el.selectedOptions || []).map(o => o.value).filter(Boolean);
+}
+
+function manualSelectValues(id, values) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const normalized = (values || []).map(String).filter(Boolean);
+    normalized.forEach(value => {
+        if (!Array.from(el.options).some(o => String(o.value) === value)) {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = value;
+            el.appendChild(option);
+        }
+    });
+    const set = new Set(normalized);
+    Array.from(el.options).forEach(o => o.selected = set.has(String(o.value)));
+}
+
+function manualResetPlannerState() {
+    manualPlannerState.campaignId = null;
+    manualPlannerState.mode = 'create';
+    manualPlannerState.step = 1;
+    manualPlannerState.reportsExisting = [];
+    manualPlannerState.reportDrafts = [];
+    manualPlannerState.reportEdit = null;
+    const form = document.getElementById('planningForm');
+    if (form) {
+        form.reset();
+        delete form.dataset.campaignId;
+    }
+    manualPopulateSimpleOptions();
+    manualRenderReports();
+    const bodies = ['manualBudgetBody','manualParticipantsBody','manualPartnersBody','manualPhasesBody'];
+    bodies.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+    manualAddBudgetRow();
+    manualAddParticipantRow();
+    manualAddPhaseRow();
+    manualResetReportEditor();
+    const status = document.getElementById('createStatus');
+    if (status) status.style.display = 'none';
+    manualGoToStep(1);
+    manualSetModalTitle();
+}
+
+function manualGoToStep(step) {
+    step = Math.max(1, Math.min(8, Number(step) || 1));
+    manualPlannerState.step = step;
+    document.querySelectorAll('.manual-plan-step').forEach(el => el.classList.toggle('active', Number(el.dataset.step) === step));
+    document.querySelectorAll('.manual-plan-tab').forEach(el => el.classList.toggle('active', Number(el.dataset.step) === step));
+    const prev = document.getElementById('manualPrevBtn');
+    const next = document.getElementById('manualNextBtn');
+    const submit = document.getElementById('manualSubmitBtn');
+    if (prev) prev.style.display = step > 1 ? '' : 'none';
+    if (next) next.style.display = step < 8 ? '' : 'none';
+    if (submit) submit.style.display = step === 8 && manualPlannerState.mode !== 'view' ? '' : 'none';
+    const label = document.getElementById('manualStepLabel');
+    if (label) label.textContent = `Step ${step} of 8`;
+    if (step === 8) manualRenderReview();
+    manualApplyMode();
+}
+
+function manualNextStep() { manualGoToStep(manualPlannerState.step + 1); }
+function manualPreviousStep() { manualGoToStep(manualPlannerState.step - 1); }
+
+function manualApplyMode() {
+    const viewMode = manualPlannerState.mode === 'view';
+    const form = document.getElementById('planningForm');
+    if (!form) return;
+    form.querySelectorAll('input,select,textarea').forEach(el => el.disabled = viewMode);
+    form.querySelectorAll('[data-planner-edit-action="1"]').forEach(el => el.style.display = viewMode ? 'none' : '');
+    const save = document.getElementById('manualSaveDraftBtn');
+    const submit = document.getElementById('manualSubmitBtn');
+    if (save) {
+        save.style.display = viewMode ? 'none' : '';
+        save.innerHTML = manualPlannerState.mode === 'edit' ? '<i class="fas fa-save"></i> Save Changes' : '<i class="fas fa-save"></i> Save Draft';
+    }
+    if (submit && manualPlannerState.step === 8) submit.style.display = viewMode ? 'none' : '';
+    const reportReq = document.getElementById('manualReportFileRequirement');
+    if (reportReq) reportReq.textContent = manualPlannerState.reportEdit?.type === 'existing' ? '(optional when replacing metadata only)' : '*';
+}
+
+function manualStaffOptions(selected = '') {
+    return '<option value="">Select staff...</option>' + (manualPlannerState.options.reference_staff || []).map(s => `<option value="${Number(s.id)}" ${String(s.id)===String(selected)?'selected':''}>${manualEscapeHtml(s.name)} — ${manualEscapeHtml(s.role || 'Staff')} (QTY ${Number(s.qty || 1)})</option>`).join('');
+}
+function manualPartnerOptions(selected = '') {
+    return '<option value="">Select partner...</option>' + (manualPlannerState.options.available_partners || []).map(p => `<option value="${Number(p.id)}" ${String(p.id)===String(selected)?'selected':''}>${manualEscapeHtml(p.name)} — ${manualEscapeHtml(p.organization_type || 'partner')}</option>`).join('');
+}
+
+function manualAddBudgetRow(item = {}) {
+    const body = document.getElementById('manualBudgetBody'); if (!body) return;
+    const tr = document.createElement('tr'); tr.className = 'manual-budget-row';
+    tr.innerHTML = `<td><input class="mb-name" value="${manualEscapeHtml(item.item_name || '')}" placeholder="Item"></td><td><input class="mb-category" value="${manualEscapeHtml(item.category || '')}" placeholder="Category"></td><td><input class="mb-qty" type="number" min="1" value="${Number(item.quantity || 1)}" oninput="manualUpdateBudgetTotal()"></td><td><input class="mb-unit" value="${manualEscapeHtml(item.unit_label || '')}" placeholder="pcs"></td><td><input class="mb-cost" type="number" min="0" step="0.01" value="${Number(item.unit_cost || 0)}" oninput="manualUpdateBudgetTotal()"></td><td><input class="mb-sessions" type="number" min="1" value="${Number(item.sessions_or_days || 1)}" oninput="manualUpdateBudgetTotal()"></td><td><select class="mb-funding"><option value="government_allocated" ${item.funding_source==='government_allocated'?'selected':''}>Government Allocated</option><option value="reimbursable" ${item.funding_source==='reimbursable'?'selected':''}>Reimbursable</option><option value="other" ${item.funding_source==='other'?'selected':''}>Other</option></select></td><td><textarea class="mb-notes" rows="1">${manualEscapeHtml(item.notes || '')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="this.closest('tr').remove();manualUpdateBudgetTotal();" style="padding:6px 8px">×</button></td>`;
+    body.appendChild(tr); manualUpdateBudgetTotal(); manualApplyMode();
+}
+function manualCollectBudget() {
+    return Array.from(document.querySelectorAll('.manual-budget-row')).map(row => ({
+        item_name: row.querySelector('.mb-name').value.trim(), category: row.querySelector('.mb-category').value.trim(), item_type:'manual', quantity:Number(row.querySelector('.mb-qty').value||1), unit_label:row.querySelector('.mb-unit').value.trim(), unit_cost:Number(row.querySelector('.mb-cost').value||0), sessions_or_days:Number(row.querySelector('.mb-sessions').value||1), funding_source:row.querySelector('.mb-funding').value, notes:row.querySelector('.mb-notes').value.trim()
+    })).filter(x => x.item_name);
+}
+function manualUpdateBudgetTotal() {
+    const total = manualCollectBudget().reduce((sum, x) => sum + x.quantity * x.unit_cost * x.sessions_or_days, 0);
+    const el = document.getElementById('manualBudgetTotal'); if (el) el.textContent = total.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const hidden = document.getElementById('budget'); if (hidden) hidden.value = total.toFixed(2);
+    return total;
+}
+
+function manualParticipantStaffChanged(select) {
+    const row = select.closest('tr'); const staff = (manualPlannerState.options.reference_staff || []).find(s => String(s.id)===String(select.value));
+    const available = row?.querySelector('.mp-available'); const qty = row?.querySelector('.mp-qty');
+    if (available) available.textContent = staff ? Number(staff.qty || 1) : '-';
+    if (qty && staff) { qty.max = Number(staff.qty || 1); if (Number(qty.value||1) > Number(qty.max)) qty.value = qty.max; }
+}
+function manualAddParticipantRow(item = {}) {
+    const body = document.getElementById('manualParticipantsBody'); if (!body) return;
+    const staff = (manualPlannerState.options.reference_staff || []).find(s => String(s.id)===String(item.staff_id));
+    const tr = document.createElement('tr'); tr.className='manual-participant-row';
+    tr.innerHTML=`<td><select class="mp-staff" onchange="manualParticipantStaffChanged(this)">${manualStaffOptions(item.staff_id || '')}</select></td><td class="mp-available">${staff?Number(staff.qty||1):'-'}</td><td><input class="mp-qty" type="number" min="1" max="${staff?Number(staff.qty||1):1}" value="${Number(item.selected_qty||1)}"></td><td><input class="mp-activity" value="${manualEscapeHtml(item.assigned_activity||'')}"></td><td><input class="mp-location" value="${manualEscapeHtml(item.deployment_location||'')}"></td><td><textarea class="mp-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="this.closest('tr').remove();" style="padding:6px 8px">×</button></td>`;
+    body.appendChild(tr); manualApplyMode();
+}
+function manualCollectParticipants(){return Array.from(document.querySelectorAll('.manual-participant-row')).map(r=>({staff_id:Number(r.querySelector('.mp-staff').value||0),selected_qty:Number(r.querySelector('.mp-qty').value||1),assigned_activity:r.querySelector('.mp-activity').value.trim(),deployment_location:r.querySelector('.mp-location').value.trim(),notes:r.querySelector('.mp-notes').value.trim()})).filter(x=>x.staff_id>0);}
+
+function manualAddPartnerRow(item = {}) {
+    const body=document.getElementById('manualPartnersBody'); if(!body)return;
+    const tr=document.createElement('tr'); tr.className='manual-partner-row';
+    tr.innerHTML=`<td><select class="mpar-partner">${manualPartnerOptions(item.partner_id||'')}</select></td><td><select class="mpar-type"><option value="collaboration" ${item.engagement_type==='collaboration'?'selected':''}>Collaboration</option><option value="co_host" ${item.engagement_type==='co_host'?'selected':''}>Co-host</option><option value="resource_sharing" ${item.engagement_type==='resource_sharing'?'selected':''}>Resource Sharing</option><option value="training_provider" ${item.engagement_type==='training_provider'?'selected':''}>Training Provider</option><option value="coordination" ${item.engagement_type==='coordination'?'selected':''}>Coordination</option></select></td><td><input class="mpar-role" value="${manualEscapeHtml(item.role||'')}"></td><td><textarea class="mpar-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="this.closest('tr').remove();" style="padding:6px 8px">×</button></td>`;
+    body.appendChild(tr); manualApplyMode();
+}
+function manualCollectPartners(){return Array.from(document.querySelectorAll('.manual-partner-row')).map(r=>({partner_id:Number(r.querySelector('.mpar-partner').value||0),engagement_type:r.querySelector('.mpar-type').value,role:r.querySelector('.mpar-role').value.trim(),notes:r.querySelector('.mpar-notes').value.trim()})).filter(x=>x.partner_id>0);}
+
+function manualToList(text){return String(text||'').split(/\n|,/).map(v=>v.trim()).filter(Boolean);}
+function manualAddPhaseRow(item = {}) {
+    const body=document.getElementById('manualPhasesBody'); if(!body)return;
+    const sprint=Number(item.sprint_number||document.querySelectorAll('.manual-phase-row').length+1);
+    const activities=Array.isArray(item.activities)?item.activities.join('\n'):(item.activities||'');
+    const locations=Array.isArray(item.locations)?item.locations.join('\n'):(item.locations||'');
+    const tr=document.createElement('tr'); tr.className='manual-phase-row';
+    tr.innerHTML=`<td><input class="mph-num" type="number" min="1" value="${sprint}" style="width:60px"></td><td><input class="mph-title" value="${manualEscapeHtml(item.sprint_title||'')}"></td><td><input class="mph-start" type="date" value="${manualEscapeHtml(item.start_date||'')}"></td><td><input class="mph-end" type="date" value="${manualEscapeHtml(item.end_date||'')}"></td><td><textarea class="mph-objectives" rows="2">${manualEscapeHtml(item.objectives||'')}</textarea></td><td><textarea class="mph-activities" rows="2" placeholder="One per line">${manualEscapeHtml(activities)}</textarea></td><td><textarea class="mph-locations" rows="2" placeholder="One per line">${manualEscapeHtml(locations)}</textarea></td><td><input class="mph-budget" type="number" min="0" step="0.01" value="${Number(item.phase_budget||0)}"></td><td><textarea class="mph-outputs" rows="2">${manualEscapeHtml(item.outputs||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="this.closest('tr').remove();manualRenumberPhases();" style="padding:6px 8px">×</button></td>`;
+    body.appendChild(tr); manualApplyMode();
+}
+function manualRenumberPhases(){Array.from(document.querySelectorAll('.manual-phase-row')).forEach((r,i)=>{const n=r.querySelector('.mph-num');if(n)n.value=i+1;});}
+function manualCollectPhases(){return Array.from(document.querySelectorAll('.manual-phase-row')).map(r=>({sprint_number:Number(r.querySelector('.mph-num').value||1),sprint_title:r.querySelector('.mph-title').value.trim(),start_date:r.querySelector('.mph-start').value,end_date:r.querySelector('.mph-end').value,objectives:r.querySelector('.mph-objectives').value.trim(),activities:manualToList(r.querySelector('.mph-activities').value),assigned_staff:[],assigned_partners:[],locations:manualToList(r.querySelector('.mph-locations').value),phase_budget:Number(r.querySelector('.mph-budget').value||0),outputs:r.querySelector('.mph-outputs').value.trim(),completion_criteria:'',dependencies:[],status:'planned'})).filter(x=>x.sprint_title||x.start_date||x.end_date);}
+
+function manualResetReportEditor(){
+    ['manual_report_title','manual_report_date','manual_report_location','manual_report_description','manual_report_file'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    const type=document.getElementById('manual_report_type'); if(type) type.value='Crime Report';
+    manualPlannerState.reportEdit=null;
+    const text=document.getElementById('manualReportSaveText'); if(text) text.textContent='Add Report';
+    manualApplyMode();
+}
+function manualRenderReports(){
+    const body=document.getElementById('manualReportsBody'); if(!body)return;
+    const rows=[];
+    manualPlannerState.reportsExisting.forEach(r=>rows.push({kind:'existing',key:r.id,data:r,fileName:r.original_file_name||r.stored_file_name||'File'}));
+    manualPlannerState.reportDrafts.forEach((r,i)=>rows.push({kind:'draft',key:i,data:r,fileName:r.file?.name||'Pending file'}));
+    if(!rows.length){body.innerHTML='<tr><td colspan="6" class="planner-empty">No supporting reports added yet.</td></tr>';return;}
+    body.innerHTML=rows.map(row=>`<tr><td>${manualEscapeHtml(row.fileName)}${row.kind==='draft'?' <span style="color:#b45309;font-size:10px">(pending upload)</span>':''}</td><td>${manualEscapeHtml(row.data.report_title||'')}</td><td>${manualEscapeHtml(row.data.report_type||'')}</td><td>${manualEscapeHtml(row.data.report_date||'-')}</td><td>${manualEscapeHtml(row.data.location||'-')}</td><td style="white-space:nowrap"><button type="button" class="btn btn-secondary" onclick="manualViewReport('${row.kind}',${Number(row.key)})" style="padding:5px 8px">View</button> <button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualEditReport('${row.kind}',${Number(row.key)})" style="padding:5px 8px">Edit</button> <button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualDeleteReport('${row.kind}',${Number(row.key)})" style="padding:5px 8px">Delete</button></td></tr>`).join('');
+    manualApplyMode();
+}
+function manualViewReport(kind,key){
+    if(kind==='existing'){
+        const r=manualPlannerState.reportsExisting.find(x=>Number(x.id)===Number(key)); if(!r)return;
+        const url=(basePath||'')+'/'+String(r.file_path||'').replace(/^\/+/, ''); window.open(url,'_blank','noopener');
+    }else{
+        const r=manualPlannerState.reportDrafts[key]; if(r?.file){const url=URL.createObjectURL(r.file);window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000);}
+    }
+}
+function manualEditReport(kind,key){
+    const r=kind==='existing'?manualPlannerState.reportsExisting.find(x=>Number(x.id)===Number(key)):manualPlannerState.reportDrafts[key]; if(!r)return;
+    document.getElementById('manual_report_title').value=r.report_title||''; document.getElementById('manual_report_type').value=r.report_type||'Other'; document.getElementById('manual_report_date').value=r.report_date||''; document.getElementById('manual_report_location').value=r.location||''; document.getElementById('manual_report_description').value=r.description||'';
+    manualPlannerState.reportEdit={type:kind,key}; const text=document.getElementById('manualReportSaveText');if(text)text.textContent='Update Report'; manualApplyMode();
+}
+async function manualAddOrUpdateReport(){
+    if(manualPlannerState.mode==='view')return;
+    const title=document.getElementById('manual_report_title').value.trim(); const file=document.getElementById('manual_report_file').files[0]||null;
+    if(!title){alert('Report title is required.');return;}
+    const edit=manualPlannerState.reportEdit;
+    if(!edit && !file){alert('Choose a report file.');return;}
+    const meta={report_title:title,report_type:document.getElementById('manual_report_type').value,report_date:document.getElementById('manual_report_date').value,location:document.getElementById('manual_report_location').value.trim(),description:document.getElementById('manual_report_description').value.trim()};
+    try{
+        if(edit?.type==='existing'){
+            const formData=new FormData(); Object.entries(meta).forEach(([k,v])=>formData.append(k,v)); if(file)formData.append('report_file',file);
+            const result=await manualApiJson(apiBase+`/api/v1/campaigns/${manualPlannerState.campaignId}/reports/${edit.key}`,{method:'POST',body:formData});
+            const idx=manualPlannerState.reportsExisting.findIndex(x=>Number(x.id)===Number(edit.key)); if(idx>=0)manualPlannerState.reportsExisting[idx]=result.data;
+        }else if(edit?.type==='draft'){
+            const old=manualPlannerState.reportDrafts[edit.key]; manualPlannerState.reportDrafts[edit.key]={...old,...meta,file:file||old.file};
+        }else if(manualPlannerState.campaignId){
+            const formData=new FormData(); Object.entries(meta).forEach(([k,v])=>formData.append(k,v)); formData.append('report_file',file);
+            const result=await manualApiJson(apiBase+`/api/v1/campaigns/${manualPlannerState.campaignId}/reports`,{method:'POST',body:formData}); manualPlannerState.reportsExisting.unshift(result.data);
+        }else{
+            manualPlannerState.reportDrafts.push({...meta,file});
+        }
+        manualResetReportEditor(); manualRenderReports();
+    }catch(err){alert('Report error: '+err.message);}
+}
+async function manualDeleteReport(kind,key){
+    if(manualPlannerState.mode==='view')return; if(!confirm('Delete this supporting report?'))return;
+    try{if(kind==='existing'){await manualApiJson(apiBase+`/api/v1/campaigns/${manualPlannerState.campaignId}/reports/${key}`,{method:'DELETE'});manualPlannerState.reportsExisting=manualPlannerState.reportsExisting.filter(x=>Number(x.id)!==Number(key));}else{manualPlannerState.reportDrafts.splice(key,1);}manualRenderReports();}catch(err){alert('Delete failed: '+err.message);}
+}
+async function manualUploadDraftReports(){
+    if(!manualPlannerState.campaignId||!manualPlannerState.reportDrafts.length)return;
+    const drafts=[...manualPlannerState.reportDrafts];
+    for(const r of drafts){const fd=new FormData();fd.append('report_title',r.report_title);fd.append('report_type',r.report_type);fd.append('report_date',r.report_date||'');fd.append('location',r.location||'');fd.append('description',r.description||'');fd.append('report_file',r.file);const result=await manualApiJson(apiBase+`/api/v1/campaigns/${manualPlannerState.campaignId}/reports`,{method:'POST',body:fd});manualPlannerState.reportsExisting.unshift(result.data);}
+    manualPlannerState.reportDrafts=[]; manualRenderReports();
+}
+
+function manualSyncDateFields(){
+    [['start_datetime','start_date','start_time'],['end_datetime','end_date','end_time']].forEach(([src,dateId,timeId])=>{const v=document.getElementById(src)?.value||'';const [d,t]=v.split('T');document.getElementById(dateId).value=d||'';document.getElementById(timeId).value=t||'';});
+}
+function manualCollectSummary(){
+    manualSyncDateFields();
+    const participantRows=manualCollectParticipants();
+    return {title:document.getElementById('title').value.trim(),description:document.getElementById('description').value.trim()||null,category:document.getElementById('category').value||null,geographic_scope:document.getElementById('geographic_scope').value||null,status:document.getElementById('status').value||'draft',start_date:document.getElementById('start_date').value||null,start_time:document.getElementById('start_time').value||null,end_date:document.getElementById('end_date').value||null,end_time:document.getElementById('end_time').value||null,objectives:document.getElementById('objectives').value.trim()||null,location:document.getElementById('location').value||null,barangay_target_zones:manualSelectedValues('barangay_zones'),budget:manualUpdateBudgetTotal(),staff_count:participantRows.reduce((s,p)=>s+Number(p.selected_qty||0),0)};
+}
+function manualCollectPlanningPayload(){return {segment_ids:manualSelectedValues('manual_target_segments').map(Number),budget_items:manualCollectBudget(),participants:manualCollectParticipants(),partners:manualCollectPartners(),schedule_phases:manualCollectPhases()};}
+function manualValidationErrors(){
+    const s=manualCollectSummary(),p=manualCollectPlanningPayload(),errors=[];
+    if(!s.title)errors.push({step:1,msg:'Campaign Title is required.'}); if(!s.category)errors.push({step:1,msg:'Category is required.'}); if(!s.objectives)errors.push({step:1,msg:'Objectives are required.'}); if(!s.description)errors.push({step:1,msg:'Description is required.'});
+    if((manualPlannerState.reportsExisting.length+manualPlannerState.reportDrafts.length)<1)errors.push({step:2,msg:'Upload at least one supporting report.'}); if(!s.geographic_scope)errors.push({step:3,msg:'Primary Barangay / Geographic Scope is required.'}); if(!s.location)errors.push({step:3,msg:'Campaign Location is required.'}); if(!p.segment_ids.length)errors.push({step:3,msg:'Select at least one target audience.'}); if(!p.budget_items.length)errors.push({step:4,msg:'Add at least one budget item.'}); if(!p.participants.length)errors.push({step:5,msg:'Add at least one participant.'}); if(!p.schedule_phases.length)errors.push({step:7,msg:'Add at least one Date Sprint.'});
+    p.schedule_phases.forEach((ph,i)=>{if(!ph.sprint_title||!ph.start_date||!ph.end_date)errors.push({step:7,msg:`Sprint ${i+1} needs a title, start date, and end date.`});else if(ph.start_date>ph.end_date)errors.push({step:7,msg:`Sprint ${i+1} start date cannot be after end date.`});});
+    return errors;
+}
+function manualRenderReview(){
+    const summary=manualCollectSummary(),plan=manualCollectPlanningPayload(),errors=manualValidationErrors();
+    const validation=document.getElementById('manualReviewValidation'); if(validation)validation.innerHTML=errors.length?`<div style="background:#fff7ed;border-left:4px solid #f97316;padding:12px;border-radius:8px"><strong style="color:#9a3412">${errors.length} item(s) need attention</strong><ul style="margin:8px 0 0;padding-left:20px">${errors.map(e=>`<li><button type="button" onclick="manualGoToStep(${e.step})" style="border:0;background:none;color:#c2410c;text-decoration:underline;cursor:pointer;padding:0">${manualEscapeHtml(e.msg)}</button></li>`).join('')}</ul></div>`:`<div style="background:#f0fdf4;border-left:4px solid #22c55e;padding:12px;border-radius:8px;color:#166534;font-weight:700"><i class="fas fa-check-circle"></i> Campaign plan is complete and ready to save.</div>`;
+    const grid=document.getElementById('manualReviewGrid'); if(!grid)return;
+    const totalStaff=plan.participants.reduce((s,p)=>s+Number(p.selected_qty||0),0); const phaseDates=plan.schedule_phases.filter(p=>p.start_date&&p.end_date); const dateRange=phaseDates.length?`${phaseDates.map(p=>p.start_date).sort()[0]} → ${phaseDates.map(p=>p.end_date).sort().slice(-1)[0]}`:'Not set';
+    grid.innerHTML=`<div class="review-box"><strong>Overall Summary</strong>${manualEscapeHtml(summary.title||'Untitled')}<br>${manualEscapeHtml(summary.category||'-')}<br>${manualEscapeHtml(summary.description||'-')}</div><div class="review-box"><strong>Reports</strong>${manualPlannerState.reportsExisting.length+manualPlannerState.reportDrafts.length} supporting report(s)</div><div class="review-box"><strong>Locations & Audience</strong>${manualEscapeHtml(summary.geographic_scope||'-')}<br>${manualEscapeHtml(summary.location||'-')}<br>${plan.segment_ids.length} audience segment(s)</div><div class="review-box"><strong>Budget Breakdown</strong>₱${manualUpdateBudgetTotal().toLocaleString('en-PH',{minimumFractionDigits:2})}<br>${plan.budget_items.length} budget item(s)</div><div class="review-box"><strong>Participants</strong>${totalStaff} staff allocation(s)<br>${plan.participants.length} participant row(s)</div><div class="review-box"><strong>Partners</strong>${plan.partners.length} selected partner(s)</div><div class="review-box"><strong>Date Sprint</strong>${plan.schedule_phases.length} sprint(s)<br>${manualEscapeHtml(dateRange)}</div><div class="review-box"><strong>Workflow</strong>Status remains <b>${manualEscapeHtml(summary.status||'draft')}</b>. Normal approval rules still apply.</div>`;
+}
+
+async function manualPersistPlan(complete=false){
+    if(manualPlannerState.mode==='view')return;
+    const statusEl=document.getElementById('createStatus'); if(statusEl){statusEl.style.display='block';statusEl.className='status-text';statusEl.textContent=complete?'Saving complete campaign plan...':'Saving draft...';}
+    const summary=manualCollectSummary(); if(!summary.title||!summary.category){if(statusEl){statusEl.className='status-text error';statusEl.textContent='Campaign Title and Category are required before saving.';}manualGoToStep(1);return false;}
+    if(complete){const errors=manualValidationErrors();if(errors.length){if(statusEl){statusEl.className='status-text error';statusEl.textContent=errors[0].msg;}manualGoToStep(errors[0].step);return false;}}
+    try{
+        let result;
+        if(!manualPlannerState.campaignId){summary.status='draft';result=await manualApiJson(apiBase+'/api/v1/campaigns',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(summary)});manualPlannerState.campaignId=Number(result.id);manualPlannerState.mode='edit';document.getElementById('planningForm').dataset.campaignId=manualPlannerState.campaignId;}
+        else{result=await manualApiJson(apiBase+`/api/v1/campaigns/${manualPlannerState.campaignId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(summary)});}
+        await manualApiJson(apiBase+`/api/v1/campaigns/${manualPlannerState.campaignId}/manual-planning`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(manualCollectPlanningPayload())});
+        await manualUploadDraftReports();
+        if(statusEl){statusEl.className='status-text success';statusEl.textContent=complete?'Campaign plan saved successfully!':'Draft saved successfully. You can continue editing all 8 steps.';}
+        manualSetModalTitle(); manualApplyMode(); if(typeof refreshAllCampaignViews==='function')refreshAllCampaignViews();
+        if(complete){showSuccessToast('Campaign plan saved successfully!');setTimeout(()=>closePlanCampaignModal(),400);}else{showSuccessToast('Draft saved successfully!');}
+        return true;
+    }catch(err){if(statusEl){statusEl.className='status-text error';statusEl.textContent='Save failed: '+err.message;}return false;}
+}
+async function manualSaveDraft(){return manualPersistPlan(false);}
+
+document.getElementById('planningForm').addEventListener('submit',async e=>{e.preventDefault();await manualPersistPlan(true);});
+
+async function manualLoadPlanningData(campaignId){
+    const data=await manualApiJson(apiBase+`/api/v1/campaigns/${campaignId}/manual-planning`); const p=data.data||{};
+    manualPlannerState.options.reference_staff=p.reference_staff||[];manualPlannerState.options.available_partners=p.available_partners||[];manualPlannerState.options.audience_segments=p.audience_segments||[];manualPopulateReferenceOptions();
+    manualPlannerState.reportsExisting=p.reports||[];manualPlannerState.reportDrafts=[];manualRenderReports();
+    const bb=document.getElementById('manualBudgetBody');if(bb)bb.innerHTML='';(p.budget_items||[]).filter(x=>!x.source_recommendation_id).forEach(manualAddBudgetRow);if(!(p.budget_items||[]).filter(x=>!x.source_recommendation_id).length)manualAddBudgetRow();
+    const pb=document.getElementById('manualParticipantsBody');if(pb)pb.innerHTML='';(p.participants||[]).forEach(manualAddParticipantRow);if(!(p.participants||[]).length)manualAddParticipantRow();
+    const prb=document.getElementById('manualPartnersBody');if(prb)prb.innerHTML='';(p.partners||[]).forEach(manualAddPartnerRow);
+    const phb=document.getElementById('manualPhasesBody');if(phb)phb.innerHTML='';(p.schedule_phases||[]).forEach(manualAddPhaseRow);if(!(p.schedule_phases||[]).length)manualAddPhaseRow();
+    manualSelectValues('manual_target_segments',(p.audiences||[]).map(a=>a.segment_id));manualUpdateBudgetTotal();manualApplyMode();
+}
+function manualEnsureSelectValue(id, value) {
+    const el = document.getElementById(id); if (!el || !value) return;
+    if (!Array.from(el.options).some(o => String(o.value) === String(value))) {
+        const option = document.createElement('option'); option.value = value; option.textContent = value; el.appendChild(option);
+    }
+    el.value = value;
+}
+function manualPopulateCampaignSummary(c){
+    document.getElementById('title').value=c.title||'';document.getElementById('category').value=c.category||'';document.getElementById('description').value=c.description||'';document.getElementById('objectives').value=c.objectives||'';document.getElementById('status').value=c.status||'draft';
+    manualEnsureSelectValue('geographic_scope', c.geographic_scope||''); manualEnsureSelectValue('location', c.location||'');
+    if(c.start_date)document.getElementById('start_datetime').value=c.start_date+'T'+String(c.start_time||'00:00').slice(0,5);if(c.end_date)document.getElementById('end_datetime').value=c.end_date+'T'+String(c.end_time||'00:00').slice(0,5);
+    let zones=[];try{zones=Array.isArray(c.barangay_target_zones)?c.barangay_target_zones:JSON.parse(c.barangay_target_zones||'[]');}catch(_){zones=[];}manualSelectValues('barangay_zones',zones);
+}
+async function openManualPlannerForCampaign(campaignId,mode='edit'){
+    try{
+        manualResetPlannerState();manualPlannerState.campaignId=Number(campaignId);manualPlannerState.mode=mode;document.getElementById('planningForm').dataset.campaignId=campaignId;
+        await manualLoadOptions();manualPopulateSimpleOptions();
+        const campaign=await manualApiJson(apiBase+`/api/v1/campaigns/${campaignId}`);manualPopulateCampaignSummary(campaign.data||{});await manualLoadPlanningData(campaignId);manualSetModalTitle();manualGoToStep(1);
+        const modal=document.getElementById('planCampaignModal');if(modal){modal.style.display='block';document.body.style.overflow='hidden';}manualApplyMode();
+    }catch(err){alert('Failed to load campaign plan: '+err.message);}
+}
 
 // Plan New Campaign Modal Functions
-function openPlanCampaignModal(isEdit = false) {
-    const modal = document.getElementById('planCampaignModal');
-    if (modal) {
-        // Reset form if not editing (opening for new campaign)
-        if (!isEdit) {
-            clearForm();
-        }
-        modal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-        // Focus on first input
-        setTimeout(() => {
-            const firstInput = modal.querySelector('select, input');
-            if (firstInput) firstInput.focus();
-        }, 100);
-    }
+async function openPlanCampaignModal(isEdit=false){
+    if(isEdit&&manualPlannerState.campaignId){const modal=document.getElementById('planCampaignModal');if(modal){modal.style.display='block';document.body.style.overflow='hidden';}return;}
+    manualResetPlannerState();
+    try{await manualLoadOptions();}catch(err){console.error(err);const status=document.getElementById('createStatus');if(status){status.style.display='block';status.className='status-text error';status.textContent='Unable to load planner reference lists: '+err.message;}}
+    manualPopulateSimpleOptions();manualSetModalTitle();manualGoToStep(1);const modal=document.getElementById('planCampaignModal');if(modal){modal.style.display='block';document.body.style.overflow='hidden';}
 }
-
-function closePlanCampaignModal() {
-    const modal = document.getElementById('planCampaignModal');
-    if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
-    }
-}
-
-// Close modal when clicking outside
-document.addEventListener('click', function(e) {
-    const modal = document.getElementById('planCampaignModal');
-    if (modal && e.target === modal) {
-        closePlanCampaignModal();
-    }
-});
-
-// Close modal on Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closePlanCampaignModal();
-    }
-});
-
-function clearForm() {
-    // Reset form dataset
-    if (document.getElementById('planningForm')) {
-        delete document.getElementById('planningForm').dataset.campaignId;
-    }
-    
-    // Reset submit button
-    const submitBtn = document.querySelector('#planningForm button[type="submit"]');
-    if (submitBtn) {
-        submitBtn.textContent = 'Create Campaign';
-        submitBtn.onclick = null; // Remove custom handler, use form's default submit
-    }
-    
-    // Hide final schedule field
-    const finalScheduleField = document.getElementById('final_schedule_field');
-    if (finalScheduleField) {
-        finalScheduleField.style.display = 'none';
-    }
-    const finalScheduleValue = document.getElementById('final_schedule_value');
-    if (finalScheduleValue) {
-        finalScheduleValue.textContent = '-';
-    }
-    
-    // Reset status options to show only 'draft' for new campaigns
-    updateStatusOptions('draft');
-    
-    // Clear form fields
-    document.getElementById('planningForm').reset();
-    
-    // FIX: Clear Assigned Staff multi-select
-    const assignedStaffEl = document.getElementById('assigned_staff');
-    if (assignedStaffEl) {
-        if (typeof assignedStaffEl.setSelectedValues === 'function') {
-            assignedStaffEl.setSelectedValues([]);
-        } else {
-            // Fallback: clear all selected options
-            Array.from(assignedStaffEl.options).forEach(opt => opt.selected = false);
-        }
-        // Clear tags display
-        const assignedStaffTags = document.getElementById('assigned_staff_tags');
-        if (assignedStaffTags) {
-            assignedStaffTags.innerHTML = '';
-        }
-    }
-    
-    // FIX: Clear Materials multi-select
-    const materialsEl = document.getElementById('materials_json');
-    if (materialsEl) {
-        if (typeof materialsEl.setSelectedValues === 'function') {
-            materialsEl.setSelectedValues([]);
-        } else {
-            // Fallback: clear all selected options
-            Array.from(materialsEl.options).forEach(opt => opt.selected = false);
-        }
-        // Clear tags display
-        const materialsTags = document.getElementById('materials_json_tags');
-        if (materialsTags) {
-            materialsTags.innerHTML = '';
-        }
-    }
-    
-    // Clear status display
-    document.getElementById('createStatus').style.display = 'none';
-}
+function closePlanCampaignModal(){const modal=document.getElementById('planCampaignModal');if(modal){modal.style.display='none';document.body.style.overflow='';}}
+document.addEventListener('click',e=>{const modal=document.getElementById('planCampaignModal');if(modal&&e.target===modal)closePlanCampaignModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePlanCampaignModal();});
+function clearForm(){manualResetPlannerState();}
 
 // AutoML
 let currentPrediction = null;
@@ -8677,445 +8606,12 @@ function updateStatusOptions(currentStatus) {
 
 // Edit Campaign
 async function editCampaign(campaignId) {
-    try {
-        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
-            headers: { 'Authorization': 'Bearer ' + getToken() }
-        });
-        const data = await res.json();
-        if (data.error) {
-            alert('Error: ' + data.error);
-            return;
-        }
-        
-        const c = data.data;
-        
-        // Debug: Log the campaign data received from API
-        console.log('=== EDIT CAMPAIGN DEBUG ===');
-        console.log('Full campaign data:', c);
-        console.log('start_time from API:', c.start_time);
-        console.log('end_time from API:', c.end_time);
-        console.log('barangay_target_zones from API:', c.barangay_target_zones);
-        console.log('=== END EDIT CAMPAIGN DEBUG ===');
-        
-        // Populate form with campaign data
-        if (document.getElementById('title')) {
-            document.getElementById('title').value = c.title || '';
-            // Trigger combobox update if needed
-            if (typeof document.getElementById('title').setSelectedValues === 'function') {
-                document.getElementById('title').setSelectedValues(c.title);
-            }
-        }
-        if (document.getElementById('description')) {
-            document.getElementById('description').value = c.description || '';
-        }
-        if (document.getElementById('category')) {
-            document.getElementById('category').value = c.category || '';
-            if (typeof document.getElementById('category').setSelectedValues === 'function') {
-                document.getElementById('category').setSelectedValues(c.category);
-            }
-        }
-        if (document.getElementById('geographic_scope')) {
-            document.getElementById('geographic_scope').value = c.geographic_scope || '';
-            if (typeof document.getElementById('geographic_scope').setSelectedValues === 'function') {
-                document.getElementById('geographic_scope').setSelectedValues(c.geographic_scope);
-            }
-        }
-        if (document.getElementById('status')) {
-            // Filter status options based on current status and valid transitions
-            updateStatusOptions(c.status || 'draft');
-            document.getElementById('status').value = c.status || 'draft';
-            if (typeof document.getElementById('status').setSelectedValues === 'function') {
-                document.getElementById('status').setSelectedValues(c.status);
-            }
-        }
-        if (document.getElementById('start_date')) {
-            document.getElementById('start_date').value = c.start_date || '';
-        }
-        if (document.getElementById('start_time')) {
-            document.getElementById('start_time').value = c.start_time || '';
-        }
-        if (document.getElementById('end_date')) {
-            document.getElementById('end_date').value = c.end_date || '';
-        }
-        if (document.getElementById('end_time')) {
-            document.getElementById('end_time').value = c.end_time || '';
-        }
-        
-        // Populate datetime-local fields for start and end
-        if (document.getElementById('start_datetime') && c.start_date) {
-            const startTime = c.start_time || '00:00:00';
-            const startDateTimeValue = c.start_date + 'T' + startTime.substring(0, 5);
-            document.getElementById('start_datetime').value = startDateTimeValue;
-        }
-        if (document.getElementById('end_datetime') && c.end_date) {
-            const endTime = c.end_time || '00:00:00';
-            const endDateTimeValue = c.end_date + 'T' + endTime.substring(0, 5);
-            document.getElementById('end_datetime').value = endDateTimeValue;
-        }
-        // Handle final schedule display (read-only)
-        const finalScheduleField = document.getElementById('final_schedule_field');
-        const finalScheduleValue = document.getElementById('final_schedule_value');
-        
-        if (c.final_schedule_datetime) {
-            // Format the datetime for display
-            const scheduleDate = new Date(c.final_schedule_datetime);
-            const formattedDate = scheduleDate.toLocaleString('en-US', {
-                dateStyle: 'long',
-                timeStyle: 'short'
-            });
-            
-            if (finalScheduleValue) {
-                finalScheduleValue.textContent = formattedDate;
-            }
-            
-            if (finalScheduleField) {
-                finalScheduleField.style.display = 'block';
-            }
-        } else {
-            // Hide the field if no final schedule exists
-            if (finalScheduleField) {
-                finalScheduleField.style.display = 'none';
-            }
-        }
-        
-        // Legacy draft_schedule_datetime handling (for backward compatibility, but field is removed)
-        if (document.getElementById('draft_schedule_datetime')) {
-            // Convert datetime to datetime-local format
-            if (c.draft_schedule_datetime) {
-                const dt = new Date(c.draft_schedule_datetime);
-                const localDateTime = dt.toISOString().slice(0, 16);
-                document.getElementById('draft_schedule_datetime').value = localDateTime;
-            }
-        }
-        if (document.getElementById('location')) {
-            document.getElementById('location').value = c.location || '';
-            if (typeof document.getElementById('location').setSelectedValues === 'function') {
-                document.getElementById('location').setSelectedValues(c.location);
-            }
-        }
-        if (document.getElementById('objectives')) {
-            document.getElementById('objectives').value = c.objectives || '';
-        }
-        if (document.getElementById('budget')) {
-            document.getElementById('budget').value = c.budget || '';
-        }
-        if (document.getElementById('staff_count')) {
-            document.getElementById('staff_count').value = c.staff_count || '';
-        }
-        
-        // Handle multi-select fields
-        if (c.assigned_staff) {
-            const staff = typeof c.assigned_staff === 'string' ? JSON.parse(c.assigned_staff) : c.assigned_staff;
-            if (Array.isArray(staff) && document.getElementById('assigned_staff')) {
-                if (typeof document.getElementById('assigned_staff').setSelectedValues === 'function') {
-                    document.getElementById('assigned_staff').setSelectedValues(staff);
-                }
-            }
-        }
-        if (c.barangay_target_zones) {
-            const zones = typeof c.barangay_target_zones === 'string' ? JSON.parse(c.barangay_target_zones) : c.barangay_target_zones;
-            console.log('Barangay zones to set:', zones);
-            console.log('Is array?', Array.isArray(zones));
-            
-            const barangayEl = document.getElementById('barangay_zones');
-            console.log('Barangay element:', barangayEl);
-            console.log('Has setSelectedValues?', barangayEl && typeof barangayEl.setSelectedValues === 'function');
-            
-            if (Array.isArray(zones) && barangayEl) {
-                if (typeof barangayEl.setSelectedValues === 'function') {
-                    console.log('Calling setSelectedValues with:', zones);
-                    barangayEl.setSelectedValues(zones);
-                    console.log('After setSelectedValues, element value:', barangayEl.value);
-                } else {
-                    console.warn('barangay_zones element does not have setSelectedValues function');
-                    // Fallback: try setting value directly
-                    barangayEl.value = zones.join(',');
-                }
-            }
-        }
-        if (c.materials_json) {
-            const materials = typeof c.materials_json === 'string' ? JSON.parse(c.materials_json) : c.materials_json;
-            if (typeof materials === 'object' && document.getElementById('materials_json')) {
-                const materialList = Object.keys(materials);
-                if (typeof document.getElementById('materials_json').setSelectedValues === 'function') {
-                    document.getElementById('materials_json').setSelectedValues(materialList);
-                }
-            }
-        }
-        
-        // Store campaign ID for update
-        document.getElementById('planningForm').dataset.campaignId = campaignId;
-        
-        // Change form button text
-        const submitBtn = document.querySelector('#planningForm button[type="submit"]');
-        if (submitBtn) {
-            submitBtn.textContent = 'Update Campaign';
-            submitBtn.onclick = function(e) {
-                e.preventDefault();
-                updateCampaign(campaignId);
-            };
-        }
-        
-        // Open the Plan Campaign modal (since planning section is now a modal)
-        openPlanCampaignModal(true); // Pass true to indicate edit mode
-        
-    } catch (err) {
-        alert('Failed to load campaign: ' + err.message);
-    }
+    return openManualPlannerForCampaign(campaignId, 'edit');
 }
 
 // View Campaign Details
 async function viewCampaign(campaignId) {
-    try {
-        // Remove existing modal if any to prevent duplication
-        const existingModal = document.getElementById('viewCampaignModal');
-        if (existingModal) {
-            existingModal.remove();
-        }
-        
-        const res = await fetch(apiBase + '/api/v1/campaigns/' + campaignId, {
-            headers: { 'Authorization': 'Bearer ' + getToken() }
-        });
-        const data = await res.json();
-        if (data.error) {
-            alert('Error: ' + data.error);
-            return;
-        }
-        
-        const c = data.data;
-        
-        // Format dates with optional time
-        const formatDate = (dateStr, timeStr = null) => {
-            if (!dateStr) return 'Not set';
-            try {
-                // Combine date and time if time is provided
-                let dateTimeStr = dateStr;
-                if (timeStr) {
-                    // Ensure time is in HH:MM format
-                    const timePart = timeStr.substring(0, 5);
-                    dateTimeStr = dateStr + 'T' + timePart;
-                }
-                return new Date(dateTimeStr).toLocaleString('en-US', {dateStyle: 'long', timeStyle: 'short'});
-            } catch (e) {
-                return dateStr;
-            }
-        };
-        
-        // Format JSON fields
-        const formatJSON = (jsonStr) => {
-            if (!jsonStr) return 'None';
-            try {
-                const parsed = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
-                if (Array.isArray(parsed)) {
-                    return parsed.join(', ') || 'None';
-                } else if (typeof parsed === 'object') {
-                    return Object.keys(parsed).join(', ') || 'None';
-                }
-                return String(parsed);
-            } catch (e) {
-                return String(jsonStr);
-            }
-        };
-        
-        // Create modal with campaign details
-        const modal = document.createElement('div');
-        modal.id = 'viewCampaignModal';
-        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);';
-        
-        const statusColors = {
-            'draft': { bg: '#f3f4f6', color: '#374151' },
-            'pending': { bg: '#fef3c7', color: '#92400e' },
-            'approved': { bg: '#d1fae5', color: '#065f46' },
-            'ongoing': { bg: '#dbeafe', color: '#1e40af' },
-            'scheduled': { bg: '#e0f2fe', color: '#0c4a6e' },
-            'completed': { bg: '#dcfce7', color: '#166534' },
-            'archived': { bg: '#f3f4f6', color: '#6b7280' }
-        };
-        const statusStyle = statusColors[c.status] || statusColors['draft'];
-        
-        modal.innerHTML = `
-            <div style="background: white; border-radius: 16px; max-width: 900px; width: 100%; max-height: 90vh; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); display: flex; flex-direction: column;">
-                <!-- Header -->
-                <div style="background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; padding: 24px 32px; position: relative;">
-                    <button id="closeViewModalBtn" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">&times;</button>
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                        <div>
-                            <div style="font-size: 14px; opacity: 0.9; font-weight: 500;">Campaign #${c.id}</div>
-                            <h2 style="margin: 4px 0 0 0; font-size: 28px; font-weight: 700; line-height: 1.2;">${c.title || 'Untitled Campaign'}</h2>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
-                        <span style="background: ${statusStyle.bg}; color: ${statusStyle.color}; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">
-                            ${(c.status || 'draft').charAt(0).toUpperCase() + (c.status || 'draft').slice(1)}
-                        </span>
-                        ${c.category ? `<span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;">${c.category}</span>` : ''}
-                        ${c.geographic_scope ? `<span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;">${c.geographic_scope}</span>` : ''}
-                    </div>
-                </div>
-                
-                <!-- Content -->
-                <div style="padding: 32px; overflow-y: auto; flex: 1;">
-                    ${c.description ? `
-                        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid #4c8a89;">
-                            <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Description</div>
-                            <p style="margin: 0; color: #475569; line-height: 1.6; font-size: 15px;">${c.description}</p>
-                        </div>
-                    ` : ''}
-                    
-                    ${c.objectives ? `
-                        <div style="background: #f0fdfa; padding: 20px; border-radius: 12px; margin-bottom: 24px; border-left: 4px solid #14b8a6;">
-                            <div style="font-size: 12px; font-weight: 700; color: #115e59; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Objectives</div>
-                            <p style="margin: 0; color: #134e4a; line-height: 1.6; font-size: 15px;">${c.objectives}</p>
-                        </div>
-                    ` : ''}
-                    
-                    <!-- Schedule & Timeline -->
-                    <div style="margin-bottom: 24px;">
-                        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;">
-                            Schedule & Timeline
-                        </h3>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
-                            <div style="background: white; border: 2px solid #e2e8f0; padding: 16px; border-radius: 10px;">
-                                <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Start Date</div>
-                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">${formatDate(c.start_date, c.start_time)}</div>
-                            </div>
-                            <div style="background: white; border: 2px solid #e2e8f0; padding: 16px; border-radius: 10px;">
-                                <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">End Date</div>
-                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">${formatDate(c.end_date, c.end_time)}</div>
-                            </div>
-                            ${c.final_schedule_datetime ? `
-                                <div style="background: white; border: 2px solid #14b8a6; padding: 16px; border-radius: 10px;">
-                                    <div style="font-size: 11px; font-weight: 600; color: #115e59; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Final Schedule</div>
-                                    <div style="font-size: 15px; font-weight: 600; color: #115e59;">${formatDate(c.final_schedule_datetime)}</div>
-                                </div>
-                            ` : ''}
-                            ${c.ai_recommended_datetime ? `
-                                <div style="background: white; border: 2px solid #4c8a89; padding: 16px; border-radius: 10px;">
-                                    <div style="font-size: 11px; font-weight: 600; color: #2d5a59; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">AI Recommended</div>
-                                    <div style="font-size: 15px; font-weight: 600; color: #2d5a59;">${formatDate(c.ai_recommended_datetime)}</div>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                    
-                    <!-- Resources & Budget -->
-                    <div style="margin-bottom: 24px;">
-                        <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;">
-                            Resources & Budget
-                        </h3>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                            ${c.budget ? `
-                                <div style="background: white; padding: 20px; border-radius: 10px; border: 2px solid #e2e8f0;">
-                                    <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Budget</div>
-                                    <div style="font-size: 24px; font-weight: 700; color: #0f172a;">₱${parseFloat(c.budget).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
-                                </div>
-                            ` : ''}
-                            ${c.staff_count ? `
-                                <div style="background: white; border: 2px solid #e2e8f0; padding: 20px; border-radius: 10px;">
-                                    <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Staff Count</div>
-                                    <div style="font-size: 24px; font-weight: 700; color: #0f172a;">${c.staff_count}</div>
-                                </div>
-                            ` : ''}
-                        </div>
-                        ${c.assigned_staff && formatJSON(c.assigned_staff) !== 'None' ? `
-                            <div style="margin-top: 16px; background: #f8fafc; padding: 16px; border-radius: 10px; border-left: 4px solid #4c8a89;">
-                                <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px;">Assigned Staff</div>
-                                <div style="color: #475569; font-size: 14px;">${formatJSON(c.assigned_staff)}</div>
-                            </div>
-                        ` : ''}
-                        ${c.materials_json && formatJSON(c.materials_json) !== 'None' ? `
-                            <div style="margin-top: 16px; background: #f8fafc; padding: 16px; border-radius: 10px; border-left: 4px solid #14b8a6;">
-                                <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px;">Materials</div>
-                                <div style="color: #475569; font-size: 14px;">${formatJSON(c.materials_json)}</div>
-                            </div>
-                        ` : ''}
-                        
-                        <!-- Budget Line Items Breakdown -->
-                        <div id="campaignBudgetBreakdown" style="margin-top: 16px;"></div>
-                    </div>
-                    
-                    <!-- Location & Zones -->
-                    ${c.location || (c.barangay_target_zones && formatJSON(c.barangay_target_zones) !== 'None') ? `
-                        <div style="margin-bottom: 24px;">
-                            <h3 style="font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;">
-                                Location & Target Zones
-                            </h3>
-                            ${c.location ? `
-                                <div style="background: white; border: 2px solid #e2e8f0; padding: 16px; border-radius: 10px; margin-bottom: 12px;">
-                                    <div style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 6px;">Location</div>
-                                    <div style="color: #0f172a; font-size: 15px; font-weight: 500;">${c.location}</div>
-                                </div>
-                            ` : ''}
-                            ${c.barangay_target_zones && formatJSON(c.barangay_target_zones) !== 'None' ? `
-                                <div style="background: #f0fdfa; padding: 16px; border-radius: 10px; border-left: 4px solid #14b8a6;">
-                                    <div style="font-size: 12px; font-weight: 600; color: #115e59; margin-bottom: 8px;">Barangay Target Zones</div>
-                                    <div style="color: #134e4a; font-size: 14px;">${formatJSON(c.barangay_target_zones)}</div>
-                                </div>
-                            ` : ''}
-                        </div>
-                    ` : ''}
-                    
-                    <!-- Metadata -->
-                    <div style="padding-top: 20px; border-top: 2px solid #f1f5f9;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 13px;">
-                            <div>
-                                <span style="color: #64748b; font-weight: 500;">Created:</span>
-                                <span style="color: #0f172a; font-weight: 600; margin-left: 4px;">${formatDate(c.created_at)}</span>
-                            </div>
-                            <div>
-                                <span style="color: #64748b; font-weight: 500;">Updated:</span>
-                                <span style="color: #0f172a; font-weight: 600; margin-left: 4px;">${formatDate(c.updated_at)}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Footer -->
-                <div style="background: #f8fafc; padding: 20px 32px; border-top: 2px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
-                    <button id="closeViewModalFooterBtn" style="padding: 10px 24px; background: white; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; font-weight: 600; color: #475569; transition: all 0.2s; font-size: 14px;" onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#cbd5e1'" onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">Close</button>
-                    ${!isViewer() && canEditCampaign(c.status) ? `<button id="editFromViewBtn" data-campaign-id="${c.id}" style="padding: 10px 24px; background: linear-gradient(135deg, #4c8a89 0%, #2d5a59 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(76, 138, 137, 0.3); font-size: 14px;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 8px -1px rgba(76, 138, 137, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(76, 138, 137, 0.3)'">Edit Campaign</button>` : ''}
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        
-        // Add event listeners for close buttons
-        const closeTopBtn = document.getElementById('closeViewModalBtn');
-        const closeFooterBtn = document.getElementById('closeViewModalFooterBtn');
-        const editBtn = document.getElementById('editFromViewBtn');
-        
-        if (closeTopBtn) {
-            closeTopBtn.addEventListener('click', () => {
-                modal.remove();
-            });
-        }
-        
-        if (closeFooterBtn) {
-            closeFooterBtn.addEventListener('click', () => {
-                modal.remove();
-            });
-        }
-        
-        if (editBtn) {
-            editBtn.addEventListener('click', () => {
-                const campaignId = editBtn.getAttribute('data-campaign-id');
-                modal.remove();
-                editCampaign(parseInt(campaignId));
-            });
-        }
-        
-        // Close on outside click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
-        });
-        
-        // Load budget breakdown for this campaign
-        loadCampaignBudgetBreakdown(campaignId);
-    } catch (err) {
-        alert('Failed to load campaign: ' + err.message);
-    }
+    return openManualPlannerForCampaign(campaignId, 'view');
 }
 
 // Load budget breakdown for campaign view modal
