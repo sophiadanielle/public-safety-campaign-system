@@ -2641,10 +2641,10 @@ async function openAiRecommendationModal(index, items) {
     document.body.appendChild(modal);
 
     const tabBar = document.getElementById('aiRecModalTabs');
-    tabBar.addEventListener('click', function (e) {
+    tabBar.addEventListener('click', async function (e) {
         const btn = e.target.closest('.ai-rec-tab');
-        if (!btn) return;
-        document.querySelectorAll('.ai-rec-tab').forEach(b => {
+        if (!btn || btn.disabled) return;
+        tabBar.querySelectorAll('.ai-rec-tab').forEach(b => {
             b.style.color = '#64748b';
             b.style.borderBottom = '3px solid transparent';
             b.style.fontWeight = '600';
@@ -2656,6 +2656,14 @@ async function openAiRecommendationModal(index, items) {
         btn.style.background = 'rgba(102,126,234,0.08)';
         const tab = btn.getAttribute('data-tab');
         window.__aiRecActiveTab = tab;
+
+        // Overall Summary and Locations can render directly from the recommendation.
+        // The remaining tabs rely on the detailed planning tables. If those rows do
+        // not exist yet, generate the existing campaign plan on demand and reload it.
+        if (aiRecTabNeedsGeneratedPlan(tab) && !aiRecTabHasData(tab, window.__aiRecDetail || {})) {
+            const generated = await ensureAiRecommendationTabData(rec, tab);
+            if (!generated) return;
+        }
         renderAiRecTab(tab, rec);
     });
 
@@ -2677,6 +2685,146 @@ async function openAiRecommendationModal(index, items) {
     }
     updateAiRecPlanAction(rec);
     renderAiRecTab('overview', rec);
+}
+
+function aiRecTabNeedsGeneratedPlan(tab) {
+    return ['reports', 'budget', 'staff', 'events', 'schedule'].includes(tab);
+}
+
+function aiRecTabHasData(tab, data) {
+    data = data || {};
+    if (tab === 'reports') {
+        const reports = data.reports || {};
+        return Array.isArray(reports.all) && reports.all.length > 0;
+    }
+    if (tab === 'budget') {
+        return !!(data.budget && Array.isArray(data.budget.items) && data.budget.items.length > 0);
+    }
+    if (tab === 'staff') {
+        const staff = data.staffing || (data.staff && data.staff.staffing) || data.staff || {};
+        const existing = staff.existing_staff || (data.staff && data.staff.existing) || [];
+        const gaps = staff.missing_staff_requirements || (data.staff && data.staff.gaps) || [];
+        const participants = data.staff && Array.isArray(data.staff.participants) ? data.staff.participants : [];
+        const partners = Array.isArray(data.partners) ? data.partners : [];
+        const suggestions = Array.isArray(data.suggestions) ? data.suggestions : (Array.isArray(data.partner_suggestions) ? data.partner_suggestions : []);
+        return existing.length > 0 || gaps.length > 0 || participants.length > 0 || partners.length > 0 || suggestions.length > 0;
+    }
+    if (tab === 'schedule') {
+        const schedule = data.schedule || data.schedule_phases || {};
+        return Array.isArray(schedule.phases) ? schedule.phases.length > 0 : Array.isArray(schedule) && schedule.length > 0;
+    }
+    if (tab === 'events') {
+        const events = data.events || {};
+        return (Array.isArray(events.existing_events) && events.existing_events.length > 0)
+            || (Array.isArray(events.related_events) && events.related_events.length > 0)
+            || (Array.isArray(events.recommended_events) && events.recommended_events.length > 0);
+    }
+    return true;
+}
+
+function aiRecPrettyTabName(tab) {
+    const labels = {
+        reports: 'Reports',
+        budget: 'Budget Breakdown',
+        staff: 'Participants & Partners',
+        events: 'Events & Seminars',
+        schedule: 'Date Sprint'
+    };
+    return labels[tab] || 'Campaign Plan';
+}
+
+async function ensureAiRecommendationTabData(rec, tab) {
+    const body = document.getElementById('aiRecModalBody');
+    const recommendationId = Number((window.__aiRecDetail && window.__aiRecDetail.summary && window.__aiRecDetail.summary.id) || rec.id || 0);
+    if (!recommendationId) {
+        if (body) body.innerHTML = '<div style="padding:32px;text-align:center;color:#dc2626;font-weight:700;">Unable to load this tab because the recommendation ID is missing.</div>';
+        return false;
+    }
+
+    // Reuse a running generation request instead of firing one request per tab click.
+    if (window.__aiRecPlanGenerationPromise && window.__aiRecPlanGenerationId === recommendationId) {
+        try {
+            await window.__aiRecPlanGenerationPromise;
+            return aiRecTabHasData(tab, window.__aiRecDetail || {});
+        } catch (_) {
+            return false;
+        }
+    }
+
+    const token = localStorage.getItem('jwtToken') || '';
+    if (!token.trim()) {
+        if (body) body.innerHTML = '<div style="padding:32px;text-align:center;color:#dc2626;font-weight:700;">Your login session is missing. Please log in again to generate the detailed campaign plan.</div>';
+        return false;
+    }
+
+    const tabLabel = aiRecPrettyTabName(tab);
+    if (body) {
+        body.innerHTML = `
+            <div style="text-align:center;padding:50px 20px;color:#64748b;">
+                <i class="fas fa-spinner fa-pulse" style="font-size:28px;color:#667eea;margin-bottom:12px;"></i>
+                <div style="font-size:14px;font-weight:700;color:#334155;">Preparing ${escapeHtml(tabLabel)}...</div>
+                <div style="font-size:12px;margin-top:6px;">This recommendation has no stored detailed plan yet. The existing AI planning engine is generating it now.</div>
+            </div>`;
+    }
+
+    const summary = (window.__aiRecDetail && window.__aiRecDetail.summary) || {};
+    const currentStatus = String(summary.planning_status || rec.planning_status || 'not_generated').toLowerCase();
+    const action = ['completed', 'completed_with_warnings', 'processing'].includes(currentStatus) ? 'recalculate' : 'generate';
+
+    const generationPromise = (async () => {
+        const response = await fetch(aiRecommendationGenerateUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': 'Bearer ' + token.trim()
+            },
+            body: JSON.stringify({ recommendation_id: recommendationId, action })
+        });
+        if (!response.ok) throw new Error(await readApiError(response));
+        const payload = await response.json();
+        if (payload.error || payload.success === false) {
+            throw new Error(payload.error || payload.message || 'Campaign plan generation failed.');
+        }
+        await reloadAiRecommendationDetails(rec);
+        return true;
+    })();
+
+    window.__aiRecPlanGenerationPromise = generationPromise;
+    window.__aiRecPlanGenerationId = recommendationId;
+
+    try {
+        await generationPromise;
+        if (!aiRecTabHasData(tab, window.__aiRecDetail || {})) {
+            if (body) {
+                body.innerHTML = `
+                    <div style="padding:28px;text-align:center;">
+                        <div style="color:#92400e;font-weight:700;margin-bottom:8px;">${escapeHtml(tabLabel)} was generated but no matching rows were produced.</div>
+                        <button type="button" onclick="generateAiRecommendationPlan()" style="padding:8px 14px;border:0;border-radius:8px;background:#667eea;color:#fff;font-weight:700;cursor:pointer;"><i class="fas fa-redo"></i> Recalculate Campaign Plan</button>
+                    </div>`;
+            }
+            return false;
+        }
+        return true;
+    } catch (error) {
+        const message = error && error.message ? error.message : 'Campaign plan generation failed.';
+        console.error('AI recommendation tab generation failed:', error);
+        if (body) {
+            body.innerHTML = `
+                <div style="padding:28px;text-align:center;">
+                    <div style="color:#dc2626;font-weight:800;margin-bottom:8px;">Unable to prepare ${escapeHtml(tabLabel)}</div>
+                    <div style="color:#64748b;font-size:12px;margin-bottom:14px;white-space:pre-wrap;">${escapeHtml(message)}</div>
+                    <button type="button" onclick="generateAiRecommendationPlan()" style="padding:8px 14px;border:0;border-radius:8px;background:#667eea;color:#fff;font-weight:700;cursor:pointer;"><i class="fas fa-redo"></i> Retry Generate Campaign Plan</button>
+                </div>`;
+        }
+        if (typeof showErrorToast === 'function') showErrorToast('Planning generation failed: ' + message);
+        return false;
+    } finally {
+        if (window.__aiRecPlanGenerationId === recommendationId) {
+            delete window.__aiRecPlanGenerationPromise;
+            delete window.__aiRecPlanGenerationId;
+        }
+    }
 }
 
 function renderAiRecTab(tab, rec) {
@@ -3994,6 +4142,8 @@ function closeAiRecommendationModal() {
     delete window.__aiRecDetailError;
     delete window.__aiRecActive;
     delete window.__aiRecActiveTab;
+    delete window.__aiRecPlanGenerationPromise;
+    delete window.__aiRecPlanGenerationId;
 }
 
 console.log('BASE PATH:', basePath);
