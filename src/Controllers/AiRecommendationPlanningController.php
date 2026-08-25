@@ -346,7 +346,7 @@ class AiRecommendationPlanningController
         }
 
         try {
-            $rec = $this->requireRecommendationForAccept($recommendationId, true);
+            $rec = $this->requireRecommendationForAccept($recommendationId, $forceReaccept);
             $userId = $this->userId($user);
 
             // Ensure planning items (budget, schedule, staff) exist before accepting
@@ -364,6 +364,9 @@ class AiRecommendationPlanningController
                     $this->partnerMatching->storeMatches($recommendationId, $matches);
                     $this->partnerMatching->storeSuggestions($recommendationId, $matches['suggestions']);
                     $this->scheduleService->generateScheduleFromRecommendation($recommendationId, $rec, $camp);
+                    // Keep the original AI generation logic, but ensure its supporting report
+                    // snapshots are also available when a recommendation is accepted directly.
+                    $this->generateReportSnapshots($recommendationId, $rec);
                     $this->pdo->prepare("UPDATE campaign_department_ai_recommendations SET planning_status = 'completed' WHERE id = ?")->execute([$recommendationId]);
                     $rec = $this->requireRecommendationForAccept($recommendationId, true);
                 } catch (\Throwable $genErr) {
@@ -378,6 +381,16 @@ class AiRecommendationPlanningController
             $staff = $this->insertAcceptedStaff($recommendationId, $userId);
             $events = $this->insertAcceptedEvents($recommendationId, $campaignId, $userId, $rec);
             $partners = $this->insertAcceptedPartners($recommendationId, $campaignId);
+
+            // The All Campaigns modal now uses the same 8-step planner for View/Edit.
+            // Copy the accepted AI plan into those campaign-linked planner tables so
+            // every AI recommendation becomes a complete approved 8-tab campaign.
+            $manualPlan = $this->copyAcceptedRecommendationToCampaignPlanner(
+                $recommendationId,
+                $campaignId,
+                $userId,
+                $rec
+            );
 
             $stmt = $this->pdo->prepare("
                 UPDATE campaign_department_ai_recommendations
@@ -413,6 +426,10 @@ class AiRecommendationPlanningController
                 'staff_skipped_existing' => $staff['skipped'],
                 'events_created' => $events,
                 'partners_created' => $partners,
+                'reports_copied' => $manualPlan['reports'],
+                'participants_copied' => $manualPlan['participants'],
+                'audience_segments_linked' => $manualPlan['audiences'],
+                'schedule_phases_copied' => $manualPlan['phases'],
             ];
         } catch (RuntimeException $e) {
             if ($this->pdo->inTransaction()) {
@@ -527,7 +544,7 @@ class AiRecommendationPlanningController
             $endDate,
             $this->dateTimeValue($rec['planning_generated_at'] ?? null),
             $userId,
-            $this->jsonOrNull($rec['ai_recommended_actions'] ?? null),
+            $this->actionsAsText($rec['ai_recommended_actions'] ?? null),
             $locationText,
             $this->assignedStaffSnapshot($rec['id'] ?? 0),
             $this->jsonOrNull($locations),
@@ -861,7 +878,14 @@ class AiRecommendationPlanningController
                 $updateMatched->execute([$partnerId, (int) $partner['id']]);
             }
 
-            $insertEngagement->execute([$partnerId, $campaignId, $partner['recommendation_reason'] ?? null]);
+            $engagementMeta = json_encode([
+                'source' => 'ai_recommendation',
+                'recommendation_id' => $recommendationId,
+                'role' => $partner['recommended_role'] ?? '',
+                'engagement_type' => 'collaboration',
+                'notes' => $partner['recommendation_reason'] ?? '',
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $insertEngagement->execute([$partnerId, $campaignId, $engagementMeta]);
             $count++;
         }
 
@@ -886,11 +910,276 @@ class AiRecommendationPlanningController
             $insertPartner->execute([$name, $orgType, $details]);
             $partnerId = (int) $this->pdo->lastInsertId();
             $updateSuggestion->execute([$partnerId, (int) $suggestion['id']]);
-            $insertEngagement->execute([$partnerId, $campaignId, $suggestion['rationale'] ?? null]);
+            $engagementMeta = json_encode([
+                'source' => 'ai_recommendation',
+                'recommendation_id' => $recommendationId,
+                'role' => $suggestion['expected_contribution'] ?? '',
+                'engagement_type' => 'collaboration',
+                'notes' => $suggestion['rationale'] ?? '',
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $insertEngagement->execute([$partnerId, $campaignId, $engagementMeta]);
             $count++;
         }
 
         return $count;
+    }
+
+    /**
+     * Copy an accepted AI recommendation into the campaign-linked tables read by the
+     * 8-step Plan/View/Edit Campaign modal. AI generation itself is intentionally
+     * unchanged; this is only the acceptance/conversion bridge.
+     */
+    private function copyAcceptedRecommendationToCampaignPlanner(
+        int $recommendationId,
+        int $campaignId,
+        ?int $userId,
+        array $rec
+    ): array {
+        // Some older recommendations were generated before report snapshots existed.
+        $snapshotCountStmt = $this->pdo->prepare('SELECT COUNT(*) FROM campaign_ai_report_snapshots WHERE recommendation_id = ?');
+        $snapshotCountStmt->execute([$recommendationId]);
+        if ((int) $snapshotCountStmt->fetchColumn() === 0) {
+            try {
+                $this->generateReportSnapshots($recommendationId, $rec);
+            } catch (\Throwable $e) {
+                error_log('AI accept report snapshot generation warning: ' . $e->getMessage());
+            }
+        }
+
+        $reports = $this->copyAiReportsToCampaign($recommendationId, $campaignId, $userId);
+        $participants = $this->copyAiParticipantsToCampaign($recommendationId, $campaignId, $userId);
+        $phases = $this->copyAiScheduleToCampaign($recommendationId, $campaignId, $userId);
+        $audiences = $this->copyAiAudienceToCampaign($recommendationId, $campaignId, $rec);
+
+        // Keep the compatibility fields used by older campaign screens synchronized.
+        $staffStmt = $this->pdo->prepare("SELECT staff_name_snapshot, selected_qty FROM campaign_department_campaign_participants WHERE campaign_id = ? ORDER BY id");
+        $staffStmt->execute([$campaignId]);
+        $staffRows = $staffStmt->fetchAll(PDO::FETCH_ASSOC);
+        $staffNames = [];
+        $staffCount = 0;
+        foreach ($staffRows as $row) {
+            if (!empty($row['staff_name_snapshot'])) {
+                $staffNames[] = $row['staff_name_snapshot'];
+            }
+            $staffCount += max(0, (int) ($row['selected_qty'] ?? 0));
+        }
+
+        $this->pdo->prepare("UPDATE campaign_department_campaigns SET assigned_staff = ?, staff_count = ?, status = 'approved' WHERE id = ?")
+            ->execute([
+                empty($staffNames) ? null : json_encode(array_values(array_unique($staffNames)), JSON_UNESCAPED_UNICODE),
+                $staffCount,
+                $campaignId,
+            ]);
+
+        return [
+            'reports' => $reports,
+            'participants' => $participants,
+            'audiences' => $audiences,
+            'phases' => $phases,
+        ];
+    }
+
+    private function copyAiReportsToCampaign(int $recommendationId, int $campaignId, ?int $userId): int
+    {
+        $this->pdo->prepare('DELETE FROM campaign_department_campaign_reports WHERE campaign_id = ?')->execute([$campaignId]);
+
+        $stmt = $this->pdo->prepare('SELECT * FROM campaign_ai_report_snapshots WHERE recommendation_id = ? ORDER BY report_datetime ASC, id ASC');
+        $stmt->execute([$recommendationId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $insert = $this->pdo->prepare("\n            INSERT INTO campaign_department_campaign_reports\n                (campaign_id, report_title, report_type, report_date, location, description,\n                 original_file_name, stored_file_name, file_path, mime_type, file_size, uploaded_by)\n            VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', 'application/x-ai-report-snapshot', 0, ?)\n        ");
+
+        $count = 0;
+        foreach ($rows as $row) {
+            $source = ucfirst((string) ($row['source_type'] ?? 'AI'));
+            $externalId = trim((string) ($row['external_report_id'] ?? $row['id'] ?? ''));
+            $fileLabel = $source . ' Report Snapshot' . ($externalId !== '' ? ' - ' . $externalId : '');
+            $descriptionParts = [];
+            if (!empty($row['description'])) $descriptionParts[] = (string) $row['description'];
+            if (!empty($row['severity'])) $descriptionParts[] = 'Severity: ' . $row['severity'];
+            if (!empty($row['incident_status'])) $descriptionParts[] = 'Incident status: ' . $row['incident_status'];
+            if (!empty($row['source_system'])) $descriptionParts[] = 'Source: ' . $row['source_system'];
+            if ($externalId !== '') $descriptionParts[] = 'Source report ID: ' . $externalId;
+
+            $insert->execute([
+                $campaignId,
+                trim((string) ($row['incident_title'] ?? 'Supporting AI report')) ?: 'Supporting AI report',
+                $source . ' Report',
+                $row['report_date'] ?? $this->dateOnly($row['report_datetime'] ?? null),
+                $row['location'] ?? $row['barangay_or_area'] ?? null,
+                implode("\n\n", $descriptionParts),
+                $fileLabel,
+                $fileLabel,
+                $userId,
+            ]);
+            $count++;
+        }
+        return $count;
+    }
+
+    private function copyAiParticipantsToCampaign(int $recommendationId, int $campaignId, ?int $userId): int
+    {
+        $this->pdo->prepare('DELETE FROM campaign_department_campaign_participants WHERE campaign_id = ?')->execute([$campaignId]);
+
+        $stmt = $this->pdo->prepare("\n            SELECT p.*, s.name AS current_staff_name, s.role AS current_staff_role\n            FROM campaign_ai_recommendation_participants p\n            LEFT JOIN campaign_department_reference_staff s ON s.id = p.staff_id\n            WHERE p.recommendation_id = ?\n            ORDER BY p.id ASC\n        ");
+        $stmt->execute([$recommendationId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $insert = $this->pdo->prepare("\n            INSERT INTO campaign_department_campaign_participants\n                (campaign_id, staff_id, staff_name_snapshot, staff_role_snapshot, selected_qty,\n                 assigned_activity, deployment_location, notes, created_by)\n            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)\n        ");
+
+        $count = 0;
+        foreach ($rows as $row) {
+            $staffId = !empty($row['staff_id']) ? (int) $row['staff_id'] : null;
+            $name = $row['current_staff_name'] ?? $row['staff_name_snapshot'] ?? null;
+            $role = $row['current_staff_role'] ?? $row['staff_role_snapshot'] ?? $row['required_role'] ?? null;
+            $qty = (int) ($row['selected_qty'] ?? 0);
+            if ($qty <= 0) $qty = (int) ($row['matched_qty'] ?? 0);
+            if ($qty <= 0) $qty = (int) ($row['required_qty'] ?? 1);
+            $qty = max(1, $qty);
+
+            $notes = [];
+            if (!empty($row['recommendation_reason'])) $notes[] = (string) $row['recommendation_reason'];
+            if (!empty($row['required_capability'])) $notes[] = 'Capability: ' . $row['required_capability'];
+            if (!empty($row['match_method'])) $notes[] = 'AI match: ' . $row['match_method'];
+
+            $insert->execute([
+                $campaignId,
+                $staffId,
+                $name,
+                $role,
+                $qty,
+                $row['assigned_activity'] ?? null,
+                $row['deployment_location'] ?? null,
+                implode("\n", $notes),
+                $userId,
+            ]);
+            $count++;
+        }
+        return $count;
+    }
+
+    private function copyAiScheduleToCampaign(int $recommendationId, int $campaignId, ?int $userId): int
+    {
+        $this->pdo->prepare('DELETE FROM campaign_department_campaign_schedule_phases WHERE campaign_id = ?')->execute([$campaignId]);
+
+        $stmt = $this->pdo->prepare('SELECT * FROM campaign_ai_recommendation_schedule_phases WHERE recommendation_id = ? ORDER BY sort_order ASC, sprint_number ASC, id ASC');
+        $stmt->execute([$recommendationId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $insert = $this->pdo->prepare("\n            INSERT INTO campaign_department_campaign_schedule_phases\n                (campaign_id, sprint_number, sprint_title, start_date, end_date, duration_days, objectives,\n                 activities, assigned_staff, assigned_partners, locations, phase_budget, outputs,\n                 completion_criteria, dependencies, status, sort_order, created_by)\n            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', ?, ?)\n        ");
+
+        $count = 0;
+        foreach ($rows as $i => $row) {
+            $start = $this->dateOnly($row['start_date'] ?? null);
+            $end = $this->dateOnly($row['end_date'] ?? null);
+            if (!$start || !$end) continue;
+            $duration = max(1, (int) ($row['duration_days'] ?? 0));
+            if ($duration <= 1) {
+                $duration = max(1, (int) floor((strtotime($end) - strtotime($start)) / 86400) + 1);
+            }
+            $insert->execute([
+                $campaignId,
+                $i + 1,
+                trim((string) ($row['sprint_title'] ?? 'Campaign Sprint')) ?: 'Campaign Sprint',
+                $start,
+                $end,
+                $duration,
+                $row['objectives'] ?? null,
+                $this->jsonOrNull($row['activities'] ?? null),
+                $this->jsonOrNull($row['assigned_staff'] ?? null),
+                $this->jsonOrNull($row['assigned_partners'] ?? null),
+                $this->jsonOrNull($row['locations'] ?? null),
+                max(0, (float) ($row['phase_budget'] ?? 0)),
+                $row['outputs'] ?? null,
+                $row['completion_criteria'] ?? null,
+                $this->jsonOrNull($row['dependencies'] ?? null),
+                $i + 1,
+                $userId,
+            ]);
+            $count++;
+        }
+        return $count;
+    }
+
+    private function copyAiAudienceToCampaign(int $recommendationId, int $campaignId, array $rec): int
+    {
+        $this->pdo->prepare('DELETE FROM campaign_department_campaign_audience WHERE campaign_id = ?')->execute([$campaignId]);
+
+        $audienceText = trim((string) ($rec['ai_target_audience'] ?? ''));
+        if ($audienceText === '') {
+            $audienceText = 'Residents and households in affected areas';
+        }
+        $location = $this->firstLocation($rec['affected_locations'] ?? null) ?: 'Barangay San Agustin';
+        $priority = strtolower((string) ($rec['priority_level'] ?? 'medium'));
+        $risk = $priority === 'high' || $priority === 'critical' ? 'High' : ($priority === 'low' ? 'Low' : 'Medium');
+        $sectors = $this->inferAudienceSectors($audienceText);
+        if (empty($sectors)) $sectors = ['Households'];
+
+        $find = $this->pdo->prepare("\n            SELECT id FROM campaign_department_audience_segments\n            WHERE is_archived = 0 AND sector_type = ? AND LOWER(COALESCE(location_reference,'')) = LOWER(?)\n            ORDER BY id DESC LIMIT 1\n        ");
+        $insertSegment = $this->pdo->prepare("\n            INSERT INTO campaign_department_audience_segments\n                (segment_name, geographic_scope, location_reference, sector_type, risk_level,\n                 basis_of_segmentation, criteria, is_archived)\n            VALUES (?, 'Barangay', ?, ?, ?, 'Incident pattern reference', ?, 0)\n        ");
+        $link = $this->pdo->prepare('INSERT IGNORE INTO campaign_department_campaign_audience (campaign_id, segment_id) VALUES (?, ?)');
+
+        $linked = 0;
+        foreach ($sectors as $sector) {
+            $find->execute([$sector, $location]);
+            $segmentId = (int) $find->fetchColumn();
+            if ($segmentId <= 0) {
+                $segmentName = 'AI Target - ' . $sector . ' - Rec #' . $recommendationId;
+                $criteria = json_encode([
+                    'source' => 'ai_recommendation',
+                    'recommendation_id' => $recommendationId,
+                    'target_audience' => $audienceText,
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $insertSegment->execute([$segmentName, $location, $sector, $risk, $criteria]);
+                $segmentId = (int) $this->pdo->lastInsertId();
+            }
+            if ($segmentId > 0) {
+                $link->execute([$campaignId, $segmentId]);
+                $linked++;
+            }
+        }
+        return $linked;
+    }
+
+    private function inferAudienceSectors(string $text): array
+    {
+        $t = strtolower($text);
+        $map = [
+            'Youth' => ['youth', 'teen', 'adolescent', 'young people'],
+            'Senior Citizens' => ['senior', 'elderly', 'older adult'],
+            'Schools' => ['school', 'student', 'teacher', 'campus'],
+            'NGOs' => ['ngo', 'non-government', 'civil society'],
+            'Person with Disabilities' => ['pwd', 'disability', 'disabled', 'persons with disabilities'],
+            'Pregnant Women' => ['pregnant', 'pregnancy', 'expectant mother'],
+            'Households' => ['resident', 'household', 'family', 'families', 'community', 'general public', 'women', 'men', 'homeowner'],
+        ];
+        $out = [];
+        foreach ($map as $sector => $needles) {
+            foreach ($needles as $needle) {
+                if (str_contains($t, $needle)) {
+                    $out[] = $sector;
+                    break;
+                }
+            }
+        }
+        return array_values(array_unique($out));
+    }
+
+    private function actionsAsText(mixed $value): ?string
+    {
+        $items = $this->decodeList($value);
+        if (empty($items)) {
+            $text = trim((string) ($value ?? ''));
+            return $text !== '' ? $text : null;
+        }
+        $lines = [];
+        foreach ($items as $item) {
+            if (is_scalar($item)) {
+                $text = trim((string) $item);
+                if ($text !== '') $lines[] = '• ' . $text;
+            }
+        }
+        return empty($lines) ? null : implode("\n", $lines);
     }
 
     private function contactDetailsJson(?string $a, ?string $b): ?string

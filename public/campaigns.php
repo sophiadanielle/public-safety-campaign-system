@@ -3755,7 +3755,7 @@ function showAcceptAiRecConfirmModal(details, onConfirm) {
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <h3 style="margin: 0 0 6px; font-size: 20px; font-weight: 700; color: white;">Accept AI Strategy?</h3>
-                <p style="margin: 0; font-size: 13px; color: rgba(255, 255, 255, 0.9);">Confirm converting this recommendation into an active campaign</p>
+                <p style="margin: 0; font-size: 13px; color: rgba(255, 255, 255, 0.9);">Convert this AI plan into an Approved campaign with all 8 campaign tabs populated</p>
             </div>
             <div style="padding: 24px;">
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
@@ -3775,7 +3775,7 @@ function showAcceptAiRecConfirmModal(details, onConfirm) {
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; background: #f1f5f9; padding: 8px 12px; border-radius: 8px;">
                         <i class="fas fa-calendar-alt" style="color: #06b6d4;"></i>
-                        <span><strong>${details.phaseCount}</strong> activity event(s) to <strong>Events & Seminars</strong></span>
+                        <span><strong>${details.phaseCount}</strong> Date Sprint phase(s) to the campaign and matching activity event(s) to <strong>Events & Seminars</strong></span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; background: #f1f5f9; padding: 8px 12px; border-radius: 8px;">
                         <i class="fas fa-handshake" style="color: #f59e0b;"></i>
@@ -3825,10 +3825,13 @@ function showAcceptAiRecSuccessModal(payload) {
                 <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: left;">
                     <div style="font-weight: 700; color: #166534; font-size: 13px; margin-bottom: 8px;"><i class="fas fa-info-circle"></i> Summary of Created Items:</div>
                     <ul style="margin: 0; padding-left: 20px; color: #15803d; font-size: 13px; line-height: 1.6;">
-                        <li><strong>${payload.budget_items_created || 0}</strong> budget line items added to Financial & Budgeting</li>
-                        <li><strong>${payload.staff_created || 0}</strong> missing staff members added to Staff Roster</li>
-                        <li><strong>${payload.events_created || 0}</strong> activity events added to Events & Seminars</li>
-                        <li><strong>${payload.partners_created || 0}</strong> partners linked</li>
+                        <li>Campaign status: <strong>APPROVED</strong></li>
+                        <li><strong>${payload.reports_copied || 0}</strong> AI supporting report snapshot(s) copied to Reports</li>
+                        <li><strong>${payload.audience_segments_linked || 0}</strong> target audience segment(s) linked</li>
+                        <li><strong>${payload.budget_items_created || 0}</strong> budget line items copied</li>
+                        <li><strong>${payload.participants_copied || 0}</strong> participant allocation(s) copied</li>
+                        <li><strong>${payload.partners_created || 0}</strong> partner(s) linked</li>
+                        <li><strong>${payload.schedule_phases_copied || 0}</strong> Date Sprint phase(s) copied</li>
                     </ul>
                 </div>
                 <div style="font-size: 13px; color: #64748b; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -3905,7 +3908,7 @@ async function acceptAiRecommendation() {
                     'Accept': 'application/json',
                     'Authorization': 'Bearer ' + token.trim()
                 },
-                body: JSON.stringify({ recommendation_id: recommendationId, force: true, reaccept: true })
+                body: JSON.stringify({ recommendation_id: recommendationId })
             });
 
             if (!resp.ok) {
@@ -4960,7 +4963,21 @@ function manualRenderReports(){
 function manualViewReport(kind,key){
     if(kind==='existing'){
         const r=manualPlannerState.reportsExisting.find(x=>Number(x.id)===Number(key)); if(!r)return;
-        const url=(basePath||'')+'/'+String(r.file_path||'').replace(/^\/+/, ''); window.open(url,'_blank','noopener');
+        const path=String(r.file_path||'').trim();
+        // Accepted AI recommendations carry report snapshots/metadata rather than a
+        // physical uploaded file. Show that source report inside the campaign modal.
+        if(!path){
+            let existing=document.getElementById('manualAiReportSnapshotModal');
+            if(existing)existing.remove();
+            const modal=document.createElement('div');
+            modal.id='manualAiReportSnapshotModal';
+            modal.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.68);z-index:30000;display:flex;align-items:center;justify-content:center;padding:20px;';
+            modal.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:85vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.35)"><div style="padding:18px 22px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:12px;align-items:center"><div><div style="font-size:11px;font-weight:800;color:#6366f1;text-transform:uppercase">AI Supporting Report Snapshot</div><h3 style="margin:4px 0 0;color:#0f172a">${manualEscapeHtml(r.report_title||'Supporting Report')}</h3></div><button type="button" onclick="document.getElementById('manualAiReportSnapshotModal')?.remove()" style="border:0;background:none;font-size:26px;cursor:pointer;color:#64748b">&times;</button></div><div style="padding:22px"><div class="review-grid"><div class="review-box"><strong>Report Type</strong>${manualEscapeHtml(r.report_type||'-')}</div><div class="review-box"><strong>Report Date</strong>${manualEscapeHtml(r.report_date||'-')}</div><div class="review-box"><strong>Location</strong>${manualEscapeHtml(r.location||'-')}</div><div class="review-box"><strong>Source</strong>Copied from accepted AI recommendation</div></div><div style="margin-top:16px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;white-space:pre-wrap;line-height:1.6;color:#334155">${manualEscapeHtml(r.description||'No additional report description stored.')}</div></div></div>`;
+            modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
+            document.body.appendChild(modal);
+            return;
+        }
+        const url=(basePath||'')+'/'+path.replace(/^\/+/, ''); window.open(url,'_blank','noopener');
     }else{
         const r=manualPlannerState.reportDrafts[key]; if(r?.file){const url=URL.createObjectURL(r.file);window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000);}
     }

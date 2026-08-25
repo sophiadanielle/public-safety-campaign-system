@@ -1551,24 +1551,37 @@ class CampaignController
             $participantsStmt->execute(['cid' => $campaignId]);
             $participants = $participantsStmt->fetchAll(PDO::FETCH_ASSOC);
 
-            $partnersStmt = $this->pdo->prepare("SELECT pe.id, pe.partner_id, pe.engagement_type, pe.notes, p.name AS partner_name, p.organization_type FROM campaign_department_partner_engagements pe LEFT JOIN campaign_department_partners p ON p.id = pe.partner_id WHERE pe.campaign_id = :cid AND pe.engagement_type = 'manual_planner' ORDER BY pe.id ASC");
+            // Accepted AI recommendations keep their source engagement type as ai_recommended,
+            // but they must also appear in the same Partners tab used by manual campaigns.
+            $partnersStmt = $this->pdo->prepare("SELECT pe.id, pe.partner_id, pe.engagement_type, pe.notes, p.name AS partner_name, p.organization_type FROM campaign_department_partner_engagements pe LEFT JOIN campaign_department_partners p ON p.id = pe.partner_id WHERE pe.campaign_id = :cid AND pe.engagement_type IN ('manual_planner','ai_recommended') ORDER BY CASE WHEN pe.engagement_type = 'manual_planner' THEN 0 ELSE 1 END, pe.id ASC");
             $partnersStmt->execute(['cid' => $campaignId]);
             $partnerRows = $partnersStmt->fetchAll(PDO::FETCH_ASSOC);
             $partners = [];
+            $seenPartnerIds = [];
             foreach ($partnerRows as $row) {
+                $partnerId = (int)($row['partner_id'] ?? 0);
+                if ($partnerId > 0 && isset($seenPartnerIds[$partnerId])) {
+                    continue;
+                }
+                if ($partnerId > 0) {
+                    $seenPartnerIds[$partnerId] = true;
+                }
                 $meta = [];
-                if (!empty($row['notes'])) {
-                    $decoded = json_decode((string)$row['notes'], true);
+                $rawNotes = (string)($row['notes'] ?? '');
+                if ($rawNotes !== '') {
+                    $decoded = json_decode($rawNotes, true);
                     if (is_array($decoded)) $meta = $decoded;
                 }
+                $isAiPartner = ($row['engagement_type'] ?? '') === 'ai_recommended';
                 $partners[] = [
                     'id' => (int)$row['id'],
                     'partner_id' => (int)$row['partner_id'],
                     'partner_name' => $row['partner_name'],
                     'organization_type' => $row['organization_type'],
-                    'role' => $meta['role'] ?? '',
+                    'role' => $meta['role'] ?? ($isAiPartner ? 'AI Recommended Partner' : ''),
                     'engagement_type' => $meta['engagement_type'] ?? 'collaboration',
-                    'notes' => $meta['notes'] ?? '',
+                    'notes' => $meta['notes'] ?? ($isAiPartner ? $rawNotes : ''),
+                    'source' => $meta['source'] ?? ($isAiPartner ? 'ai_recommendation' : 'manual'),
                 ];
             }
 
