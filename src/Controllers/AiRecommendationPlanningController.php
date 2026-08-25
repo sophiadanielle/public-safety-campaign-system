@@ -1525,16 +1525,29 @@ class AiRecommendationPlanningController
             }
         }
 
-        if ($externalId === '' && $localId !== null) {
-            $externalId = $sourceType . '-' . $localId;
+        // source_local_id maps to an integer primary key in the local source table.
+        // External disaster feeds use opaque/hash IDs (for example md5-like values),
+        // so those IDs belong only in external_report_id and must never be inserted
+        // into campaign_ai_report_snapshots.source_local_id (INT in the LGU schema).
+        $numericLocalId = null;
+        if (is_int($localId)) {
+            $numericLocalId = $localId;
+        } elseif (is_string($localId) && preg_match('/^\d+$/', trim($localId))) {
+            $numericLocalId = (int) trim($localId);
+        } elseif (is_float($localId) && floor($localId) === $localId) {
+            $numericLocalId = (int) $localId;
         }
-        if ($externalId !== '' && !str_contains($externalId, '-') && $localId !== null) {
+
+        if ($externalId === '' && $localId !== null) {
+            $externalId = $sourceType . '-' . (string) $localId;
+        }
+        if ($externalId !== '' && !str_contains($externalId, '-') && $numericLocalId !== null) {
             $externalId = $sourceType . '-' . $externalId;
         }
 
         return [
             'source_type' => in_array($sourceType, ['crime', 'disaster'], true) ? $sourceType : $defaultSource,
-            'source_local_id' => $localId === null ? null : (string) $localId,
+            'source_local_id' => $numericLocalId,
             'external_report_id' => $externalId,
             'title' => $title,
         ];

@@ -272,7 +272,7 @@ class AiRecommendationSchemaService
                 recommendation_id INT NOT NULL,
                 source_type VARCHAR(40) NOT NULL,
                 external_report_id VARCHAR(120) NOT NULL,
-                source_local_id VARCHAR(120) NULL,
+                source_local_id INT NULL,
                 incident_title VARCHAR(255) NULL,
                 description TEXT NULL,
                 category VARCHAR(120) NULL,
