@@ -1405,6 +1405,82 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         </div><!-- End Modal Content -->
     </div><!-- End Modal Overlay -->
 
+    <!-- Add Staff Modal -->
+    <?php if (!$isViewer): ?>
+    <div id="staffModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10001; overflow-y: auto; padding: 20px;">
+        <div class="modal-content" style="background: white; max-width: 550px; margin: 20px auto; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative;">
+            <!-- Modal Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 16px 16px 0 0;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-user-plus" style="color: #4c8a89;"></i>
+                    Add Staff
+                </h2>
+                <button type="button" onclick="closeAddStaffModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; padding: 4px 8px; line-height: 1;" title="Close">
+                    &times;
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div style="padding: 24px;">
+                <!-- Staff Name -->
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Staff Name *</label>
+                    <input type="text" id="staffName" placeholder="e.g., Juan Dela Cruz" style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                </div>
+                
+                <!-- Position Mode Toggle -->
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block; color: #0f172a;">
+                        <i class="fas fa-list" style="margin-right: 6px;"></i> Position Mode
+                    </label>
+                    <div style="display: flex; gap: 12px;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 16px; border: 2px solid #4c8a89; border-radius: 8px; background: #f0fdfa;">
+                            <input type="radio" name="staffPositionMode" value="existing" checked onchange="toggleStaffPositionMode('existing')">
+                            <span style="font-weight: 500;">Select Existing</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 8px 16px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                            <input type="radio" name="staffPositionMode" value="new" onchange="toggleStaffPositionMode('new')">
+                            <span style="font-weight: 500;">Add New</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Existing Position Dropdown -->
+                <div id="existingStaffPositionGroup" style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Position / Role *</label>
+                    <select id="staffPositionSelect" required style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="">Select Position...</option>
+                    </select>
+                </div>
+                
+                <!-- New Position Input -->
+                <div id="newStaffPositionGroup" style="margin-bottom: 20px; display: none;">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Staff Position *</label>
+                    <input type="text" id="newStaffPosition" placeholder="e.g., Barangay Captain" style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                    <p style="margin: 6px 0 0 0; font-size: 12px; color: #64748b;">Enter a new position/role for this staff member.</p>
+                </div>
+                
+                <!-- Quantity -->
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Quantity *</label>
+                    <input type="number" id="staffQty" min="1" value="1" style="width: 100%; max-width: 120px; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                    <p style="margin: 6px 0 0 0; font-size: 12px; color: #64748b;">Number of staff with this position/role.</p>
+                </div>
+                
+                <div id="staffStatus" style="margin-bottom: 16px; display: none;"></div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div style="padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" onclick="closeAddStaffModal()" class="btn btn-secondary">Cancel</button>
+                <button type="button" onclick="saveNewStaff()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-save"></i> Add Staff
+                </button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Add Budget Line Items Modal -->
     <?php if (!$isViewer): ?>
     <div id="budgetModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; overflow-y: auto; padding: 20px;">
@@ -1952,6 +2028,45 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             </table>
         </div>
         
+    </section>
+    <?php endif; ?>
+
+    <!-- Staff Section -->
+    <?php if (!$isViewer): ?>
+    <section class="card" id="staff-section">
+        <div class="section-header" style="margin-bottom: 20px;">
+            <h2 class="section-title analytics-accent"><i class="fas fa-users" style="margin-right: 8px;"></i> Staff</h2>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="openAddStaffModal()" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-plus"></i> Add Staff
+                </button>
+                <button class="btn btn-secondary" onclick="loadStaffTable()" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+        <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
+            Manage staff positions and personnel for campaign deployment. Add new positions or select from existing roles and set the quantity needed.
+        </p>
+        
+        <!-- Staff Table -->
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th>Name</th>
+                        <th>Position / Role</th>
+                        <th style="width: 80px;">Qty</th>
+                        <th style="width: 100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="staffTable">
+                    <tr><td colspan="5" style="text-align:center; padding:24px; color: #64748b;">Loading staff data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="staffPagination" class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 16px;"></div>
     </section>
     <?php endif; ?>
 
@@ -7423,6 +7538,278 @@ async function deleteBudgetItem(id) {
     }
 }
 
+// ========== Staff Functions ==========
+
+let staffRoles = [];
+
+// Load staff table
+let currentStaffPage = 1;
+const STAFF_PER_PAGE = 10;
+let allStaffData = [];
+
+function renderStaffTable() {
+    const tbody = document.getElementById('staffTable');
+    const pagination = document.getElementById('staffPagination');
+    if (!tbody) return;
+    
+    const start = (currentStaffPage - 1) * STAFF_PER_PAGE;
+    const end = Math.min(start + STAFF_PER_PAGE, allStaffData.length);
+    const pageData = allStaffData.slice(start, end);
+    const totalPages = Math.ceil(allStaffData.length / STAFF_PER_PAGE) || 1;
+    
+    tbody.innerHTML = '';
+    pageData.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="font-weight: 600; color: #6366f1;">${s.id}</td>
+            <td>${escapeHtml(s.name)}</td>
+            <td>${escapeHtml(s.role)}</td>
+            <td style="text-align: center; font-weight: 600;">${s.qty || 1}</td>
+            <td>
+                <button class="btn btn-danger" onclick="deleteStaffMember(${s.id})" style="padding: 4px 10px; font-size: 11px;" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    if (pagination) {
+        pagination.innerHTML = '';
+        if (allStaffData.length <= STAFF_PER_PAGE) return;
+        
+        const prev = document.createElement('button');
+        prev.className = 'btn btn-secondary';
+        prev.innerHTML = '&laquo; Prev';
+        prev.style.padding = '6px 12px';
+        prev.style.fontSize = '13px';
+        prev.disabled = currentStaffPage === 1;
+        prev.onclick = () => { if (currentStaffPage > 1) { currentStaffPage--; renderStaffTable(); } };
+        pagination.appendChild(prev);
+        
+        for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'btn' + (i === currentStaffPage ? ' btn-primary' : ' btn-secondary');
+            btn.textContent = i;
+            btn.style.padding = '6px 12px';
+            btn.style.fontSize = '13px';
+            btn.onclick = () => { currentStaffPage = i; renderStaffTable(); };
+            pagination.appendChild(btn);
+        }
+        
+        const next = document.createElement('button');
+        next.className = 'btn btn-secondary';
+        next.innerHTML = 'Next &raquo;';
+        next.style.padding = '6px 12px';
+        next.style.fontSize = '13px';
+        next.disabled = currentStaffPage === totalPages;
+        next.onclick = () => { if (currentStaffPage < totalPages) { currentStaffPage++; renderStaffTable(); } };
+        pagination.appendChild(next);
+    }
+}
+
+async function loadStaffTable() {
+    const tbody = document.getElementById('staffTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color: #64748b;">Loading...</td></tr>';
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/reference-staff', {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        
+        if (!data.success) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color: #ef4444;">Error: ' + (data.error || 'Failed to load staff') + '</td></tr>';
+            return;
+        }
+        
+        allStaffData = data.data || data.staff || [];
+        currentStaffPage = 1;
+        
+        if (allStaffData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color: #64748b;">No staff members yet. Click "Add Staff" to add one.</td></tr>';
+            document.getElementById('staffPagination').innerHTML = '';
+            return;
+        }
+        
+        renderStaffTable();
+    } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:24px; color: #ef4444;">Error: ' + err.message + '</td></tr>';
+    }
+}
+
+// Load roles for the staff position dropdown
+async function loadStaffRoles() {
+    try {
+        const res = await fetch(apiBase + '/api/v1/reference-staff/roles', {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            staffRoles = data.data || data.roles || [];
+            const select = document.getElementById('staffPositionSelect');
+            if (select) {
+                select.innerHTML = '<option value="">Select Position...</option>';
+                staffRoles.forEach(role => {
+                    const opt = document.createElement('option');
+                    opt.value = role;
+                    opt.textContent = role;
+                    select.appendChild(opt);
+                });
+            }
+        }
+    } catch (err) {
+        console.error('Failed to load staff roles:', err);
+    }
+}
+
+// Open Add Staff modal
+function openAddStaffModal() {
+    const modal = document.getElementById('staffModal');
+    if (modal) {
+        loadStaffRoles();
+        document.getElementById('staffName').value = '';
+        document.getElementById('staffPositionSelect').value = '';
+        document.getElementById('newStaffPosition').value = '';
+        document.getElementById('staffQty').value = 1;
+        document.getElementById('staffStatus').style.display = 'none';
+        toggleStaffPositionMode('existing');
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Close Add Staff modal
+function closeAddStaffModal() {
+    const modal = document.getElementById('staffModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Close staff modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('staffModal');
+    if (modal && e.target === modal) {
+        closeAddStaffModal();
+    }
+});
+
+// Toggle between existing position mode and add new mode
+function toggleStaffPositionMode(mode) {
+    const existingGroup = document.getElementById('existingStaffPositionGroup');
+    const newGroup = document.getElementById('newStaffPositionGroup');
+    
+    if (mode === 'existing') {
+        existingGroup.style.display = 'block';
+        newGroup.style.display = 'none';
+    } else {
+        existingGroup.style.display = 'none';
+        newGroup.style.display = 'block';
+    }
+}
+
+// Save new staff member
+async function saveNewStaff() {
+    const mode = document.querySelector('input[name="staffPositionMode"]:checked')?.value;
+    const qty = parseInt(document.getElementById('staffQty')?.value) || 1;
+    
+    const name = document.getElementById('staffName')?.value?.trim();
+    if (!name) {
+        showStaffStatus('Please enter a staff name', 'error');
+        return;
+    }
+    
+    let role;
+    if (mode === 'existing') {
+        role = document.getElementById('staffPositionSelect')?.value;
+        if (!role) {
+            showStaffStatus('Please select a position/role', 'error');
+            return;
+        }
+    } else {
+        role = document.getElementById('newStaffPosition')?.value?.trim();
+        if (!role) {
+            showStaffStatus('Please enter a staff position', 'error');
+            return;
+        }
+    }
+    
+    showStaffStatus('Saving...', 'success');
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/reference-staff', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify({ name, role, qty })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            showStaffStatus('Staff added successfully!', 'success');
+            closeAddStaffModal();
+            loadStaffTable();
+            showSuccessToast('Staff member added successfully!');
+        } else {
+            showStaffStatus(data.error || 'Failed to add staff', 'error');
+        }
+    } catch (err) {
+        showStaffStatus('Error: ' + err.message, 'error');
+    }
+}
+
+// Delete staff member
+async function deleteStaffMember(id) {
+    if (!confirm('Are you sure you want to delete this staff member?')) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/reference-staff/' + id, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            loadStaffTable();
+            showSuccessToast('Staff member deleted successfully!');
+        } else {
+            alert(data.error || 'Failed to delete');
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
+// Show status message in staff modal
+function showStaffStatus(message, type) {
+    const status = document.getElementById('staffStatus');
+    if (!status) return;
+    status.style.display = 'block';
+    status.style.padding = '12px';
+    status.style.borderRadius = '8px';
+    status.style.fontSize = '13px';
+    status.style.fontWeight = '500';
+    
+    if (type === 'error') {
+        status.style.background = '#fef2f2';
+        status.style.color = '#dc2626';
+        status.style.border = '1px solid #fecaca';
+    } else {
+        status.style.background = '#f0fdf4';
+        status.style.color = '#16a34a';
+        status.style.border = '1px solid #bbf7d0';
+    }
+    status.innerHTML = '<i class="fas ' + (type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle') + '" style="margin-right: 6px;"></i> ' + message;
+}
+
 // Render budget table - grouped by campaign
 function renderBudgetTable() {
     const tbody = document.getElementById('budgetTable');
@@ -9275,6 +9662,8 @@ async function initializeCampaigns() {
                 console.warn('initializeCampaigns() - Refresh button not found!');
             }
         }, 200);
+        
+        loadStaffTable();
         
         // Calendar will auto-refresh via refetchEvents() in loadCampaigns()
     } catch (err) {
