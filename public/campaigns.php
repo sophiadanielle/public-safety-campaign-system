@@ -1572,149 +1572,9 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     </div>
     <?php endif; ?>
 
-    <!-- AutoML Panel -->
-    <?php if (!$isViewer): // RBAC: Hide AutoML section for Viewer (management tool) ?>
+    <!-- Smart AI Campaign Recommendations -->
+    <?php if (!$isViewer): // RBAC: Hide AI recommendations for Viewer (management tool) ?>
     <section class="card" id="automl-section">
-        <div class="section-header">
-            <h2 class="section-title analytics-accent">🤖 AI-Powered Deployment Optimization</h2>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 12px; color: #64748b; font-weight: 500; background: #f1f5f9; padding: 4px 10px; border-radius: 12px;">Core Innovation</span>
-                <button type="button" id="automlRefreshBtn" onclick="if(typeof refreshAutoMLCampaigns==='function'){refreshAutoMLCampaigns();}else if(typeof window.refreshAutoMLCampaigns==='function'){window.refreshAutoMLCampaigns();}else{console.error('refreshAutoMLCampaigns not found'); alert('Refresh function not loaded');}" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; font-weight: 500;" title="Refresh campaign list" onmouseover="this.style.background='#5568d3'" onmouseout="this.style.background='#667eea'">
-                    <i class="fas fa-sync-alt"></i>
-                    <span>Refresh</span>
-                </button>
-            </div>
-        </div>
-        
-        <!-- Core Innovation Highlight Card -->
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px; color: white; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
-                <div style="flex: 1;">
-                    <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                        <i class="fas fa-brain"></i>
-                        AI-Powered Scheduling Intelligence
-                    </h3>
-                    <p style="margin: 0; opacity: 0.95; line-height: 1.6; font-size: 14px;">
-                        The scheduler analyzes historical campaign data, attendance trends, survey feedback, and event conflicts to recommend optimal deployment schedules. 
-                        <button type="button" onclick="showAIHowItWorksModal()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-left: 8px; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                            View How the AI Works
-                        </button>
-                    </p>
-                </div>
-            </div>
-            
-            <!-- Input Form Card -->
-            <div style="background: rgba(255,255,255,0.95); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                <div style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
-                    <div class="form-field" style="flex: 1; min-width: 250px; position: relative; overflow: visible;">
-                        <label for="automl_campaign_id" style="color: #0f172a; display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
-                            <i class="fas fa-bullhorn" style="margin-right: 6px; color: #667eea;"></i>
-                            Select Campaign *
-                        </label>
-                        <select id="automl_campaign_id" style="background: white; border: 2px solid #e2e8f0; color: #0f172a; width: 100%; padding: 10px 12px; padding-right: 32px; border-radius: 6px; font-size: 14px; cursor: pointer; appearance: auto; -webkit-appearance: menulist; -moz-appearance: menulist; height: 42px; box-sizing: border-box; position: relative; z-index: 1000; overflow: visible; transition: border-color 0.2s;" onfocus="this.style.borderColor='#667eea'; checkDropdownStatus(); console.log('Dropdown focused, options count:', this.options.length);" onblur="this.style.borderColor='#e2e8f0';" onchange="updateDropdownStatus(); validateAutoMLForm(); console.log('Dropdown changed to:', this.value);" onclick="console.log('Dropdown clicked, options count:', this.options.length); if(this.options.length <= 1) { console.warn('Dropdown has no options! Attempting to populate...'); populateAutoMLDropdown(); }" onmousedown="console.log('Dropdown mousedown, options:', Array.from(this.options).map(o => o.value + ':' + o.textContent));">
-                            <option value="">-- Select a campaign --</option>
-                        </select>
-                        <p id="automl_dropdown_status" style="color: #64748b; font-size: 12px; margin: 6px 0 0 0; min-height: 16px;">Loading campaigns...</p>
-                        <p style="color: #94a3b8; font-size: 11px; margin: 4px 0 0 0; line-height: 1.4;">
-                            💡 Campaigns are pulled from the <strong>All Campaigns</strong> section below. Conflict checking will compare with the <strong>Events module</strong>.
-                        </p>
-                    </div>
-                    <div class="form-field" style="flex: 1; min-width: 200px;">
-                        <label for="automl_audience_segment" style="color: #0f172a; display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
-                            <i class="fas fa-users" style="margin-right: 6px; color: #667eea;"></i>
-                            Target Segment (Optional)
-                        </label>
-                        <input id="automl_audience_segment" type="number" placeholder="Enter segment ID" style="background: white; border: 2px solid #e2e8f0; color: #0f172a; width: 100%; padding: 10px 12px; border-radius: 6px; font-size: 14px; height: 42px; box-sizing: border-box; transition: border-color 0.2s;" onfocus="this.style.borderColor='#667eea';" onblur="this.style.borderColor='#e2e8f0';" onchange="validateAutoMLForm();" oninput="validateAutoMLForm();">
-                        <p style="color: #94a3b8; font-size: 11px; margin: 4px 0 0 0; line-height: 1.4;">
-                            💡 Segments are pulled from the <strong>Segments module</strong>. Leave empty for general audience analysis.
-                        </p>
-                    </div>
-                    <div style="display: flex; flex-direction: column; justify-content: flex-end; min-width: 160px;">
-                        <button type="button" id="getPredictionBtn" class="btn btn-primary" onclick="if(typeof handleGetPredictionClick==='function'){handleGetPredictionClick(event);}else if(typeof window.handleGetPredictionClick==='function'){window.handleGetPredictionClick(event);}else{console.error('handleGetPredictionClick not found'); alert('Prediction function not loaded. Please refresh the page.');}" style="background: white; color: #667eea; border: 2px solid white; font-weight: 700; padding: 12px 24px; height: 42px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; white-space: nowrap; transition: all 0.2s; cursor: pointer; border-radius: 6px; font-size: 14px;" onmouseover="this.style.background='#f8fafc'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                            <i class="fas fa-magic" style="margin-right: 8px;"></i>
-                            Get AI Prediction
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Empty State (when no campaign selected) -->
-            <div id="automlEmptyState" style="background: rgba(255,255,255,0.95); border-radius: 8px; padding: 40px 24px; text-align: center; color: #64748b; display: block;">
-                <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.6;">
-                    <i class="fas fa-robot"></i>
-                </div>
-                <h4 style="margin: 0 0 8px 0; color: #0f172a; font-size: 18px; font-weight: 600;">Ready for AI Analysis</h4>
-                <p style="margin: 0; font-size: 14px; line-height: 1.6; max-width: 500px; margin-left: auto; margin-right: auto;">
-                    Select a campaign above and click <strong>"Get AI Prediction"</strong> to receive an AI-powered recommendation for the optimal deployment schedule.
-                </p>
-            </div>
-            
-            <!-- AI Recommendation Result Card -->
-            <div id="automlResult" class="prediction-result" style="display:none; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 24px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
-                    <div style="font-size: 32px;">
-                        <i class="fas fa-check-circle" style="color: #10b981;"></i>
-                    </div>
-                    <div style="flex: 1;">
-                        <h4 style="margin: 0 0 4px 0; color: #0f172a; font-size: 18px; font-weight: 700;">AI Recommendation Generated</h4>
-                        <p style="margin: 0; color: #64748b; font-size: 13px;">Review the suggested schedule below and choose an action.</p>
-                    </div>
-                </div>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
-                    <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 16px;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                            <i class="fas fa-calendar-alt" style="color: #10b981; font-size: 18px;"></i>
-                            <strong style="color: #065f46; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Suggested Date & Time</strong>
-                        </div>
-                        <div id="pred_datetime" style="color: #0f172a; font-size: 16px; font-weight: 600; line-height: 1.4;">-</div>
-                    </div>
-                    
-                    <div style="background: #eff6ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 16px;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                            <i class="fas fa-chart-line" style="color: #3b82f6; font-size: 18px;"></i>
-                            <strong style="color: #1e40af; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Confidence Score</strong>
-                        </div>
-                        <div id="pred_confidence" style="color: #0f172a; font-size: 16px; font-weight: 600; line-height: 1.4;">-</div>
-                        <p style="margin: 8px 0 0 0; color: #64748b; font-size: 11px; line-height: 1.4;">
-                            Higher scores indicate stronger confidence in the recommendation based on historical data analysis.
-                        </p>
-                    </div>
-                    
-                    <div style="background: #faf5ff; border: 2px solid #a855f7; border-radius: 8px; padding: 16px;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                            <i class="fas fa-cog" style="color: #a855f7; font-size: 18px;"></i>
-                            <strong style="color: #6b21a8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Model Source</strong>
-                        </div>
-                        <div id="pred_source" style="color: #0f172a; font-size: 16px; font-weight: 600; line-height: 1.4;">-</div>
-                    </div>
-                </div>
-                
-                <div style="background: #f8fafc; border-left: 4px solid #667eea; border-radius: 6px; padding: 16px; margin-bottom: 20px;">
-                    <div style="display: flex; align-items: flex-start; gap: 12px;">
-                        <i class="fas fa-lightbulb" style="color: #667eea; font-size: 20px; margin-top: 2px;"></i>
-                        <div style="flex: 1;">
-                            <strong style="display: block; margin-bottom: 6px; color: #0f172a; font-size: 14px;">AI Recommendation:</strong>
-                            <div id="pred_recommendation" style="color: #475569; font-size: 13px; line-height: 1.6;">Based on historical performance data</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-primary" onclick="acceptAIRecommendation()" style="background: #10b981; color: white; border: none; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#10b981'; this.style.transform='translateY(0)'">
-                        <i class="fas fa-check"></i>
-                        Accept AI Recommendation
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="checkConflicts()" style="background: white; color: #667eea; border: 2px solid #667eea; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
-                        <i class="fas fa-search"></i>
-                        Check Conflicts
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="overrideSchedule()" style="background: white; color: #64748b; border: 2px solid #e2e8f0; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'" onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">
-                        <i class="fas fa-edit"></i>
-                        Override Schedule
-                    </button>
-                </div>
-            </div>
             <div class="crime-ai-card" id="aiRecommendationsCard">
                 <div class="crime-ai-toolbar">
                     <div>
@@ -1771,9 +1631,8 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     <div id="aiRecommendationsPaginationControls" class="crime-ai-page-controls"></div>
                 </div>
             </div>
-        </div>
     </section>
-    <?php endif; // End RBAC: Hide AutoML section for Viewer ?>
+    <?php endif; // End RBAC: Hide AI recommendations for Viewer ?>
 
     <!-- Campaigns List - Moved to top -->
     <section class="card" id="list-section">
@@ -6955,8 +6814,7 @@ function toggleBudgetVisibilityInline() {
         console.log('loadCampaigns() - Rendering campaigns. Current role:', currentUserRole, 'Role ID:', currentUserRoleId);
         console.log('loadCampaigns() - isAdmin():', isAdmin(), 'isViewer():', isViewer());
         
-        // Populate AutoML dropdown immediately after campaigns are loaded
-        populateAutoMLDropdown();
+        // Legacy AutoML deployment controls were removed; Smart AI recommendations load independently.
         
         allCampaigns.forEach(c => {
             const tr = document.createElement('tr');
@@ -9633,98 +9491,8 @@ async function initializeCampaigns() {
         
         loadResources();
         
-        // Populate AutoML dropdown immediately after campaigns are loaded
-        console.log('initializeCampaigns() - Populating AutoML dropdown with', allCampaigns.length, 'campaigns');
-        populateAutoMLDropdown();
-        validateAutoMLForm();
-        
-        // Also set up a delayed check as backup
-        setTimeout(() => {
-            const automlSelect = document.getElementById('automl_campaign_id');
-            if (automlSelect && automlSelect.options.length <= 1 && allCampaigns.length > 0) {
-                console.log('initializeCampaigns() - Dropdown empty, populating...');
-                populateAutoMLDropdown();
-                validateAutoMLForm();
-            } else if (automlSelect) {
-                console.log('initializeCampaigns() - Dropdown already has', automlSelect.options.length - 1, 'options');
-                validateAutoMLForm();
-            }
-            
-            // Ensure Get Prediction button has event listener
-            const getPredictionBtn = document.getElementById('getPredictionBtn');
-            if (getPredictionBtn) {
-                console.log('initializeCampaigns() - Found Get Prediction button');
-                // Remove old onclick and add event listener
-                getPredictionBtn.onclick = null;
-                
-                // Remove any existing listeners first
-                const newBtn = getPredictionBtn.cloneNode(true);
-                getPredictionBtn.parentNode.replaceChild(newBtn, getPredictionBtn);
-                
-                // Get the new button reference
-                const btn = document.getElementById('getPredictionBtn');
-                
-                // Add click event listener
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('=== Get Prediction button clicked via event listener ===');
-                    handleGetPredictionClick(e);
-                });
-                
-                // Also set onclick as backup
-                btn.onclick = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('=== Get Prediction button clicked via onclick handler ===');
-                    handleGetPredictionClick(e);
-                };
-                
-                console.log('initializeCampaigns() - Get Prediction button event listeners attached');
-            } else {
-                console.warn('initializeCampaigns() - Get Prediction button not found!');
-            }
-            
-            // Ensure Refresh button has event listener
-            const refreshBtn = document.getElementById('automlRefreshBtn');
-            if (refreshBtn) {
-                console.log('initializeCampaigns() - Found Refresh button');
-                
-                // Remove any existing listeners by cloning
-                const newRefreshBtn = refreshBtn.cloneNode(true);
-                refreshBtn.parentNode.replaceChild(newRefreshBtn, refreshBtn);
-                
-                // Get the new button reference
-                const refreshBtnNew = document.getElementById('automlRefreshBtn');
-                
-                // Add click event listener
-                refreshBtnNew.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('=== Refresh button clicked ===');
-                    console.log('refreshAutoMLCampaigns type:', typeof refreshAutoMLCampaigns);
-                    console.log('window.refreshAutoMLCampaigns type:', typeof window.refreshAutoMLCampaigns);
-                    
-                    try {
-                        if (typeof refreshAutoMLCampaigns === 'function') {
-                            refreshAutoMLCampaigns();
-                        } else if (typeof window.refreshAutoMLCampaigns === 'function') {
-                            window.refreshAutoMLCampaigns();
-                        } else {
-                            console.error('refreshAutoMLCampaigns function not found!');
-                            alert('Error: Refresh function not loaded. Please refresh the page.');
-                        }
-                    } catch (err) {
-                        console.error('Error in refresh button click handler:', err);
-                        alert('Error: ' + err.message);
-                    }
-                });
-                
-                console.log('initializeCampaigns() - Refresh button event listener attached');
-            } else {
-                console.warn('initializeCampaigns() - Refresh button not found!');
-            }
-        }, 200);
+        // Legacy AutoML deployment/scheduling controls were removed.
+        // Smart AI Campaign Recommendations are initialized separately below.
         
         loadStaffTable();
         
