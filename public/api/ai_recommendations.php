@@ -1272,8 +1272,18 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
             $hashInput = $rec['trend_key'] . '|' . json_encode($rec['cluster_report_ids']);
             $hash = hash('sha256', $hashInput);
 
+            // The current LGU schema defines campaign_department_ai_recommendations.category
+            // as ENUM('crime','disaster'). Keep that column as the EVIDENCE SOURCE so older
+            // databases remain compatible. The actual campaign classification (including
+            // Education) is stored in data_snapshot / returned as campaign_category.
+            $dbSourceCategory = strtolower(trim((string) ($rec['source_type'] ?? '')));
+            if (!in_array($dbSourceCategory, ['crime', 'disaster'], true)) {
+                $trendForSource = strtolower((string) ($rec['trend_key'] ?? ''));
+                $dbSourceCategory = str_starts_with($trendForSource, 'disaster:') ? 'disaster' : 'crime';
+            }
+
             $upsertStmt->execute([
-                ':category' => $rec['category'],
+                ':category' => $dbSourceCategory,
                 ':campaign_title' => $rec['campaign_title'],
                 ':main_trend' => $rec['main_trend'],
                 ':trend_key' => $rec['trend_key'],
@@ -1353,6 +1363,9 @@ function attach_persisted_recommendation_ids(PDO $pdo, array $recommendations): 
             ? (int) $row['converted_campaign_id']
             : null;
         $recommendations[$index]['planning_status'] = $row['planning_status'] ?? 'not_generated';
+        if (empty($recommendations[$index]['campaign_category'])) {
+            $recommendations[$index]['campaign_category'] = $recommendations[$index]['category'] ?? 'crime';
+        }
     }
 
     return $recommendations;
@@ -1374,7 +1387,6 @@ function load_cached_recommendations(PDO $pdo): ?array
         }
 
         $recommendations = [];
-        $categoryUpdate = $pdo->prepare('UPDATE campaign_department_ai_recommendations SET category = ? WHERE id = ? AND (category IS NULL OR LOWER(category) <> ?)');
         foreach ($rows as $row) {
             $rec = json_decode((string) ($row['data_snapshot'] ?? ''), true);
             if (!is_array($rec)) {
@@ -1398,11 +1410,11 @@ function load_cached_recommendations(PDO $pdo): ?array
                 $cachedActions,
                 $sourceType
             );
+            // Do not write Education into the legacy ENUM('crime','disaster') column.
+            // Return it as the campaign category while preserving the report source separately.
             $rec['category'] = $normalizedCategory;
+            $rec['campaign_category'] = $normalizedCategory;
             $rec['source_type'] = $sourceType;
-            if (strtolower((string) ($row['category'] ?? '')) !== $normalizedCategory) {
-                $categoryUpdate->execute([$normalizedCategory, (int) $row['id'], $normalizedCategory]);
-            }
 
             $rec['id'] = (int) $row['id'];
             $rec['approval_status'] = $row['approval_status'] ?? 'recommended';
@@ -1594,6 +1606,7 @@ try {
             // category describes WHAT the campaign is. source_type describes
             // WHERE the evidence came from (crime/disaster/partner data).
             'category' => $campaignCategory,
+            'campaign_category' => $campaignCategory,
             'source_type' => $cluster['source'],
             'campaign_title' => $campaignTitle,
             'main_trend' => $cluster['trend_label'],

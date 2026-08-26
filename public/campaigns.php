@@ -1313,7 +1313,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                             <p class="planner-help">Enter the campaign details manually. The campaign remains <strong>Draft</strong> and still follows the existing Secretary/Captain approval workflow.</p>
                             <div class="planner-grid">
                                 <div class="form-field"><label for="title">Campaign Title *</label><input type="text" id="title" required placeholder="Enter campaign title..."></div>
-                                <div class="form-field"><label for="category">Category *</label><input id="category" list="manualCategoryOptions" required placeholder="e.g. Crime, Disaster, Fire Safety"><datalist id="manualCategoryOptions"><option value="crime"><option value="disaster"><option value="fire"><option value="flood"><option value="earthquake"><option value="health"><option value="road safety"><option value="general"></datalist></div>
+                                <div class="form-field"><label for="category">Category *</label><input id="category" list="manualCategoryOptions" required placeholder="e.g. Crime, Disaster, Fire Safety"><datalist id="manualCategoryOptions"><option value="crime"><option value="disaster"><option value="fire"><option value="flood"><option value="earthquake"><option value="health"><option value="education"><option value="road safety"><option value="general"></datalist></div>
                                 <div class="form-field"><label for="start_datetime">Start Date & Time</label><input id="start_datetime" type="datetime-local"></div>
                                 <div class="form-field"><label for="end_datetime">End Date & Time</label><input id="end_datetime" type="datetime-local"></div>
                                 <div class="form-field full"><label for="objectives">Objectives *</label><textarea id="objectives" rows="4" placeholder="Primary objectives and goals..."></textarea></div>
@@ -2300,9 +2300,47 @@ function getPriorityBadge(level, score) {
     return { className: 'priority-low', label: 'Low', color: '#16a34a' };
 }
 
+function normalizeAiCampaignCategory(rec = {}) {
+    const explicitCampaignCategory = String(rec.campaign_category || '').trim().toLowerCase();
+    if (['education', 'crime', 'disaster'].includes(explicitCampaignCategory)) {
+        return explicitCampaignCategory;
+    }
+
+    const trend = String(rec.trend_key || '').trim().toLowerCase();
+    const sourceType = String(rec.source_type || rec.source || '').trim().toLowerCase();
+    const currentCategory = String(rec.category || '').trim().toLowerCase();
+    const title = String(rec.campaign_title || rec.recommended_campaign_title || '').trim().toLowerCase();
+    const audience = String(rec.ai_target_audience || rec.target_audience || '').trim().toLowerCase();
+    const actionsRaw = Array.isArray(rec.ai_recommended_actions) ? rec.ai_recommended_actions.join(' ') : String(rec.ai_recommended_actions || '');
+    const text = `${title} ${audience} ${actionsRaw}`.toLowerCase();
+
+    if (sourceType === 'disaster' || currentCategory === 'disaster' || trend.startsWith('disaster:')) {
+        return 'disaster';
+    }
+
+    // The campaign category describes WHAT the intervention does.  The evidence
+    // source remains separate, so a crime report may legitimately produce an
+    // Education campaign when the response is prevention/awareness/seminars.
+    if (
+        trend.includes('drug-related') ||
+        trend.includes('youth-safety') ||
+        /drug[- ]?free|say no to drugs|choose life|anti[- ]?drug awareness|drug prevention|youth|student|school|kabataan|education|seminar|workshop|orientation|peer education/.test(text)
+    ) {
+        const enforcementOnly = /patrol|enforcement|apprehend|apprehension|arrest|surveillance|hotspot operation|police operation|checkpoint|raid|law enforcement/.test(text)
+            && !/awareness|educat|seminar|workshop|training|orientation|leadership|student|school|youth|kabataan|prevention/.test(text);
+        if (!enforcementOnly) return 'education';
+    }
+
+    return currentCategory === 'education' ? 'education' : 'crime';
+}
+
 function getCategoryBadge(source) {
-    if (source === 'disaster') {
+    const normalized = String(source || '').trim().toLowerCase();
+    if (normalized === 'disaster') {
         return { className: 'badge-disaster', label: 'Disaster', icon: 'fa-exclamation-triangle', color: '#dc2626' };
+    }
+    if (normalized === 'education') {
+        return { className: 'badge-education', label: 'Education', icon: 'fa-graduation-cap', color: '#0f766e' };
     }
     return { className: 'badge-crime', label: 'Crime', icon: 'fa-shield-alt', color: '#667eea' };
 }
@@ -2469,7 +2507,7 @@ function renderAiRecommendationsTable() {
 
         const catCell = document.createElement('td');
         catCell.style.cssText = 'padding: 12px 14px; vertical-align: middle;';
-        const catBadge = getCategoryBadge(rec.category || rec.source || 'crime');
+        const catBadge = getCategoryBadge(normalizeAiCampaignCategory(rec));
         const catSpan = document.createElement('span');
         catSpan.style.cssText = `display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: ${catBadge.color}15; color: ${catBadge.color}; border: 1px solid ${catBadge.color}30; text-transform: uppercase; letter-spacing: 0.3px;`;
         catSpan.innerHTML = `<i class="fas ${catBadge.icon}"></i> ${catBadge.label}`;
@@ -2540,7 +2578,9 @@ async function loadAiRecommendations(forceRefresh = false) {
             throw new Error(payload.error || 'AI recommendations endpoint failed');
         }
 
-        aiRecommendations = Array.isArray(payload?.recommendations) ? payload.recommendations : [];
+        aiRecommendations = Array.isArray(payload?.recommendations)
+            ? payload.recommendations.map(rec => ({ ...rec, category: normalizeAiCampaignCategory(rec), campaign_category: normalizeAiCampaignCategory(rec) }))
+            : [];
         aiRecommendationsFiltered = [...aiRecommendations];
         aiRecommendationsCurrentPage = 1;
         renderAiRecommendationsTable();
@@ -2583,7 +2623,7 @@ async function openAiRecommendationModal(index, items) {
     closeAiRecommendationModal();
 
     const prio = getPriorityBadge(rec.priority_level, rec.priority_score);
-    const catBadge = getCategoryBadge(rec.category || rec.source || 'crime');
+    const catBadge = getCategoryBadge(normalizeAiCampaignCategory(rec));
 
     const modal = document.createElement('div');
     modal.id = 'aiRecommendationModal';
@@ -4005,17 +4045,54 @@ function showAcceptAiRecSuccessModal(payload) {
     setTimeout(reloadPage, 2500);
 }
 
+async function resolveAiRecommendationId(rec = {}, summary = {}) {
+    let id = Number(summary.id || rec.id || 0);
+    if (id > 0) return id;
+
+    try {
+        const response = await fetch(aiRecommendationsUrl + '?_accept_id=' + Date.now(), {
+            headers: { 'Accept': 'application/json' },
+            cache: 'no-store'
+        });
+        if (!response.ok) return 0;
+
+        const payload = await response.json();
+        const cached = Array.isArray(payload?.recommendations) ? payload.recommendations : [];
+        const trendKey = String(summary.trend_key || rec.trend_key || '').trim();
+        const title = String(summary.campaign_title || rec.campaign_title || rec.recommended_campaign_title || '').trim();
+
+        let match = null;
+        if (trendKey) {
+            match = cached.find(item => String(item?.trend_key || '').trim() === trendKey && Number(item?.id || 0) > 0) || null;
+        }
+        if (!match && title) {
+            match = cached.find(item => String(item?.campaign_title || item?.recommended_campaign_title || '').trim() === title && Number(item?.id || 0) > 0) || null;
+        }
+
+        id = Number(match?.id || 0);
+        if (id > 0) {
+            rec.id = id;
+            if (summary && typeof summary === 'object') summary.id = id;
+            if (window.__aiRecActive?.rec) window.__aiRecActive.rec.id = id;
+        }
+        return id;
+    } catch (error) {
+        console.warn('Unable to resolve AI recommendation ID:', error);
+        return 0;
+    }
+}
+
 async function acceptAiRecommendation() {
     const active = window.__aiRecActive || {};
     const rec = active.rec || {};
     const data = window.__aiRecDetail || {};
     const summary = data.summary || {};
-    const recommendationId = summary.id || rec.id;
+    const recommendationId = await resolveAiRecommendationId(rec, summary);
     const acceptBtn = document.getElementById('aiRecAcceptBtn');
     const status = document.getElementById('aiRecPlanStatus');
 
     if (!recommendationId) {
-        showErrorToast('Acceptance failed: missing recommendation ID.');
+        showErrorToast('Acceptance failed: recommendation ID could not be resolved. Refresh the recommendations and try again.');
         return;
     }
 

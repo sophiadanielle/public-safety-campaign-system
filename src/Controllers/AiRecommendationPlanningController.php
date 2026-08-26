@@ -58,6 +58,18 @@ class AiRecommendationPlanningController
         }
 
         $rec = $this->requireRecommendation($recommendationId);
+
+        // If someone removed generated plan rows manually, planning_status may still
+        // say completed. Treat that state as stale so Generate Campaign Plan can
+        // rebuild the missing details instead of returning "already completed".
+        $currentPlanningStatus = strtolower(trim((string) ($rec['planning_status'] ?? 'not_generated')));
+        $missingExistingDetails = $this->missingRecommendationPlanDetails($recommendationId);
+        if (in_array($currentPlanningStatus, ['completed', 'completed_with_warnings'], true) && !empty($missingExistingDetails)) {
+            $this->pdo->prepare("UPDATE campaign_department_ai_recommendations SET planning_status = 'not_generated' WHERE id = ?")
+                ->execute([$recommendationId]);
+            $rec['planning_status'] = 'not_generated';
+        }
+
         if ($campaignId <= 0 && !empty($rec['converted_campaign_id'])) {
             $campaignId = (int) $rec['converted_campaign_id'];
         }
@@ -349,30 +361,11 @@ class AiRecommendationPlanningController
             $rec = $this->requireRecommendationForAccept($recommendationId, $forceReaccept);
             $userId = $this->userId($user);
 
-            // Ensure planning items (budget, schedule, staff) exist before accepting
-            $budgetCount = (int) $this->pdo->query("SELECT COUNT(*) FROM campaign_ai_recommendation_budget_items WHERE recommendation_id = " . (int) $recommendationId)->fetchColumn();
-            $phaseCount = (int) $this->pdo->query("SELECT COUNT(*) FROM campaign_ai_recommendation_schedule_phases WHERE recommendation_id = " . (int) $recommendationId)->fetchColumn();
-
-            if ($budgetCount === 0 || $phaseCount === 0 || in_array($rec['planning_status'] ?? '', ['not_generated', 'failed'], true)) {
-                try {
-                    // Generate planning internally
-                    $camp = !empty($rec['converted_campaign_id']) ? $this->findCampaign((int) $rec['converted_campaign_id']) : null;
-                    $this->budgetAllocation->generateEstimatedBudgetFromRecommendation($recommendationId, $rec, $camp);
-                    $participants = $this->staffMatching->getRecommendedParticipantsFromRecommendation($rec, $camp);
-                    $this->staffMatching->storeParticipants($recommendationId, $participants);
-                    $matches = $this->partnerMatching->matchPartnersFromRecommendation($rec, $camp);
-                    $this->partnerMatching->storeMatches($recommendationId, $matches);
-                    $this->partnerMatching->storeSuggestions($recommendationId, $matches['suggestions']);
-                    $this->scheduleService->generateScheduleFromRecommendation($recommendationId, $rec, $camp);
-                    // Keep the original AI generation logic, but ensure its supporting report
-                    // snapshots are also available when a recommendation is accepted directly.
-                    $this->generateReportSnapshots($recommendationId, $rec);
-                    $this->pdo->prepare("UPDATE campaign_department_ai_recommendations SET planning_status = 'completed' WHERE id = ?")->execute([$recommendationId]);
-                    $rec = $this->requireRecommendationForAccept($recommendationId, true);
-                } catch (\Throwable $genErr) {
-                    error_log('On-the-fly planning generation error: ' . $genErr->getMessage());
-                }
-            }
+            // Acceptance must convert the exact plan the user reviewed. Never silently
+            // regenerate deleted/missing AI detail rows during Accept; doing so allowed a
+            // recommendation to be accepted even after its budget/staff/partner/schedule/
+            // report data had been deleted manually from the database.
+            $this->assertRecommendationPlanCompleteForAccept($recommendationId, $rec);
 
             $this->pdo->beginTransaction();
 
@@ -448,6 +441,50 @@ class AiRecommendationPlanningController
             error_log('AI recommendation accept failed: ' . $e->getMessage());
             http_response_code(500);
             return ['error' => 'Acceptance failed: ' . $e->getMessage()];
+        }
+    }
+
+    private function missingRecommendationPlanDetails(int $recommendationId): array
+    {
+        // Partners are intentionally optional. The accepted campaign must, however,
+        // have the four core planning datasets used by the 8-step campaign view.
+        $tables = [
+            'Budget Breakdown' => 'campaign_ai_recommendation_budget_items',
+            'Participants' => 'campaign_ai_recommendation_participants',
+            'Date Sprint / Events' => 'campaign_ai_recommendation_schedule_phases',
+            'Supporting Reports' => 'campaign_ai_report_snapshots',
+        ];
+
+        $missing = [];
+        foreach ($tables as $label => $table) {
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM {$table} WHERE recommendation_id = ?");
+            $stmt->execute([$recommendationId]);
+            if ((int) $stmt->fetchColumn() <= 0) {
+                $missing[] = $label;
+            }
+        }
+
+        return $missing;
+    }
+
+    private function assertRecommendationPlanCompleteForAccept(int $recommendationId, array $rec): void
+    {
+        $status = strtolower(trim((string) ($rec['planning_status'] ?? 'not_generated')));
+        if (!in_array($status, ['completed', 'completed_with_warnings'], true)) {
+            http_response_code(409);
+            throw new RuntimeException(
+                'AI recommendation plan is not ready for acceptance. Generate the campaign plan first.'
+            );
+        }
+
+        $missing = $this->missingRecommendationPlanDetails($recommendationId);
+        if (!empty($missing)) {
+            http_response_code(409);
+            throw new RuntimeException(
+                'AI recommendation plan is incomplete or its generated details were deleted. Missing: '
+                . implode(', ', $missing)
+                . '. Open the recommendation and use Generate Campaign Plan before accepting it.'
+            );
         }
     }
 
