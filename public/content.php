@@ -1026,6 +1026,13 @@ try {
 <script>
 <?php require_once __DIR__ . '/../header/includes/path_helper.php'; ?>
 const token = localStorage.getItem('jwtToken') || '';
+
+// Always read the latest JWT token. This helper is used by the Announcements API
+// and avoids ReferenceError when the page token changes after login/refresh.
+function getToken() {
+    return localStorage.getItem('jwtToken') || token || '';
+}
+
 const apiBase = '<?php echo $apiPath; ?>';
 const publicPath = '<?php echo $publicPath; ?>';
 
