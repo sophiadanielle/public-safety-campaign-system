@@ -296,7 +296,7 @@ require_once __DIR__ . '/header/includes/path_helper.php';
 
         .hero-stats {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 16px;
         }
 
@@ -1026,8 +1026,8 @@ require_once __DIR__ . '/header/includes/path_helper.php';
                                 <i class="fas fa-bullhorn"></i>
                             </div>
                             <div>
-                                <div class="hero-card-title">Campaign Dashboard</div>
-                                <div class="hero-card-subtitle">Real-time monitoring & analytics</div>
+                                <div class="hero-card-title">Announcement</div>
+                                <div class="hero-card-subtitle">Latest community advisories & updates</div>
                             </div>
                         </div>
                         <div class="hero-stats">
@@ -1310,6 +1310,18 @@ require_once __DIR__ . '/header/includes/path_helper.php';
                         <li><a href="#features">Event Management</a></li>
                         <li><a href="#features">Impact Analytics</a></li>
                         <li><a href="#features">Community Surveys</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3><i class="fas fa-phone-volume"></i> Emergency Hotlines</h3>
+                    <ul>
+                        <li><strong>Nationwide Emergency Hotline:</strong> 911</li>
+                        <li><strong>Philippine National Police (PNP):</strong> 117 or (02) 8722-0650</li>
+                        <li><strong>Philippine Red Cross:</strong> 143 or (02) 8527-0000</li>
+                        <li><strong>Bureau of Fire Protection (BFP):</strong> (02) 8426-0219 or (02) 8426-3812</li>
+                        <li><strong>National Disaster Risk Reduction and Management Council (NDRRMC):</strong> (02) 8911-5061 to 65</li>
+                        <li><strong>Metropolitan Manila Development Authority (MMDA) Traffic Hotline:</strong> 136</li>
+                        <li><strong>Department of Social Welfare and Development (DSWD):</strong> (02) 8931-8101</li>
                     </ul>
                 </div>
             </div>
