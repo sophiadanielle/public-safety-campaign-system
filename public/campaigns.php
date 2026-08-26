@@ -1350,53 +1350,56 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                             </div>
                         </div>
                     </section>
-
                     <section class="manual-plan-step" data-step="4">
                         <div class="planner-card">
-                            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
-                                <div>
-                                    <h3><i class="fas fa-coins" style="color:#f59e0b"></i> Detailed Budget Breakdown <span class="required-chip">At least 1 item</span></h3>
-                                    <p class="planner-help">Build the budget here. New campaign budgets are saved as <strong>Draft</strong>, then explicitly <strong>Approved</strong>, then <strong>Finalized</strong> before they appear in Financial &amp; Budgeting.</p>
-                                </div>
-                                <button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddBudgetRow()"><i class="fas fa-plus"></i> Add Budget Item</button>
+                            <h3><i class="fas fa-coins" style="color:#f59e0b"></i> Budget Breakdown <span class="required-chip">Manual entry</span></h3>
+                            <p class="planner-help">Enter every budget component manually. Saving the campaign saves these details with the Draft; nothing is auto-filled from Financial &amp; Budgeting.</p>
+
+                            <div class="planner-card" style="margin-bottom:14px;background:#f8fafc;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><div><h3 style="font-size:14px;margin:0;">1. Detailed Line Items</h3><p class="planner-help" style="margin:4px 0 0;">Enter each planned expense.</p></div><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddBudgetRow()"><i class="fas fa-plus"></i> Add Line Item</button></div>
+                                <div class="planner-table-wrap"><table class="planner-table" style="min-width:1350px"><thead><tr><th>Item *</th><th>Description</th><th>Category *</th><th>Qty</th><th>Unit</th><th>Unit Cost</th><th>Days/Sessions</th><th>Funding</th><th>Mapped Action</th><th>Notes</th><th></th></tr></thead><tbody id="manualBudgetBody"></tbody></table></div>
+                                <div style="text-align:right;margin-top:12px;font-size:16px;font-weight:800;color:#166534;">Line Item Total: ₱<span id="manualBudgetTotal">0.00</span></div>
                             </div>
 
-                            <div id="manualBudgetWorkflowBar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:14px;">
-                                <div>
-                                    <div style="font-size:10px;color:#94a3b8;font-weight:800;text-transform:uppercase;">Budget Workflow Status</div>
-                                    <div id="manualBudgetWorkflowStatus" style="font-size:15px;font-weight:800;color:#475569;margin-top:3px;">Draft</div>
-                                    <div id="manualBudgetWorkflowNote" style="font-size:11px;color:#64748b;margin-top:3px;">Save the campaign draft before approval.</div>
-                                </div>
-                                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                                    <button type="button" id="manualBudgetApproveBtn" data-planner-edit-action="1" class="btn btn-success" onclick="manualApproveBudgetPlan()" style="display:none;background:#10b981;color:white;border:none;"><i class="fas fa-check"></i> Approve Budget</button>
-                                    <button type="button" id="manualBudgetFinalizeBtn" data-planner-edit-action="1" class="btn btn-primary" onclick="manualFinalizeBudgetPlan()" style="display:none;"><i class="fas fa-file-invoice-dollar"></i> Finalize to Financial &amp; Budgeting</button>
+                            <div class="planner-card" style="margin-bottom:14px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><h3 style="font-size:14px;margin:0;">2. Category Breakdown</h3><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddCategoryBreakdownRow()"><i class="fas fa-plus"></i> Add Category</button></div>
+                                <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Category *</th><th>Amount (₱) *</th><th>Percentage</th><th>Notes</th><th></th></tr></thead><tbody id="manualCategoryBreakdownBody"></tbody></table></div>
+                            </div>
+
+                            <div class="planner-card" style="margin-bottom:14px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><h3 style="font-size:14px;margin:0;">3. Action Budget Mapping</h3><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddActionBudgetRow()"><i class="fas fa-plus"></i> Add Action Mapping</button></div>
+                                <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Campaign Action *</th><th>Budget Item / Purpose</th><th>Amount (₱) *</th><th>Rationale</th><th></th></tr></thead><tbody id="manualActionBudgetBody"></tbody></table></div>
+                            </div>
+
+                            <div class="planner-card" style="margin-bottom:14px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><h3 style="font-size:14px;margin:0;">4. Location Budget Destination</h3><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddLocationBudgetRow()"><i class="fas fa-plus"></i> Add Destination</button></div>
+                                <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Location / Destination *</th><th>Purpose</th><th>Amount (₱) *</th><th>Notes</th><th></th></tr></thead><tbody id="manualLocationBudgetBody"></tbody></table></div>
+                            </div>
+
+                            <div class="planner-card" style="margin-bottom:14px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><h3 style="font-size:14px;margin:0;">5. Staff Deployment Cost Impact</h3><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddStaffCostRow()"><i class="fas fa-plus"></i> Add Staff Cost</button></div>
+                                <div class="planner-table-wrap"><table class="planner-table" style="min-width:1050px"><thead><tr><th>Staff / Role *</th><th>Activity</th><th>Location</th><th>Qty</th><th>Rate (₱)</th><th>Days/Sessions</th><th>Total (₱)</th><th>Notes</th><th></th></tr></thead><tbody id="manualStaffCostBody"></tbody></table></div>
+                            </div>
+
+                            <div class="planner-card" style="margin-bottom:14px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><h3 style="font-size:14px;margin:0;">6. Partner Contribution Impact</h3><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddPartnerImpactRow()"><i class="fas fa-plus"></i> Add Partner Contribution</button></div>
+                                <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Partner *</th><th>Contribution / Support *</th><th>Type</th><th>Estimated Value (₱)</th><th>Notes</th><th></th></tr></thead><tbody id="manualPartnerImpactBody"></tbody></table></div>
+                            </div>
+
+                            <div class="planner-card" style="background:#fffbeb;border-color:#fde68a;">
+                                <h3 style="font-size:14px;margin:0 0 10px;">7. Contingency</h3>
+                                <div class="planner-grid">
+                                    <div class="form-field"><label>Contingency Percentage (%) *</label><input id="manual_contingency_percentage" type="number" min="0" step="0.01" placeholder="e.g. 10"></div>
+                                    <div class="form-field"><label>Contingency Amount (₱) *</label><input id="manual_contingency_amount" type="number" min="0" step="0.01" placeholder="0.00"></div>
+                                    <div class="form-field full"><label>Reason / Basis *</label><textarea id="manual_contingency_reason" rows="2" placeholder="Explain why this contingency is required."></textarea></div>
+                                    <div class="form-field full"><label>May Cover</label><textarea id="manual_contingency_may_cover" rows="2" placeholder="e.g. emergency transport, price increases, replacement materials"></textarea></div>
                                 </div>
                             </div>
 
-                            <div class="planner-table-wrap">
-                                <table class="planner-table" style="min-width:2050px;">
-                                    <thead><tr>
-                                        <th>#</th><th>Budget Category *</th><th>Item Name *</th><th>Description</th><th>Related Campaign Action</th><th>Type</th><th>QTY</th><th>Unit</th><th>Unit Cost</th><th>Sessions / Days</th><th>Subtotal</th><th>Funding</th><th>Budget Destination / Location</th><th>Notes</th><th></th>
-                                    </tr></thead>
-                                    <tbody id="manualBudgetBody"></tbody>
-                                </table>
-                            </div>
-                            <div style="text-align:right;margin-top:12px;font-size:16px;font-weight:800;color:#166534;">Total: ₱<span id="manualBudgetTotal">0.00</span></div>
                             <input id="budget" type="hidden"><input id="staff_count" type="hidden">
-
-                            <div id="manualBudgetDetailedAnalysis" style="margin-top:18px;">
-                                <details open style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:10px;overflow:hidden;"><summary style="cursor:pointer;padding:11px 13px;background:#f8fafc;font-size:12px;font-weight:800;text-transform:uppercase;color:#334155;">Detailed Line Items</summary><div id="manualBudgetAnalysisLines" style="padding:12px;color:#64748b;font-size:12px;">Add budget line items above.</div></details>
-                                <details style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:10px;overflow:hidden;"><summary style="cursor:pointer;padding:11px 13px;background:#f8fafc;font-size:12px;font-weight:800;text-transform:uppercase;color:#334155;">Category Breakdown</summary><div id="manualBudgetAnalysisCategories" style="padding:12px;"></div></details>
-                                <details style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:10px;overflow:hidden;"><summary style="cursor:pointer;padding:11px 13px;background:#f8fafc;font-size:12px;font-weight:800;text-transform:uppercase;color:#334155;">Action Budget Mapping</summary><div id="manualBudgetAnalysisActions" style="padding:12px;"></div></details>
-                                <details style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:10px;overflow:hidden;"><summary style="cursor:pointer;padding:11px 13px;background:#f8fafc;font-size:12px;font-weight:800;text-transform:uppercase;color:#334155;">Location Budget Destination</summary><div id="manualBudgetAnalysisLocations" style="padding:12px;"></div></details>
-                                <details style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:10px;overflow:hidden;"><summary style="cursor:pointer;padding:11px 13px;background:#f8fafc;font-size:12px;font-weight:800;text-transform:uppercase;color:#334155;">Staff Deployment Cost Impact</summary><div id="manualBudgetAnalysisStaff" style="padding:12px;"></div></details>
-                                <details style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:10px;overflow:hidden;"><summary style="cursor:pointer;padding:11px 13px;background:#f8fafc;font-size:12px;font-weight:800;text-transform:uppercase;color:#334155;">Partner Contribution Impact</summary><div id="manualBudgetAnalysisPartners" style="padding:12px;"></div></details>
-                                <details style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:0;overflow:hidden;"><summary style="cursor:pointer;padding:11px 13px;background:#f8fafc;font-size:12px;font-weight:800;text-transform:uppercase;color:#334155;">Contingency</summary><div id="manualBudgetAnalysisContingency" style="padding:12px;"></div></details>
-                            </div>
                         </div>
                     </section>
-
-                    <section class="manual-plan-step" data-step="5">
+<section class="manual-plan-step" data-step="5">
                         <div class="planner-card">
                             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div><h3><i class="fas fa-users" style="color:#667eea"></i> Participants <span class="required-chip">At least 1 participant</span></h3><p class="planner-help">Select from <code>campaign_department_reference_staff</code>. Quantity is limited by the available QTY in Staff.</p></div><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddParticipantRow()"><i class="fas fa-plus"></i> Add Participant</button></div>
                             <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Staff *</th><th>Available</th><th>Qty</th><th>Assigned Activity</th><th>Deployment Location</th><th>Notes</th><th></th></tr></thead><tbody id="manualParticipantsBody"></tbody></table></div>
@@ -1420,7 +1423,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     <section class="manual-plan-step" data-step="8">
                         <div class="planner-card">
                             <h3><i class="fas fa-check-double" style="color:#10b981"></i> Review & Submit</h3>
-                            <p class="planner-help">Review Steps 1–7. Saving creates/updates the campaign as a Draft. The budget has its own Draft → Approved → Finalized workflow before it appears in Financial & Budgeting.</p>
+                            <p class="planner-help">Review Steps 1–7. Completing this plan does not approve the campaign; it remains in the normal governance workflow.</p>
                             <div id="manualReviewValidation" style="margin-bottom:14px;"></div>
                             <div class="review-grid" id="manualReviewGrid"></div>
                         </div>
@@ -1433,7 +1436,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                             <button type="button" id="manualPrevBtn" class="btn btn-secondary" onclick="manualPreviousStep()" style="display:none;"><i class="fas fa-arrow-left"></i> Previous</button>
                             <button type="button" id="manualSaveDraftBtn" class="btn btn-secondary" onclick="manualSaveDraft()"><i class="fas fa-save"></i> Save Draft</button>
                             <button type="button" id="manualNextBtn" class="btn btn-primary" onclick="manualNextStep()">Next <i class="fas fa-arrow-right"></i></button>
-                            <button type="submit" id="manualSubmitBtn" class="btn btn-primary" style="display:none;"><i class="fas fa-save"></i> Save Complete Draft</button>
+                            <button type="submit" id="manualSubmitBtn" class="btn btn-primary" style="display:none;"><i class="fas fa-check"></i> Complete Campaign Plan</button>
                             <button type="button" class="btn btn-secondary" onclick="closePlanCampaignModal()">Close</button>
                         </div>
                     </div>
@@ -1518,80 +1521,67 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     </div>
     <?php endif; ?>
 
-    <!-- AutoML Panel -->
-    <?php if (!$isViewer): // RBAC: Hide AutoML section for Viewer (management tool) ?>
+    <!-- Smart AI Campaign Recommendations -->
+    <?php if (!$isViewer): ?>
     <section class="card" id="automl-section">
-        <div class="section-header">
-            <h2 class="section-title analytics-accent">🤖 AI-Powered Deployment Optimization</h2>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 12px; color: #64748b; font-weight: 500; background: #f1f5f9; padding: 4px 10px; border-radius: 12px;">Core Innovation</span>
-                <button type="button" id="automlRefreshBtn" onclick="if(typeof refreshAutoMLCampaigns==='function'){refreshAutoMLCampaigns();}else if(typeof window.refreshAutoMLCampaigns==='function'){window.refreshAutoMLCampaigns();}else{console.error('refreshAutoMLCampaigns not found'); alert('Refresh function not loaded');}" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; font-weight: 500;" title="Refresh campaign list" onmouseover="this.style.background='#5568d3'" onmouseout="this.style.background='#667eea'">
+    <div class="crime-ai-card" id="aiRecommendationsCard">
+        <div class="crime-ai-toolbar">
+            <div>
+                <h3 style="margin: 0 0 6px 0; color: #0f172a; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-robot" style="color: #667eea;"></i>
+                    Smart AI Campaign Recommendations
+                </h3>
+                <p id="aiRecommendationsStatus" class="crime-ai-status" style="margin: 0;">
+                    Loading unified analytics from crime and disaster reports...
+                </p>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="position: relative;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+                    <input type="text" id="aiRecSearchInput" placeholder="Search recommendations..." 
+                        style="padding: 8px 12px 8px 32px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px; width: 200px; background: white; outline: none;"
+                        onkeyup="filterAiRecommendations()" onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='#e2e8f0'">
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="loadAiRecommendations(true)" style="display: inline-flex; align-items: center; gap: 6px; border: 2px solid #667eea; color: #667eea; background: white; font-weight: 700;">
                     <i class="fas fa-sync-alt"></i>
-                    <span>Refresh</span>
+                    Refresh
+                </button>
+                <button type="button" id="aiRecBackfillBtn" class="btn btn-primary" onclick="backfillAiRecommendationPlans()" style="display: inline-flex; align-items: center; gap: 6px; background: #667eea; color: white; border: 2px solid #667eea; font-weight: 700;">
+                    <i class="fas fa-magic"></i>
+                    Generate Missing Plans
                 </button>
             </div>
         </div>
-        
-        <!-- Legacy AI-Powered Scheduling Intelligence panel removed. Smart AI Campaign Recommendations remains below. -->
-            <div class="crime-ai-card" id="aiRecommendationsCard">
-                <div class="crime-ai-toolbar">
-                    <div>
-                        <h3 style="margin: 0 0 6px 0; color: #0f172a; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                            <i class="fas fa-robot" style="color: #667eea;"></i>
-                            Smart AI Campaign Recommendations
-                        </h3>
-                        <p id="aiRecommendationsStatus" class="crime-ai-status" style="margin: 0;">
-                            Loading unified analytics from crime and disaster reports...
-                        </p>
-                    </div>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <div style="position: relative;">
-                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
-                            <input type="text" id="aiRecSearchInput" placeholder="Search recommendations..." 
-                                style="padding: 8px 12px 8px 32px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px; width: 200px; background: white; outline: none;"
-                                onkeyup="filterAiRecommendations()" onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='#e2e8f0'">
-                        </div>
-                        <button type="button" class="btn btn-secondary" onclick="loadAiRecommendations(true)" style="display: inline-flex; align-items: center; gap: 6px; border: 2px solid #667eea; color: #667eea; background: white; font-weight: 700;">
-                            <i class="fas fa-sync-alt"></i>
-                            Refresh
-                        </button>
-                        <button type="button" id="aiRecBackfillBtn" class="btn btn-primary" onclick="backfillAiRecommendationPlans()" style="display: inline-flex; align-items: center; gap: 6px; background: #667eea; color: white; border: 2px solid #667eea; font-weight: 700;">
-                            <i class="fas fa-magic"></i>
-                            Generate Missing Plans
-                        </button>
-                    </div>
-                </div>
-                <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
-                    <table class="data-table" style="width: 100%; border-collapse: collapse; min-width: 860px;">
-                        <thead>
-                            <tr style="background: #f8fafc;">
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 50px;">#</th>
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Campaign Title</th>
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 90px;">Category</th>
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Main Trend</th>
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap; width: 110px;">Reports</th>
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap; width: 130px;">Priority</th>
-                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 80px;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="aiRecommendationsTable">
-                            <tr>
-                                <td colspan="7" style="padding: 28px; text-align: center; color: #64748b;">
-                                    <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
-                                    Loading unified recommendations...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div id="aiRecommendationsPagination" class="crime-ai-pagination" style="display: none;">
-                    <div id="aiRecommendationsPaginationSummary" style="color: #64748b; font-size: 13px; font-weight: 600;"></div>
-                    <div id="aiRecommendationsPaginationControls" class="crime-ai-page-controls"></div>
-                </div>
-            </div>
+        <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <table class="data-table" style="width: 100%; border-collapse: collapse; min-width: 860px;">
+                <thead>
+                    <tr style="background: #f8fafc;">
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 50px;">#</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Campaign Title</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 90px;">Category</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Main Trend</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap; width: 110px;">Reports</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap; width: 130px;">Priority</th>
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 80px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="aiRecommendationsTable">
+                    <tr>
+                        <td colspan="7" style="padding: 28px; text-align: center; color: #64748b;">
+                            <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+                            Loading unified recommendations...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
+        <div id="aiRecommendationsPagination" class="crime-ai-pagination" style="display: none;">
+            <div id="aiRecommendationsPaginationSummary" style="color: #64748b; font-size: 13px; font-weight: 600;"></div>
+            <div id="aiRecommendationsPaginationControls" class="crime-ai-page-controls"></div>
+        </div>
+    </div>
     </section>
-    <?php endif; // End RBAC: Hide AutoML section for Viewer ?>
+    <?php endif; ?>
 
     <!-- Campaigns List - Moved to top -->
     <section class="card" id="list-section">
@@ -1782,7 +1772,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             </div>
         </div>
         <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
-            Finalized campaign budgets only. New manual budgets are created in <strong>Plan New Campaign</strong> as Draft, approved, then finalized here. Editing a finalized budget creates a <strong>Pending</strong> revision that must be approved or rejected with a reason.
+            Finalized campaign budgets are managed from the campaign plan. Use <strong>Plan New Campaign → Budget Breakdown</strong> to enter the complete detailed budget, then use View here to inspect it.
         </p>
         
         <!-- Budget Summary Cards -->
@@ -1839,7 +1829,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                     </tr>
                 </thead>
                 <tbody id="budgetTable">
-                    <tr><td colspan="6" style="text-align:center; padding:24px; color: #64748b;">No finalized campaign budgets yet. Create a budget in Plan New Campaign, approve it, then finalize it.</td></tr>
+                    <tr><td colspan="6" style="text-align:center; padding:24px; color: #64748b;">No budget items yet. Add items using the form above.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -4772,8 +4762,7 @@ let manualPlannerState = {
     options: { reference_staff: [], available_partners: [], audience_segments: [] },
     reportsExisting: [],
     reportDrafts: [],
-    reportEdit: null,
-    budgetWorkflow: { planning_status: 'draft', review_status: 'none', rejection_reason: null }
+    reportEdit: null
 };
 
 function manualEscapeHtml(value) {
@@ -4871,7 +4860,6 @@ function manualResetPlannerState() {
     manualPlannerState.reportsExisting = [];
     manualPlannerState.reportDrafts = [];
     manualPlannerState.reportEdit = null;
-    manualPlannerState.budgetWorkflow = { planning_status: 'draft', review_status: 'none', rejection_reason: null };
     const form = document.getElementById('planningForm');
     if (form) {
         form.reset();
@@ -4879,9 +4867,10 @@ function manualResetPlannerState() {
     }
     manualPopulateSimpleOptions();
     manualRenderReports();
-    const bodies = ['manualBudgetBody','manualParticipantsBody','manualPartnersBody','manualPhasesBody'];
+    const bodies = ['manualBudgetBody','manualCategoryBreakdownBody','manualActionBudgetBody','manualLocationBudgetBody','manualStaffCostBody','manualPartnerImpactBody','manualParticipantsBody','manualPartnersBody','manualPhasesBody'];
     bodies.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
     manualAddBudgetRow();
+    manualRenderBudgetDetails({});
     manualAddParticipantRow();
     manualAddPhaseRow();
     manualResetReportEditor();
@@ -4889,7 +4878,6 @@ function manualResetPlannerState() {
     if (status) status.style.display = 'none';
     manualGoToStep(1);
     manualSetModalTitle();
-    manualRenderBudgetWorkflow();
 }
 
 function manualGoToStep(step) {
@@ -4925,7 +4913,6 @@ function manualApplyMode() {
         save.innerHTML = manualPlannerState.mode === 'edit' ? '<i class="fas fa-save"></i> Save Changes' : '<i class="fas fa-save"></i> Save Draft';
     }
     if (submit && manualPlannerState.step === 8) submit.style.display = viewMode ? 'none' : '';
-    manualRenderBudgetWorkflow();
     const reportReq = document.getElementById('manualReportFileRequirement');
     if (reportReq) reportReq.textContent = manualPlannerState.reportEdit?.type === 'existing' ? '(optional when replacing metadata only)' : '*';
 }
@@ -4937,129 +4924,45 @@ function manualPartnerOptions(selected = '') {
     return '<option value="">Select partner...</option>' + (manualPlannerState.options.available_partners || []).map(p => `<option value="${Number(p.id)}" ${String(p.id)===String(selected)?'selected':''}>${manualEscapeHtml(p.name)} — ${manualEscapeHtml(p.organization_type || 'partner')}</option>`).join('');
 }
 
+function manualRemoveRow(btn) {
+    const tr = btn?.closest('tr');
+    if (tr) tr.remove();
+    manualUpdateBudgetTotal();
+}
 function manualAddBudgetRow(item = {}) {
     const body = document.getElementById('manualBudgetBody'); if (!body) return;
     const tr = document.createElement('tr'); tr.className = 'manual-budget-row';
-    tr.innerHTML = `
-        <td class="mb-num" style="font-weight:700;color:#64748b;text-align:center;">${body.children.length + 1}</td>
-        <td><input class="mb-category" value="${manualEscapeHtml(item.category || '')}" placeholder="e.g. Educational Materials" oninput="manualUpdateBudgetTotal()"></td>
-        <td><input class="mb-name" value="${manualEscapeHtml(item.item_name || '')}" placeholder="Item name" oninput="manualUpdateBudgetTotal()"></td>
-        <td><textarea class="mb-description" rows="2" placeholder="What this item covers" oninput="manualUpdateBudgetTotal()">${manualEscapeHtml(item.item_description || item.description || '')}</textarea></td>
-        <td><textarea class="mb-action" rows="2" placeholder="Campaign action supported" oninput="manualUpdateBudgetTotal()">${manualEscapeHtml(item.related_action || '')}</textarea></td>
-        <td><select class="mb-type" onchange="manualUpdateBudgetTotal()"><option value="consumable" ${item.item_type==='consumable'?'selected':''}>Consumable</option><option value="material" ${item.item_type==='material'?'selected':''}>Material</option><option value="equipment" ${item.item_type==='equipment'?'selected':''}>Equipment</option><option value="service" ${item.item_type==='service'?'selected':''}>Service</option><option value="activity" ${item.item_type==='activity'?'selected':''}>Activity</option><option value="logistics" ${item.item_type==='logistics'?'selected':''}>Logistics</option><option value="personnel_support" ${item.item_type==='personnel_support'?'selected':''}>Personnel Support</option><option value="contingency" ${item.item_type==='contingency'?'selected':''}>Contingency</option><option value="manual" ${(!item.item_type||item.item_type==='manual')?'selected':''}>Other</option></select></td>
-        <td><input class="mb-qty" type="number" min="1" value="${Number(item.quantity || 1)}" oninput="manualUpdateBudgetTotal()"></td>
-        <td><input class="mb-unit" value="${manualEscapeHtml(item.unit_label || '')}" placeholder="pcs/session" oninput="manualUpdateBudgetTotal()"></td>
-        <td><input class="mb-cost" type="number" min="0" step="0.01" value="${Number(item.unit_cost || 0)}" oninput="manualUpdateBudgetTotal()"></td>
-        <td><input class="mb-sessions" type="number" min="1" value="${Number(item.sessions_or_days || 1)}" oninput="manualUpdateBudgetTotal()"></td>
-        <td class="mb-subtotal" style="font-weight:800;text-align:right;white-space:nowrap;">₱0.00</td>
-        <td><select class="mb-funding" onchange="manualUpdateBudgetTotal()"><option value="government_allocated" ${item.funding_source==='government_allocated'?'selected':''}>Government Allocated</option><option value="reimbursable" ${item.funding_source==='reimbursable'?'selected':''}>Reimbursable</option><option value="partner_contribution" ${item.funding_source==='partner_contribution'?'selected':''}>Partner Contribution</option><option value="other" ${item.funding_source==='other'?'selected':''}>Other</option></select></td>
-        <td><input class="mb-destination" value="${manualEscapeHtml(item.budget_destination || '')}" placeholder="Barangay Hall / School / Zone" oninput="manualUpdateBudgetTotal()"></td>
-        <td><textarea class="mb-notes" rows="2" oninput="manualUpdateBudgetTotal()">${manualEscapeHtml(item.notes || '')}</textarea></td>
-        <td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="this.closest('tr').remove();manualRenumberBudgetRows();manualUpdateBudgetTotal();" style="padding:6px 8px">×</button></td>`;
-    body.appendChild(tr);
-    manualRenumberBudgetRows();
-    manualUpdateBudgetTotal();
-    manualApplyMode();
+    tr.innerHTML = `<td><input class="mb-name" value="${manualEscapeHtml(item.item_name || '')}" placeholder="Item"></td><td><textarea class="mb-description" rows="1" placeholder="Detailed description">${manualEscapeHtml(item.item_description || '')}</textarea></td><td><input class="mb-category" value="${manualEscapeHtml(item.category || '')}" placeholder="Category"></td><td><input class="mb-qty" type="number" min="1" value="${Number(item.quantity || 1)}" oninput="manualUpdateBudgetTotal()"></td><td><input class="mb-unit" value="${manualEscapeHtml(item.unit_label || '')}" placeholder="pcs"></td><td><input class="mb-cost" type="number" min="0" step="0.01" value="${Number(item.unit_cost || 0)}" oninput="manualUpdateBudgetTotal()"></td><td><input class="mb-sessions" type="number" min="1" value="${Number(item.sessions_or_days || 1)}" oninput="manualUpdateBudgetTotal()"></td><td><select class="mb-funding"><option value="government_allocated" ${item.funding_source==='government_allocated'?'selected':''}>Government Allocated</option><option value="reimbursable" ${item.funding_source==='reimbursable'?'selected':''}>Reimbursable</option><option value="partner" ${item.funding_source==='partner'?'selected':''}>Partner Contribution</option><option value="other" ${item.funding_source==='other'?'selected':''}>Other</option></select></td><td><textarea class="mb-action" rows="1" placeholder="Action this item supports">${manualEscapeHtml(item.related_action || '')}</textarea></td><td><textarea class="mb-notes" rows="1">${manualEscapeHtml(item.notes || '')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualRemoveRow(this)" style="padding:6px 8px">×</button></td>`;
+    body.appendChild(tr); manualUpdateBudgetTotal(); manualApplyMode();
 }
-
-function manualRenumberBudgetRows(){
-    document.querySelectorAll('.manual-budget-row').forEach((row,i)=>{const n=row.querySelector('.mb-num');if(n)n.textContent=String(i+1);});
-}
-
 function manualCollectBudget() {
-    return Array.from(document.querySelectorAll('.manual-budget-row')).map((row,index) => ({
-        item_name: row.querySelector('.mb-name')?.value.trim() || '',
-        category: row.querySelector('.mb-category')?.value.trim() || '',
-        item_description: row.querySelector('.mb-description')?.value.trim() || '',
-        related_action: row.querySelector('.mb-action')?.value.trim() || '',
-        item_type: row.querySelector('.mb-type')?.value || 'manual',
-        quantity: Number(row.querySelector('.mb-qty')?.value || 1),
-        unit_label: row.querySelector('.mb-unit')?.value.trim() || '',
-        unit_cost: Number(row.querySelector('.mb-cost')?.value || 0),
-        sessions_or_days: Number(row.querySelector('.mb-sessions')?.value || 1),
-        funding_source: row.querySelector('.mb-funding')?.value || 'government_allocated',
-        budget_destination: row.querySelector('.mb-destination')?.value.trim() || '',
-        notes: row.querySelector('.mb-notes')?.value.trim() || '',
-        source_recommendation_id: row.dataset.sourceRecommendationId ? Number(row.dataset.sourceRecommendationId) : null,
-        sort_order: index + 1
+    return Array.from(document.querySelectorAll('.manual-budget-row')).map(row => ({
+        item_name: row.querySelector('.mb-name')?.value.trim() || '', item_description: row.querySelector('.mb-description')?.value.trim() || '', category: row.querySelector('.mb-category')?.value.trim() || '', item_type:'manual', quantity:Number(row.querySelector('.mb-qty')?.value||1), unit_label:row.querySelector('.mb-unit')?.value.trim() || '', unit_cost:Number(row.querySelector('.mb-cost')?.value||0), sessions_or_days:Number(row.querySelector('.mb-sessions')?.value||1), funding_source:row.querySelector('.mb-funding')?.value || 'government_allocated', related_action:row.querySelector('.mb-action')?.value.trim() || '', notes:row.querySelector('.mb-notes')?.value.trim() || ''
     })).filter(x => x.item_name);
 }
-
-function manualBudgetMoney(value){return '₱'+Number(value||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function manualBudgetEmpty(msg){return `<div style="padding:12px;text-align:center;color:#94a3b8;font-size:12px;">${manualEscapeHtml(msg)}</div>`;}
-
-function manualRenderBudgetAnalysis(){
-    const items=manualCollectBudget();
-    const total=items.reduce((sum,x)=>sum+(x.quantity*x.unit_cost*x.sessions_or_days),0);
-    document.querySelectorAll('.manual-budget-row').forEach(row=>{
-        const qty=Number(row.querySelector('.mb-qty')?.value||1),cost=Number(row.querySelector('.mb-cost')?.value||0),days=Number(row.querySelector('.mb-sessions')?.value||1);
-        const el=row.querySelector('.mb-subtotal');if(el)el.textContent=manualBudgetMoney(qty*cost*days);
-    });
-
-    const lineEl=document.getElementById('manualBudgetAnalysisLines');
-    if(lineEl) lineEl.innerHTML=items.length?`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:1100px"><thead><tr style="background:#f8fafc">${['#','Category','Item','Action','Destination','Funding','Subtotal'].map(h=>`<th style="padding:7px;text-align:left;font-size:11px">${h}</th>`).join('')}</tr></thead><tbody>${items.map((x,i)=>`<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:7px">${i+1}</td><td style="padding:7px">${manualEscapeHtml(x.category||x.item_type)}</td><td style="padding:7px;font-weight:700">${manualEscapeHtml(x.item_name)}</td><td style="padding:7px">${manualEscapeHtml(x.related_action||'General campaign implementation')}</td><td style="padding:7px">${manualEscapeHtml(x.budget_destination||document.getElementById('location')?.value||'Campaign-wide')}</td><td style="padding:7px">${manualEscapeHtml(x.funding_source)}</td><td style="padding:7px;text-align:right;font-weight:800">${manualBudgetMoney(x.quantity*x.unit_cost*x.sessions_or_days)}</td></tr>`).join('')}</tbody></table></div>`:manualBudgetEmpty('No detailed line items yet.');
-
-    const group=(keyFn)=>items.reduce((m,x)=>{const k=keyFn(x)||'Unspecified';const sub=x.quantity*x.unit_cost*x.sessions_or_days;if(!m[k])m[k]={total:0,count:0};m[k].total+=sub;m[k].count++;return m;},{});
-    const cats=group(x=>x.category||x.item_type);
-    const catEl=document.getElementById('manualBudgetAnalysisCategories');if(catEl)catEl.innerHTML=Object.keys(cats).length?`<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f8fafc"><th style="padding:7px;text-align:left">Category</th><th style="padding:7px;text-align:right">Total</th><th style="padding:7px;text-align:right">% of Total</th><th style="padding:7px;text-align:right">Items</th></tr></thead><tbody>${Object.entries(cats).map(([k,v])=>`<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:7px;font-weight:700">${manualEscapeHtml(k)}</td><td style="padding:7px;text-align:right">${manualBudgetMoney(v.total)}</td><td style="padding:7px;text-align:right">${total?((v.total/total)*100).toFixed(2):'0.00'}%</td><td style="padding:7px;text-align:right">${v.count}</td></tr>`).join('')}</tbody></table>`:manualBudgetEmpty('No category breakdown yet.');
-
-    const acts=group(x=>x.related_action||'General campaign implementation');
-    const actEl=document.getElementById('manualBudgetAnalysisActions');if(actEl)actEl.innerHTML=Object.keys(acts).length?Object.entries(acts).map(([k,v])=>`<div style="display:flex;justify-content:space-between;gap:12px;padding:9px 10px;border:1px solid #e2e8f0;border-radius:7px;margin-bottom:7px"><strong>${manualEscapeHtml(k)}</strong><span style="font-weight:800;color:#166534">${manualBudgetMoney(v.total)}</span></div>`).join(''):manualBudgetEmpty('No action-to-budget mapping yet.');
-
-    const locs=group(x=>x.budget_destination||document.getElementById('location')?.value||'Campaign-wide');
-    const locEl=document.getElementById('manualBudgetAnalysisLocations');if(locEl)locEl.innerHTML=Object.keys(locs).length?`<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f8fafc"><th style="padding:7px;text-align:left">Destination</th><th style="padding:7px;text-align:right">Line Items</th><th style="padding:7px;text-align:right">Budget</th></tr></thead><tbody>${Object.entries(locs).map(([k,v])=>`<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:7px;font-weight:700">${manualEscapeHtml(k)}</td><td style="padding:7px;text-align:right">${v.count}</td><td style="padding:7px;text-align:right">${manualBudgetMoney(v.total)}</td></tr>`).join('')}</tbody></table>`:manualBudgetEmpty('No location budget destinations yet.');
-
-    const participants=manualCollectParticipants();
-    const staffSupport=items.filter(x=>/staff|personnel/i.test(`${x.category} ${x.item_type} ${x.item_name}`)).reduce((s,x)=>s+x.quantity*x.unit_cost*x.sessions_or_days,0);
-    const totalStaff=participants.reduce((s,p)=>s+Number(p.selected_qty||0),0);
-    const staffEl=document.getElementById('manualBudgetAnalysisStaff');if(staffEl)staffEl.innerHTML=participants.length?`<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f8fafc"><th style="padding:7px;text-align:left">Staff / Role</th><th style="padding:7px;text-align:right">QTY</th><th style="padding:7px;text-align:left">Deployment</th><th style="padding:7px;text-align:right">Estimated Support Impact</th></tr></thead><tbody>${participants.map(p=>{const st=(manualPlannerState.options.reference_staff||[]).find(x=>Number(x.id)===Number(p.staff_id));const est=totalStaff?staffSupport*Number(p.selected_qty||0)/totalStaff:0;return `<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:7px;font-weight:700">${manualEscapeHtml(st?`${st.name} — ${st.role||'Staff'}`:'Staff')}</td><td style="padding:7px;text-align:right">${p.selected_qty}</td><td style="padding:7px">${manualEscapeHtml(p.deployment_location||document.getElementById('location')?.value||'Campaign-wide')}</td><td style="padding:7px;text-align:right">${manualBudgetMoney(est)}</td></tr>`}).join('')}</tbody></table><div style="font-size:11px;color:#64748b;margin-top:7px">Support impact comes from budget lines categorized as Staff/Personnel support; it is not a salary estimate.</div>`:manualBudgetEmpty('Add participants to calculate staff deployment cost impact.');
-
-    const partners=manualCollectPartners();
-    const partnerBudget=items.filter(x=>x.funding_source==='partner_contribution').reduce((s,x)=>s+x.quantity*x.unit_cost*x.sessions_or_days,0);
-    const partnerEl=document.getElementById('manualBudgetAnalysisPartners');if(partnerEl)partnerEl.innerHTML=partners.length?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-bottom:10px"><div style="padding:10px;background:#f8fafc;border-radius:7px"><small>Recorded Partner Contribution</small><div style="font-weight:800">${manualBudgetMoney(partnerBudget)}</div></div><div style="padding:10px;background:#f8fafc;border-radius:7px"><small>Budget After Contribution</small><div style="font-weight:800">${manualBudgetMoney(Math.max(0,total-partnerBudget))}</div></div></div>${partners.map(p=>{const opt=(manualPlannerState.options.available_partners||[]).find(x=>Number(x.id)===Number(p.partner_id));return `<div style="border:1px solid #e2e8f0;border-radius:7px;padding:9px;margin-bottom:7px"><strong>${manualEscapeHtml(opt?.name||'Partner')}</strong><div style="font-size:12px;color:#64748b">${manualEscapeHtml(p.role||p.engagement_type||'Campaign support')}</div></div>`}).join('')}`:manualBudgetEmpty('No partner contribution impact. Add a partner or use Partner Contribution as a funding source.');
-
-    const contingency=items.filter(x=>/contingency/i.test(`${x.category} ${x.item_type} ${x.item_name}`)).reduce((s,x)=>s+x.quantity*x.unit_cost*x.sessions_or_days,0);
-    const contEl=document.getElementById('manualBudgetAnalysisContingency');if(contEl)contEl.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px"><div style="padding:10px;background:#f8fafc;border-radius:7px"><small>Contingency Amount</small><div style="font-weight:800">${manualBudgetMoney(contingency)}</div></div><div style="padding:10px;background:#f8fafc;border-radius:7px"><small>Contingency %</small><div style="font-weight:800">${total?((contingency/total)*100).toFixed(2):'0.00'}%</div></div><div style="padding:10px;background:#f8fafc;border-radius:7px"><small>Basis</small><div style="font-size:12px">Budget lines named/categorized as Contingency</div></div></div>`;
-}
-
 function manualUpdateBudgetTotal() {
     const total = manualCollectBudget().reduce((sum, x) => sum + x.quantity * x.unit_cost * x.sessions_or_days, 0);
     const el = document.getElementById('manualBudgetTotal'); if (el) el.textContent = total.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
     const hidden = document.getElementById('budget'); if (hidden) hidden.value = total.toFixed(2);
-    manualRenderBudgetAnalysis();
     return total;
 }
-
-async function manualRefreshBudgetWorkflow(){
-    if(!manualPlannerState.campaignId){manualPlannerState.budgetWorkflow={planning_status:'draft',review_status:'none',rejection_reason:null};manualRenderBudgetWorkflow();return;}
-    try{const r=await manualApiJson(apiBase+`/api/v1/campaigns/${manualPlannerState.campaignId}/budget-workflow`);manualPlannerState.budgetWorkflow=r.data||manualPlannerState.budgetWorkflow;}catch(e){console.warn('Budget workflow load failed',e);}
-    manualRenderBudgetWorkflow();
+function manualAddCategoryBreakdownRow(item={}){
+    const b=document.getElementById('manualCategoryBreakdownBody');if(!b)return;const tr=document.createElement('tr');tr.className='manual-category-budget-row';tr.innerHTML=`<td><input class="mcb-category" value="${manualEscapeHtml(item.category||'')}"></td><td><input class="mcb-amount" type="number" min="0" step="0.01" value="${Number(item.amount||0)}"></td><td><input class="mcb-percent" type="number" min="0" step="0.01" value="${Number(item.percentage||0)}"></td><td><textarea class="mcb-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualRemoveRow(this)" style="padding:6px 8px">×</button></td>`;b.appendChild(tr);manualApplyMode();
 }
-
-function manualRenderBudgetWorkflow(){
-    const wf=manualPlannerState.budgetWorkflow||{};const planning=String(wf.planning_status||'draft').toLowerCase();const review=String(wf.review_status||'none').toLowerCase();
-    const status=document.getElementById('manualBudgetWorkflowStatus'),note=document.getElementById('manualBudgetWorkflowNote'),approve=document.getElementById('manualBudgetApproveBtn'),finalize=document.getElementById('manualBudgetFinalizeBtn');
-    let label=planning==='finalized'?'Finalized':planning==='approved'?'Approved':'Draft',color=planning==='finalized'?'#166534':planning==='approved'?'#1d4ed8':'#92400e';
-    if(review==='pending'){label='Pending Financial Review';color='#92400e';}else if(review==='rejected'){label='Rejected Revision';color='#991b1b';}
-    if(status){status.textContent=label;status.style.color=color;}
-    if(note){note.textContent=review==='pending'?'Budget edits are pending approval in Financial & Budgeting.':review==='rejected'?(`Rejected: ${wf.rejection_reason||'No reason recorded.'}`):planning==='draft'?'Save the draft, then approve the budget plan.':planning==='approved'?'Approved. Finalize it to insert it into Financial & Budgeting.':'This budget is already in Financial & Budgeting.';}
-    const canAct=manualPlannerState.mode!=='view' && !!manualPlannerState.campaignId && (typeof isAdmin==='function'&&isAdmin() || typeof isCaptain==='function'&&isCaptain());
-    if(approve)approve.style.display=canAct&&planning==='draft'&&review!=='pending'?'':'none';
-    if(finalize)finalize.style.display=canAct&&planning==='approved'?'':'none';
-}
-
-async function manualApproveBudgetPlan(){
-    if(!manualPlannerState.campaignId){showWarningToast('Save the campaign draft first.');return;}
-    if(!manualCollectBudget().length){showWarningToast('Add at least one budget line item.');return;}
-    const saved=await manualPersistPlan(false);if(!saved)return;
-    try{const r=await manualApiJson(apiBase+`/api/v1/campaigns/${manualPlannerState.campaignId}/budget-workflow`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'approve_planner'})});manualPlannerState.budgetWorkflow=r.data||{};manualRenderBudgetWorkflow();showSuccessToast(r.message||'Budget approved.');}catch(e){showWarningToast(e.message);}
-}
-
-async function manualFinalizeBudgetPlan(){
-    if(!manualPlannerState.campaignId)return;
-    if(!confirm('Finalize this approved budget and insert it into Financial & Budgeting?'))return;
-    try{const r=await manualApiJson(apiBase+`/api/v1/campaigns/${manualPlannerState.campaignId}/budget-workflow`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'finalize_planner'})});manualPlannerState.budgetWorkflow=r.data||{};manualRenderBudgetWorkflow();if(typeof loadBudgetData==='function')loadBudgetData();showSuccessToast(r.message||'Budget finalized.');}catch(e){showWarningToast(e.message);}
-}
+function manualCollectCategoryBreakdown(){return Array.from(document.querySelectorAll('.manual-category-budget-row')).map(r=>({category:r.querySelector('.mcb-category')?.value.trim()||'',amount:Number(r.querySelector('.mcb-amount')?.value||0),percentage:Number(r.querySelector('.mcb-percent')?.value||0),notes:r.querySelector('.mcb-notes')?.value.trim()||''})).filter(x=>x.category||x.amount);}
+function manualAddActionBudgetRow(item={}){const b=document.getElementById('manualActionBudgetBody');if(!b)return;const tr=document.createElement('tr');tr.className='manual-action-budget-row';tr.innerHTML=`<td><input class="mab-action" value="${manualEscapeHtml(item.action||'')}"></td><td><input class="mab-item" value="${manualEscapeHtml(item.budget_item||'')}"></td><td><input class="mab-amount" type="number" min="0" step="0.01" value="${Number(item.amount||0)}"></td><td><textarea class="mab-rationale" rows="1">${manualEscapeHtml(item.rationale||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualRemoveRow(this)" style="padding:6px 8px">×</button></td>`;b.appendChild(tr);manualApplyMode();}
+function manualCollectActionBudget(){return Array.from(document.querySelectorAll('.manual-action-budget-row')).map(r=>({action:r.querySelector('.mab-action')?.value.trim()||'',budget_item:r.querySelector('.mab-item')?.value.trim()||'',amount:Number(r.querySelector('.mab-amount')?.value||0),rationale:r.querySelector('.mab-rationale')?.value.trim()||''})).filter(x=>x.action||x.amount);}
+function manualAddLocationBudgetRow(item={}){const b=document.getElementById('manualLocationBudgetBody');if(!b)return;const tr=document.createElement('tr');tr.className='manual-location-budget-row';tr.innerHTML=`<td><input class="mlb-location" value="${manualEscapeHtml(item.location||'')}"></td><td><input class="mlb-purpose" value="${manualEscapeHtml(item.purpose||'')}"></td><td><input class="mlb-amount" type="number" min="0" step="0.01" value="${Number(item.amount||0)}"></td><td><textarea class="mlb-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualRemoveRow(this)" style="padding:6px 8px">×</button></td>`;b.appendChild(tr);manualApplyMode();}
+function manualCollectLocationBudget(){return Array.from(document.querySelectorAll('.manual-location-budget-row')).map(r=>({location:r.querySelector('.mlb-location')?.value.trim()||'',purpose:r.querySelector('.mlb-purpose')?.value.trim()||'',amount:Number(r.querySelector('.mlb-amount')?.value||0),notes:r.querySelector('.mlb-notes')?.value.trim()||''})).filter(x=>x.location||x.amount);}
+function manualAddStaffCostRow(item={}){const b=document.getElementById('manualStaffCostBody');if(!b)return;const tr=document.createElement('tr');tr.className='manual-staff-cost-row';tr.innerHTML=`<td><input class="msc-staff" value="${manualEscapeHtml(item.staff_or_role||'')}"></td><td><input class="msc-activity" value="${manualEscapeHtml(item.activity||'')}"></td><td><input class="msc-location" value="${manualEscapeHtml(item.location||'')}"></td><td><input class="msc-qty" type="number" min="0" value="${Number(item.quantity||0)}" oninput="manualRecalcStaffCost(this)"></td><td><input class="msc-rate" type="number" min="0" step="0.01" value="${Number(item.rate||0)}" oninput="manualRecalcStaffCost(this)"></td><td><input class="msc-days" type="number" min="0" step="1" value="${Number(item.days_or_sessions||0)}" oninput="manualRecalcStaffCost(this)"></td><td><input class="msc-total" type="number" min="0" step="0.01" value="${Number(item.total||0)}"></td><td><textarea class="msc-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualRemoveRow(this)" style="padding:6px 8px">×</button></td>`;b.appendChild(tr);manualApplyMode();}
+function manualRecalcStaffCost(el){const r=el?.closest('tr');if(!r)return;const q=Number(r.querySelector('.msc-qty')?.value||0),rate=Number(r.querySelector('.msc-rate')?.value||0),days=Number(r.querySelector('.msc-days')?.value||0);const t=r.querySelector('.msc-total');if(t)t.value=(q*rate*days).toFixed(2);}
+function manualCollectStaffCost(){return Array.from(document.querySelectorAll('.manual-staff-cost-row')).map(r=>({staff_or_role:r.querySelector('.msc-staff')?.value.trim()||'',activity:r.querySelector('.msc-activity')?.value.trim()||'',location:r.querySelector('.msc-location')?.value.trim()||'',quantity:Number(r.querySelector('.msc-qty')?.value||0),rate:Number(r.querySelector('.msc-rate')?.value||0),days_or_sessions:Number(r.querySelector('.msc-days')?.value||0),total:Number(r.querySelector('.msc-total')?.value||0),notes:r.querySelector('.msc-notes')?.value.trim()||''})).filter(x=>x.staff_or_role||x.total);}
+function manualAddPartnerImpactRow(item={}){const b=document.getElementById('manualPartnerImpactBody');if(!b)return;const tr=document.createElement('tr');tr.className='manual-partner-impact-row';tr.innerHTML=`<td><input class="mpi-partner" value="${manualEscapeHtml(item.partner||'')}"></td><td><input class="mpi-contribution" value="${manualEscapeHtml(item.contribution||'')}"></td><td><select class="mpi-type"><option value="in_kind" ${item.type==='in_kind'?'selected':''}>In-kind</option><option value="cash" ${item.type==='cash'?'selected':''}>Cash</option><option value="service" ${item.type==='service'?'selected':''}>Service</option><option value="other" ${item.type==='other'?'selected':''}>Other</option></select></td><td><input class="mpi-value" type="number" min="0" step="0.01" value="${Number(item.estimated_value||0)}"></td><td><textarea class="mpi-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualRemoveRow(this)" style="padding:6px 8px">×</button></td>`;b.appendChild(tr);manualApplyMode();}
+function manualCollectPartnerImpact(){return Array.from(document.querySelectorAll('.manual-partner-impact-row')).map(r=>({partner:r.querySelector('.mpi-partner')?.value.trim()||'',contribution:r.querySelector('.mpi-contribution')?.value.trim()||'',type:r.querySelector('.mpi-type')?.value||'in_kind',estimated_value:Number(r.querySelector('.mpi-value')?.value||0),notes:r.querySelector('.mpi-notes')?.value.trim()||''})).filter(x=>x.partner||x.contribution||x.estimated_value);}
+function manualCollectContingency(){return {contingency_percentage:Number(document.getElementById('manual_contingency_percentage')?.value||0),contingency_amount:Number(document.getElementById('manual_contingency_amount')?.value||0),reason:document.getElementById('manual_contingency_reason')?.value.trim()||'',may_cover:manualToList(document.getElementById('manual_contingency_may_cover')?.value||'')};}
+function manualCollectBudgetDetails(){return {detailed_line_items:manualCollectBudget(),category_breakdown:manualCollectCategoryBreakdown(),action_budget_mapping:manualCollectActionBudget(),location_budget_destination:manualCollectLocationBudget(),staff_deployment_cost_impact:manualCollectStaffCost(),partner_contribution_impact:manualCollectPartnerImpact(),contingency:manualCollectContingency()};}
+function manualClearBudgetDetailBodies(){['manualCategoryBreakdownBody','manualActionBudgetBody','manualLocationBudgetBody','manualStaffCostBody','manualPartnerImpactBody'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='';});}
+function manualRenderBudgetDetails(d={}){manualClearBudgetDetailBodies();(d.category_breakdown||[]).forEach(manualAddCategoryBreakdownRow);if(!(d.category_breakdown||[]).length)manualAddCategoryBreakdownRow();(d.action_budget_mapping||[]).forEach(manualAddActionBudgetRow);if(!(d.action_budget_mapping||[]).length)manualAddActionBudgetRow();(d.location_budget_destination||[]).forEach(manualAddLocationBudgetRow);if(!(d.location_budget_destination||[]).length)manualAddLocationBudgetRow();(d.staff_deployment_cost_impact||[]).forEach(manualAddStaffCostRow);if(!(d.staff_deployment_cost_impact||[]).length)manualAddStaffCostRow();(d.partner_contribution_impact||[]).forEach(manualAddPartnerImpactRow);if(!(d.partner_contribution_impact||[]).length)manualAddPartnerImpactRow();const c=d.contingency||{};const ep=document.getElementById('manual_contingency_percentage'),ea=document.getElementById('manual_contingency_amount'),er=document.getElementById('manual_contingency_reason'),em=document.getElementById('manual_contingency_may_cover');if(ep)ep.value=c.contingency_percentage??'';if(ea)ea.value=c.contingency_amount??'';if(er)er.value=c.reason||'';if(em)em.value=Array.isArray(c.may_cover)?c.may_cover.join('\n'):(c.may_cover||'');manualApplyMode();}
 
 function manualParticipantStaffChanged(select) {
     const row = select.closest('tr'); const staff = (manualPlannerState.options.reference_staff || []).find(s => String(s.id)===String(select.value));
@@ -5071,7 +4974,7 @@ function manualAddParticipantRow(item = {}) {
     const body = document.getElementById('manualParticipantsBody'); if (!body) return;
     const staff = (manualPlannerState.options.reference_staff || []).find(s => String(s.id)===String(item.staff_id));
     const tr = document.createElement('tr'); tr.className='manual-participant-row';
-    tr.innerHTML=`<td><select class="mp-staff" onchange="manualParticipantStaffChanged(this);manualUpdateBudgetTotal();">${manualStaffOptions(item.staff_id || '')}</select></td><td class="mp-available">${staff?Number(staff.qty||1):'-'}</td><td><input class="mp-qty" type="number" min="1" max="${staff?Number(staff.qty||1):1}" value="${Number(item.selected_qty||1)}" oninput="manualUpdateBudgetTotal()"></td><td><input class="mp-activity" value="${manualEscapeHtml(item.assigned_activity||'')}" oninput="manualUpdateBudgetTotal()"></td><td><input class="mp-location" value="${manualEscapeHtml(item.deployment_location||'')}" oninput="manualUpdateBudgetTotal()"></td><td><textarea class="mp-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="this.closest('tr').remove();manualUpdateBudgetTotal();" style="padding:6px 8px">×</button></td>`;
+    tr.innerHTML=`<td><select class="mp-staff" onchange="manualParticipantStaffChanged(this)">${manualStaffOptions(item.staff_id || '')}</select></td><td class="mp-available">${staff?Number(staff.qty||1):'-'}</td><td><input class="mp-qty" type="number" min="1" max="${staff?Number(staff.qty||1):1}" value="${Number(item.selected_qty||1)}"></td><td><input class="mp-activity" value="${manualEscapeHtml(item.assigned_activity||'')}"></td><td><input class="mp-location" value="${manualEscapeHtml(item.deployment_location||'')}"></td><td><textarea class="mp-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="this.closest('tr').remove();" style="padding:6px 8px">×</button></td>`;
     body.appendChild(tr); manualApplyMode();
 }
 function manualCollectParticipants(){return Array.from(document.querySelectorAll('.manual-participant-row')).map(r=>({staff_id:Number(r.querySelector('.mp-staff').value||0),selected_qty:Number(r.querySelector('.mp-qty').value||1),assigned_activity:r.querySelector('.mp-activity').value.trim(),deployment_location:r.querySelector('.mp-location').value.trim(),notes:r.querySelector('.mp-notes').value.trim()})).filter(x=>x.staff_id>0);}
@@ -5079,7 +4982,7 @@ function manualCollectParticipants(){return Array.from(document.querySelectorAll
 function manualAddPartnerRow(item = {}) {
     const body=document.getElementById('manualPartnersBody'); if(!body)return;
     const tr=document.createElement('tr'); tr.className='manual-partner-row';
-    tr.innerHTML=`<td><select class="mpar-partner" onchange="manualUpdateBudgetTotal()">${manualPartnerOptions(item.partner_id||'')}</select></td><td><select class="mpar-type" onchange="manualUpdateBudgetTotal()"><option value="collaboration" ${item.engagement_type==='collaboration'?'selected':''}>Collaboration</option><option value="co_host" ${item.engagement_type==='co_host'?'selected':''}>Co-host</option><option value="resource_sharing" ${item.engagement_type==='resource_sharing'?'selected':''}>Resource Sharing</option><option value="training_provider" ${item.engagement_type==='training_provider'?'selected':''}>Training Provider</option><option value="coordination" ${item.engagement_type==='coordination'?'selected':''}>Coordination</option></select></td><td><input class="mpar-role" value="${manualEscapeHtml(item.role||'')}" oninput="manualUpdateBudgetTotal()"></td><td><textarea class="mpar-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="this.closest('tr').remove();manualUpdateBudgetTotal();" style="padding:6px 8px">×</button></td>`;
+    tr.innerHTML=`<td><select class="mpar-partner">${manualPartnerOptions(item.partner_id||'')}</select></td><td><select class="mpar-type"><option value="collaboration" ${item.engagement_type==='collaboration'?'selected':''}>Collaboration</option><option value="co_host" ${item.engagement_type==='co_host'?'selected':''}>Co-host</option><option value="resource_sharing" ${item.engagement_type==='resource_sharing'?'selected':''}>Resource Sharing</option><option value="training_provider" ${item.engagement_type==='training_provider'?'selected':''}>Training Provider</option><option value="coordination" ${item.engagement_type==='coordination'?'selected':''}>Coordination</option></select></td><td><input class="mpar-role" value="${manualEscapeHtml(item.role||'')}"></td><td><textarea class="mpar-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="this.closest('tr').remove();" style="padding:6px 8px">×</button></td>`;
     body.appendChild(tr); manualApplyMode();
 }
 function manualCollectPartners(){return Array.from(document.querySelectorAll('.manual-partner-row')).map(r=>({partner_id:Number(r.querySelector('.mpar-partner').value||0),engagement_type:r.querySelector('.mpar-type').value,role:r.querySelector('.mpar-role').value.trim(),notes:r.querySelector('.mpar-notes').value.trim()})).filter(x=>x.partner_id>0);}
@@ -5182,11 +5085,11 @@ function manualCollectSummary(){
     const participantRows=manualCollectParticipants();
     return {title:document.getElementById('title').value.trim(),description:document.getElementById('description').value.trim()||null,category:document.getElementById('category').value||null,geographic_scope:document.getElementById('geographic_scope').value||null,status:document.getElementById('status').value||'draft',start_date:document.getElementById('start_date').value||null,start_time:document.getElementById('start_time').value||null,end_date:document.getElementById('end_date').value||null,end_time:document.getElementById('end_time').value||null,objectives:document.getElementById('objectives').value.trim()||null,location:document.getElementById('location').value||null,barangay_target_zones:manualSelectedValues('barangay_zones'),budget:manualUpdateBudgetTotal(),staff_count:participantRows.reduce((s,p)=>s+Number(p.selected_qty||0),0)};
 }
-function manualCollectPlanningPayload(){return {segment_ids:manualSelectedValues('manual_target_segments').map(Number),budget_items:manualCollectBudget(),participants:manualCollectParticipants(),partners:manualCollectPartners(),schedule_phases:manualCollectPhases()};}
+function manualCollectPlanningPayload(){return {segment_ids:manualSelectedValues('manual_target_segments').map(Number),budget_items:manualCollectBudget(),budget_details:manualCollectBudgetDetails(),participants:manualCollectParticipants(),partners:manualCollectPartners(),schedule_phases:manualCollectPhases()};}
 function manualValidationErrors(){
     const s=manualCollectSummary(),p=manualCollectPlanningPayload(),errors=[];
     if(!s.title)errors.push({step:1,msg:'Campaign Title is required.'}); if(!s.category)errors.push({step:1,msg:'Category is required.'}); if(!s.objectives)errors.push({step:1,msg:'Objectives are required.'}); if(!s.description)errors.push({step:1,msg:'Description is required.'});
-    if((manualPlannerState.reportsExisting.length+manualPlannerState.reportDrafts.length)<1)errors.push({step:2,msg:'Upload at least one supporting report.'}); if(!s.geographic_scope)errors.push({step:3,msg:'Primary Barangay / Geographic Scope is required.'}); if(!s.location)errors.push({step:3,msg:'Campaign Location is required.'}); if(!p.segment_ids.length)errors.push({step:3,msg:'Select at least one target audience.'}); if(!p.budget_items.length)errors.push({step:4,msg:'Add at least one budget item.'}); if(!p.participants.length)errors.push({step:5,msg:'Add at least one participant.'}); if(!p.schedule_phases.length)errors.push({step:7,msg:'Add at least one Date Sprint.'});
+    if((manualPlannerState.reportsExisting.length+manualPlannerState.reportDrafts.length)<1)errors.push({step:2,msg:'Upload at least one supporting report.'}); if(!s.geographic_scope)errors.push({step:3,msg:'Primary Barangay / Geographic Scope is required.'}); if(!s.location)errors.push({step:3,msg:'Campaign Location is required.'}); if(!p.segment_ids.length)errors.push({step:3,msg:'Select at least one target audience.'}); if(!p.budget_items.length)errors.push({step:4,msg:'Add at least one detailed budget line item.'}); const bd=p.budget_details||{}; if(!(bd.category_breakdown||[]).length)errors.push({step:4,msg:'Add at least one Category Breakdown row.'}); if(!(bd.action_budget_mapping||[]).length)errors.push({step:4,msg:'Add at least one Action Budget Mapping row.'}); if(!(bd.location_budget_destination||[]).length)errors.push({step:4,msg:'Add at least one Location Budget Destination row.'}); if(!(bd.staff_deployment_cost_impact||[]).length)errors.push({step:4,msg:'Add at least one Staff Deployment Cost Impact row.'}); if(!(bd.partner_contribution_impact||[]).length)errors.push({step:4,msg:'Add at least one Partner Contribution Impact row.'}); if(!Number(bd.contingency?.contingency_amount||0) && !String(bd.contingency?.reason||'').trim())errors.push({step:4,msg:'Enter the Contingency amount and reason.'}); if(!p.participants.length)errors.push({step:5,msg:'Add at least one participant.'}); if(!p.schedule_phases.length)errors.push({step:7,msg:'Add at least one Date Sprint.'});
     p.schedule_phases.forEach((ph,i)=>{if(!ph.sprint_title||!ph.start_date||!ph.end_date)errors.push({step:7,msg:`Sprint ${i+1} needs a title, start date, and end date.`});else if(ph.start_date>ph.end_date)errors.push({step:7,msg:`Sprint ${i+1} start date cannot be after end date.`});});
     return errors;
 }
@@ -5195,7 +5098,7 @@ function manualRenderReview(){
     const validation=document.getElementById('manualReviewValidation'); if(validation)validation.innerHTML=errors.length?`<div style="background:#fff7ed;border-left:4px solid #f97316;padding:12px;border-radius:8px"><strong style="color:#9a3412">${errors.length} item(s) need attention</strong><ul style="margin:8px 0 0;padding-left:20px">${errors.map(e=>`<li><button type="button" onclick="manualGoToStep(${e.step})" style="border:0;background:none;color:#c2410c;text-decoration:underline;cursor:pointer;padding:0">${manualEscapeHtml(e.msg)}</button></li>`).join('')}</ul></div>`:`<div style="background:#f0fdf4;border-left:4px solid #22c55e;padding:12px;border-radius:8px;color:#166534;font-weight:700"><i class="fas fa-check-circle"></i> Campaign plan is complete and ready to save.</div>`;
     const grid=document.getElementById('manualReviewGrid'); if(!grid)return;
     const totalStaff=plan.participants.reduce((s,p)=>s+Number(p.selected_qty||0),0); const phaseDates=plan.schedule_phases.filter(p=>p.start_date&&p.end_date); const dateRange=phaseDates.length?`${phaseDates.map(p=>p.start_date).sort()[0]} → ${phaseDates.map(p=>p.end_date).sort().slice(-1)[0]}`:'Not set';
-    grid.innerHTML=`<div class="review-box"><strong>Overall Summary</strong>${manualEscapeHtml(summary.title||'Untitled')}<br>${manualEscapeHtml(summary.category||'-')}<br>${manualEscapeHtml(summary.description||'-')}</div><div class="review-box"><strong>Reports</strong>${manualPlannerState.reportsExisting.length+manualPlannerState.reportDrafts.length} supporting report(s)</div><div class="review-box"><strong>Locations & Audience</strong>${manualEscapeHtml(summary.geographic_scope||'-')}<br>${manualEscapeHtml(summary.location||'-')}<br>${plan.segment_ids.length} audience segment(s)</div><div class="review-box"><strong>Budget Breakdown</strong>₱${manualUpdateBudgetTotal().toLocaleString('en-PH',{minimumFractionDigits:2})}<br>${plan.budget_items.length} budget item(s)</div><div class="review-box"><strong>Participants</strong>${totalStaff} staff allocation(s)<br>${plan.participants.length} participant row(s)</div><div class="review-box"><strong>Partners</strong>${plan.partners.length} selected partner(s)</div><div class="review-box"><strong>Date Sprint</strong>${plan.schedule_phases.length} sprint(s)<br>${manualEscapeHtml(dateRange)}</div><div class="review-box"><strong>Workflow</strong>Status remains <b>${manualEscapeHtml(summary.status||'draft')}</b>. Normal approval rules still apply.</div>`;
+    grid.innerHTML=`<div class="review-box"><strong>Overall Summary</strong>${manualEscapeHtml(summary.title||'Untitled')}<br>${manualEscapeHtml(summary.category||'-')}<br>${manualEscapeHtml(summary.description||'-')}</div><div class="review-box"><strong>Reports</strong>${manualPlannerState.reportsExisting.length+manualPlannerState.reportDrafts.length} supporting report(s)</div><div class="review-box"><strong>Locations & Audience</strong>${manualEscapeHtml(summary.geographic_scope||'-')}<br>${manualEscapeHtml(summary.location||'-')}<br>${plan.segment_ids.length} audience segment(s)</div><div class="review-box"><strong>Budget Breakdown</strong>₱${manualUpdateBudgetTotal().toLocaleString('en-PH',{minimumFractionDigits:2})}<br>${plan.budget_items.length} line item(s)<br>7 detailed budget sections completed</div><div class="review-box"><strong>Participants</strong>${totalStaff} staff allocation(s)<br>${plan.participants.length} participant row(s)</div><div class="review-box"><strong>Partners</strong>${plan.partners.length} selected partner(s)</div><div class="review-box"><strong>Date Sprint</strong>${plan.schedule_phases.length} sprint(s)<br>${manualEscapeHtml(dateRange)}</div><div class="review-box"><strong>Workflow</strong>Status remains <b>${manualEscapeHtml(summary.status||'draft')}</b>. Normal approval rules still apply.</div>`;
 }
 
 async function manualPersistPlan(complete=false){
@@ -5215,7 +5118,6 @@ async function manualPersistPlan(complete=false){
         }
         await manualApiJson(apiBase+`/api/v1/campaigns/${manualPlannerState.campaignId}/manual-planning`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(manualCollectPlanningPayload())});
         await manualUploadDraftReports();
-        await manualRefreshBudgetWorkflow();
         if(statusEl){statusEl.className='status-text success';statusEl.textContent=complete?'Campaign plan saved successfully!':'Draft saved successfully. You can continue editing all 8 steps.';}
         manualSetModalTitle(); manualApplyMode(); if(typeof refreshAllCampaignViews==='function')refreshAllCampaignViews();
         if(complete){showSuccessToast('Campaign plan saved successfully!');setTimeout(()=>closePlanCampaignModal(),400);}else{showSuccessToast('Draft saved successfully!');}
@@ -5230,12 +5132,12 @@ async function manualLoadPlanningData(campaignId){
     const data=await manualApiJson(apiBase+`/api/v1/campaigns/${campaignId}/manual-planning`); const p=data.data||{};
     manualPlannerState.options.reference_staff=p.reference_staff||[];manualPlannerState.options.available_partners=p.available_partners||[];manualPlannerState.options.audience_segments=p.audience_segments||[];manualPopulateReferenceOptions();
     manualPlannerState.reportsExisting=p.reports||[];manualPlannerState.reportDrafts=[];manualRenderReports();
-    manualPlannerState.budgetWorkflow=p.budget_workflow||{planning_status:'draft',review_status:'none',rejection_reason:null};
     const bb=document.getElementById('manualBudgetBody');if(bb)bb.innerHTML='';(p.budget_items||[]).filter(x=>!x.source_recommendation_id).forEach(manualAddBudgetRow);if(!(p.budget_items||[]).filter(x=>!x.source_recommendation_id).length)manualAddBudgetRow();
+    manualRenderBudgetDetails(p.budget_details||{});
     const pb=document.getElementById('manualParticipantsBody');if(pb)pb.innerHTML='';(p.participants||[]).forEach(manualAddParticipantRow);if(!(p.participants||[]).length)manualAddParticipantRow();
     const prb=document.getElementById('manualPartnersBody');if(prb)prb.innerHTML='';(p.partners||[]).forEach(manualAddPartnerRow);
     const phb=document.getElementById('manualPhasesBody');if(phb)phb.innerHTML='';(p.schedule_phases||[]).forEach(manualAddPhaseRow);if(!(p.schedule_phases||[]).length)manualAddPhaseRow();
-    manualSelectValues('manual_target_segments',(p.audiences||[]).map(a=>a.segment_id));manualUpdateBudgetTotal();manualRenderBudgetWorkflow();manualApplyMode();
+    manualSelectValues('manual_target_segments',(p.audiences||[]).map(a=>a.segment_id));manualUpdateBudgetTotal();manualApplyMode();
 }
 function manualEnsureSelectValue(id, value) {
     const el = document.getElementById(id); if (!el || !value) return;
@@ -5300,7 +5202,7 @@ function checkDropdownStatus() {
                 statusEl.textContent = 'Campaigns loaded but dropdown empty. Click Refresh.';
                 statusEl.style.color = 'rgba(255,193,7,0.9)';
                 // Try to populate immediately
-                populateAutoMLDropdown();
+                if (typeof populateAutoMLDropdown === 'function' && document.getElementById('automl_campaign_id')) populateAutoMLDropdown();
             } else {
                 statusEl.textContent = 'No campaigns available. Create a campaign first.';
                 statusEl.style.color = 'rgba(255,255,255,0.7)';
@@ -5333,7 +5235,7 @@ async function refreshAutoMLCampaigns() {
     
     try {
         await loadCampaigns();
-        populateAutoMLDropdown();
+        if (typeof populateAutoMLDropdown === 'function' && document.getElementById('automl_campaign_id')) populateAutoMLDropdown();
         
         if (statusEl) {
             const optionCount = document.getElementById('automl_campaign_id') ? document.getElementById('automl_campaign_id').options.length - 1 : 0;
@@ -5549,11 +5451,7 @@ function populateAutoMLDropdown() {
     const automlSelect = document.getElementById('automl_campaign_id');
     const statusEl = document.getElementById('automl_dropdown_status');
     
-    if (!automlSelect) {
-        console.error('populateAutoMLDropdown() - automl_campaign_id element not found');
-        if (statusEl) statusEl.textContent = 'Error: Dropdown element not found';
-        return false;
-    }
+    if (!automlSelect) { return false; }
     
     console.log('populateAutoMLDropdown() - Called. allCampaigns length:', allCampaigns ? allCampaigns.length : 'undefined');
     console.log('populateAutoMLDropdown() - Current dropdown options:', automlSelect.options.length);
@@ -7099,7 +6997,7 @@ function toggleBudgetVisibilityInline() {
         console.log('loadCampaigns() - isAdmin():', isAdmin(), 'isViewer():', isViewer());
         
         // Populate AutoML dropdown immediately after campaigns are loaded
-        populateAutoMLDropdown();
+        if (typeof populateAutoMLDropdown === 'function' && document.getElementById('automl_campaign_id')) populateAutoMLDropdown();
         
         allCampaigns.forEach(c => {
             const tr = document.createElement('tr');
@@ -7247,7 +7145,7 @@ function toggleBudgetVisibilityInline() {
             console.log('loadCampaigns() - allCampaigns data (from database):', allCampaigns);
             console.log('loadCampaigns() - Campaign count:', allCampaigns ? allCampaigns.length : 0);
             
-            const populated = populateAutoMLDropdown();
+            const populated = (typeof populateAutoMLDropdown === 'function' && document.getElementById('automl_campaign_id')) ? populateAutoMLDropdown() : false;
             console.log('loadCampaigns() - populateAutoMLDropdown() returned:', populated);
             
             // Verify dropdown has options
@@ -7475,7 +7373,240 @@ async function loadBudgetData() {
     }
 }
 
-// Standalone Add Budget Line Items workflow removed. Budget lines are managed through Plan New Campaign and Financial & Budgeting.
+// Populate budget campaign dropdown
+function populateBudgetCampaignDropdown() {
+    const select = document.getElementById('budget_campaign_id');
+    if (!select || !allCampaigns) return;
+    
+    select.innerHTML = '<option value="">Select Campaign...</option>';
+    allCampaigns.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${c.id} - ${c.title || 'Untitled'}`;
+        select.appendChild(opt);
+    });
+}
+
+// Budget row counter
+let budgetRowCounter = 1;
+
+// Budget Modal Functions
+function openBudgetModal() {
+    const modal = document.getElementById('budgetModal');
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        // Populate campaign dropdown
+        if (typeof populateBudgetCampaignDropdown === 'function' && document.getElementById('budget_campaign_id')) populateBudgetCampaignDropdown();
+    }
+}
+
+function closeBudgetModal() {
+    const modal = document.getElementById('budgetModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Close budget modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('budgetModal');
+    if (modal && e.target === modal) {
+        closeBudgetModal();
+    }
+});
+
+// Populate budget campaign dropdown
+function populateBudgetCampaignDropdown() {
+    const select = document.getElementById('budget_campaign_id');
+    if (!select || !allCampaigns) return;
+    
+    select.innerHTML = '<option value="">Select Campaign...</option>';
+    allCampaigns.forEach(c => {
+        const option = document.createElement('option');
+        option.value = c.id;
+        option.textContent = `${c.title} (ID: ${c.id})`;
+        select.appendChild(option);
+    });
+}
+
+// Add new budget row (without funding source - it's now overall)
+function addBudgetRow() {
+    const container = document.getElementById('budgetItemsContainer');
+    if (!container) return;
+    
+    const newRow = document.createElement('tr');
+    newRow.className = 'budget-item-row';
+    newRow.setAttribute('data-row', budgetRowCounter++);
+    newRow.innerHTML = `
+        <td style="padding: 8px;"><input type="text" class="budget-item-name" placeholder="e.g., Leaflets" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
+        <td style="padding: 8px;">
+            <select class="budget-item-type" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <option value="consumable">Consumable</option>
+                <option value="material">Material</option>
+            </select>
+        </td>
+        <td style="padding: 8px;"><input type="number" class="budget-item-qty" min="1" value="1" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
+        <td style="padding: 8px;"><input type="number" class="budget-item-cost" min="0" step="0.01" placeholder="0.00" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
+        <td style="padding: 8px; text-align: center;">
+            <button type="button" onclick="removeBudgetRow(this)" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; background: #ef4444; color: white; border: none;" title="Remove row">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    `;
+    container.appendChild(newRow);
+}
+
+// Remove budget row
+function removeBudgetRow(btn) {
+    const row = btn.closest('tr');
+    const container = document.getElementById('budgetItemsContainer');
+    if (container && container.children.length > 1) {
+        row.remove();
+    } else {
+        showBudgetStatus('At least one row is required', 'error');
+    }
+}
+
+// Clear all budget rows
+function clearBudgetRows() {
+    const container = document.getElementById('budgetItemsContainer');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <tr class="budget-item-row" data-row="0">
+            <td style="padding: 8px;"><input type="text" class="budget-item-name" placeholder="e.g., Tarpaulin" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
+            <td style="padding: 8px;">
+                <select class="budget-item-type" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                    <option value="consumable">Consumable</option>
+                    <option value="material">Material</option>
+                </select>
+            </td>
+            <td style="padding: 8px;"><input type="number" class="budget-item-qty" min="1" value="1" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
+            <td style="padding: 8px;"><input type="number" class="budget-item-cost" min="0" step="0.01" placeholder="0.00" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
+            <td style="padding: 8px; text-align: center;">
+                <button type="button" onclick="removeBudgetRow(this)" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; background: #ef4444; color: white; border: none;" title="Remove row">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+    budgetRowCounter = 1;
+    document.getElementById('budget_campaign_id').value = '';
+}
+
+// Save all budget items
+async function saveAllBudgetItems() {
+    const campaignId = document.getElementById('budget_campaign_id')?.value;
+    if (!campaignId) {
+        showBudgetStatus('Please select a campaign', 'error');
+        return;
+    }
+    
+    // Get overall funding source
+    const fundingSource = document.getElementById('budget_funding_source')?.value || 'government_allocated';
+    
+    const rows = document.querySelectorAll('#budgetItemsContainer .budget-item-row');
+    const items = [];
+    
+    rows.forEach(row => {
+        const itemName = row.querySelector('.budget-item-name')?.value?.trim();
+        const itemType = row.querySelector('.budget-item-type')?.value;
+        const quantity = parseInt(row.querySelector('.budget-item-qty')?.value) || 1;
+        const unitCost = parseFloat(row.querySelector('.budget-item-cost')?.value) || 0;
+        
+        if (itemName) {
+            items.push({ item_name: itemName, item_type: itemType, quantity, unit_cost: unitCost, funding_source: fundingSource });
+        }
+    });
+    
+    if (items.length === 0) {
+        showBudgetStatus('Please enter at least one item', 'error');
+        return;
+    }
+    
+    showBudgetStatus('Saving ' + items.length + ' item(s)...', 'success');
+    
+    let savedCount = 0;
+    let errorCount = 0;
+    
+    for (const item of items) {
+        try {
+            const res = await fetch(apiBase + '/api/v1/budgets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + getToken()
+                },
+                body: JSON.stringify({
+                    campaign_id: parseInt(campaignId),
+                    ...item
+                })
+            });
+            
+            // Handle non-JSON responses
+            const contentType = res.headers.get('content-type');
+            let data;
+            
+            if (contentType && contentType.includes('application/json')) {
+                data = await res.json();
+            } else {
+                console.error('Budget API returned non-JSON response:', res.status);
+                errorCount++;
+                continue;
+            }
+            
+            // Check for success - API returns 201 status and success: true
+            if (res.ok && data.success) {
+                savedCount++;
+            } else {
+                console.error('Budget save failed:', data.error || 'Unknown error');
+                errorCount++;
+            }
+        } catch (err) {
+            console.error('Budget save exception:', err);
+            errorCount++;
+        }
+    }
+    
+    if (errorCount === 0) {
+        showBudgetStatus(`Successfully saved ${savedCount} item(s)!`, 'success');
+        clearBudgetRows();
+        closeBudgetModal();
+        loadBudgetData();
+        // Show global toast notification (visible after modal closes)
+        showSuccessToast(`Successfully saved ${savedCount} budget item(s)!`);
+    } else if (savedCount > 0) {
+        showBudgetStatus(`Saved ${savedCount} item(s), ${errorCount} failed`, 'error');
+        loadBudgetData();
+        showWarningToast(`Saved ${savedCount} item(s), ${errorCount} failed`);
+    } else {
+        showBudgetStatus(`Failed to save items. Please try again.`, 'error');
+        showErrorToast(`Failed to save budget items. Check console for details.`);
+    }
+}
+
+// Delete budget item
+async function deleteBudgetItem(id) {
+    if (!confirm('Are you sure you want to delete this budget item?')) return;
+    
+    try {
+        const res = await fetch(apiBase + '/api/v1/budgets/' + id, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            loadBudgetData();
+        } else {
+            alert(data.error || 'Failed to delete');
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
 
 // ========== Staff Functions ==========
 
@@ -7753,55 +7884,64 @@ function showStaffStatus(message, type) {
 function renderBudgetTable() {
     const tbody = document.getElementById('budgetTable');
     if (!tbody) return;
+    
+    // Filter out archived items for main view
     const activeItems = (allBudgetItems || []).filter(item => !item.is_archived);
-    if (!activeItems.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:#64748b;">No finalized campaign budgets yet. Create the budget in Plan New Campaign, approve it, then finalize it.</td></tr>';
+    
+    if (!activeItems || activeItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color: #64748b;">No budget items yet. Add items using the form above.</td></tr>';
         return;
     }
+    
+    // Group items by campaign_id
     const groupedByCampaign = {};
     activeItems.forEach(item => {
-        const campaignId = Number(item.campaign_id || 0);
-        if (!groupedByCampaign[campaignId]) groupedByCampaign[campaignId] = {
-            campaign_id: campaignId,
-            campaign_title: item.campaign_title || 'Campaign #' + campaignId,
-            items: [], total_budget: 0, government_total: 0, reimbursable_total: 0, partner_total: 0,
-            planning_status: item.budget_planning_status || 'finalized',
-            review_status: item.budget_review_status || 'none',
-            rejection_reason: item.budget_rejection_reason || ''
-        };
-        const sessions = Math.max(1, Number(item.sessions_or_days || 1));
-        const itemTotal = Number(item.quantity || 0) * Number(item.unit_cost || 0) * sessions;
-        const group = groupedByCampaign[campaignId];
-        group.items.push(item); group.total_budget += itemTotal;
-        if (item.funding_source === 'government_allocated') group.government_total += itemTotal;
-        else if (item.funding_source === 'partner_contribution') group.partner_total += itemTotal;
-        else group.reimbursable_total += itemTotal;
+        const campaignId = item.campaign_id || 0;
+        if (!groupedByCampaign[campaignId]) {
+            groupedByCampaign[campaignId] = {
+                campaign_id: campaignId,
+                campaign_title: item.campaign_title || 'Campaign #' + campaignId,
+                items: [],
+                total_budget: 0,
+                government_total: 0,
+                reimbursable_total: 0
+            };
+        }
+        const itemTotal = (item.quantity || 0) * (item.unit_cost || 0);
+        groupedByCampaign[campaignId].items.push(item);
+        groupedByCampaign[campaignId].total_budget += itemTotal;
+        if (item.funding_source === 'government_allocated') {
+            groupedByCampaign[campaignId].government_total += itemTotal;
+        } else {
+            groupedByCampaign[campaignId].reimbursable_total += itemTotal;
+        }
     });
+    
     tbody.innerHTML = '';
     Object.values(groupedByCampaign).forEach(group => {
-        const funding = [];
-        if(group.government_total>0) funding.push(`Gov: ₱${group.government_total.toLocaleString('en-PH',{minimumFractionDigits:2})}`);
-        if(group.reimbursable_total>0) funding.push(`Reimb: ₱${group.reimbursable_total.toLocaleString('en-PH',{minimumFractionDigits:2})}`);
-        if(group.partner_total>0) funding.push(`Partner: ₱${group.partner_total.toLocaleString('en-PH',{minimumFractionDigits:2})}`);
-        const review=String(group.review_status||'none').toLowerCase();
-        let statusLabel='Finalized', statusClass='approved';
-        if(review==='pending'){statusLabel='Pending';statusClass='pending';}
-        else if(review==='approved'){statusLabel='Approved';statusClass='approved';}
-        else if(review==='rejected'){statusLabel='Rejected';statusClass='rejected';}
-        const canReview=(typeof isAdmin==='function'&&isAdmin()) || (typeof isCaptain==='function'&&isCaptain());
-        const tr=document.createElement('tr');
-        tr.innerHTML=`
-            <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;font-weight:600" title="${escapeHtml(group.campaign_title)}"><span style="color:#6366f1;font-weight:700">#${group.campaign_id}</span> ${escapeHtml(group.campaign_title)}</td>
-            <td><span class="badge draft">${group.items.length} item${group.items.length!==1?'s':''}</span></td>
-            <td style="font-weight:700;color:#059669">₱${group.total_budget.toLocaleString('en-PH',{minimumFractionDigits:2})}</td>
-            <td style="font-size:12px;color:#64748b">${funding.join('<br>')||'-'}</td>
-            <td><span class="badge ${statusClass}" title="${escapeHtml(group.rejection_reason||'')}">${statusLabel}</span>${review==='rejected'&&group.rejection_reason?`<div style="font-size:10px;color:#991b1b;margin-top:4px;max-width:180px">${escapeHtml(group.rejection_reason)}</div>`:''}</td>
-            <td style="white-space:nowrap">
-                <button class="btn btn-secondary" onclick="viewBudgetDetails(${group.campaign_id})" style="padding:4px 10px;font-size:11px;margin:1px" title="View detailed budget analysis"><i class="fas fa-eye"></i> View</button>
-                <button class="btn btn-secondary" onclick="editBudgetItems(${group.campaign_id})" style="padding:4px 10px;font-size:11px;margin:1px" title="Edit budget; saving creates a Pending revision"><i class="fas fa-edit"></i> Edit</button>
-                ${review==='pending'&&canReview?`<button class="btn btn-success" onclick="approvePendingBudget(${group.campaign_id})" style="padding:4px 10px;font-size:11px;margin:1px;background:#10b981;color:white;border:none"><i class="fas fa-check"></i> Approve</button><button class="btn btn-danger" onclick="openBudgetRejectReasonModal(${group.campaign_id})" style="padding:4px 10px;font-size:11px;margin:1px;background:#ef4444;color:white;border:none"><i class="fas fa-times"></i> Reject</button>`:''}
-                <button class="btn btn-warning" onclick="archiveBudgetItems(${group.campaign_id})" style="padding:4px 10px;font-size:11px;margin:1px;background:#f59e0b;color:white;border:none" title="Archive budget"><i class="fas fa-archive"></i></button>
-            </td>`;
+        const fundingBreakdown = [];
+        if (group.government_total > 0) fundingBreakdown.push(`Gov: ₱${group.government_total.toLocaleString('en-PH', {minimumFractionDigits: 2})}`);
+        if (group.reimbursable_total > 0) fundingBreakdown.push(`Reimb: ₱${group.reimbursable_total.toLocaleString('en-PH', {minimumFractionDigits: 2})}`);
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; font-weight: 600;" title="${group.campaign_title}"><span style="color: #6366f1; font-weight: 700;">#${group.campaign_id}</span> ${group.campaign_title}</td>
+            <td><span class="badge draft">${group.items.length} item${group.items.length > 1 ? 's' : ''}</span></td>
+            <td style="font-weight: 700; color: #059669;">₱${group.total_budget.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+            <td style="font-size: 12px; color: #64748b;">${fundingBreakdown.join('<br>') || '-'}</td>
+            <td><span class="badge approved">Active</span></td>
+            <td style="white-space: nowrap;">
+                <button class="btn btn-secondary" onclick="viewBudgetDetails(${group.campaign_id})" style="padding: 4px 10px; font-size: 11px; margin: 1px;" title="View budget breakdown">
+                    <i class="fas fa-eye"></i> View
+                </button>
+                <button class="btn btn-secondary" onclick="editBudgetItems(${group.campaign_id})" style="padding: 4px 10px; font-size: 11px; margin: 1px;" title="Edit budget items">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="btn btn-warning" onclick="archiveBudgetItems(${group.campaign_id})" style="padding: 4px 10px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;" title="Archive budget items">
+                    <i class="fas fa-archive"></i>
+                </button>
+            </td>
+        `;
         tbody.appendChild(tr);
     });
 }
@@ -7842,72 +7982,222 @@ function toggleBudgetCardVisibility(type) {
 
 // View budget details modal
 async function viewBudgetDetails(campaignId) {
+    const items = (allBudgetItems || []).filter(item => Number(item.campaign_id) === Number(campaignId) && !item.is_archived);
+    if (items.length === 0) { alert('No budget items found for this campaign.'); return; }
+    let details = {};
     try {
-        const res=await fetch(apiBase+`/api/v1/campaigns/${campaignId}/budget-analysis`,{headers:{'Authorization':'Bearer '+getToken()}});
-        const json=await res.json();if(!res.ok||!json.success)throw new Error(json.error||'Failed to load budget analysis');
-        const d=json.data||{}, items=d.line_items||[], wf=d.workflow||{}, summary=d.summary||{};
-        const lineRows=items.length?items.map(i=>`<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:7px">${i.number}</td><td style="padding:7px">${escapeHtml(i.category||'')}</td><td style="padding:7px;font-weight:700">${escapeHtml(i.item_name||'')}</td><td style="padding:7px;min-width:180px">${escapeHtml(i.description||'')}</td><td style="padding:7px;min-width:180px">${escapeHtml(i.related_action||'')}</td><td style="padding:7px;text-align:right">${i.quantity}</td><td style="padding:7px">${escapeHtml(i.unit_label||'')}</td><td style="padding:7px;text-align:right">${aiRecMoney(i.unit_cost)}</td><td style="padding:7px;text-align:right">${i.sessions_or_days}</td><td style="padding:7px;text-align:right;font-weight:800">${aiRecMoney(i.subtotal)}</td><td style="padding:7px">${escapeHtml(i.funding_source||'')}</td><td style="padding:7px">${escapeHtml(i.budget_destination||'')}</td><td style="padding:7px">${escapeHtml(i.notes||'')}</td></tr>`).join(''):'<tr><td colspan="13" style="padding:18px;text-align:center;color:#94a3b8">No budget lines.</td></tr>';
-        const cats=(d.category_breakdown||[]).map(c=>`<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:7px;font-weight:700">${escapeHtml(c.category)}</td><td style="padding:7px;text-align:right">${aiRecMoney(c.total)}</td><td style="padding:7px;text-align:right">${c.percentage_of_total}%</td><td style="padding:7px;text-align:right">${c.item_count}</td></tr>`).join('')||'<tr><td colspan="4" style="padding:16px;text-align:center;color:#94a3b8">No category breakdown.</td></tr>';
-        const actions=(d.action_breakdown||[]).map(a=>`<div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;gap:12px"><strong>${escapeHtml(a.action)}</strong><strong style="color:#166534">${aiRecMoney(a.action_budget_total)}</strong></div><div style="margin-top:6px">${(a.items||[]).map(x=>`<span style="display:inline-block;background:#f1f5f9;border-radius:999px;padding:3px 8px;margin:2px;font-size:11px">${escapeHtml(x.item_name)} — ${aiRecMoney(x.subtotal)}</span>`).join('')}</div></div>`).join('')||'<div style="color:#94a3b8;text-align:center">No action mapping.</div>';
-        const locations=(d.location_breakdown||[]).map(l=>`<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:7px;font-weight:700">${escapeHtml(l.location)}</td><td style="padding:7px;text-align:right">${l.activities}</td><td style="padding:7px;text-align:right">${l.staff_qty}</td><td style="padding:7px;text-align:right">${aiRecMoney(l.material_allocation)}</td><td style="padding:7px;text-align:right">${aiRecMoney(l.transportation_cost)}</td><td style="padding:7px;text-align:right">${aiRecMoney(l.other_cost)}</td><td style="padding:7px;text-align:right;font-weight:800">${aiRecMoney(l.total_estimated_cost)}</td><td style="padding:7px">${escapeHtml(l.basis||'')}</td></tr>`).join('')||'<tr><td colspan="8" style="padding:16px;text-align:center;color:#94a3b8">No location distribution.</td></tr>';
-        const staff=(d.staff_cost_impact||[]).map(x=>`<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:7px;font-weight:700">${escapeHtml(x.staff_role)}</td><td style="padding:7px;text-align:right">${x.required_qty}</td><td style="padding:7px;text-align:right">${x.deployment_days}</td><td style="padding:7px">${escapeHtml(x.deployment_location||'')}</td><td style="padding:7px;text-align:right;font-weight:800">${aiRecMoney(x.estimated_support_cost)}</td><td style="padding:7px">${escapeHtml(x.cost_type||'')}</td></tr>`).join('')||'<tr><td colspan="6" style="padding:16px;text-align:center;color:#94a3b8">No staff deployment cost impact.</td></tr>';
-        const pi=d.partner_contribution_impact||{items:[]};const partners=(pi.items||[]).map(x=>`<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:7px;font-weight:700">${escapeHtml(x.partner)}</td><td style="padding:7px">${escapeHtml(x.recommended_contribution||'')}</td><td style="padding:7px">${escapeHtml(x.contribution_type||'')}</td><td style="padding:7px">${escapeHtml(x.estimated_budget_impact||'')}</td><td style="padding:7px">${aiRecBadge(x.verification_status||'Recorded')}</td></tr>`).join('')||'<tr><td colspan="5" style="padding:16px;text-align:center;color:#94a3b8">No partner contribution impact.</td></tr>';
-        const c=d.contingency||{};
-        const workflowLabel=String(wf.review_status||'none')==='pending'?'Pending':String(wf.review_status||'none')==='rejected'?'Rejected':String(wf.review_status||'none')==='approved'?'Approved':(wf.planning_status==='finalized'?'Finalized':wf.planning_status||'Draft');
-        const modal=document.createElement('div');modal.id='budgetDetailsModal';modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:18px';
-        modal.innerHTML=`<div style="background:white;border-radius:14px;max-width:1180px;width:97%;max-height:92vh;overflow:auto;padding:24px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px"><div><h3 style="margin:0;color:#0f172a"><i class="fas fa-receipt"></i> Detailed Budget Breakdown: ${escapeHtml(d.campaign?.title||'Campaign')}</h3><div style="font-size:12px;color:#64748b;margin-top:5px">Status: ${aiRecBadge(workflowLabel)} ${wf.rejection_reason?`<span style="color:#991b1b;margin-left:8px">Reason: ${escapeHtml(wf.rejection_reason)}</span>`:''}</div></div><button onclick="document.getElementById('budgetDetailsModal').remove()" style="background:none;border:none;font-size:26px;cursor:pointer">&times;</button></div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px">${aiRecSummaryCard('Total Budget',aiRecMoney(summary.total_budget),'#166534')}${aiRecSummaryCard('Line Items',summary.line_item_count||0)}${aiRecSummaryCard('Staff Support Impact',aiRecMoney(summary.staff_support_total||0))}${aiRecSummaryCard('Partner Contribution',aiRecMoney(summary.partner_contribution_total||0))}</div>
-        ${aiRecSection('Detailed Line Items','fa-list-check',`<div style="overflow:auto;max-height:390px;border:1px solid #e2e8f0;border-radius:6px"><table style="width:100%;border-collapse:collapse;min-width:1750px"><thead><tr style="background:#f1f5f9">${['#','Category','Item','Description','Related Action','QTY','Unit','Unit Cost','Sessions / Days','Subtotal','Funding','Budget Destination','Notes'].map(h=>`<th style="padding:7px;text-align:left;font-size:11px">${h}</th>`).join('')}</tr></thead><tbody>${lineRows}</tbody></table></div>`)}
-        ${aiRecSection('Category Breakdown','fa-chart-pie',`<table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f8fafc"><th style="padding:7px;text-align:left">Category</th><th style="padding:7px;text-align:right">Total</th><th style="padding:7px;text-align:right">% of Total</th><th style="padding:7px;text-align:right">Items</th></tr></thead><tbody>${cats}</tbody></table>`,false)}
-        ${aiRecSection('Action Budget Mapping','fa-route',actions,false)}
-        ${aiRecSection('Location Budget Destination','fa-map-location-dot',`<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:900px"><thead><tr style="background:#f8fafc">${['Location','Activities','Staff QTY','Materials','Transportation','Other','Total','Basis'].map(h=>`<th style="padding:7px;text-align:left">${h}</th>`).join('')}</tr></thead><tbody>${locations}</tbody></table></div>`,false)}
-        ${aiRecSection('Staff Deployment Cost Impact','fa-users-gear',`<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:800px"><thead><tr style="background:#f8fafc">${['Staff Role','QTY','Deployment Days','Location','Estimated Support Cost','Cost Type'].map(h=>`<th style="padding:7px;text-align:left">${h}</th>`).join('')}</tr></thead><tbody>${staff}</tbody></table></div>`,false)}
-        ${aiRecSection('Partner Contribution Impact','fa-handshake',`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:10px">${aiRecSummaryCard('Budget Before Contribution',aiRecMoney(pi.budget_before_confirmed_partner_contributions||0))}${aiRecSummaryCard('Budget After Recorded Contribution',aiRecMoney(pi.budget_after_confirmed_partner_contributions||0))}</div><div style="font-size:12px;color:#64748b;margin-bottom:8px">${escapeHtml(pi.note||'')}</div><div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:850px"><thead><tr style="background:#f8fafc">${['Partner','Contribution','Type','Budget Impact','Status'].map(h=>`<th style="padding:7px;text-align:left">${h}</th>`).join('')}</tr></thead><tbody>${partners}</tbody></table></div>`,false)}
-        ${aiRecSection('Contingency','fa-shield-halved',`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">${aiRecSummaryCard('Contingency Percentage',(c.contingency_percentage||0)+'%')}${aiRecSummaryCard('Contingency Amount',aiRecMoney(c.contingency_amount||0))}${aiRecSummaryCard('Basis',escapeHtml(c.reason||''))}</div>`,false)}
-        <div style="text-align:right;margin-top:18px"><button class="btn btn-secondary" onclick="document.getElementById('budgetDetailsModal').remove()">Close</button></div></div>`;
-        document.body.appendChild(modal);
-    } catch(err){showWarningToast('Failed to load budget details: '+err.message);}
-}
-
-function editBudgetItems(campaignId) {
-    const items=(allBudgetItems||[]).filter(item=>Number(item.campaign_id)===Number(campaignId)&&!item.is_archived);
-    if(!items.length){showWarningToast('No finalized budget items found.');return;}
-    const title=items[0].campaign_title||'Campaign #'+campaignId;
-    const rows=items.map(item=>budgetEditRowHtml(item,false)).join('');
-    const modal=document.createElement('div');modal.id='editBudgetModal';modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px';
-    modal.innerHTML=`<div style="background:white;border-radius:14px;max-width:1180px;width:98%;max-height:92vh;overflow:auto;padding:24px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><div><h3 style="margin:0"><i class="fas fa-edit"></i> Edit Budget: ${escapeHtml(title)}</h3><div style="font-size:12px;color:#92400e;margin-top:5px"><i class="fas fa-clock"></i> Saving changes will set this budget to <strong>Pending</strong>. It must be approved or rejected.</div></div><button onclick="document.getElementById('editBudgetModal').remove()" style="background:none;border:none;font-size:26px;cursor:pointer">&times;</button></div><div style="overflow:auto;border:1px solid #e2e8f0;border-radius:8px"><table class="data-table" style="width:100%;min-width:1800px"><thead><tr>${['Category','Item Name','Description','Related Action','Type','QTY','Unit','Unit Cost','Sessions/Days','Funding','Budget Destination','Notes','Remove'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody id="editBudgetItemsBody">${rows}</tbody></table></div><div style="margin-top:12px"><button onclick="addNewBudgetItemRow(${campaignId})" class="btn btn-secondary"><i class="fas fa-plus"></i> Add Item</button></div><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px"><button class="btn btn-secondary" onclick="document.getElementById('editBudgetModal').remove()">Cancel</button><button class="btn btn-primary" onclick="saveEditedBudgetItems(${campaignId})"><i class="fas fa-save"></i> Save as Pending</button></div></div>`;
+        const resp = await manualApiJson(apiBase + `/api/v1/campaigns/${campaignId}/manual-planning`);
+        details = resp.data?.budget_details || {};
+    } catch (_) { details = {}; }
+    const campaignTitle = items[0].campaign_title || 'Campaign #' + campaignId;
+    const money=v=>'₱'+Number(v||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+    let totalBudget=0;
+    const itemsHtml=items.map(item=>{const sessions=Number(item.sessions_or_days||1)||1;const total=Number(item.quantity||0)*Number(item.unit_cost||0)*sessions;totalBudget+=total;return `<tr><td>${manualEscapeHtml(item.item_name||'-')}</td><td>${manualEscapeHtml(item.category||item.item_type||'-')}</td><td>${manualEscapeHtml(item.item_description||'-')}</td><td>${Number(item.quantity||0)} ${manualEscapeHtml(item.unit_label||'')}</td><td>${money(item.unit_cost)}</td><td>${sessions}</td><td>${money(total)}</td><td>${manualEscapeHtml(item.related_action||'-')}</td></tr>`;}).join('');
+    const table=(headers,rows,render)=>`<div class="planner-table-wrap" style="margin-top:8px"><table class="planner-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(render).join(''):`<tr><td colspan="${headers.length}" class="planner-empty">No saved data.</td></tr>`}</tbody></table></div>`;
+    const c=details.contingency||{};
+    const modal=document.createElement('div');modal.id='budgetDetailsModal';modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:18px;';
+    modal.innerHTML=`<div style="background:#fff;border-radius:14px;max-width:1200px;width:96%;max-height:90vh;overflow:auto;padding:24px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px"><div><h3 style="margin:0;color:#0f172a"><i class="fas fa-receipt"></i> Detailed Budget Breakdown: ${manualEscapeHtml(campaignTitle)}</h3><div style="color:#64748b;font-size:12px;margin-top:4px">Manual campaign budget details</div></div><button onclick="document.getElementById('budgetDetailsModal').remove()" style="background:none;border:0;font-size:28px;cursor:pointer;color:#64748b">&times;</button></div>
+    <div style="background:#dcfce7;border-radius:10px;padding:14px;text-align:center;margin-bottom:16px"><div style="font-size:11px;color:#166534;font-weight:700;text-transform:uppercase">Total Detailed Line Items</div><div style="font-size:28px;font-weight:800;color:#166534">${money(totalBudget)}</div></div>
+    ${aiRecSection('Detailed Line Items','fa-list',table(['Item','Category','Description','Qty/Unit','Unit Cost','Days/Sessions','Total','Mapped Action'],itemsHtml?items:[],(x)=>{const sessions=Number(x.sessions_or_days||1)||1;const total=Number(x.quantity||0)*Number(x.unit_cost||0)*sessions;return `<tr><td>${manualEscapeHtml(x.item_name||'-')}</td><td>${manualEscapeHtml(x.category||x.item_type||'-')}</td><td>${manualEscapeHtml(x.item_description||'-')}</td><td>${Number(x.quantity||0)} ${manualEscapeHtml(x.unit_label||'')}</td><td>${money(x.unit_cost)}</td><td>${sessions}</td><td>${money(total)}</td><td>${manualEscapeHtml(x.related_action||'-')}</td></tr>`;}),false)}
+    ${aiRecSection('Category Breakdown','fa-chart-pie',table(['Category','Amount','Percentage','Notes'],details.category_breakdown||[],x=>`<tr><td>${manualEscapeHtml(x.category||'-')}</td><td>${money(x.amount)}</td><td>${Number(x.percentage||0)}%</td><td>${manualEscapeHtml(x.notes||'-')}</td></tr>`),false)}
+    ${aiRecSection('Action Budget Mapping','fa-diagram-project',table(['Action','Budget Item / Purpose','Amount','Rationale'],details.action_budget_mapping||[],x=>`<tr><td>${manualEscapeHtml(x.action||'-')}</td><td>${manualEscapeHtml(x.budget_item||'-')}</td><td>${money(x.amount)}</td><td>${manualEscapeHtml(x.rationale||'-')}</td></tr>`),false)}
+    ${aiRecSection('Location Budget Destination','fa-location-dot',table(['Location / Destination','Purpose','Amount','Notes'],details.location_budget_destination||[],x=>`<tr><td>${manualEscapeHtml(x.location||'-')}</td><td>${manualEscapeHtml(x.purpose||'-')}</td><td>${money(x.amount)}</td><td>${manualEscapeHtml(x.notes||'-')}</td></tr>`),false)}
+    ${aiRecSection('Staff Deployment Cost Impact','fa-users',table(['Staff / Role','Activity','Location','Qty','Rate','Days/Sessions','Total','Notes'],details.staff_deployment_cost_impact||[],x=>`<tr><td>${manualEscapeHtml(x.staff_or_role||'-')}</td><td>${manualEscapeHtml(x.activity||'-')}</td><td>${manualEscapeHtml(x.location||'-')}</td><td>${Number(x.quantity||0)}</td><td>${money(x.rate)}</td><td>${Number(x.days_or_sessions||0)}</td><td>${money(x.total)}</td><td>${manualEscapeHtml(x.notes||'-')}</td></tr>`),false)}
+    ${aiRecSection('Partner Contribution Impact','fa-handshake',table(['Partner','Contribution','Type','Estimated Value','Notes'],details.partner_contribution_impact||[],x=>`<tr><td>${manualEscapeHtml(x.partner||'-')}</td><td>${manualEscapeHtml(x.contribution||'-')}</td><td>${manualEscapeHtml(x.type||'-')}</td><td>${money(x.estimated_value)}</td><td>${manualEscapeHtml(x.notes||'-')}</td></tr>`),false)}
+    ${aiRecSection('Contingency','fa-shield-halved',`<div class="review-grid"><div class="review-box"><strong>Percentage</strong>${Number(c.contingency_percentage||0)}%</div><div class="review-box"><strong>Amount</strong>${money(c.contingency_amount)}</div><div class="review-box"><strong>Reason</strong>${manualEscapeHtml(c.reason||'-')}</div><div class="review-box"><strong>May Cover</strong>${(c.may_cover||[]).map(manualEscapeHtml).join(', ')||'-'}</div></div>`,false)}
+    <div style="text-align:right;margin-top:18px"><button onclick="document.getElementById('budgetDetailsModal').remove()" class="btn btn-secondary">Close</button></div></div>`;
     document.body.appendChild(modal);
 }
 
-function budgetEditRowHtml(item={},isNew=false){
-    const source=item.source_recommendation_id||'';
-    return `<tr data-source-recommendation-id="${source}"><td><input class="edit-budget-category" value="${escapeHtml(item.category||'')}"></td><td><input class="edit-item-name" value="${escapeHtml(item.item_name||'')}"></td><td><textarea class="edit-budget-description" rows="2">${escapeHtml(item.item_description||'')}</textarea></td><td><textarea class="edit-budget-action" rows="2">${escapeHtml(item.related_action||'')}</textarea></td><td><select class="edit-item-type">${['consumable','material','equipment','service','activity','logistics','personnel_support','contingency','manual'].map(v=>`<option value="${v}" ${item.item_type===v?'selected':''}>${v.replaceAll('_',' ')}</option>`).join('')}</select></td><td><input class="edit-item-qty" type="number" min="1" value="${Number(item.quantity||1)}"></td><td><input class="edit-budget-unit" value="${escapeHtml(item.unit_label||'')}"></td><td><input class="edit-item-cost" type="number" min="0" step="0.01" value="${Number(item.unit_cost||0)}"></td><td><input class="edit-budget-sessions" type="number" min="1" value="${Number(item.sessions_or_days||1)}"></td><td><select class="edit-item-funding"><option value="government_allocated" ${item.funding_source==='government_allocated'?'selected':''}>Government</option><option value="reimbursable" ${item.funding_source==='reimbursable'?'selected':''}>Reimbursable</option><option value="partner_contribution" ${item.funding_source==='partner_contribution'?'selected':''}>Partner Contribution</option><option value="other" ${item.funding_source==='other'?'selected':''}>Other</option></select></td><td><input class="edit-budget-destination" value="${escapeHtml(item.budget_destination||'')}"></td><td><textarea class="edit-budget-notes" rows="2">${escapeHtml(item.notes||'')}</textarea></td><td><button type="button" class="btn btn-danger" onclick="this.closest('tr').remove()" style="padding:5px 8px;background:#ef4444;color:white;border:none"><i class="fas fa-trash"></i></button></td></tr>`;
+// Edit budget items for a campaign
+function editBudgetItems(campaignId) {
+    const items = (allBudgetItems || []).filter(item => item.campaign_id === campaignId && !item.is_archived);
+    if (items.length === 0) {
+        alert('No budget items found for this campaign.');
+        return;
+    }
+    
+    const campaignTitle = items[0].campaign_title || 'Campaign #' + campaignId;
+    
+    let itemsHtml = items.map(item => {
+        const itemTotal = (item.quantity || 0) * (item.unit_cost || 0);
+        return `
+            <tr data-item-id="${item.id}">
+                <td><input type="text" value="${item.item_name || ''}" class="edit-item-name" style="width: 100%; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px;"></td>
+                <td>
+                    <select class="edit-item-type" style="padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px;">
+                        <option value="consumable" ${item.item_type === 'consumable' ? 'selected' : ''}>Consumable</option>
+                        <option value="material" ${item.item_type === 'material' ? 'selected' : ''}>Material</option>
+                        <option value="equipment" ${item.item_type === 'equipment' ? 'selected' : ''}>Equipment</option>
+                        <option value="service" ${item.item_type === 'service' ? 'selected' : ''}>Service</option>
+                    </select>
+                </td>
+                <td><input type="number" value="${item.quantity || 1}" class="edit-item-qty" min="1" style="width: 60px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;"></td>
+                <td><input type="number" value="${item.unit_cost || 0}" class="edit-item-cost" min="0" step="0.01" style="width: 100px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: right;"></td>
+                <td>
+                    <select class="edit-item-funding" style="padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px;">
+                        <option value="government_allocated" ${item.funding_source === 'government_allocated' ? 'selected' : ''}>Government</option>
+                        <option value="reimbursable" ${item.funding_source === 'reimbursable' ? 'selected' : ''}>Reimbursable</option>
+                    </select>
+                </td>
+                <td>
+                    <button onclick="deleteBudgetItem(${item.id})" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; background: #ef4444; color: white; border: none;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    const modal = document.createElement('div');
+    modal.id = 'editBudgetModal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 12px; max-width: 900px; width: 95%; max-height: 85vh; overflow: auto; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-edit"></i> Edit Budget: ${campaignTitle}</h3>
+                <button onclick="document.getElementById('editBudgetModal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+            </div>
+            <table class="data-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Type</th>
+                        <th style="text-align: center;">Qty</th>
+                        <th style="text-align: right;">Unit Cost</th>
+                        <th>Funding</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody id="editBudgetItemsBody">${itemsHtml}</tbody>
+            </table>
+            <div style="margin-top: 16px;">
+                <button onclick="addNewBudgetItemRow(${campaignId})" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px;">
+                    <i class="fas fa-plus"></i> Add Another Item
+                </button>
+            </div>
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
+                <button onclick="document.getElementById('editBudgetModal').remove()" class="btn btn-secondary" style="padding: 10px 20px;">Cancel</button>
+                <button onclick="saveEditedBudgetItems(${campaignId})" class="btn btn-primary" style="padding: 10px 20px; background: #10b981; color: white; border: none;">Save Changes</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
 
-async function saveEditedBudgetItems(campaignId){
-    const rows=Array.from(document.querySelectorAll('#editBudgetItemsBody tr'));
-    const items=rows.map((r,i)=>({category:r.querySelector('.edit-budget-category').value.trim(),item_name:r.querySelector('.edit-item-name').value.trim(),item_description:r.querySelector('.edit-budget-description').value.trim(),related_action:r.querySelector('.edit-budget-action').value.trim(),item_type:r.querySelector('.edit-item-type').value,quantity:Number(r.querySelector('.edit-item-qty').value||1),unit_label:r.querySelector('.edit-budget-unit').value.trim(),unit_cost:Number(r.querySelector('.edit-item-cost').value||0),sessions_or_days:Number(r.querySelector('.edit-budget-sessions').value||1),funding_source:r.querySelector('.edit-item-funding').value,budget_destination:r.querySelector('.edit-budget-destination').value.trim(),notes:r.querySelector('.edit-budget-notes').value.trim(),source_recommendation_id:r.dataset.sourceRecommendationId?Number(r.dataset.sourceRecommendationId):null,sort_order:i+1})).filter(x=>x.item_name);
-    if(!items.length){showWarningToast('At least one budget item is required.');return;}
-    try{const res=await fetch(apiBase+`/api/v1/campaigns/${campaignId}/budget-revision`,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:JSON.stringify({items})});const data=await res.json();if(!res.ok)throw new Error(data.error||'Failed to save revision');document.getElementById('editBudgetModal')?.remove();showSuccessToast(data.message||'Budget revision saved as Pending.');await loadBudgetData();}catch(err){showWarningToast(err.message);}
+// Save edited budget items
+async function saveEditedBudgetItems(campaignId) {
+    const rows = document.querySelectorAll('#editBudgetItemsBody tr');
+    let savedCount = 0;
+    let errorCount = 0;
+    
+    for (const row of rows) {
+        const itemId = row.dataset.itemId;
+        const isNew = row.dataset.isNew === 'true';
+        const itemName = row.querySelector('.edit-item-name').value;
+        const itemType = row.querySelector('.edit-item-type').value;
+        const quantity = parseInt(row.querySelector('.edit-item-qty').value) || 1;
+        const unitCost = parseFloat(row.querySelector('.edit-item-cost').value) || 0;
+        const fundingSource = row.querySelector('.edit-item-funding').value;
+        
+        // Skip empty item names
+        if (!itemName.trim()) continue;
+        
+        try {
+            let res;
+            if (isNew) {
+                // Create new item via POST
+                res = await fetch(apiBase + '/api/v1/budgets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + getToken()
+                    },
+                    body: JSON.stringify({
+                        campaign_id: campaignId,
+                        item_name: itemName,
+                        item_type: itemType,
+                        quantity: quantity,
+                        unit_cost: unitCost,
+                        funding_source: fundingSource
+                    })
+                });
+            } else {
+                // Update existing item via PUT
+                res = await fetch(apiBase + '/api/v1/budgets/' + itemId, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + getToken()
+                    },
+                    body: JSON.stringify({
+                        item_name: itemName,
+                        item_type: itemType,
+                        quantity: quantity,
+                        unit_cost: unitCost,
+                        funding_source: fundingSource
+                    })
+                });
+            }
+            
+            if (res.ok) {
+                savedCount++;
+            } else {
+                errorCount++;
+            }
+        } catch (err) {
+            errorCount++;
+        }
+    }
+    
+    document.getElementById('editBudgetModal').remove();
+    
+    if (errorCount === 0) {
+        showSuccessToast(`Successfully saved ${savedCount} budget item(s)!`);
+    } else {
+        showWarningToast(`Saved ${savedCount} item(s), ${errorCount} failed`);
+    }
+    
+    loadBudgetData();
 }
 
-function addNewBudgetItemRow(campaignId){const body=document.getElementById('editBudgetItemsBody');if(!body)return;body.insertAdjacentHTML('beforeend',budgetEditRowHtml({item_type:'consumable',quantity:1,sessions_or_days:1,funding_source:'government_allocated'},true));}
-
-async function approvePendingBudget(campaignId){
-    if(!confirm('Approve this pending budget revision?'))return;
-    try{const res=await fetch(apiBase+`/api/v1/campaigns/${campaignId}/budget-workflow`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:JSON.stringify({action:'approve_edit'})});const data=await res.json();if(!res.ok)throw new Error(data.error||'Approval failed');showSuccessToast(data.message||'Budget approved.');await loadBudgetData();}catch(err){showWarningToast(err.message);}
-}
-
-function openBudgetRejectReasonModal(campaignId){
-    document.getElementById('budgetRejectReasonModal')?.remove();
-    const modal=document.createElement('div');modal.id='budgetRejectReasonModal';modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10020;display:flex;align-items:center;justify-content:center;padding:20px';
-    modal.innerHTML=`<div style="background:white;border-radius:14px;max-width:520px;width:100%;padding:24px"><h3 style="margin:0 0 8px;color:#991b1b"><i class="fas fa-circle-xmark"></i> Reject Budget Revision</h3><p style="font-size:13px;color:#64748b">Enter the reason for rejection. The last finalized budget values will be restored.</p><label style="font-weight:700;font-size:13px">Rejection Reason *</label><textarea id="budgetRejectReasonText" rows="5" style="width:100%;box-sizing:border-box;margin-top:7px;padding:10px;border:1px solid #cbd5e1;border-radius:8px" placeholder="Explain what must be corrected..."></textarea><div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px"><button class="btn btn-secondary" onclick="document.getElementById('budgetRejectReasonModal').remove()">Cancel</button><button class="btn btn-danger" onclick="submitBudgetRejection(${campaignId})" style="background:#ef4444;color:white;border:none"><i class="fas fa-times"></i> Reject Budget</button></div></div>`;
-    document.body.appendChild(modal);document.getElementById('budgetRejectReasonText')?.focus();
-}
-
-async function submitBudgetRejection(campaignId){
-    const reason=document.getElementById('budgetRejectReasonText')?.value.trim()||'';if(!reason){showWarningToast('Rejection reason is required.');return;}
-    try{const res=await fetch(apiBase+`/api/v1/campaigns/${campaignId}/budget-workflow`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:JSON.stringify({action:'reject_edit',reason})});const data=await res.json();if(!res.ok)throw new Error(data.error||'Rejection failed');document.getElementById('budgetRejectReasonModal')?.remove();showSuccessToast(data.message||'Budget rejected.');await loadBudgetData();}catch(err){showWarningToast(err.message);}
+// Add new budget item row in edit modal
+function addNewBudgetItemRow(campaignId) {
+    const tbody = document.getElementById('editBudgetItemsBody');
+    if (!tbody) return;
+    
+    const newRowId = 'new_' + Date.now();
+    const tr = document.createElement('tr');
+    tr.dataset.itemId = newRowId;
+    tr.dataset.isNew = 'true';
+    tr.innerHTML = `
+        <td><input type="text" value="" class="edit-item-name" placeholder="Item name" style="width: 100%; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px;"></td>
+        <td>
+            <select class="edit-item-type" style="padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px;">
+                <option value="consumable" selected>Consumable</option>
+                <option value="material">Material</option>
+                <option value="equipment">Equipment</option>
+                <option value="service">Service</option>
+            </select>
+        </td>
+        <td><input type="number" value="1" class="edit-item-qty" min="1" style="width: 60px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: center;"></td>
+        <td><input type="number" value="0" class="edit-item-cost" min="0" step="0.01" style="width: 100px; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px; text-align: right;"></td>
+        <td>
+            <select class="edit-item-funding" style="padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px;">
+                <option value="government_allocated" selected>Government</option>
+                <option value="reimbursable">Reimbursable</option>
+            </select>
+        </td>
+        <td>
+            <button onclick="this.closest('tr').remove()" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; background: #ef4444; color: white; border: none;">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    
+    // Focus on the new item name field
+    tr.querySelector('.edit-item-name').focus();
 }
 
 // Archive budget items for a campaign
@@ -8148,7 +8438,7 @@ function showBudgetStatus(message, type) {
 const originalLoadCampaigns = loadCampaigns;
 loadCampaigns = async function() {
     await originalLoadCampaigns();
-    populateBudgetCampaignDropdown();
+    if (typeof populateBudgetCampaignDropdown === 'function' && document.getElementById('budget_campaign_id')) populateBudgetCampaignDropdown();
     loadBudgetData();
 };
 
@@ -9327,15 +9617,17 @@ async function initializeCampaigns() {
         
         // Populate AutoML dropdown immediately after campaigns are loaded
         console.log('initializeCampaigns() - Populating AutoML dropdown with', allCampaigns.length, 'campaigns');
-        populateAutoMLDropdown();
-        validateAutoMLForm();
+        if (document.getElementById('automl_campaign_id')) {
+            if (typeof populateAutoMLDropdown === 'function') populateAutoMLDropdown();
+            validateAutoMLForm();
+        }
         
         // Also set up a delayed check as backup
         setTimeout(() => {
             const automlSelect = document.getElementById('automl_campaign_id');
             if (automlSelect && automlSelect.options.length <= 1 && allCampaigns.length > 0) {
                 console.log('initializeCampaigns() - Dropdown empty, populating...');
-                populateAutoMLDropdown();
+                if (typeof populateAutoMLDropdown === 'function' && document.getElementById('automl_campaign_id')) populateAutoMLDropdown();
                 validateAutoMLForm();
             } else if (automlSelect) {
                 console.log('initializeCampaigns() - Dropdown already has', automlSelect.options.length - 1, 'options');
@@ -9579,7 +9871,7 @@ const observer = new MutationObserver((mutations) => {
     const automlSelect = document.getElementById('automl_campaign_id');
     if (automlSelect && automlSelect.options.length <= 1 && allCampaigns.length > 0) {
         console.log('MutationObserver - AutoML dropdown detected, populating...');
-        populateAutoMLDropdown();
+        if (typeof populateAutoMLDropdown === 'function' && document.getElementById('automl_campaign_id')) populateAutoMLDropdown();
     }
 });
 

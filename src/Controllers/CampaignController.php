@@ -24,44 +24,6 @@ class CampaignController
         private int $jwtExpirySeconds
     ) {
         $this->autoMLService = new AutoMLService($pdo);
-        $this->ensureBudgetWorkflowSchema();
-    }
-
-    private function ensureBudgetWorkflowSchema(): void
-    {
-        try {
-            $this->pdo->exec("ALTER TABLE campaign_budgets ADD COLUMN budget_destination VARCHAR(255) NULL AFTER related_action");
-        } catch (\PDOException $e) {
-            // Already migrated.
-        }
-        try {
-            $this->pdo->exec("
-                CREATE TABLE IF NOT EXISTS campaign_budget_workflows (
-                    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                    campaign_id INT UNSIGNED NOT NULL,
-                    planning_status ENUM('draft','approved','finalized') NOT NULL DEFAULT 'draft',
-                    review_status ENUM('none','pending','approved','rejected') NOT NULL DEFAULT 'none',
-                    rejection_reason TEXT NULL,
-                    pre_edit_snapshot LONGTEXT NULL,
-                    approved_by INT UNSIGNED NULL,
-                    approved_at DATETIME NULL,
-                    finalized_by INT UNSIGNED NULL,
-                    finalized_at DATETIME NULL,
-                    reviewed_by INT UNSIGNED NULL,
-                    reviewed_at DATETIME NULL,
-                    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                    PRIMARY KEY (id),
-                    UNIQUE KEY uq_campaign_budget_workflow_campaign (campaign_id),
-                    KEY idx_budget_workflow_planning (planning_status),
-                    KEY idx_budget_workflow_review (review_status),
-                    CONSTRAINT fk_budget_workflow_campaign FOREIGN KEY (campaign_id)
-                        REFERENCES campaign_department_campaigns(id) ON DELETE CASCADE ON UPDATE CASCADE
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-            ");
-        } catch (\PDOException $e) {
-            error_log('CampaignController::ensureBudgetWorkflowSchema - ' . $e->getMessage());
-        }
     }
     
     /**
@@ -1581,6 +1543,37 @@ class CampaignController
             $budgetsStmt->execute(['cid' => $campaignId]);
             $budgets = $budgetsStmt->fetchAll(PDO::FETCH_ASSOC);
 
+            $budgetDetails = [
+                'detailed_line_items' => [],
+                'category_breakdown' => [],
+                'action_budget_mapping' => [],
+                'location_budget_destination' => [],
+                'staff_deployment_cost_impact' => [],
+                'partner_contribution_impact' => [],
+                'contingency' => [],
+            ];
+            try {
+                $budgetDetailsStmt = $this->pdo->prepare('SELECT * FROM campaign_department_campaign_budget_details WHERE campaign_id = :cid LIMIT 1');
+                $budgetDetailsStmt->execute(['cid' => $campaignId]);
+                $budgetDetailsRow = $budgetDetailsStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+                foreach ([
+                    'detailed_line_items_json' => 'detailed_line_items',
+                    'category_breakdown_json' => 'category_breakdown',
+                    'action_budget_mapping_json' => 'action_budget_mapping',
+                    'location_budget_destination_json' => 'location_budget_destination',
+                    'staff_deployment_cost_impact_json' => 'staff_deployment_cost_impact',
+                    'partner_contribution_impact_json' => 'partner_contribution_impact',
+                    'contingency_json' => 'contingency',
+                ] as $column => $key) {
+                    if (!empty($budgetDetailsRow[$column])) {
+                        $decoded = json_decode((string)$budgetDetailsRow[$column], true);
+                        if (is_array($decoded)) $budgetDetails[$key] = $decoded;
+                    }
+                }
+            } catch (\PDOException $e) {
+                error_log('CampaignController::manualPlanning budget details unavailable: ' . $e->getMessage());
+            }
+
             $audienceStmt = $this->pdo->prepare('SELECT ca.segment_id, s.segment_name, s.sector_type, s.location_reference FROM campaign_department_campaign_audience ca LEFT JOIN campaign_department_audience_segments s ON s.id = ca.segment_id WHERE ca.campaign_id = :cid ORDER BY s.segment_name ASC');
             $audienceStmt->execute(['cid' => $campaignId]);
             $audiences = $audienceStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1641,19 +1634,10 @@ class CampaignController
             $availablePartners = $this->pdo->query("SELECT id, name, organization_type FROM campaign_department_partners WHERE COALESCE(status,'active') <> 'archived' ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
             $segments = $this->pdo->query('SELECT id, segment_name, geographic_scope, location_reference, sector_type, risk_level, is_archived FROM campaign_department_audience_segments ORDER BY is_archived ASC, segment_name ASC')->fetchAll(PDO::FETCH_ASSOC);
 
-            $workflowStmt = $this->pdo->prepare('SELECT * FROM campaign_budget_workflows WHERE campaign_id = :cid LIMIT 1');
-            $workflowStmt->execute(['cid' => $campaignId]);
-            $budgetWorkflow = $workflowStmt->fetch(PDO::FETCH_ASSOC) ?: [
-                'campaign_id' => $campaignId,
-                'planning_status' => count($budgets) > 0 ? 'finalized' : 'draft',
-                'review_status' => 'none',
-                'rejection_reason' => null,
-            ];
-
             return ['data' => [
                 'reports' => $reports,
                 'budget_items' => $budgets,
-                'budget_workflow' => $budgetWorkflow,
+                'budget_details' => $budgetDetails,
                 'audiences' => $audiences,
                 'participants' => $participants,
                 'partners' => $partners,
@@ -1681,6 +1665,7 @@ class CampaignController
         $this->findCampaign($campaignId);
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
         $budgetItems = is_array($input['budget_items'] ?? null) ? $input['budget_items'] : [];
+        $budgetDetails = is_array($input['budget_details'] ?? null) ? $input['budget_details'] : [];
         $segmentIds = is_array($input['segment_ids'] ?? null) ? $input['segment_ids'] : [];
         $participants = is_array($input['participants'] ?? null) ? $input['participants'] : [];
         $partners = is_array($input['partners'] ?? null) ? $input['partners'] : [];
@@ -1698,24 +1683,10 @@ class CampaignController
                 if ($segmentId > 0) $insertAudience->execute(['cid' => $campaignId, 'sid' => $segmentId]);
             }
 
-            // Budget workflow: manual planning is Draft until explicitly approved and finalized.
-            // If a finalized budget is edited through the campaign planner, preserve the last
-            // finalized values so Financial & Budgeting can review the revision as Pending.
-            $workflowStmt = $this->pdo->prepare('SELECT * FROM campaign_budget_workflows WHERE campaign_id = :cid LIMIT 1 FOR UPDATE');
-            $workflowStmt->execute(['cid' => $campaignId]);
-            $budgetWorkflow = $workflowStmt->fetch(PDO::FETCH_ASSOC) ?: null;
-            $wasFinalized = ($budgetWorkflow['planning_status'] ?? '') === 'finalized';
-            $preEditSnapshot = (string)($budgetWorkflow['pre_edit_snapshot'] ?? '');
-            if ($wasFinalized && (($budgetWorkflow['review_status'] ?? 'none') !== 'pending' || $preEditSnapshot === '')) {
-                $snapStmt = $this->pdo->prepare("SELECT * FROM campaign_budgets WHERE campaign_id = :cid AND COALESCE(is_archived,0)=0 ORDER BY sort_order ASC, id ASC");
-                $snapStmt->execute(['cid' => $campaignId]);
-                $preEditSnapshot = json_encode($snapStmt->fetchAll(PDO::FETCH_ASSOC), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
-            }
-
             // Replace manual budget items only; AI-converted rows are preserved.
             $stmt = $this->pdo->prepare('DELETE FROM campaign_budgets WHERE campaign_id = :cid AND source_recommendation_id IS NULL');
             $stmt->execute(['cid' => $campaignId]);
-            $insertBudget = $this->pdo->prepare('INSERT INTO campaign_budgets (campaign_id,item_name,item_type,quantity,unit_cost,funding_source,notes,created_by,is_archived,category,item_description,sessions_or_days,unit_label,related_action,budget_destination,is_estimate,sort_order) VALUES (:cid,:name,:type,:qty,:cost,:funding,:notes,:uid,0,:category,:description,:sessions,:unit_label,:related_action,:budget_destination,0,:sort_order)');
+            $insertBudget = $this->pdo->prepare('INSERT INTO campaign_budgets (campaign_id,item_name,item_type,quantity,unit_cost,funding_source,notes,created_by,is_archived,category,item_description,sessions_or_days,unit_label,related_action,is_estimate,sort_order) VALUES (:cid,:name,:type,:qty,:cost,:funding,:notes,:uid,0,:category,:description,:sessions,:unit_label,:related_action,0,:sort_order)');
             $totalBudget = 0.0;
             $sort = 0;
             foreach ($budgetItems as $item) {
@@ -1740,28 +1711,44 @@ class CampaignController
                     'sessions' => $sessions,
                     'unit_label' => trim((string)($item['unit_label'] ?? '')) ?: null,
                     'related_action' => trim((string)($item['related_action'] ?? '')) ?: null,
-                    'budget_destination' => trim((string)($item['budget_destination'] ?? '')) ?: null,
                     'sort_order' => $sort,
                 ]);
             }
 
-            // Include preserved AI-converted rows in the campaign-level compatibility total.
+            // Include any preserved AI-converted budget rows in the campaign-level compatibility total.
             $totalStmt = $this->pdo->prepare('SELECT COALESCE(SUM(quantity * unit_cost * COALESCE(NULLIF(sessions_or_days,0),1)),0) FROM campaign_budgets WHERE campaign_id = :cid AND COALESCE(is_archived,0)=0');
             $totalStmt->execute(['cid' => $campaignId]);
             $totalBudget = (float)$totalStmt->fetchColumn();
 
-            if ($budgetWorkflow) {
-                if ($wasFinalized) {
-                    $stmt = $this->pdo->prepare("UPDATE campaign_budget_workflows SET planning_status='finalized', review_status='pending', rejection_reason=NULL, pre_edit_snapshot=:snapshot, reviewed_by=NULL, reviewed_at=NULL WHERE campaign_id=:cid");
-                    $stmt->execute(['snapshot' => $preEditSnapshot, 'cid' => $campaignId]);
-                } else {
-                    // Any edit before finalization returns the budget plan to Draft for re-approval.
-                    $stmt = $this->pdo->prepare("UPDATE campaign_budget_workflows SET planning_status='draft', review_status='none', rejection_reason=NULL, approved_by=NULL, approved_at=NULL WHERE campaign_id=:cid");
-                    $stmt->execute(['cid' => $campaignId]);
-                }
-            } else {
-                $stmt = $this->pdo->prepare("INSERT INTO campaign_budget_workflows (campaign_id,planning_status,review_status) VALUES (:cid,'draft','none')");
-                $stmt->execute(['cid' => $campaignId]);
+
+            // Persist all seven manually entered budget breakdown sections.
+            try {
+                $detailStmt = $this->pdo->prepare(
+                    'INSERT INTO campaign_department_campaign_budget_details
+                    (campaign_id,detailed_line_items_json,category_breakdown_json,action_budget_mapping_json,location_budget_destination_json,staff_deployment_cost_impact_json,partner_contribution_impact_json,contingency_json,created_by,updated_by)
+                    VALUES (:cid,:line_items,:category_breakdown,:action_mapping,:location_destination,:staff_impact,:partner_impact,:contingency,:uid,:uid)
+                    ON DUPLICATE KEY UPDATE
+                    detailed_line_items_json=VALUES(detailed_line_items_json),
+                    category_breakdown_json=VALUES(category_breakdown_json),
+                    action_budget_mapping_json=VALUES(action_budget_mapping_json),
+                    location_budget_destination_json=VALUES(location_budget_destination_json),
+                    staff_deployment_cost_impact_json=VALUES(staff_deployment_cost_impact_json),
+                    partner_contribution_impact_json=VALUES(partner_contribution_impact_json),
+                    contingency_json=VALUES(contingency_json), updated_by=VALUES(updated_by), updated_at=CURRENT_TIMESTAMP'
+                );
+                $detailStmt->execute([
+                    'cid' => $campaignId,
+                    'line_items' => json_encode($budgetDetails['detailed_line_items'] ?? $budgetItems, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'category_breakdown' => json_encode($budgetDetails['category_breakdown'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'action_mapping' => json_encode($budgetDetails['action_budget_mapping'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'location_destination' => json_encode($budgetDetails['location_budget_destination'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'staff_impact' => json_encode($budgetDetails['staff_deployment_cost_impact'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'partner_impact' => json_encode($budgetDetails['partner_contribution_impact'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'contingency' => json_encode($budgetDetails['contingency'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'uid' => $userId,
+                ]);
+            } catch (\PDOException $e) {
+                throw new RuntimeException('Detailed budget storage is unavailable. Run sql/manual_campaign_detailed_budget.sql first. ' . $e->getMessage(), 0, $e);
             }
 
             // Manual participants.
@@ -1866,7 +1853,7 @@ class CampaignController
             $stmt->execute($campaignUpdate);
 
             $this->pdo->commit();
-            $this->logAudit($userId, 'campaign', 'manual_plan_update', $campaignId, ['budget_items' => count($budgetItems), 'participants' => count($participants), 'partners' => count($partners), 'schedule_phases' => count($phases)]);
+            $this->logAudit($userId, 'campaign', 'manual_plan_update', $campaignId, ['budget_items' => count($budgetItems), 'budget_details' => !empty($budgetDetails), 'participants' => count($participants), 'partners' => count($partners), 'schedule_phases' => count($phases)]);
             return ['message' => 'Manual campaign plan saved', 'campaign_id' => $campaignId, 'budget_total' => $totalBudget, 'staff_count' => $staffCount];
         } catch (\Throwable $e) {
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();
