@@ -23,6 +23,7 @@ class AiRecommendationSchemaService
             CREATE TABLE IF NOT EXISTS campaign_department_ai_recommendations (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 category VARCHAR(50) NOT NULL DEFAULT 'crime',
+                campaign_category VARCHAR(50) NULL,
                 campaign_title VARCHAR(255) NOT NULL,
                 main_trend VARCHAR(255) NULL,
                 trend_key VARCHAR(120) NULL,
@@ -57,6 +58,7 @@ class AiRecommendationSchemaService
     {
         $columns = [
             'campaign_description' => 'TEXT NULL',
+            'campaign_category' => "VARCHAR(50) NULL",
             'incident_category' => "VARCHAR(255) NULL",
             'source_report_ids' => 'LONGTEXT NULL',
             'main_trend' => 'VARCHAR(255) NULL',

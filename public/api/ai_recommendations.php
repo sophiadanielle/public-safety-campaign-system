@@ -1222,7 +1222,7 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
 
         $upsertStmt = $pdo->prepare(
             "INSERT INTO campaign_department_ai_recommendations
-            (category, campaign_title, main_trend, trend_key, description, report_count,
+            (category, campaign_category, campaign_title, main_trend, trend_key, description, report_count,
              campaign_description, incident_category,
              cluster_report_ids, affected_locations, earliest_date, latest_date,
              source_report_ids,
@@ -1231,7 +1231,7 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
              ai_reasoning, ai_recommended_actions, ai_target_audience,
              generated_by, recommendation_hash, data_snapshot, is_test_data)
             VALUES
-            (:category, :campaign_title, :main_trend, :trend_key, :description, :report_count,
+            (:category, :campaign_category, :campaign_title, :main_trend, :trend_key, :description, :report_count,
              :campaign_description, :incident_category,
              :cluster_report_ids, :affected_locations, :earliest_date, :latest_date,
              :source_report_ids,
@@ -1241,6 +1241,7 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
              :generated_by, :hash, :snapshot, :is_test_data)
             ON DUPLICATE KEY UPDATE
              category = VALUES(category),
+             campaign_category = VALUES(campaign_category),
              campaign_title = VALUES(campaign_title),
              main_trend = VALUES(main_trend),
              description = VALUES(description),
@@ -1284,6 +1285,7 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
 
             $upsertStmt->execute([
                 ':category' => $dbSourceCategory,
+                ':campaign_category' => $rec['campaign_category'] ?? $rec['category'] ?? 'crime',
                 ':campaign_title' => $rec['campaign_title'],
                 ':main_trend' => $rec['main_trend'],
                 ':trend_key' => $rec['trend_key'],
@@ -1344,7 +1346,7 @@ function attach_persisted_recommendation_ids(PDO $pdo, array $recommendations): 
 
     $placeholders = implode(',', array_fill(0, count($hashes), '?'));
     $stmt = $pdo->prepare(
-        "SELECT id, recommendation_hash, approval_status, converted_campaign_id, planning_status
+        "SELECT id, recommendation_hash, campaign_category, approval_status, converted_campaign_id, planning_status
          FROM campaign_department_ai_recommendations
          WHERE recommendation_hash IN ($placeholders)"
     );
@@ -1363,7 +1365,10 @@ function attach_persisted_recommendation_ids(PDO $pdo, array $recommendations): 
             ? (int) $row['converted_campaign_id']
             : null;
         $recommendations[$index]['planning_status'] = $row['planning_status'] ?? 'not_generated';
-        if (empty($recommendations[$index]['campaign_category'])) {
+        $persistedCampaignCategory = strtolower(trim((string) ($row['campaign_category'] ?? '')));
+        if (in_array($persistedCampaignCategory, ['education', 'crime', 'disaster'], true)) {
+            $recommendations[$index]['campaign_category'] = $persistedCampaignCategory;
+        } elseif (empty($recommendations[$index]['campaign_category'])) {
             $recommendations[$index]['campaign_category'] = $recommendations[$index]['category'] ?? 'crime';
         }
     }
@@ -1403,18 +1408,33 @@ function load_cached_recommendations(PDO $pdo): ?array
                 $cachedActions = is_array($decodedActions) ? $decodedActions : [$cachedActions];
             }
             if (!is_array($cachedActions)) $cachedActions = [];
-            $normalizedCategory = classify_campaign_category(
-                (string) ($rec['trend_key'] ?? $row['trend_key'] ?? ''),
-                (string) ($rec['campaign_title'] ?? $row['campaign_title'] ?? ''),
-                isset($rec['ai_target_audience']) ? (string) $rec['ai_target_audience'] : (isset($row['ai_target_audience']) ? (string) $row['ai_target_audience'] : null),
-                $cachedActions,
-                $sourceType
-            );
-            // Do not write Education into the legacy ENUM('crime','disaster') column.
-            // Return it as the campaign category while preserving the report source separately.
-            $rec['category'] = $normalizedCategory;
+            $persistedCampaignCategory = strtolower(trim((string) ($row['campaign_category'] ?? '')));
+            $normalizedCategory = in_array($persistedCampaignCategory, ['education', 'crime', 'disaster'], true)
+                ? $persistedCampaignCategory
+                : classify_campaign_category(
+                    (string) ($rec['trend_key'] ?? $row['trend_key'] ?? ''),
+                    (string) ($rec['campaign_title'] ?? $row['campaign_title'] ?? ''),
+                    isset($rec['ai_target_audience']) ? (string) $rec['ai_target_audience'] : (isset($row['ai_target_audience']) ? (string) $row['ai_target_audience'] : null),
+                    $cachedActions,
+                    $sourceType
+                );
+
+            // category remains the evidence/source type for backward compatibility.
+            // campaign_category is the actual intervention classification displayed
+            // to users and copied into All Campaigns on acceptance.
+            $rec['category'] = $sourceType;
             $rec['campaign_category'] = $normalizedCategory;
             $rec['source_type'] = $sourceType;
+
+            // Backfill old rows the first time they are loaded after this update.
+            if ($persistedCampaignCategory === '') {
+                try {
+                    $backfill = $pdo->prepare('UPDATE campaign_department_ai_recommendations SET campaign_category = ? WHERE id = ?');
+                    $backfill->execute([$normalizedCategory, (int) $row['id']]);
+                } catch (Throwable $backfillError) {
+                    error_log('Campaign category backfill failed: ' . $backfillError->getMessage());
+                }
+            }
 
             $rec['id'] = (int) $row['id'];
             $rec['approval_status'] = $row['approval_status'] ?? 'recommended';

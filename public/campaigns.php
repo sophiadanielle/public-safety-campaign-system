@@ -2579,7 +2579,7 @@ async function loadAiRecommendations(forceRefresh = false) {
         }
 
         aiRecommendations = Array.isArray(payload?.recommendations)
-            ? payload.recommendations.map(rec => ({ ...rec, category: normalizeAiCampaignCategory(rec), campaign_category: normalizeAiCampaignCategory(rec) }))
+            ? payload.recommendations.map(rec => ({ ...rec, campaign_category: normalizeAiCampaignCategory(rec) }))
             : [];
         aiRecommendationsFiltered = [...aiRecommendations];
         aiRecommendationsCurrentPage = 1;

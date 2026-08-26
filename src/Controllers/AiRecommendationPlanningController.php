@@ -596,6 +596,11 @@ class AiRecommendationPlanningController
 
     private function acceptedCampaignCategory(array $rec): string
     {
+        $explicit = strtolower(trim((string) ($rec['campaign_category'] ?? '')));
+        if (in_array($explicit, ['education', 'crime', 'disaster'], true)) {
+            return $explicit;
+        }
+
         $trend = strtolower(trim((string) ($rec['trend_key'] ?? '')));
         $source = $this->recommendationSourceType($rec);
 
