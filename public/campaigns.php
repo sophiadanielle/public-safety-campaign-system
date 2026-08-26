@@ -998,8 +998,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     .multi-select-container .multi-select-dropdown::-webkit-scrollbar {
         width: 8px;
     }
-    
-    .multi-select-container .multi-select-dropdown::-webkit-scrollbar-track {
+.multi-select-container .multi-select-dropdown::-webkit-scrollbar-track {
         background: #f1f5f9;
         border-radius: 4px;
     }
@@ -1313,7 +1312,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                             <p class="planner-help">Enter the campaign details manually. The campaign remains <strong>Draft</strong> and still follows the existing Secretary/Captain approval workflow.</p>
                             <div class="planner-grid">
                                 <div class="form-field"><label for="title">Campaign Title *</label><input type="text" id="title" required placeholder="Enter campaign title..."></div>
-                                <div class="form-field"><label for="category">Category *</label><input id="category" list="manualCategoryOptions" required placeholder="e.g. Crime, Disaster, Fire Safety"><datalist id="manualCategoryOptions"><option value="crime"><option value="disaster"><option value="fire"><option value="flood"><option value="earthquake"><option value="health"><option value="education"><option value="road safety"><option value="general"></datalist></div>
+                                <div class="form-field"><label for="category">Category *</label><input id="category" list="manualCategoryOptions" required placeholder="e.g. Crime, Disaster, Fire Safety"><datalist id="manualCategoryOptions"><option value="crime"><option value="disaster"><option value="fire"><option value="flood"><option value="earthquake"><option value="health"><option value="road safety"><option value="general"></datalist></div>
                                 <div class="form-field"><label for="start_datetime">Start Date & Time</label><input id="start_datetime" type="datetime-local"></div>
                                 <div class="form-field"><label for="end_datetime">End Date & Time</label><input id="end_datetime" type="datetime-local"></div>
                                 <div class="form-field full"><label for="objectives">Objectives *</label><textarea id="objectives" rows="4" placeholder="Primary objectives and goals..."></textarea></div>
@@ -1350,56 +1349,17 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                             </div>
                         </div>
                     </section>
+
                     <section class="manual-plan-step" data-step="4">
                         <div class="planner-card">
-                            <h3><i class="fas fa-coins" style="color:#f59e0b"></i> Budget Breakdown <span class="required-chip">Manual entry</span></h3>
-                            <p class="planner-help">Enter every budget component manually. Saving the campaign saves these details with the Draft; nothing is auto-filled from Financial &amp; Budgeting.</p>
-
-                            <div class="planner-card" style="margin-bottom:14px;background:#f8fafc;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><div><h3 style="font-size:14px;margin:0;">1. Detailed Line Items</h3><p class="planner-help" style="margin:4px 0 0;">Enter each planned expense.</p></div><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddBudgetRow()"><i class="fas fa-plus"></i> Add Line Item</button></div>
-                                <div class="planner-table-wrap"><table class="planner-table" style="min-width:1350px"><thead><tr><th>Item *</th><th>Description</th><th>Category *</th><th>Qty</th><th>Unit</th><th>Unit Cost</th><th>Days/Sessions</th><th>Funding</th><th>Mapped Action</th><th>Notes</th><th></th></tr></thead><tbody id="manualBudgetBody"></tbody></table></div>
-                                <div style="text-align:right;margin-top:12px;font-size:16px;font-weight:800;color:#166534;">Line Item Total: ₱<span id="manualBudgetTotal">0.00</span></div>
-                            </div>
-
-                            <div class="planner-card" style="margin-bottom:14px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><h3 style="font-size:14px;margin:0;">2. Category Breakdown</h3><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddCategoryBreakdownRow()"><i class="fas fa-plus"></i> Add Category</button></div>
-                                <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Category *</th><th>Amount (₱) *</th><th>Percentage</th><th>Notes</th><th></th></tr></thead><tbody id="manualCategoryBreakdownBody"></tbody></table></div>
-                            </div>
-
-                            <div class="planner-card" style="margin-bottom:14px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><h3 style="font-size:14px;margin:0;">3. Action Budget Mapping</h3><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddActionBudgetRow()"><i class="fas fa-plus"></i> Add Action Mapping</button></div>
-                                <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Campaign Action *</th><th>Budget Item / Purpose</th><th>Amount (₱) *</th><th>Rationale</th><th></th></tr></thead><tbody id="manualActionBudgetBody"></tbody></table></div>
-                            </div>
-
-                            <div class="planner-card" style="margin-bottom:14px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><h3 style="font-size:14px;margin:0;">4. Location Budget Destination</h3><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddLocationBudgetRow()"><i class="fas fa-plus"></i> Add Destination</button></div>
-                                <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Location / Destination *</th><th>Purpose</th><th>Amount (₱) *</th><th>Notes</th><th></th></tr></thead><tbody id="manualLocationBudgetBody"></tbody></table></div>
-                            </div>
-
-                            <div class="planner-card" style="margin-bottom:14px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><h3 style="font-size:14px;margin:0;">5. Staff Deployment Cost Impact</h3><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddStaffCostRow()"><i class="fas fa-plus"></i> Add Staff Cost</button></div>
-                                <div class="planner-table-wrap"><table class="planner-table" style="min-width:1050px"><thead><tr><th>Staff / Role *</th><th>Activity</th><th>Location</th><th>Qty</th><th>Rate (₱)</th><th>Days/Sessions</th><th>Total (₱)</th><th>Notes</th><th></th></tr></thead><tbody id="manualStaffCostBody"></tbody></table></div>
-                            </div>
-
-                            <div class="planner-card" style="margin-bottom:14px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;"><h3 style="font-size:14px;margin:0;">6. Partner Contribution Impact</h3><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddPartnerImpactRow()"><i class="fas fa-plus"></i> Add Partner Contribution</button></div>
-                                <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Partner *</th><th>Contribution / Support *</th><th>Type</th><th>Estimated Value (₱)</th><th>Notes</th><th></th></tr></thead><tbody id="manualPartnerImpactBody"></tbody></table></div>
-                            </div>
-
-                            <div class="planner-card" style="background:#fffbeb;border-color:#fde68a;">
-                                <h3 style="font-size:14px;margin:0 0 10px;">7. Contingency</h3>
-                                <div class="planner-grid">
-                                    <div class="form-field"><label>Contingency Percentage (%) *</label><input id="manual_contingency_percentage" type="number" min="0" step="0.01" placeholder="e.g. 10"></div>
-                                    <div class="form-field"><label>Contingency Amount (₱) *</label><input id="manual_contingency_amount" type="number" min="0" step="0.01" placeholder="0.00"></div>
-                                    <div class="form-field full"><label>Reason / Basis *</label><textarea id="manual_contingency_reason" rows="2" placeholder="Explain why this contingency is required."></textarea></div>
-                                    <div class="form-field full"><label>May Cover</label><textarea id="manual_contingency_may_cover" rows="2" placeholder="e.g. emergency transport, price increases, replacement materials"></textarea></div>
-                                </div>
-                            </div>
-
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div><h3><i class="fas fa-coins" style="color:#f59e0b"></i> Budget Breakdown <span class="required-chip">At least 1 item</span></h3><p class="planner-help">The total is synchronized back to the campaign's existing Budget field.</p></div><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddBudgetRow()"><i class="fas fa-plus"></i> Add Budget Item</button></div>
+                            <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Item *</th><th>Category</th><th>Qty</th><th>Unit</th><th>Unit Cost</th><th>Days/Sessions</th><th>Funding</th><th>Notes</th><th></th></tr></thead><tbody id="manualBudgetBody"></tbody></table></div>
+                            <div style="text-align:right;margin-top:12px;font-size:16px;font-weight:800;color:#166534;">Total: ₱<span id="manualBudgetTotal">0.00</span></div>
                             <input id="budget" type="hidden"><input id="staff_count" type="hidden">
                         </div>
                     </section>
-<section class="manual-plan-step" data-step="5">
+
+                    <section class="manual-plan-step" data-step="5">
                         <div class="planner-card">
                             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div><h3><i class="fas fa-users" style="color:#667eea"></i> Participants <span class="required-chip">At least 1 participant</span></h3><p class="planner-help">Select from <code>campaign_department_reference_staff</code>. Quantity is limited by the available QTY in Staff.</p></div><button type="button" data-planner-edit-action="1" class="btn btn-secondary" onclick="manualAddParticipantRow()"><i class="fas fa-plus"></i> Add Participant</button></div>
                             <div class="planner-table-wrap"><table class="planner-table"><thead><tr><th>Staff *</th><th>Available</th><th>Qty</th><th>Assigned Activity</th><th>Deployment Location</th><th>Notes</th><th></th></tr></thead><tbody id="manualParticipantsBody"></tbody></table></div>
@@ -1521,67 +1481,299 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
     </div>
     <?php endif; ?>
 
-    <!-- Smart AI Campaign Recommendations -->
+    <!-- Add Budget Line Items Modal -->
     <?php if (!$isViewer): ?>
-    <section class="card" id="automl-section">
-    <div class="crime-ai-card" id="aiRecommendationsCard">
-        <div class="crime-ai-toolbar">
-            <div>
-                <h3 style="margin: 0 0 6px 0; color: #0f172a; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-robot" style="color: #667eea;"></i>
-                    Smart AI Campaign Recommendations
-                </h3>
-                <p id="aiRecommendationsStatus" class="crime-ai-status" style="margin: 0;">
-                    Loading unified analytics from crime and disaster reports...
-                </p>
+    <div id="budgetModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; overflow-y: auto; padding: 20px;">
+        <div class="modal-content" style="background: white; max-width: 950px; margin: 20px auto; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative;">
+            <!-- Modal Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 16px 16px 0 0;">
+                <h2 style="margin: 0; font-size: 20px; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-coins" style="color: #4c8a89;"></i>
+                    Add Budget Line Items
+                </h2>
+                <button type="button" onclick="closeBudgetModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; padding: 4px 8px; line-height: 1;" title="Close">
+                    &times;
+                </button>
             </div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <div style="position: relative;">
-                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
-                    <input type="text" id="aiRecSearchInput" placeholder="Search recommendations..." 
-                        style="padding: 8px 12px 8px 32px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px; width: 200px; background: white; outline: none;"
-                        onkeyup="filterAiRecommendations()" onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='#e2e8f0'">
+            
+            <!-- Modal Body -->
+            <div style="padding: 24px; max-height: calc(100vh - 200px); overflow-y: auto;">
+                <!-- Campaign Selection -->
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block;">Campaign *</label>
+                    <select id="budget_campaign_id" required style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="">Select Campaign...</option>
+                    </select>
                 </div>
-                <button type="button" class="btn btn-secondary" onclick="loadAiRecommendations(true)" style="display: inline-flex; align-items: center; gap: 6px; border: 2px solid #667eea; color: #667eea; background: white; font-weight: 700;">
-                    <i class="fas fa-sync-alt"></i>
-                    Refresh
+                
+                <!-- Line Items Table -->
+                <div style="overflow-x: auto; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #e2e8f0;">
+                                <th style="padding: 10px; text-align: left; font-weight: 600;">Item Name *</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; width: 120px;">Type *</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; width: 80px;">Qty *</th>
+                                <th style="padding: 10px; text-align: left; font-weight: 600; width: 120px;">Unit Cost (₱) *</th>
+                                <th style="padding: 10px; text-align: center; font-weight: 600; width: 60px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="budgetItemsContainer">
+                            <tr class="budget-item-row" data-row="0">
+                                <td style="padding: 8px;"><input type="text" class="budget-item-name" placeholder="e.g., Tarpaulin" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
+                                <td style="padding: 8px;">
+                                    <select class="budget-item-type" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                                        <option value="consumable">Consumable</option>
+                                        <option value="material">Material</option>
+                                    </select>
+                                </td>
+                                <td style="padding: 8px;"><input type="number" class="budget-item-qty" min="1" value="1" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
+                                <td style="padding: 8px;"><input type="number" class="budget-item-cost" min="0" step="0.01" placeholder="0.00" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;"></td>
+                                <td style="padding: 8px; text-align: center;">
+                                    <button type="button" onclick="removeBudgetRow(this)" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; background: #ef4444; color: white; border: none;" title="Remove row">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button type="button" onclick="addBudgetRow()" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; margin-bottom: 20px;">
+                    <i class="fas fa-plus"></i> Add Another Item
                 </button>
-                <button type="button" id="aiRecBackfillBtn" class="btn btn-primary" onclick="backfillAiRecommendationPlans()" style="display: inline-flex; align-items: center; gap: 6px; background: #667eea; color: white; border: 2px solid #667eea; font-weight: 700;">
-                    <i class="fas fa-magic"></i>
-                    Generate Missing Plans
+                
+                <!-- Funding Source (Overall) -->
+                <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; border-radius: 6px; padding: 16px; margin-bottom: 20px;">
+                    <label style="font-weight: 600; margin-bottom: 8px; display: block; color: #0c4a6e;">
+                        <i class="fas fa-wallet" style="margin-right: 6px;"></i> Funding Source (for all items) *
+                    </label>
+                    <select id="budget_funding_source" required style="width: 100%; max-width: 300px; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="government_allocated">Government Allocated</option>
+                        <option value="reimbursable">Reimbursable</option>
+                    </select>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #64748b;">This funding source will be applied to all line items above.</p>
+                </div>
+                
+                <div id="budgetStatus" style="margin-bottom: 16px; display: none;"></div>
+            </div>
+            
+            <!-- Modal Footer -->
+            <div style="padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" onclick="clearBudgetRows()" class="btn btn-secondary" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-eraser"></i> Clear All
+                </button>
+                <button type="button" onclick="closeBudgetModal()" class="btn btn-secondary">Cancel</button>
+                <button type="button" onclick="saveAllBudgetItems()" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-save"></i> Save All Items
                 </button>
             </div>
-        </div>
-        <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
-            <table class="data-table" style="width: 100%; border-collapse: collapse; min-width: 860px;">
-                <thead>
-                    <tr style="background: #f8fafc;">
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 50px;">#</th>
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Campaign Title</th>
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 90px;">Category</th>
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Main Trend</th>
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap; width: 110px;">Reports</th>
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap; width: 130px;">Priority</th>
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 80px;">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="aiRecommendationsTable">
-                    <tr>
-                        <td colspan="7" style="padding: 28px; text-align: center; color: #64748b;">
-                            <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
-                            Loading unified recommendations...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div id="aiRecommendationsPagination" class="crime-ai-pagination" style="display: none;">
-            <div id="aiRecommendationsPaginationSummary" style="color: #64748b; font-size: 13px; font-weight: 600;"></div>
-            <div id="aiRecommendationsPaginationControls" class="crime-ai-page-controls"></div>
         </div>
     </div>
-    </section>
     <?php endif; ?>
+
+    <!-- AutoML Panel -->
+    <?php if (!$isViewer): // RBAC: Hide AutoML section for Viewer (management tool) ?>
+    <section class="card" id="automl-section">
+        <div class="section-header">
+            <h2 class="section-title analytics-accent">🤖 AI-Powered Deployment Optimization</h2>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 12px; color: #64748b; font-weight: 500; background: #f1f5f9; padding: 4px 10px; border-radius: 12px;">Core Innovation</span>
+                <button type="button" id="automlRefreshBtn" onclick="if(typeof refreshAutoMLCampaigns==='function'){refreshAutoMLCampaigns();}else if(typeof window.refreshAutoMLCampaigns==='function'){window.refreshAutoMLCampaigns();}else{console.error('refreshAutoMLCampaigns not found'); alert('Refresh function not loaded');}" style="background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; font-weight: 500;" title="Refresh campaign list" onmouseover="this.style.background='#5568d3'" onmouseout="this.style.background='#667eea'">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Refresh</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Core Innovation Highlight Card -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px; color: white; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <div style="flex: 1;">
+                    <h3 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-brain"></i>
+                        AI-Powered Scheduling Intelligence
+                    </h3>
+                    <p style="margin: 0; opacity: 0.95; line-height: 1.6; font-size: 14px;">
+                        The scheduler analyzes historical campaign data, attendance trends, survey feedback, and event conflicts to recommend optimal deployment schedules. 
+                        <button type="button" onclick="showAIHowItWorksModal()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-left: 8px; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                            View How the AI Works
+                        </button>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Input Form Card -->
+            <div style="background: rgba(255,255,255,0.95); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                <div style="display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap;">
+                    <div class="form-field" style="flex: 1; min-width: 250px; position: relative; overflow: visible;">
+                        <label for="automl_campaign_id" style="color: #0f172a; display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-bullhorn" style="margin-right: 6px; color: #667eea;"></i>
+                            Select Campaign *
+                        </label>
+                        <select id="automl_campaign_id" style="background: white; border: 2px solid #e2e8f0; color: #0f172a; width: 100%; padding: 10px 12px; padding-right: 32px; border-radius: 6px; font-size: 14px; cursor: pointer; appearance: auto; -webkit-appearance: menulist; -moz-appearance: menulist; height: 42px; box-sizing: border-box; position: relative; z-index: 1000; overflow: visible; transition: border-color 0.2s;" onfocus="this.style.borderColor='#667eea'; checkDropdownStatus(); console.log('Dropdown focused, options count:', this.options.length);" onblur="this.style.borderColor='#e2e8f0';" onchange="updateDropdownStatus(); validateAutoMLForm(); console.log('Dropdown changed to:', this.value);" onclick="console.log('Dropdown clicked, options count:', this.options.length); if(this.options.length <= 1) { console.warn('Dropdown has no options! Attempting to populate...'); populateAutoMLDropdown(); }" onmousedown="console.log('Dropdown mousedown, options:', Array.from(this.options).map(o => o.value + ':' + o.textContent));">
+                            <option value="">-- Select a campaign --</option>
+                        </select>
+                        <p id="automl_dropdown_status" style="color: #64748b; font-size: 12px; margin: 6px 0 0 0; min-height: 16px;">Loading campaigns...</p>
+                        <p style="color: #94a3b8; font-size: 11px; margin: 4px 0 0 0; line-height: 1.4;">
+                            💡 Campaigns are pulled from the <strong>All Campaigns</strong> section below. Conflict checking will compare with the <strong>Events module</strong>.
+                        </p>
+                    </div>
+                    <div class="form-field" style="flex: 1; min-width: 200px;">
+                        <label for="automl_audience_segment" style="color: #0f172a; display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px;">
+                            <i class="fas fa-users" style="margin-right: 6px; color: #667eea;"></i>
+                            Target Segment (Optional)
+                        </label>
+                        <input id="automl_audience_segment" type="number" placeholder="Enter segment ID" style="background: white; border: 2px solid #e2e8f0; color: #0f172a; width: 100%; padding: 10px 12px; border-radius: 6px; font-size: 14px; height: 42px; box-sizing: border-box; transition: border-color 0.2s;" onfocus="this.style.borderColor='#667eea';" onblur="this.style.borderColor='#e2e8f0';" onchange="validateAutoMLForm();" oninput="validateAutoMLForm();">
+                        <p style="color: #94a3b8; font-size: 11px; margin: 4px 0 0 0; line-height: 1.4;">
+                            💡 Segments are pulled from the <strong>Segments module</strong>. Leave empty for general audience analysis.
+                        </p>
+                    </div>
+                    <div style="display: flex; flex-direction: column; justify-content: flex-end; min-width: 160px;">
+                        <button type="button" id="getPredictionBtn" class="btn btn-primary" onclick="if(typeof handleGetPredictionClick==='function'){handleGetPredictionClick(event);}else if(typeof window.handleGetPredictionClick==='function'){window.handleGetPredictionClick(event);}else{console.error('handleGetPredictionClick not found'); alert('Prediction function not loaded. Please refresh the page.');}" style="background: white; color: #667eea; border: 2px solid white; font-weight: 700; padding: 12px 24px; height: 42px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; white-space: nowrap; transition: all 0.2s; cursor: pointer; border-radius: 6px; font-size: 14px;" onmouseover="this.style.background='#f8fafc'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)'" onmouseout="this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            <i class="fas fa-magic" style="margin-right: 8px;"></i>
+                            Get AI Prediction
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Empty State (when no campaign selected) -->
+            <div id="automlEmptyState" style="background: rgba(255,255,255,0.95); border-radius: 8px; padding: 40px 24px; text-align: center; color: #64748b; display: block;">
+                <div style="font-size: 48px; margin-bottom: 16px; opacity: 0.6;">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h4 style="margin: 0 0 8px 0; color: #0f172a; font-size: 18px; font-weight: 600;">Ready for AI Analysis</h4>
+                <p style="margin: 0; font-size: 14px; line-height: 1.6; max-width: 500px; margin-left: auto; margin-right: auto;">
+                    Select a campaign above and click <strong>"Get AI Prediction"</strong> to receive an AI-powered recommendation for the optimal deployment schedule.
+                </p>
+            </div>
+            
+            <!-- AI Recommendation Result Card -->
+            <div id="automlResult" class="prediction-result" style="display:none; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 24px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
+                    <div style="font-size: 32px;">
+                        <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 4px 0; color: #0f172a; font-size: 18px; font-weight: 700;">AI Recommendation Generated</h4>
+                        <p style="margin: 0; color: #64748b; font-size: 13px;">Review the suggested schedule below and choose an action.</p>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                    <div style="background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <i class="fas fa-calendar-alt" style="color: #10b981; font-size: 18px;"></i>
+                            <strong style="color: #065f46; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Suggested Date & Time</strong>
+                        </div>
+                        <div id="pred_datetime" style="color: #0f172a; font-size: 16px; font-weight: 600; line-height: 1.4;">-</div>
+                    </div>
+                    
+                    <div style="background: #eff6ff; border: 2px solid #3b82f6; border-radius: 8px; padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <i class="fas fa-chart-line" style="color: #3b82f6; font-size: 18px;"></i>
+                            <strong style="color: #1e40af; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Confidence Score</strong>
+                        </div>
+                        <div id="pred_confidence" style="color: #0f172a; font-size: 16px; font-weight: 600; line-height: 1.4;">-</div>
+                        <p style="margin: 8px 0 0 0; color: #64748b; font-size: 11px; line-height: 1.4;">
+                            Higher scores indicate stronger confidence in the recommendation based on historical data analysis.
+                        </p>
+                    </div>
+                    
+                    <div style="background: #faf5ff; border: 2px solid #a855f7; border-radius: 8px; padding: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <i class="fas fa-cog" style="color: #a855f7; font-size: 18px;"></i>
+                            <strong style="color: #6b21a8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Model Source</strong>
+                        </div>
+                        <div id="pred_source" style="color: #0f172a; font-size: 16px; font-weight: 600; line-height: 1.4;">-</div>
+                    </div>
+                </div>
+                
+                <div style="background: #f8fafc; border-left: 4px solid #667eea; border-radius: 6px; padding: 16px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <i class="fas fa-lightbulb" style="color: #667eea; font-size: 20px; margin-top: 2px;"></i>
+                        <div style="flex: 1;">
+                            <strong style="display: block; margin-bottom: 6px; color: #0f172a; font-size: 14px;">AI Recommendation:</strong>
+                            <div id="pred_recommendation" style="color: #475569; font-size: 13px; line-height: 1.6;">Based on historical performance data</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-primary" onclick="acceptAIRecommendation()" style="background: #10b981; color: white; border: none; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#10b981'; this.style.transform='translateY(0)'">
+                        <i class="fas fa-check"></i>
+                        Accept AI Recommendation
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="checkConflicts()" style="background: white; color: #667eea; border: 2px solid #667eea; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                        <i class="fas fa-search"></i>
+                        Check Conflicts
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="overrideSchedule()" style="background: white; color: #64748b; border: 2px solid #e2e8f0; font-weight: 600; padding: 12px 24px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; font-size: 14px;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'" onmouseout="this.style.background='white'; this.style.borderColor='#e2e8f0'">
+                        <i class="fas fa-edit"></i>
+                        Override Schedule
+                    </button>
+                </div>
+            </div>
+            <div class="crime-ai-card" id="aiRecommendationsCard">
+                <div class="crime-ai-toolbar">
+                    <div>
+                        <h3 style="margin: 0 0 6px 0; color: #0f172a; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-robot" style="color: #667eea;"></i>
+                            Smart AI Campaign Recommendations
+                        </h3>
+                        <p id="aiRecommendationsStatus" class="crime-ai-status" style="margin: 0;">
+                            Loading unified analytics from crime and disaster reports...
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <div style="position: relative;">
+                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+                            <input type="text" id="aiRecSearchInput" placeholder="Search recommendations..." 
+                                style="padding: 8px 12px 8px 32px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px; width: 200px; background: white; outline: none;"
+                                onkeyup="filterAiRecommendations()" onfocus="this.style.borderColor='#667eea'" onblur="this.style.borderColor='#e2e8f0'">
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="loadAiRecommendations(true)" style="display: inline-flex; align-items: center; gap: 6px; border: 2px solid #667eea; color: #667eea; background: white; font-weight: 700;">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
+                        <button type="button" id="aiRecBackfillBtn" class="btn btn-primary" onclick="backfillAiRecommendationPlans()" style="display: inline-flex; align-items: center; gap: 6px; background: #667eea; color: white; border: 2px solid #667eea; font-weight: 700;">
+                            <i class="fas fa-magic"></i>
+                            Generate Missing Plans
+                        </button>
+                    </div>
+                </div>
+                <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <table class="data-table" style="width: 100%; border-collapse: collapse; min-width: 860px;">
+                        <thead>
+                            <tr style="background: #f8fafc;">
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 50px;">#</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Campaign Title</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 90px;">Category</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0;">Main Trend</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap; width: 110px;">Reports</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; white-space: nowrap; width: 130px;">Priority</th>
+                                <th style="padding: 12px 14px; text-align: left; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; width: 80px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="aiRecommendationsTable">
+                            <tr>
+                                <td colspan="7" style="padding: 28px; text-align: center; color: #64748b;">
+                                    <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+                                    Loading unified recommendations...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="aiRecommendationsPagination" class="crime-ai-pagination" style="display: none;">
+                    <div id="aiRecommendationsPaginationSummary" style="color: #64748b; font-size: 13px; font-weight: 600;"></div>
+                    <div id="aiRecommendationsPaginationControls" class="crime-ai-page-controls"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <?php endif; // End RBAC: Hide AutoML section for Viewer ?>
 
     <!-- Campaigns List - Moved to top -->
     <section class="card" id="list-section">
@@ -1766,13 +1958,16 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         <div class="section-header" style="margin-bottom: 20px;">
             <h2 class="section-title analytics-accent">💰 Financial & Budgeting</h2>
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="openBudgetModal()" style="display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-plus"></i> Add Budget Line Items
+                </button>
                 <button class="btn btn-secondary" onclick="loadBudgetData()" style="display: flex; align-items: center; gap: 6px;">
                     <i class="fas fa-sync-alt"></i> Refresh
                 </button>
             </div>
         </div>
         <p style="margin: 0 0 20px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
-            Finalized campaign budgets are managed from the campaign plan. Use <strong>Plan New Campaign → Budget Breakdown</strong> to enter the complete detailed budget, then use View here to inspect it.
+            Manage budget line items for campaigns. Track consumables and materials with funding source allocation. Budget data is connected to <strong>Resource Allocation</strong> for Materials Allocated.
         </p>
         
         <!-- Budget Summary Cards -->
@@ -1792,7 +1987,6 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                 </div>
                 <div id="budgetGovDisplay" style="font-size: 24px; font-weight: 700; color: #1e40af; display: none;">₱0.00</div>
                 <div id="budgetGovHidden" style="font-size: 24px; font-weight: 700; color: #1e40af;">••••••</div>
-                <div id="budgetGovMeta" style="margin-top: 8px; font-size: 11px; color: #475569;">Active fiscal-year allocation</div>
             </div>
             <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 20px; text-align: center;">
                 <div style="font-size: 12px; color: #92400e; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -1804,7 +1998,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
             </div>
             <div style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); border-radius: 12px; padding: 20px; text-align: center;">
                 <div style="font-size: 12px; color: #7c3aed; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Line Items</div>
-                <div id="budgetItemsDisplay" style="font-size: 24px; font-weight: 700; color: #7c3aed;">0</div>
+<div id="budgetItemsDisplay" style="font-size: 24px; font-weight: 700; color: #7c3aed;">0</div>
             </div>
         </div>
         
@@ -2104,47 +2298,9 @@ function getPriorityBadge(level, score) {
     return { className: 'priority-low', label: 'Low', color: '#16a34a' };
 }
 
-function normalizeAiCampaignCategory(rec = {}) {
-    const explicitCampaignCategory = String(rec.campaign_category || '').trim().toLowerCase();
-    if (['education', 'crime', 'disaster'].includes(explicitCampaignCategory)) {
-        return explicitCampaignCategory;
-    }
-
-    const trend = String(rec.trend_key || '').trim().toLowerCase();
-    const sourceType = String(rec.source_type || rec.source || '').trim().toLowerCase();
-    const currentCategory = String(rec.category || '').trim().toLowerCase();
-    const title = String(rec.campaign_title || rec.recommended_campaign_title || '').trim().toLowerCase();
-    const audience = String(rec.ai_target_audience || rec.target_audience || '').trim().toLowerCase();
-    const actionsRaw = Array.isArray(rec.ai_recommended_actions) ? rec.ai_recommended_actions.join(' ') : String(rec.ai_recommended_actions || '');
-    const text = `${title} ${audience} ${actionsRaw}`.toLowerCase();
-
-    if (sourceType === 'disaster' || currentCategory === 'disaster' || trend.startsWith('disaster:')) {
-        return 'disaster';
-    }
-
-    // The campaign category describes WHAT the intervention does.  The evidence
-    // source remains separate, so a crime report may legitimately produce an
-    // Education campaign when the response is prevention/awareness/seminars.
-    if (
-        trend.includes('drug-related') ||
-        trend.includes('youth-safety') ||
-        /drug[- ]?free|say no to drugs|choose life|anti[- ]?drug awareness|drug prevention|youth|student|school|kabataan|education|seminar|workshop|orientation|peer education/.test(text)
-    ) {
-        const enforcementOnly = /patrol|enforcement|apprehend|apprehension|arrest|surveillance|hotspot operation|police operation|checkpoint|raid|law enforcement/.test(text)
-            && !/awareness|educat|seminar|workshop|training|orientation|leadership|student|school|youth|kabataan|prevention/.test(text);
-        if (!enforcementOnly) return 'education';
-    }
-
-    return currentCategory === 'education' ? 'education' : 'crime';
-}
-
 function getCategoryBadge(source) {
-    const normalized = String(source || '').trim().toLowerCase();
-    if (normalized === 'disaster') {
+    if (source === 'disaster') {
         return { className: 'badge-disaster', label: 'Disaster', icon: 'fa-exclamation-triangle', color: '#dc2626' };
-    }
-    if (normalized === 'education') {
-        return { className: 'badge-education', label: 'Education', icon: 'fa-graduation-cap', color: '#0f766e' };
     }
     return { className: 'badge-crime', label: 'Crime', icon: 'fa-shield-alt', color: '#667eea' };
 }
@@ -2311,7 +2467,7 @@ function renderAiRecommendationsTable() {
 
         const catCell = document.createElement('td');
         catCell.style.cssText = 'padding: 12px 14px; vertical-align: middle;';
-        const catBadge = getCategoryBadge(normalizeAiCampaignCategory(rec));
+        const catBadge = getCategoryBadge(rec.category || rec.source || 'crime');
         const catSpan = document.createElement('span');
         catSpan.style.cssText = `display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: ${catBadge.color}15; color: ${catBadge.color}; border: 1px solid ${catBadge.color}30; text-transform: uppercase; letter-spacing: 0.3px;`;
         catSpan.innerHTML = `<i class="fas ${catBadge.icon}"></i> ${catBadge.label}`;
@@ -2333,7 +2489,7 @@ function renderAiRecommendationsTable() {
         badge.textContent = `${prio.label} (${Number(rec.priority_score || 0).toFixed(0)})`;
         priorityCell.appendChild(badge);
 
-        const isAccepted = Number(rec.converted_campaign_id || 0) > 0;
+        const isAccepted = rec.converted_campaign_id || rec.approval_status === 'accepted';
         if (isAccepted) {
             const acceptedBadge = document.createElement('span');
             const cId = rec.converted_campaign_id ? ' #' + rec.converted_campaign_id : '';
@@ -2349,7 +2505,14 @@ function renderAiRecommendationsTable() {
         viewButton.className = 'btn btn-primary';
         viewButton.style.cssText = 'display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 12px;';
         viewButton.innerHTML = '<i class="fas fa-eye"></i><span>View</span>';
-        viewButton.addEventListener('click', () => openAiRecommendationModal(globalIndex, items));
+        if (!rec.id) {
+            viewButton.disabled = true;
+            viewButton.style.opacity = '0.55';
+            viewButton.style.cursor = 'not-allowed';
+            viewButton.title = 'Recommendation could not be persisted to the LGU database.';
+        } else {
+            viewButton.addEventListener('click', () => openAiRecommendationModal(globalIndex, items));
+        }
         actionCell.appendChild(viewButton);
 
         row.append(rankCell, titleCell, catCell, incCell, countCell, priorityCell, actionCell);
@@ -2359,8 +2522,8 @@ function renderAiRecommendationsTable() {
     updateAiRecommendationsPagination(items.length);
 }
 
-async function loadAiRecommendations(forceRefresh = false) {
-    if (!forceRefresh && aiRecommendations.length) {
+async function loadAiRecommendations(forceRefresh = false, forceReload = false) {
+    if (!forceRefresh && !forceReload && aiRecommendations.length) {
         aiRecommendationsFiltered = [...aiRecommendations];
         renderAiRecommendationsTable();
         return;
@@ -2376,15 +2539,13 @@ async function loadAiRecommendations(forceRefresh = false) {
             headers: { 'Accept': 'application/json' },
             cache: 'no-store'
         });
-        if (!response.ok) throw new Error(`AI recommendations API returned HTTP ${response.status}`);
+        if (!response.ok) throw new Error(await readApiError(response));
         const payload = await response.json();
         if (payload && payload.success === false) {
             throw new Error(payload.error || 'AI recommendations endpoint failed');
         }
 
-        aiRecommendations = Array.isArray(payload?.recommendations)
-            ? payload.recommendations.map(rec => ({ ...rec, category: normalizeAiCampaignCategory(rec), campaign_category: normalizeAiCampaignCategory(rec) }))
-            : [];
+        aiRecommendations = Array.isArray(payload?.recommendations) ? payload.recommendations : [];
         aiRecommendationsFiltered = [...aiRecommendations];
         aiRecommendationsCurrentPage = 1;
         renderAiRecommendationsTable();
@@ -2394,9 +2555,25 @@ async function loadAiRecommendations(forceRefresh = false) {
             return;
         }
 
-        const genLabel = payload.generated_by === 'gemini' ? 'Gemini AI titles' : payload.generated_by === 'cache' ? 'cached' : 'rule-based titles';
+        let genLabel = 'rule-based titles';
+        if (payload.generated_by === 'gemini') genLabel = 'Gemini AI';
+        else if (payload.generated_by === 'cache') genLabel = 'saved LGU AI recommendations';
+        else if (payload.generated_by === 'cache-fallback') genLabel = 'saved LGU recommendations (live-source fallback)';
+        else if (payload.generated_by === 'unavailable') genLabel = 'no available recommendation source';
+
         const testInfo = payload.test_records_filtered > 0 ? ` (${payload.test_records_filtered} test/mock records excluded)` : '';
-        setAiStatus(`${payload.valid_records || 0} valid reports grouped into ${payload.total_clusters || 0} campaign clusters; using ${genLabel}.${testInfo}`);
+        const sourceErrors = payload && payload.source_errors && typeof payload.source_errors === 'object'
+            ? Object.keys(payload.source_errors)
+            : [];
+        const sourceInfo = sourceErrors.length ? ` Live source warning: ${sourceErrors.join(' & ')} unavailable.` : '';
+        const geminiInfo = payload.gemini_configured === false && payload.generated_by !== 'cache' && payload.generated_by !== 'cache-fallback'
+            ? ' Gemini key is not configured, so deterministic titles are being used.'
+            : '';
+        const warningInfo = payload.warning ? ` ${payload.warning}` : '';
+        const databaseInfo = payload.database_connected === false
+            ? ' LGU database connection is unavailable; recommendation details and plan generation are disabled until the database connection is restored.'
+            : '';
+        setAiStatus(`${payload.valid_records || 0} valid reports grouped into ${payload.total_clusters || 0} campaign clusters; using ${genLabel}.${testInfo}${sourceInfo}${geminiInfo}${warningInfo}${databaseInfo}`, payload.database_connected === false);
     } catch (err) {
         console.error('Failed to load AI recommendations:', err);
         setAiStatus(err.message || 'Unable to load recommendations.', true);
@@ -2427,7 +2604,7 @@ async function openAiRecommendationModal(index, items) {
     closeAiRecommendationModal();
 
     const prio = getPriorityBadge(rec.priority_level, rec.priority_score);
-    const catBadge = getCategoryBadge(normalizeAiCampaignCategory(rec));
+    const catBadge = getCategoryBadge(rec.category || rec.source || 'crime');
 
     const modal = document.createElement('div');
     modal.id = 'aiRecommendationModal';
@@ -2487,10 +2664,10 @@ async function openAiRecommendationModal(index, items) {
     document.body.appendChild(modal);
 
     const tabBar = document.getElementById('aiRecModalTabs');
-    tabBar.addEventListener('click', async function (e) {
+    tabBar.addEventListener('click', function (e) {
         const btn = e.target.closest('.ai-rec-tab');
-        if (!btn || btn.disabled) return;
-        tabBar.querySelectorAll('.ai-rec-tab').forEach(b => {
+        if (!btn) return;
+        document.querySelectorAll('.ai-rec-tab').forEach(b => {
             b.style.color = '#64748b';
             b.style.borderBottom = '3px solid transparent';
             b.style.fontWeight = '600';
@@ -2502,14 +2679,6 @@ async function openAiRecommendationModal(index, items) {
         btn.style.background = 'rgba(102,126,234,0.08)';
         const tab = btn.getAttribute('data-tab');
         window.__aiRecActiveTab = tab;
-
-        // Overall Summary and Locations can render directly from the recommendation.
-        // The remaining tabs rely on the detailed planning tables. If those rows do
-        // not exist yet, generate the existing campaign plan on demand and reload it.
-        if (aiRecTabNeedsGeneratedPlan(tab) && !aiRecTabHasData(tab, window.__aiRecDetail || {})) {
-            const generated = await ensureAiRecommendationTabData(rec, tab);
-            if (!generated) return;
-        }
         renderAiRecTab(tab, rec);
     });
 
@@ -2531,146 +2700,6 @@ async function openAiRecommendationModal(index, items) {
     }
     updateAiRecPlanAction(rec);
     renderAiRecTab('overview', rec);
-}
-
-function aiRecTabNeedsGeneratedPlan(tab) {
-    return ['reports', 'budget', 'staff', 'events', 'schedule'].includes(tab);
-}
-
-function aiRecTabHasData(tab, data) {
-    data = data || {};
-    if (tab === 'reports') {
-        const reports = data.reports || {};
-        return Array.isArray(reports.all) && reports.all.length > 0;
-    }
-    if (tab === 'budget') {
-        return !!(data.budget && Array.isArray(data.budget.items) && data.budget.items.length > 0);
-    }
-    if (tab === 'staff') {
-        const staff = data.staffing || (data.staff && data.staff.staffing) || data.staff || {};
-        const existing = staff.existing_staff || (data.staff && data.staff.existing) || [];
-        const gaps = staff.missing_staff_requirements || (data.staff && data.staff.gaps) || [];
-        const participants = data.staff && Array.isArray(data.staff.participants) ? data.staff.participants : [];
-        const partners = Array.isArray(data.partners) ? data.partners : [];
-        const suggestions = Array.isArray(data.suggestions) ? data.suggestions : (Array.isArray(data.partner_suggestions) ? data.partner_suggestions : []);
-        return existing.length > 0 || gaps.length > 0 || participants.length > 0 || partners.length > 0 || suggestions.length > 0;
-    }
-    if (tab === 'schedule') {
-        const schedule = data.schedule || data.schedule_phases || {};
-        return Array.isArray(schedule.phases) ? schedule.phases.length > 0 : Array.isArray(schedule) && schedule.length > 0;
-    }
-    if (tab === 'events') {
-        const events = data.events || {};
-        return (Array.isArray(events.existing_events) && events.existing_events.length > 0)
-            || (Array.isArray(events.related_events) && events.related_events.length > 0)
-            || (Array.isArray(events.recommended_events) && events.recommended_events.length > 0);
-    }
-    return true;
-}
-
-function aiRecPrettyTabName(tab) {
-    const labels = {
-        reports: 'Reports',
-        budget: 'Budget Breakdown',
-        staff: 'Participants & Partners',
-        events: 'Events & Seminars',
-        schedule: 'Date Sprint'
-    };
-    return labels[tab] || 'Campaign Plan';
-}
-
-async function ensureAiRecommendationTabData(rec, tab) {
-    const body = document.getElementById('aiRecModalBody');
-    const recommendationId = Number((window.__aiRecDetail && window.__aiRecDetail.summary && window.__aiRecDetail.summary.id) || rec.id || 0);
-    if (!recommendationId) {
-        if (body) body.innerHTML = '<div style="padding:32px;text-align:center;color:#dc2626;font-weight:700;">Unable to load this tab because the recommendation ID is missing.</div>';
-        return false;
-    }
-
-    // Reuse a running generation request instead of firing one request per tab click.
-    if (window.__aiRecPlanGenerationPromise && window.__aiRecPlanGenerationId === recommendationId) {
-        try {
-            await window.__aiRecPlanGenerationPromise;
-            return aiRecTabHasData(tab, window.__aiRecDetail || {});
-        } catch (_) {
-            return false;
-        }
-    }
-
-    const token = localStorage.getItem('jwtToken') || '';
-    if (!token.trim()) {
-        if (body) body.innerHTML = '<div style="padding:32px;text-align:center;color:#dc2626;font-weight:700;">Your login session is missing. Please log in again to generate the detailed campaign plan.</div>';
-        return false;
-    }
-
-    const tabLabel = aiRecPrettyTabName(tab);
-    if (body) {
-        body.innerHTML = `
-            <div style="text-align:center;padding:50px 20px;color:#64748b;">
-                <i class="fas fa-spinner fa-pulse" style="font-size:28px;color:#667eea;margin-bottom:12px;"></i>
-                <div style="font-size:14px;font-weight:700;color:#334155;">Preparing ${escapeHtml(tabLabel)}...</div>
-                <div style="font-size:12px;margin-top:6px;">This recommendation has no stored detailed plan yet. The existing AI planning engine is generating it now.</div>
-            </div>`;
-    }
-
-    const summary = (window.__aiRecDetail && window.__aiRecDetail.summary) || {};
-    const currentStatus = String(summary.planning_status || rec.planning_status || 'not_generated').toLowerCase();
-    const action = ['completed', 'completed_with_warnings', 'processing'].includes(currentStatus) ? 'recalculate' : 'generate';
-
-    const generationPromise = (async () => {
-        const response = await fetch(aiRecommendationGenerateUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': 'Bearer ' + token.trim()
-            },
-            body: JSON.stringify({ recommendation_id: recommendationId, action })
-        });
-        if (!response.ok) throw new Error(await readApiError(response));
-        const payload = await response.json();
-        if (payload.error || payload.success === false) {
-            throw new Error(payload.error || payload.message || 'Campaign plan generation failed.');
-        }
-        await reloadAiRecommendationDetails(rec);
-        return true;
-    })();
-
-    window.__aiRecPlanGenerationPromise = generationPromise;
-    window.__aiRecPlanGenerationId = recommendationId;
-
-    try {
-        await generationPromise;
-        if (!aiRecTabHasData(tab, window.__aiRecDetail || {})) {
-            if (body) {
-                body.innerHTML = `
-                    <div style="padding:28px;text-align:center;">
-                        <div style="color:#92400e;font-weight:700;margin-bottom:8px;">${escapeHtml(tabLabel)} was generated but no matching rows were produced.</div>
-                        <button type="button" onclick="generateAiRecommendationPlan()" style="padding:8px 14px;border:0;border-radius:8px;background:#667eea;color:#fff;font-weight:700;cursor:pointer;"><i class="fas fa-redo"></i> Recalculate Campaign Plan</button>
-                    </div>`;
-            }
-            return false;
-        }
-        return true;
-    } catch (error) {
-        const message = error && error.message ? error.message : 'Campaign plan generation failed.';
-        console.error('AI recommendation tab generation failed:', error);
-        if (body) {
-            body.innerHTML = `
-                <div style="padding:28px;text-align:center;">
-                    <div style="color:#dc2626;font-weight:800;margin-bottom:8px;">Unable to prepare ${escapeHtml(tabLabel)}</div>
-                    <div style="color:#64748b;font-size:12px;margin-bottom:14px;white-space:pre-wrap;">${escapeHtml(message)}</div>
-                    <button type="button" onclick="generateAiRecommendationPlan()" style="padding:8px 14px;border:0;border-radius:8px;background:#667eea;color:#fff;font-weight:700;cursor:pointer;"><i class="fas fa-redo"></i> Retry Generate Campaign Plan</button>
-                </div>`;
-        }
-        if (typeof showErrorToast === 'function') showErrorToast('Planning generation failed: ' + message);
-        return false;
-    } finally {
-        if (window.__aiRecPlanGenerationId === recommendationId) {
-            delete window.__aiRecPlanGenerationPromise;
-            delete window.__aiRecPlanGenerationId;
-        }
-    }
 }
 
 function renderAiRecTab(tab, rec) {
@@ -2969,7 +2998,7 @@ function renderAiRecBudgetTabLegacy(body, data) {
 
         ${fundingHtml ? `
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-            <div style="font-size: 11px; color: #475569; font-weight: 700; margin-bottom: 6px;">Funding Source Breakdown</div>
+<div style="font-size: 11px; color: #475569; font-weight: 700; margin-bottom: 6px;">Funding Source Breakdown</div>
             ${fundingHtml}
         </div>` : ''}
 
@@ -3599,85 +3628,6 @@ function openAiEventReviewForm(eventData) {
 window.openAiEventReviewFormFromEncoded = openAiEventReviewFormFromEncoded;
 window.openAiEventReviewForm = openAiEventReviewForm;
 
-function getAiRecommendationPlanMissingDetails(data) {
-    const missing = [];
-    const budgetItems = data?.budget?.items;
-    const participants = data?.staff?.participants;
-    const phases = data?.schedule?.phases || data?.schedule_phases?.phases;
-    const reportTotal = Number(data?.reports?.total || 0);
-
-    if (!Array.isArray(budgetItems) || budgetItems.length === 0) missing.push('Budget Breakdown');
-    if (!Array.isArray(participants) || participants.length === 0) missing.push('Participants');
-    if (!Array.isArray(phases) || phases.length === 0) missing.push('Date Sprint / Events');
-    if (reportTotal <= 0) missing.push('Supporting Reports');
-
-    return missing;
-}
-
-async function prepareAiRecommendationPlanForAcceptance(rec, recommendationId, token) {
-    // Always reload first so Accept uses the current database state, not stale modal data.
-    await reloadAiRecommendationDetails(rec);
-    let data = window.__aiRecDetail || {};
-    let summary = data.summary || {};
-    let missing = getAiRecommendationPlanMissingDetails(data);
-    const status = document.getElementById('aiRecPlanStatus');
-    const acceptBtn = document.getElementById('aiRecAcceptBtn');
-
-    const planStatus = String(summary.planning_status || rec.planning_status || 'not_generated').toLowerCase();
-    const needsGeneration = missing.length > 0 || !['completed', 'completed_with_warnings'].includes(planStatus);
-    if (!needsGeneration) {
-        return data;
-    }
-
-    if (status) {
-        status.textContent = 'Generating required campaign plan before acceptance...';
-    }
-    if (acceptBtn) {
-        acceptBtn.disabled = true;
-        acceptBtn.style.opacity = '0.7';
-        acceptBtn.style.cursor = 'wait';
-        acceptBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Preparing Plan...';
-    }
-
-    // If planning_status says completed but the rows are missing, recalculate is the
-    // correct action. Otherwise use the normal first-time generator.
-    const action = ['completed', 'completed_with_warnings', 'processing'].includes(planStatus)
-        ? 'recalculate'
-        : 'generate';
-
-    const response = await fetch(aiRecommendationGenerateUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': 'Bearer ' + token.trim()
-        },
-        body: JSON.stringify({ recommendation_id: recommendationId, action })
-    });
-
-    if (!response.ok) {
-        throw new Error(await readApiError(response));
-    }
-    const payload = await response.json();
-    if (payload.error || payload.success === false) {
-        throw new Error(payload.error || payload.message || 'Campaign plan generation failed.');
-    }
-
-    await reloadAiRecommendationDetails(rec);
-    data = window.__aiRecDetail || {};
-    summary = data.summary || {};
-    missing = getAiRecommendationPlanMissingDetails(data);
-
-    if (missing.length > 0) {
-        throw new Error('Campaign plan generation finished but required data is still missing: ' + missing.join(', ') + '.');
-    }
-
-    if (status) {
-        status.textContent = 'Campaign plan is complete and ready for acceptance.';
-    }
-    return data;
-}
-
 function updateAiRecPlanAction(rec) {
     const data = window.__aiRecDetail || {};
     const summary = data.summary || {};
@@ -3706,17 +3656,11 @@ function updateAiRecPlanAction(rec) {
             acceptBtn.style.background = '#16a34a';
             acceptBtn.innerHTML = '<i class="fas fa-check-double"></i> Accepted (Campaign #' + convertedCampaignId + ')';
         } else {
-            const missingPlan = getAiRecommendationPlanMissingDetails(data);
             acceptBtn.disabled = false;
             acceptBtn.style.opacity = '1';
             acceptBtn.style.cursor = 'pointer';
             acceptBtn.style.background = '#16a34a';
-            acceptBtn.innerHTML = missingPlan.length
-                ? '<i class="fas fa-wand-magic-sparkles"></i> Generate Plan & Accept'
-                : '<i class="fas fa-check-circle"></i> Accept Recommended';
-            acceptBtn.title = missingPlan.length
-                ? 'Missing: ' + missingPlan.join(', ') + '. The plan will be generated before acceptance.'
-                : 'Accept this complete AI recommendation plan';
+            acceptBtn.innerHTML = '<i class="fas fa-check-circle"></i> Accept Recommended';
         }
     }
 
@@ -3834,7 +3778,7 @@ function showAcceptAiRecConfirmModal(details, onConfirm) {
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <h3 style="margin: 0 0 6px; font-size: 20px; font-weight: 700; color: white;">Accept AI Strategy?</h3>
-                <p style="margin: 0; font-size: 13px; color: rgba(255, 255, 255, 0.9);">Convert this AI plan into an Approved campaign with all 8 campaign tabs populated</p>
+                <p style="margin: 0; font-size: 13px; color: rgba(255, 255, 255, 0.9);">Confirm converting this recommendation into an active campaign</p>
             </div>
             <div style="padding: 24px;">
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 18px;">
@@ -3854,11 +3798,11 @@ function showAcceptAiRecConfirmModal(details, onConfirm) {
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; background: #f1f5f9; padding: 8px 12px; border-radius: 8px;">
                         <i class="fas fa-calendar-alt" style="color: #06b6d4;"></i>
-                        <span><strong>${details.phaseCount}</strong> Date Sprint phase(s) to the campaign and matching activity event(s) to <strong>Events & Seminars</strong></span>
+                        <span><strong>${details.phaseCount}</strong> activity event(s) to <strong>Events & Seminars</strong></span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; background: #f1f5f9; padding: 8px 12px; border-radius: 8px;">
                         <i class="fas fa-handshake" style="color: #f59e0b;"></i>
-                        <span><strong>${details.partnerCount}</strong> existing partner link(s); AI-only suggestions will <strong>not</strong> be added to All Partners</span>
+                        <span><strong>${details.partnerCount}</strong> partner(s) to <strong>Partners List</strong></span>
                     </div>
                 </div>
 
@@ -3904,13 +3848,10 @@ function showAcceptAiRecSuccessModal(payload) {
                 <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: left;">
                     <div style="font-weight: 700; color: #166534; font-size: 13px; margin-bottom: 8px;"><i class="fas fa-info-circle"></i> Summary of Created Items:</div>
                     <ul style="margin: 0; padding-left: 20px; color: #15803d; font-size: 13px; line-height: 1.6;">
-                        <li>Campaign status: <strong>APPROVED</strong></li>
-                        <li><strong>${payload.reports_copied || 0}</strong> AI supporting report snapshot(s) copied to Reports</li>
-                        <li><strong>${payload.audience_segments_linked || 0}</strong> target audience segment(s) linked</li>
-                        <li><strong>${payload.budget_items_created || 0}</strong> budget line items copied</li>
-                        <li><strong>${payload.participants_copied || 0}</strong> participant allocation(s) copied</li>
-                        <li><strong>${payload.partners_created || 0}</strong> partner(s) linked</li>
-                        <li><strong>${payload.schedule_phases_copied || 0}</strong> Date Sprint phase(s) copied</li>
+                        <li><strong>${payload.budget_items_created || 0}</strong> budget line items added to Financial & Budgeting</li>
+                        <li><strong>${payload.staff_created || 0}</strong> missing staff members added to Staff Roster</li>
+                        <li><strong>${payload.events_created || 0}</strong> activity events added to Events & Seminars</li>
+                        <li><strong>${payload.partners_created || 0}</strong> partners linked</li>
                     </ul>
                 </div>
                 <div style="font-size: 13px; color: #64748b; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
@@ -3934,54 +3875,17 @@ function showAcceptAiRecSuccessModal(payload) {
     setTimeout(reloadPage, 2500);
 }
 
-async function resolveAiRecommendationId(rec = {}, summary = {}) {
-    let id = Number(summary.id || rec.id || 0);
-    if (id > 0) return id;
-
-    try {
-        const response = await fetch(aiRecommendationsUrl + '?_accept_id=' + Date.now(), {
-            headers: { 'Accept': 'application/json' },
-            cache: 'no-store'
-        });
-        if (!response.ok) return 0;
-
-        const payload = await response.json();
-        const cached = Array.isArray(payload?.recommendations) ? payload.recommendations : [];
-        const trendKey = String(summary.trend_key || rec.trend_key || '').trim();
-        const title = String(summary.campaign_title || rec.campaign_title || rec.recommended_campaign_title || '').trim();
-
-        let match = null;
-        if (trendKey) {
-            match = cached.find(item => String(item?.trend_key || '').trim() === trendKey && Number(item?.id || 0) > 0) || null;
-        }
-        if (!match && title) {
-            match = cached.find(item => String(item?.campaign_title || item?.recommended_campaign_title || '').trim() === title && Number(item?.id || 0) > 0) || null;
-        }
-
-        id = Number(match?.id || 0);
-        if (id > 0) {
-            rec.id = id;
-            if (summary && typeof summary === 'object') summary.id = id;
-            if (window.__aiRecActive?.rec) window.__aiRecActive.rec.id = id;
-        }
-        return id;
-    } catch (error) {
-        console.warn('Unable to resolve AI recommendation ID:', error);
-        return 0;
-    }
-}
-
 async function acceptAiRecommendation() {
     const active = window.__aiRecActive || {};
     const rec = active.rec || {};
-    let data = window.__aiRecDetail || {};
-    let summary = data.summary || {};
-    const recommendationId = await resolveAiRecommendationId(rec, summary);
+    const data = window.__aiRecDetail || {};
+    const summary = data.summary || {};
+    const recommendationId = summary.id || rec.id;
     const acceptBtn = document.getElementById('aiRecAcceptBtn');
     const status = document.getElementById('aiRecPlanStatus');
 
     if (!recommendationId) {
-        showErrorToast('Acceptance failed: recommendation ID could not be resolved. Refresh the recommendations and try again.');
+        showErrorToast('Acceptance failed: missing recommendation ID.');
         return;
     }
 
@@ -3991,30 +3895,12 @@ async function acceptAiRecommendation() {
         return;
     }
 
-    try {
-        data = await prepareAiRecommendationPlanForAcceptance(rec, recommendationId, token);
-        summary = data.summary || {};
-    } catch (e) {
-        const message = e.message || 'Unable to generate the required campaign plan.';
-        showErrorToast('Acceptance preparation failed: ' + message);
-        if (status) status.textContent = 'Acceptance preparation failed: ' + message;
-        if (acceptBtn) {
-            acceptBtn.disabled = false;
-            acceptBtn.style.opacity = '1';
-            acceptBtn.style.cursor = 'pointer';
-            acceptBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate Plan & Accept';
-        }
-        return;
-    }
-
     const budgetCount = (data.budget && data.budget.items ? data.budget.items.length : 0);
     const participants = Array.isArray(data.staff && data.staff.participants) ? data.staff.participants : [];
     const staffToCreate = participants.filter(p => !p.staff_id && (p.missing_qty || 0) > 0).length;
     const phaseCount = (data.schedule && Array.isArray(data.schedule.phases) ? data.schedule.phases.length : 0);
-    const matchedExistingPartners = Array.isArray(data.partners)
-        ? data.partners.filter(p => Number(p.partner_id || 0) > 0)
-        : [];
-    const partnerCount = matchedExistingPartners.length;
+    const suggestions = Array.isArray(data.suggestions) ? data.suggestions.filter(s => s.proposal_status === 'proposed' && !s.created_partner_id) : [];
+    const partnerCount = (Array.isArray(data.partners) ? data.partners.length : 0) + suggestions.length;
     const title = summary.campaign_title || rec.campaign_title || 'this recommendation';
 
     showAcceptAiRecConfirmModal({
@@ -4042,7 +3928,7 @@ async function acceptAiRecommendation() {
                     'Accept': 'application/json',
                     'Authorization': 'Bearer ' + token.trim()
                 },
-                body: JSON.stringify({ recommendation_id: recommendationId })
+                body: JSON.stringify({ recommendation_id: recommendationId, force: true, reaccept: true })
             });
 
             if (!resp.ok) {
@@ -4104,9 +3990,15 @@ async function backfillAiRecommendationPlans() {
             throw new Error(payload.error || payload.message || 'Backfill failed.');
         }
 
-        showSuccessToast('Generated missing plans for ' + (payload.processed || 0) + ' recommendations.');
-        await loadAiRecommendations(false);
-    } catch (e) {
+        const succeeded = Number(payload.succeeded ?? payload.processed ?? 0);
+        const failed = Number(payload.failed ?? 0);
+        if (failed > 0) {
+            showSuccessToast(`Generated ${succeeded} recommendation plan(s); ${failed} still require attention.`);
+        } else {
+            showSuccessToast('Generated missing plans for ' + succeeded + ' recommendations.');
+        }
+        await loadAiRecommendations(false, true);
+} catch (e) {
         showErrorToast('Planning generation failed: ' + (e.message || 'Backfill failed.'));
     } finally {
         if (button) {
@@ -4128,8 +4020,6 @@ function closeAiRecommendationModal() {
     delete window.__aiRecDetailError;
     delete window.__aiRecActive;
     delete window.__aiRecActiveTab;
-    delete window.__aiRecPlanGenerationPromise;
-    delete window.__aiRecPlanGenerationId;
 }
 
 console.log('BASE PATH:', basePath);
@@ -4970,10 +4860,9 @@ function manualResetPlannerState() {
     }
     manualPopulateSimpleOptions();
     manualRenderReports();
-    const bodies = ['manualBudgetBody','manualCategoryBreakdownBody','manualActionBudgetBody','manualLocationBudgetBody','manualStaffCostBody','manualPartnerImpactBody','manualParticipantsBody','manualPartnersBody','manualPhasesBody'];
+    const bodies = ['manualBudgetBody','manualParticipantsBody','manualPartnersBody','manualPhasesBody'];
     bodies.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
     manualAddBudgetRow();
-    manualRenderBudgetDetails({});
     manualAddParticipantRow();
     manualAddPhaseRow();
     manualResetReportEditor();
@@ -5027,20 +4916,15 @@ function manualPartnerOptions(selected = '') {
     return '<option value="">Select partner...</option>' + (manualPlannerState.options.available_partners || []).map(p => `<option value="${Number(p.id)}" ${String(p.id)===String(selected)?'selected':''}>${manualEscapeHtml(p.name)} — ${manualEscapeHtml(p.organization_type || 'partner')}</option>`).join('');
 }
 
-function manualRemoveRow(btn) {
-    const tr = btn?.closest('tr');
-    if (tr) tr.remove();
-    manualUpdateBudgetTotal();
-}
 function manualAddBudgetRow(item = {}) {
     const body = document.getElementById('manualBudgetBody'); if (!body) return;
     const tr = document.createElement('tr'); tr.className = 'manual-budget-row';
-    tr.innerHTML = `<td><input class="mb-name" value="${manualEscapeHtml(item.item_name || '')}" placeholder="Item"></td><td><textarea class="mb-description" rows="1" placeholder="Detailed description">${manualEscapeHtml(item.item_description || '')}</textarea></td><td><input class="mb-category" value="${manualEscapeHtml(item.category || '')}" placeholder="Category"></td><td><input class="mb-qty" type="number" min="1" value="${Number(item.quantity || 1)}" oninput="manualUpdateBudgetTotal()"></td><td><input class="mb-unit" value="${manualEscapeHtml(item.unit_label || '')}" placeholder="pcs"></td><td><input class="mb-cost" type="number" min="0" step="0.01" value="${Number(item.unit_cost || 0)}" oninput="manualUpdateBudgetTotal()"></td><td><input class="mb-sessions" type="number" min="1" value="${Number(item.sessions_or_days || 1)}" oninput="manualUpdateBudgetTotal()"></td><td><select class="mb-funding"><option value="government_allocated" ${item.funding_source==='government_allocated'?'selected':''}>Government Allocated</option><option value="reimbursable" ${item.funding_source==='reimbursable'?'selected':''}>Reimbursable</option><option value="partner" ${item.funding_source==='partner'?'selected':''}>Partner Contribution</option><option value="other" ${item.funding_source==='other'?'selected':''}>Other</option></select></td><td><textarea class="mb-action" rows="1" placeholder="Action this item supports">${manualEscapeHtml(item.related_action || '')}</textarea></td><td><textarea class="mb-notes" rows="1">${manualEscapeHtml(item.notes || '')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualRemoveRow(this)" style="padding:6px 8px">×</button></td>`;
+    tr.innerHTML = `<td><input class="mb-name" value="${manualEscapeHtml(item.item_name || '')}" placeholder="Item"></td><td><input class="mb-category" value="${manualEscapeHtml(item.category || '')}" placeholder="Category"></td><td><input class="mb-qty" type="number" min="1" value="${Number(item.quantity || 1)}" oninput="manualUpdateBudgetTotal()"></td><td><input class="mb-unit" value="${manualEscapeHtml(item.unit_label || '')}" placeholder="pcs"></td><td><input class="mb-cost" type="number" min="0" step="0.01" value="${Number(item.unit_cost || 0)}" oninput="manualUpdateBudgetTotal()"></td><td><input class="mb-sessions" type="number" min="1" value="${Number(item.sessions_or_days || 1)}" oninput="manualUpdateBudgetTotal()"></td><td><select class="mb-funding"><option value="government_allocated" ${item.funding_source==='government_allocated'?'selected':''}>Government Allocated</option><option value="reimbursable" ${item.funding_source==='reimbursable'?'selected':''}>Reimbursable</option><option value="other" ${item.funding_source==='other'?'selected':''}>Other</option></select></td><td><textarea class="mb-notes" rows="1">${manualEscapeHtml(item.notes || '')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="this.closest('tr').remove();manualUpdateBudgetTotal();" style="padding:6px 8px">×</button></td>`;
     body.appendChild(tr); manualUpdateBudgetTotal(); manualApplyMode();
 }
 function manualCollectBudget() {
     return Array.from(document.querySelectorAll('.manual-budget-row')).map(row => ({
-        item_name: row.querySelector('.mb-name')?.value.trim() || '', item_description: row.querySelector('.mb-description')?.value.trim() || '', category: row.querySelector('.mb-category')?.value.trim() || '', item_type:'manual', quantity:Number(row.querySelector('.mb-qty')?.value||1), unit_label:row.querySelector('.mb-unit')?.value.trim() || '', unit_cost:Number(row.querySelector('.mb-cost')?.value||0), sessions_or_days:Number(row.querySelector('.mb-sessions')?.value||1), funding_source:row.querySelector('.mb-funding')?.value || 'government_allocated', related_action:row.querySelector('.mb-action')?.value.trim() || '', notes:row.querySelector('.mb-notes')?.value.trim() || ''
+        item_name: row.querySelector('.mb-name').value.trim(), category: row.querySelector('.mb-category').value.trim(), item_type:'manual', quantity:Number(row.querySelector('.mb-qty').value||1), unit_label:row.querySelector('.mb-unit').value.trim(), unit_cost:Number(row.querySelector('.mb-cost').value||0), sessions_or_days:Number(row.querySelector('.mb-sessions').value||1), funding_source:row.querySelector('.mb-funding').value, notes:row.querySelector('.mb-notes').value.trim()
     })).filter(x => x.item_name);
 }
 function manualUpdateBudgetTotal() {
@@ -5049,23 +4933,6 @@ function manualUpdateBudgetTotal() {
     const hidden = document.getElementById('budget'); if (hidden) hidden.value = total.toFixed(2);
     return total;
 }
-function manualAddCategoryBreakdownRow(item={}){
-    const b=document.getElementById('manualCategoryBreakdownBody');if(!b)return;const tr=document.createElement('tr');tr.className='manual-category-budget-row';tr.innerHTML=`<td><input class="mcb-category" value="${manualEscapeHtml(item.category||'')}"></td><td><input class="mcb-amount" type="number" min="0" step="0.01" value="${Number(item.amount||0)}"></td><td><input class="mcb-percent" type="number" min="0" step="0.01" value="${Number(item.percentage||0)}"></td><td><textarea class="mcb-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualRemoveRow(this)" style="padding:6px 8px">×</button></td>`;b.appendChild(tr);manualApplyMode();
-}
-function manualCollectCategoryBreakdown(){return Array.from(document.querySelectorAll('.manual-category-budget-row')).map(r=>({category:r.querySelector('.mcb-category')?.value.trim()||'',amount:Number(r.querySelector('.mcb-amount')?.value||0),percentage:Number(r.querySelector('.mcb-percent')?.value||0),notes:r.querySelector('.mcb-notes')?.value.trim()||''})).filter(x=>x.category||x.amount);}
-function manualAddActionBudgetRow(item={}){const b=document.getElementById('manualActionBudgetBody');if(!b)return;const tr=document.createElement('tr');tr.className='manual-action-budget-row';tr.innerHTML=`<td><input class="mab-action" value="${manualEscapeHtml(item.action||'')}"></td><td><input class="mab-item" value="${manualEscapeHtml(item.budget_item||'')}"></td><td><input class="mab-amount" type="number" min="0" step="0.01" value="${Number(item.amount||0)}"></td><td><textarea class="mab-rationale" rows="1">${manualEscapeHtml(item.rationale||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualRemoveRow(this)" style="padding:6px 8px">×</button></td>`;b.appendChild(tr);manualApplyMode();}
-function manualCollectActionBudget(){return Array.from(document.querySelectorAll('.manual-action-budget-row')).map(r=>({action:r.querySelector('.mab-action')?.value.trim()||'',budget_item:r.querySelector('.mab-item')?.value.trim()||'',amount:Number(r.querySelector('.mab-amount')?.value||0),rationale:r.querySelector('.mab-rationale')?.value.trim()||''})).filter(x=>x.action||x.amount);}
-function manualAddLocationBudgetRow(item={}){const b=document.getElementById('manualLocationBudgetBody');if(!b)return;const tr=document.createElement('tr');tr.className='manual-location-budget-row';tr.innerHTML=`<td><input class="mlb-location" value="${manualEscapeHtml(item.location||'')}"></td><td><input class="mlb-purpose" value="${manualEscapeHtml(item.purpose||'')}"></td><td><input class="mlb-amount" type="number" min="0" step="0.01" value="${Number(item.amount||0)}"></td><td><textarea class="mlb-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualRemoveRow(this)" style="padding:6px 8px">×</button></td>`;b.appendChild(tr);manualApplyMode();}
-function manualCollectLocationBudget(){return Array.from(document.querySelectorAll('.manual-location-budget-row')).map(r=>({location:r.querySelector('.mlb-location')?.value.trim()||'',purpose:r.querySelector('.mlb-purpose')?.value.trim()||'',amount:Number(r.querySelector('.mlb-amount')?.value||0),notes:r.querySelector('.mlb-notes')?.value.trim()||''})).filter(x=>x.location||x.amount);}
-function manualAddStaffCostRow(item={}){const b=document.getElementById('manualStaffCostBody');if(!b)return;const tr=document.createElement('tr');tr.className='manual-staff-cost-row';tr.innerHTML=`<td><input class="msc-staff" value="${manualEscapeHtml(item.staff_or_role||'')}"></td><td><input class="msc-activity" value="${manualEscapeHtml(item.activity||'')}"></td><td><input class="msc-location" value="${manualEscapeHtml(item.location||'')}"></td><td><input class="msc-qty" type="number" min="0" value="${Number(item.quantity||0)}" oninput="manualRecalcStaffCost(this)"></td><td><input class="msc-rate" type="number" min="0" step="0.01" value="${Number(item.rate||0)}" oninput="manualRecalcStaffCost(this)"></td><td><input class="msc-days" type="number" min="0" step="1" value="${Number(item.days_or_sessions||0)}" oninput="manualRecalcStaffCost(this)"></td><td><input class="msc-total" type="number" min="0" step="0.01" value="${Number(item.total||0)}"></td><td><textarea class="msc-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualRemoveRow(this)" style="padding:6px 8px">×</button></td>`;b.appendChild(tr);manualApplyMode();}
-function manualRecalcStaffCost(el){const r=el?.closest('tr');if(!r)return;const q=Number(r.querySelector('.msc-qty')?.value||0),rate=Number(r.querySelector('.msc-rate')?.value||0),days=Number(r.querySelector('.msc-days')?.value||0);const t=r.querySelector('.msc-total');if(t)t.value=(q*rate*days).toFixed(2);}
-function manualCollectStaffCost(){return Array.from(document.querySelectorAll('.manual-staff-cost-row')).map(r=>({staff_or_role:r.querySelector('.msc-staff')?.value.trim()||'',activity:r.querySelector('.msc-activity')?.value.trim()||'',location:r.querySelector('.msc-location')?.value.trim()||'',quantity:Number(r.querySelector('.msc-qty')?.value||0),rate:Number(r.querySelector('.msc-rate')?.value||0),days_or_sessions:Number(r.querySelector('.msc-days')?.value||0),total:Number(r.querySelector('.msc-total')?.value||0),notes:r.querySelector('.msc-notes')?.value.trim()||''})).filter(x=>x.staff_or_role||x.total);}
-function manualAddPartnerImpactRow(item={}){const b=document.getElementById('manualPartnerImpactBody');if(!b)return;const tr=document.createElement('tr');tr.className='manual-partner-impact-row';tr.innerHTML=`<td><input class="mpi-partner" value="${manualEscapeHtml(item.partner||'')}"></td><td><input class="mpi-contribution" value="${manualEscapeHtml(item.contribution||'')}"></td><td><select class="mpi-type"><option value="in_kind" ${item.type==='in_kind'?'selected':''}>In-kind</option><option value="cash" ${item.type==='cash'?'selected':''}>Cash</option><option value="service" ${item.type==='service'?'selected':''}>Service</option><option value="other" ${item.type==='other'?'selected':''}>Other</option></select></td><td><input class="mpi-value" type="number" min="0" step="0.01" value="${Number(item.estimated_value||0)}"></td><td><textarea class="mpi-notes" rows="1">${manualEscapeHtml(item.notes||'')}</textarea></td><td><button type="button" data-planner-edit-action="1" class="btn btn-danger" onclick="manualRemoveRow(this)" style="padding:6px 8px">×</button></td>`;b.appendChild(tr);manualApplyMode();}
-function manualCollectPartnerImpact(){return Array.from(document.querySelectorAll('.manual-partner-impact-row')).map(r=>({partner:r.querySelector('.mpi-partner')?.value.trim()||'',contribution:r.querySelector('.mpi-contribution')?.value.trim()||'',type:r.querySelector('.mpi-type')?.value||'in_kind',estimated_value:Number(r.querySelector('.mpi-value')?.value||0),notes:r.querySelector('.mpi-notes')?.value.trim()||''})).filter(x=>x.partner||x.contribution||x.estimated_value);}
-function manualCollectContingency(){return {contingency_percentage:Number(document.getElementById('manual_contingency_percentage')?.value||0),contingency_amount:Number(document.getElementById('manual_contingency_amount')?.value||0),reason:document.getElementById('manual_contingency_reason')?.value.trim()||'',may_cover:manualToList(document.getElementById('manual_contingency_may_cover')?.value||'')};}
-function manualCollectBudgetDetails(){return {detailed_line_items:manualCollectBudget(),category_breakdown:manualCollectCategoryBreakdown(),action_budget_mapping:manualCollectActionBudget(),location_budget_destination:manualCollectLocationBudget(),staff_deployment_cost_impact:manualCollectStaffCost(),partner_contribution_impact:manualCollectPartnerImpact(),contingency:manualCollectContingency()};}
-function manualClearBudgetDetailBodies(){['manualCategoryBreakdownBody','manualActionBudgetBody','manualLocationBudgetBody','manualStaffCostBody','manualPartnerImpactBody'].forEach(id=>{const e=document.getElementById(id);if(e)e.innerHTML='';});}
-function manualRenderBudgetDetails(d={}){manualClearBudgetDetailBodies();(d.category_breakdown||[]).forEach(manualAddCategoryBreakdownRow);if(!(d.category_breakdown||[]).length)manualAddCategoryBreakdownRow();(d.action_budget_mapping||[]).forEach(manualAddActionBudgetRow);if(!(d.action_budget_mapping||[]).length)manualAddActionBudgetRow();(d.location_budget_destination||[]).forEach(manualAddLocationBudgetRow);if(!(d.location_budget_destination||[]).length)manualAddLocationBudgetRow();(d.staff_deployment_cost_impact||[]).forEach(manualAddStaffCostRow);if(!(d.staff_deployment_cost_impact||[]).length)manualAddStaffCostRow();(d.partner_contribution_impact||[]).forEach(manualAddPartnerImpactRow);if(!(d.partner_contribution_impact||[]).length)manualAddPartnerImpactRow();const c=d.contingency||{};const ep=document.getElementById('manual_contingency_percentage'),ea=document.getElementById('manual_contingency_amount'),er=document.getElementById('manual_contingency_reason'),em=document.getElementById('manual_contingency_may_cover');if(ep)ep.value=c.contingency_percentage??'';if(ea)ea.value=c.contingency_amount??'';if(er)er.value=c.reason||'';if(em)em.value=Array.isArray(c.may_cover)?c.may_cover.join('\n'):(c.may_cover||'');manualApplyMode();}
 
 function manualParticipantStaffChanged(select) {
     const row = select.closest('tr'); const staff = (manualPlannerState.options.reference_staff || []).find(s => String(s.id)===String(select.value));
@@ -5122,21 +4989,7 @@ function manualRenderReports(){
 function manualViewReport(kind,key){
     if(kind==='existing'){
         const r=manualPlannerState.reportsExisting.find(x=>Number(x.id)===Number(key)); if(!r)return;
-        const path=String(r.file_path||'').trim();
-        // Accepted AI recommendations carry report snapshots/metadata rather than a
-        // physical uploaded file. Show that source report inside the campaign modal.
-        if(!path){
-            let existing=document.getElementById('manualAiReportSnapshotModal');
-            if(existing)existing.remove();
-            const modal=document.createElement('div');
-            modal.id='manualAiReportSnapshotModal';
-            modal.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.68);z-index:30000;display:flex;align-items:center;justify-content:center;padding:20px;';
-            modal.innerHTML=`<div style="background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:85vh;overflow:auto;box-shadow:0 24px 60px rgba(0,0,0,.35)"><div style="padding:18px 22px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;gap:12px;align-items:center"><div><div style="font-size:11px;font-weight:800;color:#6366f1;text-transform:uppercase">AI Supporting Report Snapshot</div><h3 style="margin:4px 0 0;color:#0f172a">${manualEscapeHtml(r.report_title||'Supporting Report')}</h3></div><button type="button" onclick="document.getElementById('manualAiReportSnapshotModal')?.remove()" style="border:0;background:none;font-size:26px;cursor:pointer;color:#64748b">&times;</button></div><div style="padding:22px"><div class="review-grid"><div class="review-box"><strong>Report Type</strong>${manualEscapeHtml(r.report_type||'-')}</div><div class="review-box"><strong>Report Date</strong>${manualEscapeHtml(r.report_date||'-')}</div><div class="review-box"><strong>Location</strong>${manualEscapeHtml(r.location||'-')}</div><div class="review-box"><strong>Source</strong>Copied from accepted AI recommendation</div></div><div style="margin-top:16px;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;white-space:pre-wrap;line-height:1.6;color:#334155">${manualEscapeHtml(r.description||'No additional report description stored.')}</div></div></div>`;
-            modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});
-            document.body.appendChild(modal);
-            return;
-        }
-        const url=(basePath||'')+'/'+path.replace(/^\/+/, ''); window.open(url,'_blank','noopener');
+        const url=(basePath||'')+'/'+String(r.file_path||'').replace(/^\/+/, ''); window.open(url,'_blank','noopener');
     }else{
         const r=manualPlannerState.reportDrafts[key]; if(r?.file){const url=URL.createObjectURL(r.file);window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000);}
     }
@@ -5188,11 +5041,11 @@ function manualCollectSummary(){
     const participantRows=manualCollectParticipants();
     return {title:document.getElementById('title').value.trim(),description:document.getElementById('description').value.trim()||null,category:document.getElementById('category').value||null,geographic_scope:document.getElementById('geographic_scope').value||null,status:document.getElementById('status').value||'draft',start_date:document.getElementById('start_date').value||null,start_time:document.getElementById('start_time').value||null,end_date:document.getElementById('end_date').value||null,end_time:document.getElementById('end_time').value||null,objectives:document.getElementById('objectives').value.trim()||null,location:document.getElementById('location').value||null,barangay_target_zones:manualSelectedValues('barangay_zones'),budget:manualUpdateBudgetTotal(),staff_count:participantRows.reduce((s,p)=>s+Number(p.selected_qty||0),0)};
 }
-function manualCollectPlanningPayload(){return {segment_ids:manualSelectedValues('manual_target_segments').map(Number),budget_items:manualCollectBudget(),budget_details:manualCollectBudgetDetails(),participants:manualCollectParticipants(),partners:manualCollectPartners(),schedule_phases:manualCollectPhases()};}
+function manualCollectPlanningPayload(){return {segment_ids:manualSelectedValues('manual_target_segments').map(Number),budget_items:manualCollectBudget(),participants:manualCollectParticipants(),partners:manualCollectPartners(),schedule_phases:manualCollectPhases()};}
 function manualValidationErrors(){
     const s=manualCollectSummary(),p=manualCollectPlanningPayload(),errors=[];
     if(!s.title)errors.push({step:1,msg:'Campaign Title is required.'}); if(!s.category)errors.push({step:1,msg:'Category is required.'}); if(!s.objectives)errors.push({step:1,msg:'Objectives are required.'}); if(!s.description)errors.push({step:1,msg:'Description is required.'});
-    if((manualPlannerState.reportsExisting.length+manualPlannerState.reportDrafts.length)<1)errors.push({step:2,msg:'Upload at least one supporting report.'}); if(!s.geographic_scope)errors.push({step:3,msg:'Primary Barangay / Geographic Scope is required.'}); if(!s.location)errors.push({step:3,msg:'Campaign Location is required.'}); if(!p.segment_ids.length)errors.push({step:3,msg:'Select at least one target audience.'}); if(!p.budget_items.length)errors.push({step:4,msg:'Add at least one detailed budget line item.'}); const bd=p.budget_details||{}; if(!(bd.category_breakdown||[]).length)errors.push({step:4,msg:'Add at least one Category Breakdown row.'}); if(!(bd.action_budget_mapping||[]).length)errors.push({step:4,msg:'Add at least one Action Budget Mapping row.'}); if(!(bd.location_budget_destination||[]).length)errors.push({step:4,msg:'Add at least one Location Budget Destination row.'}); if(!(bd.staff_deployment_cost_impact||[]).length)errors.push({step:4,msg:'Add at least one Staff Deployment Cost Impact row.'}); if(!(bd.partner_contribution_impact||[]).length)errors.push({step:4,msg:'Add at least one Partner Contribution Impact row.'}); if(!Number(bd.contingency?.contingency_amount||0) && !String(bd.contingency?.reason||'').trim())errors.push({step:4,msg:'Enter the Contingency amount and reason.'}); if(!p.participants.length)errors.push({step:5,msg:'Add at least one participant.'}); if(!p.schedule_phases.length)errors.push({step:7,msg:'Add at least one Date Sprint.'});
+    if((manualPlannerState.reportsExisting.length+manualPlannerState.reportDrafts.length)<1)errors.push({step:2,msg:'Upload at least one supporting report.'}); if(!s.geographic_scope)errors.push({step:3,msg:'Primary Barangay / Geographic Scope is required.'}); if(!s.location)errors.push({step:3,msg:'Campaign Location is required.'}); if(!p.segment_ids.length)errors.push({step:3,msg:'Select at least one target audience.'}); if(!p.budget_items.length)errors.push({step:4,msg:'Add at least one budget item.'}); if(!p.participants.length)errors.push({step:5,msg:'Add at least one participant.'}); if(!p.schedule_phases.length)errors.push({step:7,msg:'Add at least one Date Sprint.'});
     p.schedule_phases.forEach((ph,i)=>{if(!ph.sprint_title||!ph.start_date||!ph.end_date)errors.push({step:7,msg:`Sprint ${i+1} needs a title, start date, and end date.`});else if(ph.start_date>ph.end_date)errors.push({step:7,msg:`Sprint ${i+1} start date cannot be after end date.`});});
     return errors;
 }
@@ -5201,7 +5054,7 @@ function manualRenderReview(){
     const validation=document.getElementById('manualReviewValidation'); if(validation)validation.innerHTML=errors.length?`<div style="background:#fff7ed;border-left:4px solid #f97316;padding:12px;border-radius:8px"><strong style="color:#9a3412">${errors.length} item(s) need attention</strong><ul style="margin:8px 0 0;padding-left:20px">${errors.map(e=>`<li><button type="button" onclick="manualGoToStep(${e.step})" style="border:0;background:none;color:#c2410c;text-decoration:underline;cursor:pointer;padding:0">${manualEscapeHtml(e.msg)}</button></li>`).join('')}</ul></div>`:`<div style="background:#f0fdf4;border-left:4px solid #22c55e;padding:12px;border-radius:8px;color:#166534;font-weight:700"><i class="fas fa-check-circle"></i> Campaign plan is complete and ready to save.</div>`;
     const grid=document.getElementById('manualReviewGrid'); if(!grid)return;
     const totalStaff=plan.participants.reduce((s,p)=>s+Number(p.selected_qty||0),0); const phaseDates=plan.schedule_phases.filter(p=>p.start_date&&p.end_date); const dateRange=phaseDates.length?`${phaseDates.map(p=>p.start_date).sort()[0]} → ${phaseDates.map(p=>p.end_date).sort().slice(-1)[0]}`:'Not set';
-    grid.innerHTML=`<div class="review-box"><strong>Overall Summary</strong>${manualEscapeHtml(summary.title||'Untitled')}<br>${manualEscapeHtml(summary.category||'-')}<br>${manualEscapeHtml(summary.description||'-')}</div><div class="review-box"><strong>Reports</strong>${manualPlannerState.reportsExisting.length+manualPlannerState.reportDrafts.length} supporting report(s)</div><div class="review-box"><strong>Locations & Audience</strong>${manualEscapeHtml(summary.geographic_scope||'-')}<br>${manualEscapeHtml(summary.location||'-')}<br>${plan.segment_ids.length} audience segment(s)</div><div class="review-box"><strong>Budget Breakdown</strong>₱${manualUpdateBudgetTotal().toLocaleString('en-PH',{minimumFractionDigits:2})}<br>${plan.budget_items.length} line item(s)<br>7 detailed budget sections completed</div><div class="review-box"><strong>Participants</strong>${totalStaff} staff allocation(s)<br>${plan.participants.length} participant row(s)</div><div class="review-box"><strong>Partners</strong>${plan.partners.length} selected partner(s)</div><div class="review-box"><strong>Date Sprint</strong>${plan.schedule_phases.length} sprint(s)<br>${manualEscapeHtml(dateRange)}</div><div class="review-box"><strong>Workflow</strong>Status remains <b>${manualEscapeHtml(summary.status||'draft')}</b>. Normal approval rules still apply.</div>`;
+    grid.innerHTML=`<div class="review-box"><strong>Overall Summary</strong>${manualEscapeHtml(summary.title||'Untitled')}<br>${manualEscapeHtml(summary.category||'-')}<br>${manualEscapeHtml(summary.description||'-')}</div><div class="review-box"><strong>Reports</strong>${manualPlannerState.reportsExisting.length+manualPlannerState.reportDrafts.length} supporting report(s)</div><div class="review-box"><strong>Locations & Audience</strong>${manualEscapeHtml(summary.geographic_scope||'-')}<br>${manualEscapeHtml(summary.location||'-')}<br>${plan.segment_ids.length} audience segment(s)</div><div class="review-box"><strong>Budget Breakdown</strong>₱${manualUpdateBudgetTotal().toLocaleString('en-PH',{minimumFractionDigits:2})}<br>${plan.budget_items.length} budget item(s)</div><div class="review-box"><strong>Participants</strong>${totalStaff} staff allocation(s)<br>${plan.participants.length} participant row(s)</div><div class="review-box"><strong>Partners</strong>${plan.partners.length} selected partner(s)</div><div class="review-box"><strong>Date Sprint</strong>${plan.schedule_phases.length} sprint(s)<br>${manualEscapeHtml(dateRange)}</div><div class="review-box"><strong>Workflow</strong>Status remains <b>${manualEscapeHtml(summary.status||'draft')}</b>. Normal approval rules still apply.</div>`;
 }
 
 async function manualPersistPlan(complete=false){
@@ -5236,7 +5089,6 @@ async function manualLoadPlanningData(campaignId){
     manualPlannerState.options.reference_staff=p.reference_staff||[];manualPlannerState.options.available_partners=p.available_partners||[];manualPlannerState.options.audience_segments=p.audience_segments||[];manualPopulateReferenceOptions();
     manualPlannerState.reportsExisting=p.reports||[];manualPlannerState.reportDrafts=[];manualRenderReports();
     const bb=document.getElementById('manualBudgetBody');if(bb)bb.innerHTML='';(p.budget_items||[]).filter(x=>!x.source_recommendation_id).forEach(manualAddBudgetRow);if(!(p.budget_items||[]).filter(x=>!x.source_recommendation_id).length)manualAddBudgetRow();
-    manualRenderBudgetDetails(p.budget_details||{});
     const pb=document.getElementById('manualParticipantsBody');if(pb)pb.innerHTML='';(p.participants||[]).forEach(manualAddParticipantRow);if(!(p.participants||[]).length)manualAddParticipantRow();
     const prb=document.getElementById('manualPartnersBody');if(prb)prb.innerHTML='';(p.partners||[]).forEach(manualAddPartnerRow);
     const phb=document.getElementById('manualPhasesBody');if(phb)phb.innerHTML='';(p.schedule_phases||[]).forEach(manualAddPhaseRow);if(!(p.schedule_phases||[]).length)manualAddPhaseRow();
@@ -5305,7 +5157,7 @@ function checkDropdownStatus() {
                 statusEl.textContent = 'Campaigns loaded but dropdown empty. Click Refresh.';
                 statusEl.style.color = 'rgba(255,193,7,0.9)';
                 // Try to populate immediately
-                if (typeof populateAutoMLDropdown === 'function' && document.getElementById('automl_campaign_id')) populateAutoMLDropdown();
+                populateAutoMLDropdown();
             } else {
                 statusEl.textContent = 'No campaigns available. Create a campaign first.';
                 statusEl.style.color = 'rgba(255,255,255,0.7)';
@@ -5338,7 +5190,7 @@ async function refreshAutoMLCampaigns() {
     
     try {
         await loadCampaigns();
-        if (typeof populateAutoMLDropdown === 'function' && document.getElementById('automl_campaign_id')) populateAutoMLDropdown();
+        populateAutoMLDropdown();
         
         if (statusEl) {
             const optionCount = document.getElementById('automl_campaign_id') ? document.getElementById('automl_campaign_id').options.length - 1 : 0;
@@ -5554,7 +5406,11 @@ function populateAutoMLDropdown() {
     const automlSelect = document.getElementById('automl_campaign_id');
     const statusEl = document.getElementById('automl_dropdown_status');
     
-    if (!automlSelect) { return false; }
+    if (!automlSelect) {
+        console.error('populateAutoMLDropdown() - automl_campaign_id element not found');
+        if (statusEl) statusEl.textContent = 'Error: Dropdown element not found';
+        return false;
+    }
     
     console.log('populateAutoMLDropdown() - Called. allCampaigns length:', allCampaigns ? allCampaigns.length : 'undefined');
     console.log('populateAutoMLDropdown() - Current dropdown options:', automlSelect.options.length);
@@ -6142,7 +5998,7 @@ async function acceptAIRecommendation() {
             if (finalScheduleField) {
                 finalScheduleField.style.display = 'block';
             }
-        }
+}
         
         // Scroll to planning form
         const planningSection = document.getElementById('planning-section');
@@ -7100,7 +6956,7 @@ function toggleBudgetVisibilityInline() {
         console.log('loadCampaigns() - isAdmin():', isAdmin(), 'isViewer():', isViewer());
         
         // Populate AutoML dropdown immediately after campaigns are loaded
-        if (typeof populateAutoMLDropdown === 'function' && document.getElementById('automl_campaign_id')) populateAutoMLDropdown();
+        populateAutoMLDropdown();
         
         allCampaigns.forEach(c => {
             const tr = document.createElement('tr');
@@ -7142,7 +6998,7 @@ function toggleBudgetVisibilityInline() {
                     <!-- Secretary Actions -->
                     ${isSecretary() && !isViewer() ? `
                         ${c.status === 'draft' ? `
-                            ${canEditCampaign(c.status) ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Edit</button>` : ''}
+${canEditCampaign(c.status) ? `<button class="btn btn-secondary" onclick="editCampaign(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Edit</button>` : ''}
                             <button class="btn btn-primary" onclick="forwardToPending(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px;">Forward</button>
                             <button class="btn btn-warning" onclick="returnForRevision(${c.id})" style="padding: 3px 6px; font-size: 11px; margin: 1px; background: #f59e0b; color: white; border: none;">Return</button>
                         ` : ''}
@@ -7248,7 +7104,7 @@ function toggleBudgetVisibilityInline() {
             console.log('loadCampaigns() - allCampaigns data (from database):', allCampaigns);
             console.log('loadCampaigns() - Campaign count:', allCampaigns ? allCampaigns.length : 0);
             
-            const populated = (typeof populateAutoMLDropdown === 'function' && document.getElementById('automl_campaign_id')) ? populateAutoMLDropdown() : false;
+            const populated = populateAutoMLDropdown();
             console.log('loadCampaigns() - populateAutoMLDropdown() returned:', populated);
             
             // Verify dropdown has options
@@ -7446,6 +7302,20 @@ function loadCampaignsWithFilters() {
 
 let allBudgetItems = [];
 
+// Keep Financial & Budgeting totals consistent with the campaign Budget Breakdown.
+// Formula: Quantity × Unit Cost × Sessions/Days.
+function calculateBudgetItemTotal(item) {
+    const quantity = Number(item?.quantity || 0);
+    const unitCost = Number(item?.unit_cost || 0);
+    let sessionsOrDays = Number(item?.sessions_or_days ?? 1);
+
+    if (!Number.isFinite(sessionsOrDays) || sessionsOrDays <= 0) {
+        sessionsOrDays = 1;
+    }
+
+    return quantity * unitCost * sessionsOrDays;
+}
+
 // Load budget data
 async function loadBudgetData() {
     try {
@@ -7500,7 +7370,7 @@ function openBudgetModal() {
         modal.style.display = 'block';
         document.body.style.overflow = 'hidden';
         // Populate campaign dropdown
-        if (typeof populateBudgetCampaignDropdown === 'function' && document.getElementById('budget_campaign_id')) populateBudgetCampaignDropdown();
+        populateBudgetCampaignDropdown();
     }
 }
 
@@ -8010,7 +7880,7 @@ function renderBudgetTable() {
                 reimbursable_total: 0
             };
         }
-        const itemTotal = (item.quantity || 0) * (item.unit_cost || 0);
+        const itemTotal = calculateBudgetItemTotal(item);
         groupedByCampaign[campaignId].items.push(item);
         groupedByCampaign[campaignId].total_budget += itemTotal;
         if (item.funding_source === 'government_allocated') {
@@ -8084,90 +7954,65 @@ function toggleBudgetCardVisibility(type) {
 }
 
 // View budget details modal
-async function viewBudgetDetails(campaignId) {
-    const items = (allBudgetItems || []).filter(item => Number(item.campaign_id) === Number(campaignId) && !item.is_archived);
-    if (items.length === 0) { alert('No budget items found for this campaign.'); return; }
-    let details = {};
-    try {
-        const resp = await manualApiJson(apiBase + `/api/v1/campaigns/${campaignId}/manual-planning`);
-        details = resp.data?.budget_details || {};
-    } catch (_) { details = {}; }
-
-    // Accepted AI campaigns created before the seven-section persistence fix may
-    // only have campaign_budgets line items. Fill any missing sections from the
-    // Financial & Budgeting analysis endpoint so old accepted campaigns are also
-    // immediately complete in the View modal.
-    const needsDerivedDetails = !Array.isArray(details.category_breakdown) || !details.category_breakdown.length
-        || !Array.isArray(details.action_budget_mapping) || !details.action_budget_mapping.length
-        || !Array.isArray(details.location_budget_destination) || !details.location_budget_destination.length
-        || !Array.isArray(details.staff_deployment_cost_impact) || !details.staff_deployment_cost_impact.length
-        || !Array.isArray(details.partner_contribution_impact)
-        || !details.contingency || Object.keys(details.contingency).length === 0;
-    if (needsDerivedDetails) {
-        try {
-            const analysisResp = await manualApiJson(apiBase + `/api/v1/campaigns/${campaignId}/budget-analysis`);
-            const a = analysisResp.data || {};
-            if (!Array.isArray(details.category_breakdown) || !details.category_breakdown.length) {
-                details.category_breakdown = (a.category_breakdown || []).map(x => ({
-                    category: x.category || 'Uncategorized', amount: Number(x.total || 0),
-                    percentage: Number(x.percentage_of_total || 0),
-                    notes: `${Number(x.item_count || 0)} budget line item(s)`
-                }));
-            }
-            if (!Array.isArray(details.action_budget_mapping) || !details.action_budget_mapping.length) {
-                details.action_budget_mapping = (a.action_breakdown || []).map(x => ({
-                    action: x.action || 'Campaign implementation',
-                    budget_item: (x.items || []).map(i => i.item_name).filter(Boolean).join(', '),
-                    amount: Number(x.action_budget_total || 0),
-                    rationale: 'Budget items mapped to this campaign action.'
-                }));
-            }
-            if (!Array.isArray(details.location_budget_destination) || !details.location_budget_destination.length) {
-                details.location_budget_destination = (a.location_breakdown || []).map(x => ({
-                    location: x.location || 'Campaign-wide',
-                    purpose: `${Number(x.activities || 0)} planned activity/activities; ${Number(x.staff_qty || 0)} staff`,
-                    amount: Number(x.total_estimated_cost || 0),
-                    notes: `Materials ₱${Number(x.material_allocation || 0).toLocaleString('en-PH')} | Transportation ₱${Number(x.transportation_cost || 0).toLocaleString('en-PH')} | Other ₱${Number(x.other_cost || 0).toLocaleString('en-PH')}`
-                }));
-            }
-            if (!Array.isArray(details.staff_deployment_cost_impact) || !details.staff_deployment_cost_impact.length) {
-                details.staff_deployment_cost_impact = (a.staff_cost_impact || []).map(x => {
-                    const qty = Math.max(1, Number(x.required_qty || 1));
-                    const days = Math.max(1, Number(x.deployment_days || 1));
-                    const total = Number(x.estimated_support_cost || 0);
-                    return { staff_or_role:x.staff_role || 'Campaign Staff', activity:'Campaign deployment', location:x.deployment_location || a.campaign?.location || 'Campaign-wide', quantity:qty, rate:(qty*days)?total/(qty*days):0, days_or_sessions:days, total, notes:`Existing matched: ${Number(x.existing_matched_qty||0)} | Missing: ${Number(x.missing_qty||0)} | ${x.cost_type||''}` };
-                });
-            }
-            if (!Array.isArray(details.partner_contribution_impact) || !details.partner_contribution_impact.length) {
-                details.partner_contribution_impact = ((a.partner_contribution_impact || {}).items || []).map(x => ({
-                    partner:x.partner || 'Partner', contribution:x.recommended_contribution || 'Campaign support', type:x.contribution_type || 'Partner support', estimated_value:0, notes:`${x.estimated_budget_impact||''}${x.verification_status?' | Status: '+x.verification_status:''}`
-                }));
-            }
-            if (!details.contingency || Object.keys(details.contingency).length === 0) {
-                details.contingency = a.contingency || {};
-            }
-        } catch (e) {
-            console.warn('Unable to derive missing detailed budget sections:', e);
-        }
+function viewBudgetDetails(campaignId) {
+    const items = (allBudgetItems || []).filter(item => item.campaign_id === campaignId && !item.is_archived);
+    if (items.length === 0) {
+        alert('No budget items found for this campaign.');
+        return;
     }
+    
     const campaignTitle = items[0].campaign_title || 'Campaign #' + campaignId;
-    const money=v=>'₱'+Number(v||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
-    let totalBudget=0;
-    const itemsHtml=items.map(item=>{const sessions=Number(item.sessions_or_days||1)||1;const total=Number(item.quantity||0)*Number(item.unit_cost||0)*sessions;totalBudget+=total;return `<tr><td>${manualEscapeHtml(item.item_name||'-')}</td><td>${manualEscapeHtml(item.category||item.item_type||'-')}</td><td>${manualEscapeHtml(item.item_description||'-')}</td><td>${Number(item.quantity||0)} ${manualEscapeHtml(item.unit_label||'')}</td><td>${money(item.unit_cost)}</td><td>${sessions}</td><td>${money(total)}</td><td>${manualEscapeHtml(item.related_action||'-')}</td></tr>`;}).join('');
-    const table=(headers,rows,render)=>`<div class="planner-table-wrap" style="margin-top:8px"><table class="planner-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.map(render).join(''):`<tr><td colspan="${headers.length}" class="planner-empty">No saved data.</td></tr>`}</tbody></table></div>`;
-    const c=details.contingency||{};
-    const modal=document.createElement('div');modal.id='budgetDetailsModal';modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:18px;';
-    modal.innerHTML=`<div style="background:#fff;border-radius:14px;max-width:1200px;width:96%;max-height:90vh;overflow:auto;padding:24px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px"><div><h3 style="margin:0;color:#0f172a"><i class="fas fa-receipt"></i> Detailed Budget Breakdown: ${manualEscapeHtml(campaignTitle)}</h3><div style="color:#64748b;font-size:12px;margin-top:4px">Manual campaign budget details</div></div><button onclick="document.getElementById('budgetDetailsModal').remove()" style="background:none;border:0;font-size:28px;cursor:pointer;color:#64748b">&times;</button></div>
-    <div style="background:#dcfce7;border-radius:10px;padding:14px;text-align:center;margin-bottom:16px"><div style="font-size:11px;color:#166534;font-weight:700;text-transform:uppercase">Total Detailed Line Items</div><div style="font-size:28px;font-weight:800;color:#166534">${money(totalBudget)}</div></div>
-    ${aiRecSection('Detailed Line Items','fa-list',table(['Item','Category','Description','Qty/Unit','Unit Cost','Days/Sessions','Total','Mapped Action'],itemsHtml?items:[],(x)=>{const sessions=Number(x.sessions_or_days||1)||1;const total=Number(x.quantity||0)*Number(x.unit_cost||0)*sessions;return `<tr><td>${manualEscapeHtml(x.item_name||'-')}</td><td>${manualEscapeHtml(x.category||x.item_type||'-')}</td><td>${manualEscapeHtml(x.item_description||'-')}</td><td>${Number(x.quantity||0)} ${manualEscapeHtml(x.unit_label||'')}</td><td>${money(x.unit_cost)}</td><td>${sessions}</td><td>${money(total)}</td><td>${manualEscapeHtml(x.related_action||'-')}</td></tr>`;}),false)}
-    ${aiRecSection('Category Breakdown','fa-chart-pie',table(['Category','Amount','Percentage','Notes'],details.category_breakdown||[],x=>`<tr><td>${manualEscapeHtml(x.category||'-')}</td><td>${money(x.amount)}</td><td>${Number(x.percentage||0)}%</td><td>${manualEscapeHtml(x.notes||'-')}</td></tr>`),false)}
-    ${aiRecSection('Action Budget Mapping','fa-diagram-project',table(['Action','Budget Item / Purpose','Amount','Rationale'],details.action_budget_mapping||[],x=>`<tr><td>${manualEscapeHtml(x.action||'-')}</td><td>${manualEscapeHtml(x.budget_item||'-')}</td><td>${money(x.amount)}</td><td>${manualEscapeHtml(x.rationale||'-')}</td></tr>`),false)}
-    ${aiRecSection('Location Budget Destination','fa-location-dot',table(['Location / Destination','Purpose','Amount','Notes'],details.location_budget_destination||[],x=>`<tr><td>${manualEscapeHtml(x.location||'-')}</td><td>${manualEscapeHtml(x.purpose||'-')}</td><td>${money(x.amount)}</td><td>${manualEscapeHtml(x.notes||'-')}</td></tr>`),false)}
-    ${aiRecSection('Staff Deployment Cost Impact','fa-users',table(['Staff / Role','Activity','Location','Qty','Rate','Days/Sessions','Total','Notes'],details.staff_deployment_cost_impact||[],x=>`<tr><td>${manualEscapeHtml(x.staff_or_role||'-')}</td><td>${manualEscapeHtml(x.activity||'-')}</td><td>${manualEscapeHtml(x.location||'-')}</td><td>${Number(x.quantity||0)}</td><td>${money(x.rate)}</td><td>${Number(x.days_or_sessions||0)}</td><td>${money(x.total)}</td><td>${manualEscapeHtml(x.notes||'-')}</td></tr>`),false)}
-    ${aiRecSection('Partner Contribution Impact','fa-handshake',table(['Partner','Contribution','Type','Estimated Value','Notes'],details.partner_contribution_impact||[],x=>`<tr><td>${manualEscapeHtml(x.partner||'-')}</td><td>${manualEscapeHtml(x.contribution||'-')}</td><td>${manualEscapeHtml(x.type||'-')}</td><td>${money(x.estimated_value)}</td><td>${manualEscapeHtml(x.notes||'-')}</td></tr>`),false)}
-    ${aiRecSection('Contingency','fa-shield-halved',`<div class="review-grid"><div class="review-box"><strong>Percentage</strong>${Number(c.contingency_percentage||0)}%</div><div class="review-box"><strong>Amount</strong>${money(c.contingency_amount)}</div><div class="review-box"><strong>Reason</strong>${manualEscapeHtml(c.reason||'-')}</div><div class="review-box"><strong>May Cover</strong>${(c.may_cover||[]).map(manualEscapeHtml).join(', ')||'-'}</div></div>`,false)}
-    <div style="text-align:right;margin-top:18px"><button onclick="document.getElementById('budgetDetailsModal').remove()" class="btn btn-secondary">Close</button></div></div>`;
-    document.body.appendChild(modal);
+    let totalBudget = 0;
+    
+    let itemsHtml = items.map(item => {
+        const itemTotal = calculateBudgetItemTotal(item);
+        totalBudget += itemTotal;
+        const fundingLabel = item.funding_source === 'government_allocated' ? 'Government' : 'Reimbursable';
+        const fundingClass = item.funding_source === 'government_allocated' ? 'approved' : 'pending';
+        return `
+            <tr>
+                <td>${item.item_name || '-'}</td>
+                <td><span class="badge ${item.item_type === 'material' ? 'scheduled' : 'draft'}">${item.item_type || 'consumable'}</span></td>
+                <td style="text-align: center;">${item.quantity || 0}</td>
+                <td style="text-align: right;">₱${parseFloat(item.unit_cost || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+                <td style="text-align: right; font-weight: 600;">₱${itemTotal.toLocaleString('en-PH', {minimumFractionDigits: 2})}</td>
+                <td><span class="badge ${fundingClass}">${fundingLabel}</span></td>
+            </tr>
+        `;
+    }).join('');
+    
+    const modal = document.createElement('div');
+    modal.id = 'budgetDetailsModal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;';
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 12px; max-width: 800px; width: 90%; max-height: 80vh; overflow: auto; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #0f172a;"><i class="fas fa-receipt"></i> Budget Breakdown: ${campaignTitle}</h3>
+                <button onclick="document.getElementById('budgetDetailsModal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b;">&times;</button>
+            </div>
+            <div style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 8px; padding: 16px; margin-bottom: 20px; text-align: center;">
+                <div style="font-size: 12px; color: #166534; font-weight: 600; text-transform: uppercase;">Total Budget</div>
+                <div style="font-size: 28px; font-weight: 700; color: #166534;">₱${totalBudget.toLocaleString('en-PH', {minimumFractionDigits: 2})}</div>
+            </div>
+            <table class="data-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Type</th>
+                        <th style="text-align: center;">Qty</th>
+                        <th style="text-align: right;">Unit Cost</th>
+                        <th style="text-align: right;">Total</th>
+                        <th>Funding</th>
+                    </tr>
+                </thead>
+                <tbody>${itemsHtml}</tbody>
+            </table>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="document.getElementById('budgetDetailsModal').remove()" class="btn btn-secondary" style="padding: 10px 20px;">Close</button>
+            </div>
+        </div>
+    `;
+document.body.appendChild(modal);
 }
 
 // Edit budget items for a campaign
@@ -8181,7 +8026,7 @@ function editBudgetItems(campaignId) {
     const campaignTitle = items[0].campaign_title || 'Campaign #' + campaignId;
     
     let itemsHtml = items.map(item => {
-        const itemTotal = (item.quantity || 0) * (item.unit_cost || 0);
+        const itemTotal = calculateBudgetItemTotal(item);
         return `
             <tr data-item-id="${item.id}">
                 <td><input type="text" value="${item.item_name || ''}" class="edit-item-name" style="width: 100%; padding: 6px; border: 1px solid #e2e8f0; border-radius: 4px;"></td>
@@ -8532,32 +8377,45 @@ async function deleteArchivedBudgetItems(campaignId) {
 
 // Update budget summary cards
 function updateBudgetSummary(summary) {
-    if (!summary) return;
-    
-    const formatCurrency = (val) => '₱' + parseFloat(val || 0).toLocaleString('en-PH', {minimumFractionDigits: 2});
-    
+    const formatCurrency = (val) => '₱' + Number(val || 0).toLocaleString('en-PH', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+
+    // Do not trust the legacy API summary here because it can calculate only
+    // quantity × unit_cost. Recalculate from the actual budget rows so this
+    // section uses the exact same formula as Budget Breakdown.
+    const activeItems = (allBudgetItems || []).filter(item => !item.is_archived);
+
+    let totalBudget = 0;
+    let governmentAllocated = 0;
+    let reimbursable = 0;
+
+    activeItems.forEach(item => {
+        const itemTotal = calculateBudgetItemTotal(item);
+        totalBudget += itemTotal;
+
+        if (item.funding_source === 'government_allocated') {
+            governmentAllocated += itemTotal;
+        } else {
+            reimbursable += itemTotal;
+        }
+    });
+
     const totalEl = document.getElementById('budgetTotalDisplay');
     const govEl = document.getElementById('budgetGovDisplay');
     const reimbEl = document.getElementById('budgetReimbDisplay');
     const itemsEl = document.getElementById('budgetItemsDisplay');
-    const govMetaEl = document.getElementById('budgetGovMeta');
 
-    if (totalEl) totalEl.textContent = formatCurrency(summary.total_budget);
-    if (govEl) govEl.textContent = formatCurrency(summary.government_allocated);
-    if (reimbEl) reimbEl.textContent = formatCurrency(summary.reimbursable);
-    if (itemsEl) itemsEl.textContent = summary.item_count || 0;
+    if (totalEl) totalEl.textContent = formatCurrency(totalBudget);
+    if (govEl) govEl.textContent = formatCurrency(governmentAllocated);
+    if (reimbEl) reimbEl.textContent = formatCurrency(reimbursable);
+    if (itemsEl) itemsEl.textContent = activeItems.length;
 
-    if (govMetaEl) {
-        const fiscalYear = summary.government_fiscal_year || new Date().getFullYear();
-        const committed = formatCurrency(summary.government_committed || 0);
-        const remaining = formatCurrency(summary.government_remaining || 0);
-        govMetaEl.textContent = `FY ${fiscalYear} allocation • ${committed} committed • ${remaining} remaining`;
-    }
-    
-    // Update Materials Allocated in Resource Allocation
+    // Update Materials Allocated in Resource Allocation using the same total.
     const materialsEl = document.getElementById('materialsUsed');
     if (materialsEl) {
-        materialsEl.innerHTML = `${summary.item_count || 0} items<br><small style="font-size: 12px; color: #64748b;">₱${parseFloat(summary.total_budget || 0).toLocaleString('en-PH', {minimumFractionDigits: 2})}</small>`;
+        materialsEl.innerHTML = `${activeItems.length} items<br><small style="font-size: 12px; color: #64748b;">${formatCurrency(totalBudget)}</small>`;
     }
 }
 
@@ -8599,7 +8457,7 @@ function showBudgetStatus(message, type) {
 const originalLoadCampaigns = loadCampaigns;
 loadCampaigns = async function() {
     await originalLoadCampaigns();
-    if (typeof populateBudgetCampaignDropdown === 'function' && document.getElementById('budget_campaign_id')) populateBudgetCampaignDropdown();
+    populateBudgetCampaignDropdown();
     loadBudgetData();
 };
 
@@ -8913,7 +8771,7 @@ async function loadCampaignBudgetBreakdown(campaignId) {
         
         let totalBudget = 0;
         let itemsHtml = items.map(item => {
-            const itemTotal = (item.quantity || 0) * (item.unit_cost || 0);
+            const itemTotal = calculateBudgetItemTotal(item);
             totalBudget += itemTotal;
             const fundingLabel = item.funding_source === 'government_allocated' ? 'Gov' : 'Reimb';
             return `
@@ -8980,26 +8838,6 @@ async function deleteCampaign(campaignId) {
         }
         
         alert('Campaign deleted successfully!');
-
-        // Immediately clear stale ACCEPTED badges in the in-memory recommendation
-        // list, then reload the cached AI rows from the API so deletion is reflected
-        // without requiring a full browser refresh or AI regeneration.
-        const resetRecommendationIds = Array.isArray(data.reset_ai_recommendation_ids)
-            ? data.reset_ai_recommendation_ids.map(Number)
-            : [];
-        if (resetRecommendationIds.length && Array.isArray(aiRecommendations)) {
-            aiRecommendations = aiRecommendations.map(rec => resetRecommendationIds.includes(Number(rec.id))
-                ? { ...rec, approval_status: 'recommended', converted_campaign_id: null, accepted_at: null, accepted_by: null }
-                : rec);
-            aiRecommendationsFiltered = [...aiRecommendations];
-            renderAiRecommendationsTable();
-        }
-        if (typeof loadAiRecommendations === 'function') {
-            aiRecommendations = [];
-            aiRecommendationsFiltered = [];
-            await loadAiRecommendations(false);
-        }
-
         refreshAllCampaignViews();
     } catch (err) {
         alert('Failed to delete campaign: ' + err.message);
@@ -9194,8 +9032,7 @@ async function forwardToPending(campaignId) {
         alert('Only Secretary can forward campaigns to pending status.');
         return;
     }
-    
-    if (!confirm('Forward this campaign to Pending status for review?')) {
+if (!confirm('Forward this campaign to Pending status for review?')) {
         return;
     }
     
@@ -9798,17 +9635,15 @@ async function initializeCampaigns() {
         
         // Populate AutoML dropdown immediately after campaigns are loaded
         console.log('initializeCampaigns() - Populating AutoML dropdown with', allCampaigns.length, 'campaigns');
-        if (document.getElementById('automl_campaign_id')) {
-            if (typeof populateAutoMLDropdown === 'function') populateAutoMLDropdown();
-            validateAutoMLForm();
-        }
+        populateAutoMLDropdown();
+        validateAutoMLForm();
         
         // Also set up a delayed check as backup
         setTimeout(() => {
             const automlSelect = document.getElementById('automl_campaign_id');
             if (automlSelect && automlSelect.options.length <= 1 && allCampaigns.length > 0) {
                 console.log('initializeCampaigns() - Dropdown empty, populating...');
-                if (typeof populateAutoMLDropdown === 'function' && document.getElementById('automl_campaign_id')) populateAutoMLDropdown();
+                populateAutoMLDropdown();
                 validateAutoMLForm();
             } else if (automlSelect) {
                 console.log('initializeCampaigns() - Dropdown already has', automlSelect.options.length - 1, 'options');
@@ -10052,7 +9887,7 @@ const observer = new MutationObserver((mutations) => {
     const automlSelect = document.getElementById('automl_campaign_id');
     if (automlSelect && automlSelect.options.length <= 1 && allCampaigns.length > 0) {
         console.log('MutationObserver - AutoML dropdown detected, populating...');
-        if (typeof populateAutoMLDropdown === 'function' && document.getElementById('automl_campaign_id')) populateAutoMLDropdown();
+        populateAutoMLDropdown();
     }
 });
 
@@ -10197,7 +10032,7 @@ function getAIRecommendationsHTML(recommendations) {
     let html = `
         <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                <i class="fas fa-lightbulb" style="color: #f59e0b; font-size: 18px;"></i>
+<i class="fas fa-lightbulb" style="color: #f59e0b; font-size: 18px;"></i>
                 <strong style="color: #92400e; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">AI Recommendations for Campaign Planning</strong>
             </div>
             <p style="margin: 0 0 12px 0; color: #78350f; font-size: 13px; line-height: 1.6;">
