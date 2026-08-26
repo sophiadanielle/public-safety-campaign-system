@@ -51,6 +51,62 @@ class BudgetController
         }
     }
 
+    /**
+     * Return the active government allocation for the current fiscal year.
+     * This is the barangay-wide approved allocation, not the amount already
+     * committed to individual campaign line items.
+     */
+    private function getActiveGovernmentAllocation(): array
+    {
+        $fiscalYear = date('Y');
+
+        try {
+            $stmt = $this->pdo->prepare("
+                SELECT id, fiscal_year, total_allocation, status, effective_from, effective_until, notes
+                FROM government_budget_allocations
+                WHERE status = 'active'
+                  AND (
+                        fiscal_year = ?
+                        OR (
+                            effective_from IS NOT NULL
+                            AND effective_until IS NOT NULL
+                            AND CURDATE() BETWEEN effective_from AND effective_until
+                        )
+                  )
+                ORDER BY
+                    CASE WHEN fiscal_year = ? THEN 0 ELSE 1 END,
+                    effective_from DESC,
+                    id DESC
+                LIMIT 1
+            ");
+            $stmt->execute([$fiscalYear, $fiscalYear]);
+            $allocation = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($allocation) {
+                return [
+                    'amount' => (float) $allocation['total_allocation'],
+                    'fiscal_year' => (string) $allocation['fiscal_year'],
+                    'status' => (string) $allocation['status'],
+                    'effective_from' => $allocation['effective_from'],
+                    'effective_until' => $allocation['effective_until'],
+                    'notes' => $allocation['notes'],
+                ];
+            }
+        } catch (\PDOException $e) {
+            // Keep the budget endpoint usable on installations where the
+            // government allocation table has not been migrated yet.
+        }
+
+        return [
+            'amount' => 0.0,
+            'fiscal_year' => $fiscalYear,
+            'status' => null,
+            'effective_from' => null,
+            'effective_until' => null,
+            'notes' => null,
+        ];
+    }
+
     public function index(?array $user, array $params): array
     {
         $campaignId = $_GET['campaign_id'] ?? null;
@@ -77,27 +133,40 @@ class BudgetController
         
         $budgets = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Calculate totals
+        // Calculate campaign budget commitments separately from the barangay's
+        // approved government allocation.
         $totalBudget = 0;
-        $governmentTotal = 0;
+        $governmentCommitted = 0;
         $reimbursableTotal = 0;
-        
+
         foreach ($budgets as $b) {
             $cost = (float)($b['total_cost'] ?? ($b['quantity'] * $b['unit_cost']));
             $totalBudget += $cost;
             if ($b['funding_source'] === 'government_allocated') {
-                $governmentTotal += $cost;
+                $governmentCommitted += $cost;
             } else {
                 $reimbursableTotal += $cost;
             }
         }
-        
+
+        $governmentAllocation = $this->getActiveGovernmentAllocation();
+        $governmentAllocated = (float) $governmentAllocation['amount'];
+        $governmentRemaining = max(0, $governmentAllocated - $governmentCommitted);
+
         return [
-            'success' => true, 
+            'success' => true,
             'data' => $budgets,
             'summary' => [
                 'total_budget' => $totalBudget,
-                'government_allocated' => $governmentTotal,
+                // IMPORTANT: this now comes from government_budget_allocations.
+                'government_allocated' => $governmentAllocated,
+                // Actual campaign line items funded from the government allocation.
+                'government_committed' => $governmentCommitted,
+                'government_remaining' => $governmentRemaining,
+                'government_fiscal_year' => $governmentAllocation['fiscal_year'],
+                'government_allocation_status' => $governmentAllocation['status'],
+                'government_effective_from' => $governmentAllocation['effective_from'],
+                'government_effective_until' => $governmentAllocation['effective_until'],
                 'reimbursable' => $reimbursableTotal,
                 'item_count' => count($budgets)
             ]
