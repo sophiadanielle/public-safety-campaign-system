@@ -392,6 +392,11 @@ try {
                     <input type="text" id="modal_segment_name" placeholder="Enter segment name..." required style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
                 </div>
                 <div class="form-field">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">QTY *</label>
+                    <input type="number" id="modal_qty" min="1" step="1" value="1" required style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                    <small style="display:block; margin-top:6px; color:#64748b;">If this segment already exists, this QTY is added to the existing total.</small>
+                </div>
+                <div class="form-field">
                     <label style="font-weight: 600; margin-bottom: 6px; display: block;">Geographic Scope</label>
                     <select id="modal_geographic_scope" style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
                         <option value="">Select...</option>
@@ -771,6 +776,21 @@ async function loadSegments() {
     }
 }
 
+function getSegmentLocations(seg) {
+    const values = [];
+    const raw = seg?.locations ?? seg?.geographies_json;
+    if (Array.isArray(raw)) {
+        values.push(...raw);
+    } else if (typeof raw === 'string' && raw.trim()) {
+        try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) values.push(...parsed);
+        } catch (e) {}
+    }
+    if (seg?.location_reference) values.push(seg.location_reference);
+    return [...new Set(values.map(v => String(v || '').trim()).filter(Boolean))];
+}
+
 // Filter segments based on search and filter inputs
 function filterSegments() {
     const search = (document.getElementById('segmentSearchInput')?.value || '').toLowerCase().trim();
@@ -784,7 +804,7 @@ function filterSegments() {
         const name = (seg.segment_name || seg.name || '').toLowerCase();
         if (search && !name.includes(search)) return false;
         if (geoScope && seg.geographic_scope !== geoScope) return false;
-        if (location && seg.location_reference !== location) return false;
+        if (location && !getSegmentLocations(seg).includes(location)) return false;
         if (sectorType && seg.sector_type !== sectorType) return false;
         if (riskLevel && seg.risk_level !== riskLevel) return false;
         if (basis && seg.basis_of_segmentation !== basis) return false;
@@ -822,6 +842,7 @@ function renderSegmentsTable() {
                 <tr>
                     <th>ID</th>
                     <th>Segment Name</th>
+                    <th>QTY</th>
                     <th>Geographic Scope</th>
                     <th>Location</th>
                     <th>Sector Type</th>
@@ -841,8 +862,9 @@ function renderSegmentsTable() {
             <tr>
                 <td>#${segmentId}</td>
                 <td><strong>${segmentName}</strong></td>
+                <td><strong>${Number(seg.qty || 0).toLocaleString()}</strong></td>
                 <td>${seg.geographic_scope || '—'}</td>
-                <td>${seg.location_reference || '—'}</td>
+                <td>${getSegmentLocations(seg).length ? getSegmentLocations(seg).join(', ') : '—'}</td>
                 <td>${seg.sector_type || '—'}</td>
                 <td>${seg.risk_level ? `<span class="badge ${riskClass}">${seg.risk_level}</span>` : '—'}</td>
                 <td>${seg.basis_of_segmentation || '—'}</td>
@@ -1041,6 +1063,7 @@ function openCreateSegmentModal() {
     document.getElementById('createSegmentModalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> Create Segment';
     document.getElementById('saveSegmentBtn').textContent = 'Create Segment';
     document.getElementById('modal_segment_name').value = '';
+    document.getElementById('modal_qty').value = '1';
     document.getElementById('modal_geographic_scope').value = '';
     document.getElementById('modal_location_reference').value = '';
     document.getElementById('modal_sector_type').value = '';
@@ -1061,6 +1084,7 @@ function openEditSegmentModal(segmentId) {
     document.getElementById('createSegmentModalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Segment';
     document.getElementById('saveSegmentBtn').textContent = 'Update Segment';
     document.getElementById('modal_segment_name').value = seg.segment_name || seg.name || '';
+    document.getElementById('modal_qty').value = String(seg.qty || 0);
     document.getElementById('modal_geographic_scope').value = seg.geographic_scope || '';
     document.getElementById('modal_location_reference').value = seg.location_reference || '';
     document.getElementById('modal_sector_type').value = seg.sector_type || '';
@@ -1078,6 +1102,7 @@ function closeCreateSegmentModal() {
 async function saveSegmentFromModal() {
     const statusEl = document.getElementById('modalCreateStatus');
     const segmentName = document.getElementById('modal_segment_name').value.trim();
+    const qty = parseInt(document.getElementById('modal_qty').value || '0', 10);
     const riskLevel = document.getElementById('modal_risk_level').value;
     
     if (!segmentName) {
@@ -1086,6 +1111,12 @@ async function saveSegmentFromModal() {
         return;
     }
     
+    if (!Number.isInteger(qty) || qty < 1) {
+        statusEl.textContent = 'Error: QTY must be at least 1';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+
     if (!riskLevel) {
         statusEl.textContent = 'Error: Risk Level is required';
         statusEl.style.color = '#dc2626';
@@ -1094,6 +1125,7 @@ async function saveSegmentFromModal() {
     
     const payload = {
         segment_name: segmentName,
+        qty: qty,
         geographic_scope: document.getElementById('modal_geographic_scope').value || null,
         location_reference: document.getElementById('modal_location_reference').value || null,
         sector_type: document.getElementById('modal_sector_type').value || null,
@@ -1122,7 +1154,7 @@ async function saveSegmentFromModal() {
         const data = await res.json();
         
         if (res.ok) {
-            statusEl.textContent = editingSegmentId ? 'Segment updated!' : 'Segment created!';
+            statusEl.textContent = editingSegmentId ? 'Segment updated!' : (data.merged ? 'Existing segment updated — QTY and location added!' : 'Segment created!');
             statusEl.style.color = '#166534';
             setTimeout(() => {
                 closeCreateSegmentModal();
@@ -1435,6 +1467,7 @@ async function viewSegment(segmentId) {
                         </div>
                     </div>
                     <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+                        <span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">QTY: ${Number(seg.qty || 0).toLocaleString()}</span>
                         ${seg.geographic_scope ? `<span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;">${seg.geographic_scope}</span>` : ''}
                         ${seg.sector_type ? `<span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;">${seg.sector_type}</span>` : ''}
                         ${seg.risk_level ? `<span style="background: ${riskStyle.bg}; color: ${riskStyle.color}; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">${seg.risk_level}</span>` : ''}
@@ -1455,7 +1488,7 @@ async function viewSegment(segmentId) {
                             </div>
                             <div style="background: white; border: 2px solid #e2e8f0; padding: 16px; border-radius: 10px;">
                                 <div style="font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Location Reference</div>
-                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">${seg.location_reference || 'Not specified'}</div>
+                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">${getSegmentLocations(seg).length ? getSegmentLocations(seg).join(', ') : 'Not specified'}</div>
                             </div>
                         </div>
                     </div>

@@ -1643,6 +1643,217 @@ class ContentController
         }
     }
     
+
+    private function ensureAnnouncementsTable(): void
+    {
+        $this->pdo->exec("
+            CREATE TABLE IF NOT EXISTS `campaign_department_announcements` (
+                `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `announcement_title` VARCHAR(255) NOT NULL,
+                `announcement_content` TEXT NOT NULL,
+                `effectivity_from` DATE NOT NULL,
+                `effectivity_to` DATE NOT NULL,
+                `status` ENUM('active','inactive') NOT NULL DEFAULT 'active',
+                `created_by` INT UNSIGNED NULL,
+                `updated_by` INT UNSIGNED NULL,
+                `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                KEY `idx_announcement_status_dates` (`status`,`effectivity_from`,`effectivity_to`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        ");
+    }
+
+    private function canManageContent(?array $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+        try {
+            $role = strtolower((string)(RoleMiddleware::getUserRole($user, $this->pdo) ?? ''));
+            return $role !== 'viewer' && in_array($role, [
+                'barangay administrator','barangay staff','system_admin','barangay_admin',
+                'content_manager','campaign_creator','admin','staff','secretary','kagawad','captain'
+            ], true);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    public function announcementsIndex(?array $user, array $params = []): array
+    {
+        if (!$user) {
+            http_response_code(401);
+            return ['error' => 'Authentication required'];
+        }
+
+        $this->ensureAnnouncementsTable();
+        $rows = $this->pdo->query("
+            SELECT id, announcement_title, announcement_content, effectivity_from, effectivity_to,
+                   status, created_by, updated_by, created_at, updated_at
+            FROM campaign_department_announcements
+            ORDER BY effectivity_from DESC, id DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
+        return ['data' => $rows];
+    }
+
+    public function announcementStore(?array $user, array $params = []): array
+    {
+        if (!$this->canManageContent($user)) {
+            http_response_code($user ? 403 : 401);
+            return ['error' => $user ? 'Insufficient permissions' : 'Authentication required'];
+        }
+
+        $this->ensureAnnouncementsTable();
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $title = trim((string)($input['announcement_title'] ?? ''));
+        $content = trim((string)($input['announcement_content'] ?? ''));
+        $from = trim((string)($input['effectivity_from'] ?? ''));
+        $to = trim((string)($input['effectivity_to'] ?? ''));
+
+        if ($title === '' || $content === '' || $from === '' || $to === '') {
+            http_response_code(422);
+            return ['error' => 'Announcement title, content, and effectivity dates are required'];
+        }
+        if ($from > $to) {
+            http_response_code(422);
+            return ['error' => 'Effectivity From cannot be later than Effectivity To'];
+        }
+
+        $stmt = $this->pdo->prepare("
+            INSERT INTO campaign_department_announcements
+            (announcement_title, announcement_content, effectivity_from, effectivity_to, status, created_by, updated_by)
+            VALUES (:title, :content, :from_date, :to_date, 'active', :user_id, :user_id)
+        ");
+        $stmt->execute([
+            'title' => $title,
+            'content' => $content,
+            'from_date' => $from,
+            'to_date' => $to,
+            'user_id' => $user['id'] ?? null,
+        ]);
+
+        return ['id' => (int)$this->pdo->lastInsertId(), 'message' => 'Announcement created as Active'];
+    }
+
+    public function announcementUpdate(?array $user, array $params = []): array
+    {
+        if (!$this->canManageContent($user)) {
+            http_response_code($user ? 403 : 401);
+            return ['error' => $user ? 'Insufficient permissions' : 'Authentication required'];
+        }
+
+        $this->ensureAnnouncementsTable();
+        $id = (int)($params['id'] ?? 0);
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+        $title = trim((string)($input['announcement_title'] ?? ''));
+        $content = trim((string)($input['announcement_content'] ?? ''));
+        $from = trim((string)($input['effectivity_from'] ?? ''));
+        $to = trim((string)($input['effectivity_to'] ?? ''));
+        $status = strtolower(trim((string)($input['status'] ?? 'active')));
+
+        if (!in_array($status, ['active', 'inactive'], true)) {
+            http_response_code(422);
+            return ['error' => 'Status must be Active or Inactive'];
+        }
+        if ($title === '' || $content === '' || $from === '' || $to === '') {
+            http_response_code(422);
+            return ['error' => 'Announcement title, content, and effectivity dates are required'];
+        }
+        if ($from > $to) {
+            http_response_code(422);
+            return ['error' => 'Effectivity From cannot be later than Effectivity To'];
+        }
+
+        $stmt = $this->pdo->prepare("
+            UPDATE campaign_department_announcements
+            SET announcement_title = :title,
+                announcement_content = :content,
+                effectivity_from = :from_date,
+                effectivity_to = :to_date,
+                status = :status,
+                updated_by = :user_id,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = :id
+        ");
+        $stmt->execute([
+            'id' => $id,
+            'title' => $title,
+            'content' => $content,
+            'from_date' => $from,
+            'to_date' => $to,
+            'status' => $status,
+            'user_id' => $user['id'] ?? null,
+        ]);
+
+        return ['message' => 'Announcement updated'];
+    }
+
+    public function announcementDelete(?array $user, array $params = []): array
+    {
+        if (!$this->canManageContent($user)) {
+            http_response_code($user ? 403 : 401);
+            return ['error' => $user ? 'Insufficient permissions' : 'Authentication required'];
+        }
+
+        $this->ensureAnnouncementsTable();
+        $stmt = $this->pdo->prepare("DELETE FROM campaign_department_announcements WHERE id = :id");
+        $stmt->execute(['id' => (int)($params['id'] ?? 0)]);
+
+        return ['message' => 'Announcement deleted'];
+    }
+
+    public function publicFeed(?array $user = null, array $params = []): array
+    {
+        $this->ensureAnnouncementsTable();
+
+        $contentStmt = $this->pdo->query("
+            SELECT DISTINCT ci.id, ci.title, ci.body, ci.content_type,
+                   COALESCE(NULLIF(ci.file_reference,''), NULLIF(ci.file_path,''), a.file_path) AS file_reference,
+                   a.mime_type, ci.updated_at
+            FROM campaign_department_content_items ci
+            LEFT JOIN campaign_department_attachments a ON a.content_item_id = ci.id
+            WHERE LOWER(COALESCE(ci.approval_status,'')) = 'approved'
+              AND COALESCE(ci.visibility,'public') = 'public'
+              AND (
+                    LOWER(COALESCE(ci.content_type,'')) IN ('image','poster','infographic')
+                    OR LOWER(COALESCE(a.mime_type,'')) LIKE 'image/%'
+                    OR LOWER(COALESCE(ci.file_reference,'')) REGEXP '\\\\.(jpg|jpeg|png|gif|webp|svg)$'
+                    OR LOWER(COALESCE(ci.file_path,'')) REGEXP '\\\\.(jpg|jpeg|png|gif|webp|svg)$'
+              )
+            ORDER BY ci.updated_at DESC, ci.id DESC
+            LIMIT 12
+        ");
+        $slides = $contentStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($slides as &$slide) {
+            $path = trim((string)($slide['file_reference'] ?? ''));
+            if ($path !== '' && !preg_match('#^https?://#i', $path)) {
+                $clean = ltrim(str_replace('\\\\', '/', $path), '/');
+                $slide['file_url'] = str_starts_with($clean, 'public/')
+                    ? '/' . $clean
+                    : '/public/' . $clean;
+            } else {
+                $slide['file_url'] = $path;
+            }
+        }
+        unset($slide);
+
+        $annStmt = $this->pdo->query("
+            SELECT id, announcement_title, announcement_content, effectivity_from, effectivity_to, status
+            FROM campaign_department_announcements
+            WHERE status = 'active'
+              AND CURDATE() BETWEEN effectivity_from AND effectivity_to
+            ORDER BY effectivity_from DESC, id DESC
+        ");
+
+        return [
+            'slides' => $slides,
+            'announcements' => $annStmt->fetchAll(PDO::FETCH_ASSOC),
+        ];
+    }
+
     /**
      * Get approved content for integration (read-only API for external subsystems)
      */

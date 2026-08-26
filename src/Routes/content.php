@@ -21,6 +21,35 @@ return [
     ],
     [
         'method' => 'GET',
+        'path' => '/api/v1/content/public-feed',
+        'handler' => [ContentController::class, 'publicFeed'],
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/content/announcements',
+        'handler' => [ContentController::class, 'announcementsIndex'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/content/announcements',
+        'handler' => [ContentController::class, 'announcementStore'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'PUT',
+        'path' => '/api/v1/content/announcements/{id}',
+        'handler' => [ContentController::class, 'announcementUpdate'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'DELETE',
+        'path' => '/api/v1/content/announcements/{id}',
+        'handler' => [ContentController::class, 'announcementDelete'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'GET',
         'path' => '/api/v1/content/usage',
         'handler' => [ContentController::class, 'getUsage'],
         'middleware' => JWTMiddleware::class,

@@ -48,6 +48,48 @@ class SegmentController
         private string $jwtAudience,
         private int $jwtExpirySeconds
     ) {
+        $this->ensureSegmentEnhancements();
+    }
+
+    private function ensureSegmentEnhancements(): void
+    {
+        try {
+            $qtyColumn = $this->pdo->query("SHOW COLUMNS FROM `campaign_department_audience_segments` LIKE 'qty'")->fetch(PDO::FETCH_ASSOC);
+            if (!$qtyColumn) {
+                $this->pdo->exec("ALTER TABLE `campaign_department_audience_segments` ADD COLUMN `qty` INT UNSIGNED NOT NULL DEFAULT 0 AFTER `segment_name`");
+            }
+        } catch (\Throwable $e) {
+            error_log('SegmentController: unable to ensure qty column: ' . $e->getMessage());
+        }
+
+        try {
+            $geoColumn = $this->pdo->query("SHOW COLUMNS FROM `campaign_department_audience_segments` LIKE 'geographies_json'")->fetch(PDO::FETCH_ASSOC);
+            if (!$geoColumn) {
+                $this->pdo->exec("ALTER TABLE `campaign_department_audience_segments` ADD COLUMN `geographies_json` JSON NULL AFTER `risk_level`");
+            }
+        } catch (\Throwable $e) {
+            error_log('SegmentController: unable to ensure geographies_json column: ' . $e->getMessage());
+        }
+    }
+
+    private function decodeLocations(?string $json, ?string $primary = null): array
+    {
+        $locations = [];
+        if ($json) {
+            $decoded = json_decode($json, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $location) {
+                    $location = trim((string)$location);
+                    if ($location !== '') {
+                        $locations[] = $location;
+                    }
+                }
+            }
+        }
+        if ($primary) {
+            $locations[] = trim($primary);
+        }
+        return array_values(array_unique(array_filter($locations)));
     }
 
     public function index(?array $user, array $params = []): array
@@ -74,10 +116,12 @@ class SegmentController
                 id AS segment_id,
                 segment_name,
                 segment_name AS name,
+                COALESCE(qty, 0) AS qty,
                 geographic_scope,
                 location_reference,
                 sector_type,
                 risk_level,
+                geographies_json,
                 basis_of_segmentation,
                 COALESCE(is_archived, 0) AS is_archived,
                 created_at,
@@ -101,10 +145,12 @@ class SegmentController
             SELECT 
                 id AS segment_id,
                 segment_name,
+                COALESCE(qty, 0) AS qty,
                 geographic_scope,
                 location_reference,
                 sector_type,
                 risk_level,
+                geographies_json,
                 basis_of_segmentation,
                 created_at,
                 updated_at
@@ -154,6 +200,7 @@ class SegmentController
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
         
         $segmentName = trim($input['segment_name'] ?? '');
+        $qty = max(1, (int)($input['qty'] ?? 1));
         $geographicScope = $input['geographic_scope'] ?? null;
         $locationReference = trim($input['location_reference'] ?? '') ?: null;
         $sectorType = $input['sector_type'] ?? null;
@@ -191,38 +238,86 @@ class SegmentController
             return ['error' => 'Invalid basis of segmentation'];
         }
 
-        // Check for duplicate segment names
-        $checkStmt = $this->pdo->prepare('SELECT id FROM `campaign_department_audience_segments` WHERE segment_name = :name');
+        // If the same segment already exists, add the new quantity instead of rejecting it.
+        // Any new location is appended to geographies_json and existing locations are retained.
+        $checkStmt = $this->pdo->prepare('
+            SELECT id, COALESCE(qty, 0) AS qty, location_reference, geographies_json
+            FROM `campaign_department_audience_segments`
+            WHERE LOWER(TRIM(segment_name)) = LOWER(TRIM(:name))
+            LIMIT 1
+        ');
         $checkStmt->execute(['name' => $segmentName]);
-        if ($checkStmt->fetch()) {
-            http_response_code(422);
-            return ['error' => 'Segment name already exists'];
+        $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing) {
+            $locations = $this->decodeLocations($existing['geographies_json'] ?? null, $existing['location_reference'] ?? null);
+            if ($locationReference) {
+                $locations[] = $locationReference;
+            }
+            $locations = array_values(array_unique(array_filter($locations)));
+
+            $updateStmt = $this->pdo->prepare('
+                UPDATE `campaign_department_audience_segments`
+                SET qty = COALESCE(qty, 0) + :qty,
+                    geographies_json = :geographies_json,
+                    location_reference = COALESCE(NULLIF(location_reference, \'\'), :location_reference),
+                    geographic_scope = COALESCE(geographic_scope, :geographic_scope),
+                    sector_type = COALESCE(sector_type, :sector_type),
+                    risk_level = COALESCE(risk_level, :risk_level),
+                    basis_of_segmentation = COALESCE(basis_of_segmentation, :basis),
+                    is_archived = 0,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = :id
+            ');
+            $updateStmt->execute([
+                'id' => (int)$existing['id'],
+                'qty' => $qty,
+                'geographies_json' => json_encode($locations, JSON_UNESCAPED_UNICODE),
+                'location_reference' => $locationReference,
+                'geographic_scope' => $geographicScope ?: null,
+                'sector_type' => $sectorType ?: null,
+                'risk_level' => $riskLevel ?: null,
+                'basis' => $basisOfSegmentation ?: null,
+            ]);
+
+            return [
+                'id' => (int)$existing['id'],
+                'merged' => true,
+                'message' => 'Existing segment updated: quantity added and new location merged'
+            ];
         }
 
+        $locations = $locationReference ? [$locationReference] : [];
         $stmt = $this->pdo->prepare('
             INSERT INTO `campaign_department_audience_segments` (
-                segment_name, 
-                geographic_scope, 
-                location_reference, 
-                sector_type, 
-                risk_level, 
+                segment_name,
+                qty,
+                geographic_scope,
+                location_reference,
+                sector_type,
+                risk_level,
+                geographies_json,
                 basis_of_segmentation
             ) VALUES (
-                :segment_name, 
-                :geographic_scope, 
-                :location_reference, 
-                :sector_type, 
-                :risk_level, 
+                :segment_name,
+                :qty,
+                :geographic_scope,
+                :location_reference,
+                :sector_type,
+                :risk_level,
+                :geographies_json,
                 :basis_of_segmentation
             )
         ');
-        
+
         $stmt->execute([
             'segment_name' => $segmentName,
+            'qty' => $qty,
             'geographic_scope' => $geographicScope ?: null,
             'location_reference' => $locationReference,
             'sector_type' => $sectorType ?: null,
             'risk_level' => $riskLevel ?: null,
+            'geographies_json' => json_encode($locations, JSON_UNESCAPED_UNICODE),
             'basis_of_segmentation' => $basisOfSegmentation ?: null,
         ]);
 
@@ -264,6 +359,7 @@ class SegmentController
         $input = json_decode(file_get_contents('php://input'), true) ?? [];
         
         $segmentName = trim($input['segment_name'] ?? $segment['segment_name']);
+        $qty = max(0, (int)($input['qty'] ?? ($segment['qty'] ?? 0)));
         $geographicScope = $input['geographic_scope'] ?? $segment['geographic_scope'];
         $locationReference = isset($input['location_reference']) ? (trim($input['location_reference']) ?: null) : $segment['location_reference'];
         $sectorType = $input['sector_type'] ?? $segment['sector_type'];
@@ -309,25 +405,35 @@ class SegmentController
             return ['error' => 'Segment name already exists'];
         }
 
+        $locations = $this->decodeLocations($segment['geographies_json'] ?? null, $segment['location_reference'] ?? null);
+        if ($locationReference) {
+            $locations[] = $locationReference;
+        }
+        $locations = array_values(array_unique(array_filter($locations)));
+
         $stmt = $this->pdo->prepare('
             UPDATE `campaign_department_audience_segments` SET
                 segment_name = :segment_name,
+                qty = :qty,
                 geographic_scope = :geographic_scope,
                 location_reference = :location_reference,
                 sector_type = :sector_type,
                 risk_level = :risk_level,
+                geographies_json = :geographies_json,
                 basis_of_segmentation = :basis_of_segmentation,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :id
         ');
-        
+
         $stmt->execute([
             'id' => $id,
             'segment_name' => $segmentName,
+            'qty' => $qty,
             'geographic_scope' => $geographicScope ?: null,
             'location_reference' => $locationReference,
             'sector_type' => $sectorType ?: null,
             'risk_level' => $riskLevel ?: null,
+            'geographies_json' => json_encode($locations, JSON_UNESCAPED_UNICODE),
             'basis_of_segmentation' => $basisOfSegmentation ?: null,
         ]);
 
@@ -720,10 +826,12 @@ class SegmentController
             SELECT 
                 s.id,
                 s.segment_name,
+                COALESCE(s.qty, 0) AS qty,
                 s.geographic_scope,
                 s.location_reference,
                 s.sector_type,
                 s.risk_level,
+                s.geographies_json,
                 s.basis_of_segmentation,
                 s.created_at,
                 COUNT(m.id) AS member_count
@@ -739,10 +847,12 @@ class SegmentController
             return [
                 'id' => (int) $s['id'],
                 'segment_name' => $s['segment_name'],
+                'qty' => (int)($s['qty'] ?? 0),
                 'geographic_scope' => $s['geographic_scope'],
                 'location_reference' => $s['location_reference'],
                 'sector_type' => $s['sector_type'],
                 'risk_level' => $s['risk_level'],
+                'locations' => $this->decodeLocations($s['geographies_json'] ?? null, $s['location_reference'] ?? null),
                 'basis_of_segmentation' => $s['basis_of_segmentation'],
                 'member_count' => (int) $s['member_count'],
                 'created_at' => $s['created_at'],
@@ -801,10 +911,12 @@ class SegmentController
             SELECT 
                 id AS segment_id,
                 segment_name,
+                COALESCE(qty, 0) AS qty,
                 geographic_scope,
                 location_reference,
                 sector_type,
                 risk_level,
+                geographies_json,
                 basis_of_segmentation
             FROM `campaign_department_audience_segments` 
             WHERE id = :id 

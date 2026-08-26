@@ -946,6 +946,38 @@ require_once __DIR__ . '/header/includes/path_helper.php';
                 justify-content: center;
             }
         }
+    
+        /* Public Content Slider + Announcements */
+        .public-updates { padding: 72px 24px; background: #f8fafc; }
+        .public-updates-container { max-width: 1200px; margin: 0 auto; }
+        .public-updates-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(300px, .8fr); gap: 28px; align-items: stretch; }
+        .public-panel { background:#fff; border:1px solid #e2e8f0; border-radius:22px; overflow:hidden; box-shadow:0 14px 35px rgba(15,23,42,.08); }
+        .public-panel-header { padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .public-panel-header h2 { margin:0; font-size:22px; color:#0f172a; }
+        .landing-slider { position:relative; min-height:430px; background:#0f172a; overflow:hidden; }
+        .landing-slide { display:none; position:absolute; inset:0; }
+        .landing-slide.active { display:block; }
+        .landing-slide img { width:100%; height:100%; min-height:430px; object-fit:cover; display:block; opacity:.82; }
+        .landing-slide-overlay { position:absolute; inset:0; background:linear-gradient(90deg, rgba(15,23,42,.92) 0%, rgba(15,23,42,.55) 55%, rgba(15,23,42,.18) 100%); }
+        .landing-slide-copy { position:absolute; left:0; bottom:0; width:min(640px,88%); padding:42px; color:#fff; z-index:2; }
+        .landing-slide-copy h3 { margin:0 0 12px; font-size:30px; line-height:1.15; }
+        .landing-slide-copy p { margin:0; color:#e2e8f0; line-height:1.7; font-size:15px; }
+        .slider-controls { position:absolute; right:20px; bottom:20px; z-index:4; display:flex; gap:8px; }
+        .slider-control { width:40px; height:40px; border:0; border-radius:50%; background:rgba(255,255,255,.9); color:#0f172a; cursor:pointer; }
+        .landing-slider-empty { min-height:430px; display:flex; align-items:center; justify-content:center; color:#cbd5e1; padding:30px; text-align:center; }
+        .announcement-list { padding:16px; max-height:430px; overflow:auto; }
+        .announcement-item { border:1px solid #e2e8f0; border-left:4px solid #0f766e; border-radius:12px; padding:16px; margin-bottom:12px; background:#fff; }
+        .announcement-item h3 { margin:0 0 8px; color:#0f172a; font-size:16px; }
+        .announcement-item p { margin:0 0 10px; color:#475569; line-height:1.55; font-size:14px; white-space:pre-line; }
+        .announcement-date { color:#64748b; font-size:12px; font-weight:600; }
+        .announcement-empty { color:#64748b; text-align:center; padding:42px 16px; }
+        @media (max-width: 900px) {
+            .public-updates-grid { grid-template-columns: 1fr; }
+            .landing-slider, .landing-slide img, .landing-slider-empty { min-height:360px; }
+            .landing-slide-copy { padding:28px; }
+            .landing-slide-copy h3 { font-size:24px; }
+        }
+
     </style>
 </head>
 <body>
@@ -1022,6 +1054,35 @@ require_once __DIR__ . '/header/includes/path_helper.php';
                             <div class="floating-subtext">Fire Safety Week</div>
                         </div>
                     </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Public Content & Announcements -->
+    <section class="public-updates" id="public-updates">
+        <div class="public-updates-container">
+            <div class="section-header" style="margin-bottom:28px;">
+                <span class="section-label">Community Updates</span>
+                <h2 class="section-title">Latest Public Safety Content & Announcements</h2>
+                <p class="section-description">Approved public campaign materials and currently effective barangay announcements.</p>
+            </div>
+            <div class="public-updates-grid">
+                <div class="public-panel">
+                    <div class="public-panel-header">
+                        <h2><i class="fas fa-images" style="color:#0f766e;"></i> Featured Content</h2>
+                    </div>
+                    <div class="landing-slider" id="landingContentSlider">
+                        <div class="landing-slider-empty"><i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i> Loading featured content...</div>
+                    </div>
+                </div>
+                <div class="public-panel">
+                    <div class="public-panel-header">
+                        <h2><i class="fas fa-bullhorn" style="color:#0f766e;"></i> Announcements</h2>
+                    </div>
+                    <div class="announcement-list" id="landingAnnouncementList">
+                        <div class="announcement-empty">Loading announcements...</div>
                     </div>
                 </div>
             </div>
@@ -1301,6 +1362,72 @@ require_once __DIR__ . '/header/includes/path_helper.php';
                 navbar.style.boxShadow = 'none';
             }
         });
+
+        function escapeLandingHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+        }
+
+        let landingSlideIndex = 0;
+        let landingSlides = [];
+        let landingSlideTimer = null;
+
+        function showLandingSlide(index) {
+            if (!landingSlides.length) return;
+            landingSlideIndex = (index + landingSlides.length) % landingSlides.length;
+            document.querySelectorAll('.landing-slide').forEach((el, i) => el.classList.toggle('active', i === landingSlideIndex));
+        }
+
+        function moveLandingSlide(step) {
+            showLandingSlide(landingSlideIndex + step);
+            if (landingSlideTimer) clearInterval(landingSlideTimer);
+            landingSlideTimer = setInterval(() => showLandingSlide(landingSlideIndex + 1), 6000);
+        }
+
+        async function loadPublicLandingFeed() {
+            const slider = document.getElementById('landingContentSlider');
+            const announcementList = document.getElementById('landingAnnouncementList');
+            try {
+                const res = await fetch('/api/v1/content/public-feed', { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Unable to load public updates');
+
+                landingSlides = (data.slides || []).filter(item => item.file_url);
+                if (landingSlides.length) {
+                    slider.innerHTML = landingSlides.map((item, i) => `
+                        <article class="landing-slide ${i === 0 ? 'active' : ''}">
+                            <img src="${escapeLandingHtml(item.file_url)}" alt="${escapeLandingHtml(item.title || 'Campaign content')}" loading="${i === 0 ? 'eager' : 'lazy'}">
+                            <div class="landing-slide-overlay"></div>
+                            <div class="landing-slide-copy">
+                                <h3>${escapeLandingHtml(item.title || 'Public Safety Update')}</h3>
+                                <p>${escapeLandingHtml(item.body || '')}</p>
+                            </div>
+                        </article>
+                    `).join('') + `
+                        <div class="slider-controls">
+                            <button class="slider-control" type="button" aria-label="Previous" onclick="moveLandingSlide(-1)"><i class="fas fa-chevron-left"></i></button>
+                            <button class="slider-control" type="button" aria-label="Next" onclick="moveLandingSlide(1)"><i class="fas fa-chevron-right"></i></button>
+                        </div>`;
+                    landingSlideTimer = setInterval(() => showLandingSlide(landingSlideIndex + 1), 6000);
+                } else {
+                    slider.innerHTML = '<div class="landing-slider-empty"><div><i class="fas fa-images" style="font-size:36px;margin-bottom:12px;"></i><br>No approved public image content yet.</div></div>';
+                }
+
+                const anns = data.announcements || [];
+                announcementList.innerHTML = anns.length ? anns.map(a => `
+                    <article class="announcement-item">
+                        <h3>${escapeLandingHtml(a.announcement_title)}</h3>
+                        <p>${escapeLandingHtml(a.announcement_content)}</p>
+                        <div class="announcement-date"><i class="fas fa-calendar-alt"></i> ${escapeLandingHtml(a.effectivity_from)} to ${escapeLandingHtml(a.effectivity_to)}</div>
+                    </article>
+                `).join('') : '<div class="announcement-empty">No active announcements right now.</div>';
+            } catch (err) {
+                slider.innerHTML = '<div class="landing-slider-empty">Featured content is temporarily unavailable.</div>';
+                announcementList.innerHTML = '<div class="announcement-empty">Announcements are temporarily unavailable.</div>';
+                console.error('Landing public feed error:', err);
+            }
+        }
+
+        loadPublicLandingFeed();
     </script>
 </body>
 </html>

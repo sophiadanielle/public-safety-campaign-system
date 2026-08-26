@@ -595,6 +595,76 @@ try {
         <p>Internal LGU system for managing, validating, approving, organizing, and reusing public safety campaign materials</p>
     </div>
 
+    <section id="announcements-management" class="card" style="margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:16px;">
+            <div>
+                <h2 class="section-title" style="margin:0;">Announcements</h2>
+                <p style="margin:6px 0 0; color:#64748b; font-size:14px;">Announcements shown on the public landing page during their effectivity period.</p>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="openAnnouncementModal()">
+                <i class="fas fa-bullhorn"></i> Add Announcement
+            </button>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="data-table" style="width:100%;">
+                <thead>
+                    <tr>
+                        <th>Announcement Title</th>
+                        <th>Announcement Content</th>
+                        <th>Effectivity Date</th>
+                        <th>Status</th>
+                        <th style="width:150px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="announcementTableBody">
+                    <tr><td colspan="5" style="text-align:center; color:#64748b; padding:24px;">Loading announcements...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div id="announcementModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,.72); z-index:1000000; align-items:center; justify-content:center; padding:20px;">
+        <div style="background:#fff; width:min(680px,96vw); border-radius:16px; box-shadow:0 24px 70px rgba(0,0,0,.28); overflow:hidden;">
+            <div style="padding:20px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+                <h3 id="announcementModalTitle" style="margin:0; color:#0f172a;">Add Announcement</h3>
+                <button type="button" onclick="closeAnnouncementModal()" style="border:0; background:none; font-size:26px; cursor:pointer; color:#64748b;">&times;</button>
+            </div>
+            <div style="padding:24px;">
+                <input type="hidden" id="announcement_id">
+                <div class="form-field" style="margin-bottom:14px;">
+                    <label>Announcement Title *</label>
+                    <input type="text" id="announcement_title" maxlength="255" required placeholder="Enter announcement title">
+                </div>
+                <div class="form-field" style="margin-bottom:14px;">
+                    <label>Announcement Content *</label>
+                    <textarea id="announcement_content" rows="5" required placeholder="Enter announcement details"></textarea>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                    <div class="form-field">
+                        <label>Effectivity From *</label>
+                        <input type="date" id="announcement_from" required>
+                    </div>
+                    <div class="form-field">
+                        <label>Effectivity To *</label>
+                        <input type="date" id="announcement_to" required>
+                    </div>
+                </div>
+                <div class="form-field" id="announcementStatusField" style="margin-top:14px; display:none;">
+                    <label>Status</label>
+                    <select id="announcement_status">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                    <small style="color:#64748b;">New announcements are automatically Active. Status can be changed when editing.</small>
+                </div>
+                <div id="announcementStatusMessage" style="margin-top:12px; font-size:13px;"></div>
+            </div>
+            <div style="padding:16px 24px; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeAnnouncementModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveAnnouncement()"><i class="fas fa-save"></i> Save Announcement</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Upload Campaign Material Modal -->
     <div id="uploadContentModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 999999; align-items: center; justify-content: center;">
@@ -958,6 +1028,116 @@ try {
 const token = localStorage.getItem('jwtToken') || '';
 const apiBase = '<?php echo $apiPath; ?>';
 const publicPath = '<?php echo $publicPath; ?>';
+
+let announcements = [];
+
+function escapeAnnouncementHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+}
+
+async function loadAnnouncements() {
+    const tbody = document.getElementById('announcementTableBody');
+    if (!tbody) return;
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/announcements', {
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to load announcements');
+        announcements = data.data || [];
+        if (!announcements.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b; padding:24px;">No announcements yet.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = announcements.map(a => {
+            const status = String(a.status || 'active').toLowerCase();
+            const badge = status === 'active'
+                ? 'background:#dcfce7;color:#166534;'
+                : 'background:#f1f5f9;color:#475569;';
+            return `<tr>
+                <td><strong>${escapeAnnouncementHtml(a.announcement_title)}</strong></td>
+                <td style="max-width:440px; white-space:normal;">${escapeAnnouncementHtml(a.announcement_content)}</td>
+                <td>${escapeAnnouncementHtml(a.effectivity_from)} <strong>to</strong> ${escapeAnnouncementHtml(a.effectivity_to)}</td>
+                <td><span style="${badge}padding:5px 10px;border-radius:999px;font-size:12px;font-weight:700;text-transform:uppercase;">${escapeAnnouncementHtml(status)}</span></td>
+                <td>
+                    <button class="btn btn-secondary" style="padding:6px 10px;font-size:12px;" onclick="openAnnouncementModal(${Number(a.id)})">Edit</button>
+                    <button class="btn btn-danger" style="padding:6px 10px;font-size:12px;background:#dc2626;color:white;" onclick="deleteAnnouncement(${Number(a.id)})">Delete</button>
+                </td>
+            </tr>`;
+        }).join('');
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#dc2626; padding:24px;">${escapeAnnouncementHtml(err.message)}</td></tr>`;
+    }
+}
+
+function openAnnouncementModal(id = null) {
+    const modal = document.getElementById('announcementModal');
+    const record = id ? announcements.find(a => Number(a.id) === Number(id)) : null;
+    document.getElementById('announcement_id').value = record ? record.id : '';
+    document.getElementById('announcement_title').value = record?.announcement_title || '';
+    document.getElementById('announcement_content').value = record?.announcement_content || '';
+    document.getElementById('announcement_from').value = record?.effectivity_from || '';
+    document.getElementById('announcement_to').value = record?.effectivity_to || '';
+    document.getElementById('announcement_status').value = record?.status || 'active';
+    document.getElementById('announcementStatusField').style.display = record ? 'block' : 'none';
+    document.getElementById('announcementModalTitle').textContent = record ? 'Edit Announcement' : 'Add Announcement';
+    document.getElementById('announcementStatusMessage').textContent = record ? '' : 'Status will automatically be Active.';
+    modal.style.display = 'flex';
+}
+
+function closeAnnouncementModal() {
+    const modal = document.getElementById('announcementModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function saveAnnouncement() {
+    const id = document.getElementById('announcement_id').value;
+    const statusEl = document.getElementById('announcementStatusMessage');
+    const payload = {
+        announcement_title: document.getElementById('announcement_title').value.trim(),
+        announcement_content: document.getElementById('announcement_content').value.trim(),
+        effectivity_from: document.getElementById('announcement_from').value,
+        effectivity_to: document.getElementById('announcement_to').value
+    };
+    if (id) payload.status = document.getElementById('announcement_status').value;
+    if (!payload.announcement_title || !payload.announcement_content || !payload.effectivity_from || !payload.effectivity_to) {
+        statusEl.textContent = 'Please complete all required announcement fields.';
+        statusEl.style.color = '#dc2626';
+        return;
+    }
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/announcements' + (id ? '/' + id : ''), {
+            method: id ? 'PUT' : 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + getToken()
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to save announcement');
+        closeAnnouncementModal();
+        await loadAnnouncements();
+    } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.style.color = '#dc2626';
+    }
+}
+
+async function deleteAnnouncement(id) {
+    if (!confirm('Delete this announcement?')) return;
+    try {
+        const res = await fetch(apiBase + '/api/v1/content/announcements/' + id, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to delete announcement');
+        await loadAnnouncements();
+    } catch (err) {
+        alert(err.message);
+    }
+}
 
 // Single source of truth for all content data
 let contents = [];
@@ -4049,6 +4229,7 @@ async function deleteContentPermanent(contentId) {
 // Load content on page load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOMContentLoaded - Initializing Content Repository...');
+    loadAnnouncements();
     
     // Initialize Audience Dropdown
     function initAudienceDropdown() {
