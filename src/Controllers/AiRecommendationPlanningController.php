@@ -1018,39 +1018,50 @@ class AiRecommendationPlanningController
 
     private function insertAcceptedPartners(int $recommendationId, int $campaignId): int
     {
+        // IMPORTANT: AI recommendations must never create master partner records.
+        // `campaign_department_partners` is the manually maintained "All Partners"
+        // table shown in partners.php. AI may recommend/suggest organizations, but
+        // only an existing real partner can be linked to an accepted campaign.
         $count = 0;
 
-        $matchedStmt = $this->pdo->query("
+        $matchedStmt = $this->pdo->prepare("
             SELECT * FROM campaign_ai_recommendation_partners
-            WHERE recommendation_id = " . (int) $recommendationId . "
+            WHERE recommendation_id = ?
             ORDER BY id ASC
         ");
+        $matchedStmt->execute([$recommendationId]);
         $matched = $matchedStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $insertPartner = $this->pdo->prepare("
-            INSERT INTO campaign_department_partners (name, organization_type, contact_details)
-            VALUES (?, ?, ?)
-        ");
         $insertEngagement = $this->pdo->prepare("
-            INSERT INTO campaign_department_partner_engagements (partner_id, campaign_id, engagement_type, notes)
+            INSERT INTO campaign_department_partner_engagements
+                (partner_id, campaign_id, engagement_type, notes)
             VALUES (?, ?, 'ai_recommended', ?)
         ");
-        $updateMatched = $this->pdo->prepare("
+        $confirmMatched = $this->pdo->prepare("
             UPDATE campaign_ai_recommendation_partners
-            SET partner_id = ?, is_confirmed = 1, confirmed_at = NOW()
+            SET is_confirmed = 1, confirmed_at = NOW()
             WHERE id = ?
         ");
 
         foreach ($matched as $partner) {
             $partnerId = (int) ($partner['partner_id'] ?? 0);
-            $orgType = $this->normalizePartnerOrgType($partner['organization_type_snapshot'] ?? null);
-            $name = trim((string) ($partner['partner_name_snapshot'] ?? '')) ?: 'AI Recommended - ' . ucfirst($orgType);
-            $details = $this->contactDetailsJson($partner['capability_match_basis'] ?? null, $partner['recommendation_reason'] ?? null);
 
+            // No partner_id means this is only an AI suggestion/snapshot. Do not
+            // promote it into campaign_department_partners (All Partners).
             if ($partnerId <= 0) {
-                $insertPartner->execute([$name, $orgType, $details]);
-                $partnerId = (int) $this->pdo->lastInsertId();
-                $updateMatched->execute([$partnerId, (int) $partner['id']]);
+                continue;
+            }
+
+            // Guard against stale partner ids. Only link partners that actually
+            // exist in the manually managed master partner table.
+            $existsStmt = $this->pdo->prepare("
+                SELECT 1 FROM campaign_department_partners
+                WHERE id = ?
+                LIMIT 1
+            ");
+            $existsStmt->execute([$partnerId]);
+            if (!$existsStmt->fetchColumn()) {
+                continue;
             }
 
             $engagementMeta = json_encode([
@@ -1060,41 +1071,15 @@ class AiRecommendationPlanningController
                 'engagement_type' => 'collaboration',
                 'notes' => $partner['recommendation_reason'] ?? '',
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
             $insertEngagement->execute([$partnerId, $campaignId, $engagementMeta]);
+            $confirmMatched->execute([(int) $partner['id']]);
             $count++;
         }
 
-        $suggestionStmt = $this->pdo->query("
-            SELECT * FROM campaign_ai_recommendation_partner_suggestions
-            WHERE recommendation_id = " . (int) $recommendationId . "
-              AND proposal_status = 'proposed' AND created_partner_id IS NULL
-            ORDER BY id ASC
-        ");
-        $suggestions = $suggestionStmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $updateSuggestion = $this->pdo->prepare("
-            UPDATE campaign_ai_recommendation_partner_suggestions
-            SET created_partner_id = ?, proposal_status = 'created', reviewed_at = NOW()
-            WHERE id = ?
-        ");
-
-        foreach ($suggestions as $suggestion) {
-            $orgType = $this->normalizePartnerOrgType($suggestion['organization_type'] ?? null);
-            $name = 'AI Recommended - ' . ucfirst($orgType);
-            $details = $this->contactDetailsJson($suggestion['rationale'] ?? null, $suggestion['expected_contribution'] ?? null);
-            $insertPartner->execute([$name, $orgType, $details]);
-            $partnerId = (int) $this->pdo->lastInsertId();
-            $updateSuggestion->execute([$partnerId, (int) $suggestion['id']]);
-            $engagementMeta = json_encode([
-                'source' => 'ai_recommendation',
-                'recommendation_id' => $recommendationId,
-                'role' => $suggestion['expected_contribution'] ?? '',
-                'engagement_type' => 'collaboration',
-                'notes' => $suggestion['rationale'] ?? '',
-            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-            $insertEngagement->execute([$partnerId, $campaignId, $engagementMeta]);
-            $count++;
-        }
+        // Keep campaign_ai_recommendation_partner_suggestions as AI proposals only.
+        // They remain visible in the recommendation details, but accepting the
+        // recommendation does NOT insert them into campaign_department_partners.
 
         return $count;
     }
