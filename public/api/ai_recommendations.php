@@ -1222,7 +1222,7 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
 
         $upsertStmt = $pdo->prepare(
             "INSERT INTO campaign_department_ai_recommendations
-            (category, campaign_category, campaign_title, main_trend, trend_key, description, report_count,
+            (category, campaign_category, source_type, campaign_title, main_trend, trend_key, description, report_count,
              campaign_description, incident_category,
              cluster_report_ids, affected_locations, earliest_date, latest_date,
              source_report_ids,
@@ -1231,7 +1231,7 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
              ai_reasoning, ai_recommended_actions, ai_target_audience,
              generated_by, recommendation_hash, data_snapshot, is_test_data)
             VALUES
-            (:category, :campaign_category, :campaign_title, :main_trend, :trend_key, :description, :report_count,
+            (:category, :campaign_category, :source_type, :campaign_title, :main_trend, :trend_key, :description, :report_count,
              :campaign_description, :incident_category,
              :cluster_report_ids, :affected_locations, :earliest_date, :latest_date,
              :source_report_ids,
@@ -1242,6 +1242,7 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
             ON DUPLICATE KEY UPDATE
              category = VALUES(category),
              campaign_category = VALUES(campaign_category),
+             source_type = VALUES(source_type),
              campaign_title = VALUES(campaign_title),
              main_trend = VALUES(main_trend),
              description = VALUES(description),
@@ -1273,19 +1274,24 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
             $hashInput = $rec['trend_key'] . '|' . json_encode($rec['cluster_report_ids']);
             $hash = hash('sha256', $hashInput);
 
-            // The current LGU schema defines campaign_department_ai_recommendations.category
-            // as ENUM('crime','disaster'). Keep that column as the EVIDENCE SOURCE so older
-            // databases remain compatible. The actual campaign classification (including
-            // Education) is stored in data_snapshot / returned as campaign_category.
+            // `category` is the actual campaign classification shown in Campaigns
+            // (Education / Crime / Disaster).  `source_type` separately records where
+            // the supporting evidence came from.  Youth/school/drug-prevention partner
+            // events therefore remain source_type=crime but category=education.
             $dbSourceCategory = strtolower(trim((string) ($rec['source_type'] ?? '')));
             if (!in_array($dbSourceCategory, ['crime', 'disaster'], true)) {
                 $trendForSource = strtolower((string) ($rec['trend_key'] ?? ''));
                 $dbSourceCategory = str_starts_with($trendForSource, 'disaster:') ? 'disaster' : 'crime';
             }
+            $dbCampaignCategory = strtolower(trim((string) ($rec['campaign_category'] ?? $rec['category'] ?? 'crime')));
+            if (!in_array($dbCampaignCategory, ['education', 'crime', 'disaster'], true)) {
+                $dbCampaignCategory = 'crime';
+            }
 
             $upsertStmt->execute([
-                ':category' => $dbSourceCategory,
-                ':campaign_category' => $rec['campaign_category'] ?? $rec['category'] ?? 'crime',
+                ':category' => $dbCampaignCategory,
+                ':campaign_category' => $dbCampaignCategory,
+                ':source_type' => $dbSourceCategory,
                 ':campaign_title' => $rec['campaign_title'],
                 ':main_trend' => $rec['main_trend'],
                 ':trend_key' => $rec['trend_key'],
@@ -1346,7 +1352,7 @@ function attach_persisted_recommendation_ids(PDO $pdo, array $recommendations): 
 
     $placeholders = implode(',', array_fill(0, count($hashes), '?'));
     $stmt = $pdo->prepare(
-        "SELECT id, recommendation_hash, campaign_category, approval_status, converted_campaign_id, planning_status
+        "SELECT id, recommendation_hash, category, campaign_category, source_type, approval_status, converted_campaign_id, planning_status
          FROM campaign_department_ai_recommendations
          WHERE recommendation_hash IN ($placeholders)"
     );
@@ -1365,12 +1371,9 @@ function attach_persisted_recommendation_ids(PDO $pdo, array $recommendations): 
             ? (int) $row['converted_campaign_id']
             : null;
         $recommendations[$index]['planning_status'] = $row['planning_status'] ?? 'not_generated';
-        $persistedCampaignCategory = strtolower(trim((string) ($row['campaign_category'] ?? '')));
-        if (in_array($persistedCampaignCategory, ['education', 'crime', 'disaster'], true)) {
-            $recommendations[$index]['campaign_category'] = $persistedCampaignCategory;
-        } elseif (empty($recommendations[$index]['campaign_category'])) {
-            $recommendations[$index]['campaign_category'] = $recommendations[$index]['category'] ?? 'crime';
-        }
+        $recommendations[$index]['category'] = $row['category'] ?? ($recommendations[$index]['category'] ?? 'crime');
+        $recommendations[$index]['campaign_category'] = $row['campaign_category'] ?? $recommendations[$index]['category'];
+        $recommendations[$index]['source_type'] = $row['source_type'] ?? ($recommendations[$index]['source_type'] ?? 'crime');
     }
 
     return $recommendations;
@@ -1397,7 +1400,7 @@ function load_cached_recommendations(PDO $pdo): ?array
             if (!is_array($rec)) {
                 $rec = [];
             }
-            $sourceType = strtolower((string) ($rec['source_type'] ?? ''));
+            $sourceType = strtolower((string) ($row['source_type'] ?? $rec['source_type'] ?? ''));
             if (!in_array($sourceType, ['crime', 'disaster'], true)) {
                 $trendForSource = strtolower((string) ($rec['trend_key'] ?? $row['trend_key'] ?? ''));
                 $sourceType = str_starts_with($trendForSource, 'disaster:') ? 'disaster' : 'crime';
@@ -1408,31 +1411,34 @@ function load_cached_recommendations(PDO $pdo): ?array
                 $cachedActions = is_array($decodedActions) ? $decodedActions : [$cachedActions];
             }
             if (!is_array($cachedActions)) $cachedActions = [];
-            $persistedCampaignCategory = strtolower(trim((string) ($row['campaign_category'] ?? '')));
-            $normalizedCategory = in_array($persistedCampaignCategory, ['education', 'crime', 'disaster'], true)
-                ? $persistedCampaignCategory
-                : classify_campaign_category(
-                    (string) ($rec['trend_key'] ?? $row['trend_key'] ?? ''),
-                    (string) ($rec['campaign_title'] ?? $row['campaign_title'] ?? ''),
-                    isset($rec['ai_target_audience']) ? (string) $rec['ai_target_audience'] : (isset($row['ai_target_audience']) ? (string) $row['ai_target_audience'] : null),
-                    $cachedActions,
-                    $sourceType
-                );
-
-            // category remains the evidence/source type for backward compatibility.
-            // campaign_category is the actual intervention classification displayed
-            // to users and copied into All Campaigns on acceptance.
-            $rec['category'] = $sourceType;
+            $normalizedCategory = classify_campaign_category(
+                (string) ($rec['trend_key'] ?? $row['trend_key'] ?? ''),
+                (string) ($rec['campaign_title'] ?? $row['campaign_title'] ?? ''),
+                isset($rec['ai_target_audience']) ? (string) $rec['ai_target_audience'] : (isset($row['ai_target_audience']) ? (string) $row['ai_target_audience'] : null),
+                $cachedActions,
+                $sourceType
+            );
+            // Do not write Education into the legacy ENUM('crime','disaster') column.
+            // Return it as the campaign category while preserving the report source separately.
+            $rec['category'] = $normalizedCategory;
             $rec['campaign_category'] = $normalizedCategory;
             $rec['source_type'] = $sourceType;
 
-            // Backfill old rows the first time they are loaded after this update.
-            if ($persistedCampaignCategory === '') {
+            // Self-heal recommendations created before Education was a persisted
+            // category. Opening Campaigns is enough to correct old youth/drug rows.
+            if (
+                strtolower((string) ($row['category'] ?? '')) !== $normalizedCategory
+                || strtolower((string) ($row['campaign_category'] ?? '')) !== $normalizedCategory
+                || strtolower((string) ($row['source_type'] ?? '')) !== $sourceType
+            ) {
                 try {
-                    $backfill = $pdo->prepare('UPDATE campaign_department_ai_recommendations SET campaign_category = ? WHERE id = ?');
-                    $backfill->execute([$normalizedCategory, (int) $row['id']]);
-                } catch (Throwable $backfillError) {
-                    error_log('Campaign category backfill failed: ' . $backfillError->getMessage());
+                    $fixStmt = $pdo->prepare(
+                        'UPDATE campaign_department_ai_recommendations SET category = ?, campaign_category = ?, source_type = ? WHERE id = ?'
+                    );
+                    $fixStmt->execute([$normalizedCategory, $normalizedCategory, $sourceType, (int) $row['id']]);
+                } catch (Throwable $ignored) {
+                    // Schema service normally upgrades these columns first; keep the
+                    // response usable even if a restricted DB user cannot ALTER/UPDATE.
                 }
             }
 

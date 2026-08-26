@@ -23,7 +23,6 @@ class AiRecommendationSchemaService
             CREATE TABLE IF NOT EXISTS campaign_department_ai_recommendations (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 category VARCHAR(50) NOT NULL DEFAULT 'crime',
-                campaign_category VARCHAR(50) NULL,
                 campaign_title VARCHAR(255) NOT NULL,
                 main_trend VARCHAR(255) NULL,
                 trend_key VARCHAR(120) NULL,
@@ -57,8 +56,9 @@ class AiRecommendationSchemaService
     private static function ensurePlanningColumns(PDO $pdo): void
     {
         $columns = [
-            'campaign_description' => 'TEXT NULL',
             'campaign_category' => "VARCHAR(50) NULL",
+            'source_type' => "VARCHAR(20) NULL",
+            'campaign_description' => 'TEXT NULL',
             'incident_category' => "VARCHAR(255) NULL",
             'source_report_ids' => 'LONGTEXT NULL',
             'main_trend' => 'VARCHAR(255) NULL',
@@ -112,7 +112,13 @@ class AiRecommendationSchemaService
         self::tryExec($pdo, "ALTER TABLE campaign_department_ai_recommendations MODIFY planning_status VARCHAR(40) NOT NULL DEFAULT 'not_generated'");
         self::tryExec($pdo, "ALTER TABLE campaign_department_ai_recommendations MODIFY approval_status VARCHAR(32) NOT NULL DEFAULT 'recommended'");
         self::tryExec($pdo, "ALTER TABLE campaign_department_ai_recommendations MODIFY budget_validation_status VARCHAR(40) NOT NULL DEFAULT 'unchecked'");
+        // Existing LGU dumps used ENUM('crime','disaster') for category, which
+        // made it impossible to persist Education. Upgrade it in place while
+        // keeping source_type as the crime/disaster evidence origin.
+        self::tryExec($pdo, "ALTER TABLE campaign_department_ai_recommendations MODIFY category ENUM('crime','disaster','education') NOT NULL DEFAULT 'crime'");
         self::tryExec($pdo, "ALTER TABLE campaign_department_ai_recommendations MODIFY incident_category VARCHAR(255) NULL");
+        self::tryExec($pdo, "UPDATE campaign_department_ai_recommendations SET source_type = CASE WHEN trend_key LIKE 'disaster:%' THEN 'disaster' ELSE 'crime' END WHERE source_type IS NULL OR source_type = ''");
+        self::tryExec($pdo, "UPDATE campaign_department_ai_recommendations SET campaign_category = category WHERE campaign_category IS NULL OR campaign_category = ''");
     }
 
     private static function ensureChildTables(PDO $pdo): void

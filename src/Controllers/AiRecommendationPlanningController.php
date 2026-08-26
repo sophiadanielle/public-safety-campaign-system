@@ -596,9 +596,9 @@ class AiRecommendationPlanningController
 
     private function acceptedCampaignCategory(array $rec): string
     {
-        $explicit = strtolower(trim((string) ($rec['campaign_category'] ?? '')));
-        if (in_array($explicit, ['education', 'crime', 'disaster'], true)) {
-            return $explicit;
+        $storedCampaignCategory = strtolower(trim((string) ($rec['campaign_category'] ?? '')));
+        if (in_array($storedCampaignCategory, ['education', 'crime', 'disaster'], true)) {
+            return $storedCampaignCategory;
         }
 
         $trend = strtolower(trim((string) ($rec['trend_key'] ?? '')));
@@ -636,6 +636,11 @@ class AiRecommendationPlanningController
 
     private function recommendationSourceType(array $recommendation): string
     {
+        $storedSource = strtolower(trim((string) ($recommendation['source_type'] ?? '')));
+        if (in_array($storedSource, ['crime', 'disaster'], true)) {
+            return $storedSource;
+        }
+
         $ids = $this->decodeList($recommendation['cluster_report_ids'] ?? $recommendation['source_report_ids'] ?? null);
         foreach ($ids as $raw) {
             if (is_array($raw)) {
@@ -1641,7 +1646,7 @@ class AiRecommendationPlanningController
                 return [
                     'incident_title' => $row['title'] ?? $row['incident_title'] ?? $row['crime_type'] ?? $fallbackTitle,
                     'description' => $row['description'] ?? $row['details'] ?? $row['narrative'] ?? null,
-                    'category' => $row['category'] ?? $row['crime_type'] ?? $recommendation['category'] ?? 'crime',
+                    'category' => $row['category'] ?? $row['crime_type'] ?? $recommendation['incident_category'] ?? 'crime',
                     'severity' => $row['severity'] ?? $row['priority'] ?? null,
                     'incident_status' => $row['status'] ?? $row['incident_status'] ?? null,
                     'report_date' => $this->dateOnly($row['report_date'] ?? $row['date_reported'] ?? $row['created_at'] ?? null),
