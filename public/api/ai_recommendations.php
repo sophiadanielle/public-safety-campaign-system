@@ -1302,6 +1302,57 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
     }
 }
 
+/**
+ * Attach the persisted database identity/state to freshly generated recommendations.
+ *
+ * The refresh path builds recommendations in memory, stores them, and historically
+ * returned the in-memory rows before their AUTO_INCREMENT IDs were known.  The UI
+ * needs that ID for details/generate/accept requests, so resolve the exact rows by
+ * the same recommendation_hash used by store_recommendations_in_db().
+ */
+function attach_persisted_recommendation_ids(PDO $pdo, array $recommendations): array
+{
+    if (empty($recommendations)) {
+        return $recommendations;
+    }
+
+    $hashes = [];
+    foreach ($recommendations as $index => $rec) {
+        $hashInput = (string) ($rec['trend_key'] ?? '') . '|' . json_encode($rec['cluster_report_ids'] ?? []);
+        $hash = hash('sha256', $hashInput);
+        $hashes[$hash] = $index;
+    }
+
+    if (empty($hashes)) {
+        return $recommendations;
+    }
+
+    $placeholders = implode(',', array_fill(0, count($hashes), '?'));
+    $stmt = $pdo->prepare(
+        "SELECT id, recommendation_hash, approval_status, converted_campaign_id, planning_status
+         FROM campaign_department_ai_recommendations
+         WHERE recommendation_hash IN ($placeholders)"
+    );
+    $stmt->execute(array_keys($hashes));
+
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $hash = (string) ($row['recommendation_hash'] ?? '');
+        if ($hash === '' || !array_key_exists($hash, $hashes)) {
+            continue;
+        }
+
+        $index = $hashes[$hash];
+        $recommendations[$index]['id'] = (int) $row['id'];
+        $recommendations[$index]['approval_status'] = $row['approval_status'] ?? 'recommended';
+        $recommendations[$index]['converted_campaign_id'] = !empty($row['converted_campaign_id'])
+            ? (int) $row['converted_campaign_id']
+            : null;
+        $recommendations[$index]['planning_status'] = $row['planning_status'] ?? 'not_generated';
+    }
+
+    return $recommendations;
+}
+
 function load_cached_recommendations(PDO $pdo): ?array
 {
     try {
@@ -1578,6 +1629,9 @@ try {
 
     if ($pdo) {
         store_recommendations_in_db($pdo, $recommendations);
+        // Refresh responses must contain the DB identity immediately.  Without this,
+        // View/Generate/Accept receives recommendation_id=0 until the next page load.
+        $recommendations = attach_persisted_recommendation_ids($pdo, $recommendations);
     }
 
     json_response([
