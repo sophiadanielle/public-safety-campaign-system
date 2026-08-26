@@ -2333,7 +2333,7 @@ function renderAiRecommendationsTable() {
         badge.textContent = `${prio.label} (${Number(rec.priority_score || 0).toFixed(0)})`;
         priorityCell.appendChild(badge);
 
-        const isAccepted = Number(rec.converted_campaign_id || 0) > 0;
+        const isAccepted = rec.converted_campaign_id || rec.approval_status === 'accepted';
         if (isAccepted) {
             const acceptedBadge = document.createElement('span');
             const cId = rec.converted_campaign_id ? ' #' + rec.converted_campaign_id : '';
@@ -3599,6 +3599,85 @@ function openAiEventReviewForm(eventData) {
 window.openAiEventReviewFormFromEncoded = openAiEventReviewFormFromEncoded;
 window.openAiEventReviewForm = openAiEventReviewForm;
 
+function getAiRecommendationPlanMissingDetails(data) {
+    const missing = [];
+    const budgetItems = data?.budget?.items;
+    const participants = data?.staff?.participants;
+    const phases = data?.schedule?.phases || data?.schedule_phases?.phases;
+    const reportTotal = Number(data?.reports?.total || 0);
+
+    if (!Array.isArray(budgetItems) || budgetItems.length === 0) missing.push('Budget Breakdown');
+    if (!Array.isArray(participants) || participants.length === 0) missing.push('Participants');
+    if (!Array.isArray(phases) || phases.length === 0) missing.push('Date Sprint / Events');
+    if (reportTotal <= 0) missing.push('Supporting Reports');
+
+    return missing;
+}
+
+async function prepareAiRecommendationPlanForAcceptance(rec, recommendationId, token) {
+    // Always reload first so Accept uses the current database state, not stale modal data.
+    await reloadAiRecommendationDetails(rec);
+    let data = window.__aiRecDetail || {};
+    let summary = data.summary || {};
+    let missing = getAiRecommendationPlanMissingDetails(data);
+    const status = document.getElementById('aiRecPlanStatus');
+    const acceptBtn = document.getElementById('aiRecAcceptBtn');
+
+    const planStatus = String(summary.planning_status || rec.planning_status || 'not_generated').toLowerCase();
+    const needsGeneration = missing.length > 0 || !['completed', 'completed_with_warnings'].includes(planStatus);
+    if (!needsGeneration) {
+        return data;
+    }
+
+    if (status) {
+        status.textContent = 'Generating required campaign plan before acceptance...';
+    }
+    if (acceptBtn) {
+        acceptBtn.disabled = true;
+        acceptBtn.style.opacity = '0.7';
+        acceptBtn.style.cursor = 'wait';
+        acceptBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Preparing Plan...';
+    }
+
+    // If planning_status says completed but the rows are missing, recalculate is the
+    // correct action. Otherwise use the normal first-time generator.
+    const action = ['completed', 'completed_with_warnings', 'processing'].includes(planStatus)
+        ? 'recalculate'
+        : 'generate';
+
+    const response = await fetch(aiRecommendationGenerateUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + token.trim()
+        },
+        body: JSON.stringify({ recommendation_id: recommendationId, action })
+    });
+
+    if (!response.ok) {
+        throw new Error(await readApiError(response));
+    }
+    const payload = await response.json();
+    if (payload.error || payload.success === false) {
+        throw new Error(payload.error || payload.message || 'Campaign plan generation failed.');
+    }
+
+    await reloadAiRecommendationDetails(rec);
+    data = window.__aiRecDetail || {};
+    summary = data.summary || {};
+    missing = getAiRecommendationPlanMissingDetails(data);
+
+    if (missing.length > 0) {
+        throw new Error('Campaign plan generation finished but required data is still missing: ' + missing.join(', ') + '.');
+    }
+
+    if (status) {
+        status.textContent = 'Campaign plan is complete and ready for acceptance.';
+    }
+    return data;
+}
+
 function updateAiRecPlanAction(rec) {
     const data = window.__aiRecDetail || {};
     const summary = data.summary || {};
@@ -3627,11 +3706,17 @@ function updateAiRecPlanAction(rec) {
             acceptBtn.style.background = '#16a34a';
             acceptBtn.innerHTML = '<i class="fas fa-check-double"></i> Accepted (Campaign #' + convertedCampaignId + ')';
         } else {
+            const missingPlan = getAiRecommendationPlanMissingDetails(data);
             acceptBtn.disabled = false;
             acceptBtn.style.opacity = '1';
             acceptBtn.style.cursor = 'pointer';
             acceptBtn.style.background = '#16a34a';
-            acceptBtn.innerHTML = '<i class="fas fa-check-circle"></i> Accept Recommended';
+            acceptBtn.innerHTML = missingPlan.length
+                ? '<i class="fas fa-wand-magic-sparkles"></i> Generate Plan & Accept'
+                : '<i class="fas fa-check-circle"></i> Accept Recommended';
+            acceptBtn.title = missingPlan.length
+                ? 'Missing: ' + missingPlan.join(', ') + '. The plan will be generated before acceptance.'
+                : 'Accept this complete AI recommendation plan';
         }
     }
 
@@ -3773,7 +3858,7 @@ function showAcceptAiRecConfirmModal(details, onConfirm) {
                     </div>
                     <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #334155; background: #f1f5f9; padding: 8px 12px; border-radius: 8px;">
                         <i class="fas fa-handshake" style="color: #f59e0b;"></i>
-                        <span><strong>${details.partnerCount}</strong> partner(s) to <strong>Partners List</strong></span>
+                        <span><strong>${details.partnerCount}</strong> existing partner link(s); AI-only suggestions will <strong>not</strong> be added to All Partners</span>
                     </div>
                 </div>
 
@@ -3889,8 +3974,8 @@ async function resolveAiRecommendationId(rec = {}, summary = {}) {
 async function acceptAiRecommendation() {
     const active = window.__aiRecActive || {};
     const rec = active.rec || {};
-    const data = window.__aiRecDetail || {};
-    const summary = data.summary || {};
+    let data = window.__aiRecDetail || {};
+    let summary = data.summary || {};
     const recommendationId = await resolveAiRecommendationId(rec, summary);
     const acceptBtn = document.getElementById('aiRecAcceptBtn');
     const status = document.getElementById('aiRecPlanStatus');
@@ -3906,12 +3991,30 @@ async function acceptAiRecommendation() {
         return;
     }
 
+    try {
+        data = await prepareAiRecommendationPlanForAcceptance(rec, recommendationId, token);
+        summary = data.summary || {};
+    } catch (e) {
+        const message = e.message || 'Unable to generate the required campaign plan.';
+        showErrorToast('Acceptance preparation failed: ' + message);
+        if (status) status.textContent = 'Acceptance preparation failed: ' + message;
+        if (acceptBtn) {
+            acceptBtn.disabled = false;
+            acceptBtn.style.opacity = '1';
+            acceptBtn.style.cursor = 'pointer';
+            acceptBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate Plan & Accept';
+        }
+        return;
+    }
+
     const budgetCount = (data.budget && data.budget.items ? data.budget.items.length : 0);
     const participants = Array.isArray(data.staff && data.staff.participants) ? data.staff.participants : [];
     const staffToCreate = participants.filter(p => !p.staff_id && (p.missing_qty || 0) > 0).length;
     const phaseCount = (data.schedule && Array.isArray(data.schedule.phases) ? data.schedule.phases.length : 0);
-    const suggestions = Array.isArray(data.suggestions) ? data.suggestions.filter(s => s.proposal_status === 'proposed' && !s.created_partner_id) : [];
-    const partnerCount = (Array.isArray(data.partners) ? data.partners.length : 0) + suggestions.length;
+    const matchedExistingPartners = Array.isArray(data.partners)
+        ? data.partners.filter(p => Number(p.partner_id || 0) > 0)
+        : [];
+    const partnerCount = matchedExistingPartners.length;
     const title = summary.campaign_title || rec.campaign_title || 'this recommendation';
 
     showAcceptAiRecConfirmModal({

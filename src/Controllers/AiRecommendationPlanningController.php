@@ -403,7 +403,8 @@ class AiRecommendationPlanningController
                     'budget_items' => $budgetItems,
                     'staff_created' => $staff['created'],
                     'events_created' => $events,
-                    'partners_created' => $partners,
+                    'partners_linked' => $partners,
+                    'partners_created' => 0,
                 ]
             );
 
@@ -418,7 +419,8 @@ class AiRecommendationPlanningController
                 'staff_created' => $staff['created'],
                 'staff_skipped_existing' => $staff['skipped'],
                 'events_created' => $events,
-                'partners_created' => $partners,
+                'partners_linked' => $partners,
+                    'partners_created' => 0,
                 'reports_copied' => $manualPlan['reports'],
                 'participants_copied' => $manualPlan['participants'],
                 'audience_segments_linked' => $manualPlan['audiences'],
@@ -1018,49 +1020,36 @@ class AiRecommendationPlanningController
 
     private function insertAcceptedPartners(int $recommendationId, int $campaignId): int
     {
-        // IMPORTANT: AI recommendations must never create master partner records.
-        // `campaign_department_partners` is the manually maintained "All Partners"
-        // table shown in partners.php. AI may recommend/suggest organizations, but
-        // only an existing real partner can be linked to an accepted campaign.
+        // AI recommendations may suggest organizations, but they must NEVER create
+        // master records in partners.php -> All Partners. Only partner matches that
+        // already point to a real campaign_department_partners.id are linked here.
+        $stmt = $this->pdo->prepare("\n            SELECT *\n            FROM campaign_ai_recommendation_partners\n            WHERE recommendation_id = ?\n              AND partner_id IS NOT NULL\n              AND partner_id > 0\n            ORDER BY id ASC\n        ");
+        $stmt->execute([$recommendationId]);
+        $matched = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($matched)) {
+            return 0;
+        }
+
+        $partnerExists = $this->pdo->prepare('SELECT id FROM campaign_department_partners WHERE id = ? LIMIT 1');
+        $engagementExists = $this->pdo->prepare("\n            SELECT id FROM campaign_department_partner_engagements\n            WHERE partner_id = ? AND campaign_id = ?\n            LIMIT 1\n        ");
+        $insertEngagement = $this->pdo->prepare("\n            INSERT INTO campaign_department_partner_engagements\n                (partner_id, campaign_id, engagement_type, notes)\n            VALUES (?, ?, 'ai_recommended', ?)\n        ");
+
         $count = 0;
-
-        $matchedStmt = $this->pdo->prepare("
-            SELECT * FROM campaign_ai_recommendation_partners
-            WHERE recommendation_id = ?
-            ORDER BY id ASC
-        ");
-        $matchedStmt->execute([$recommendationId]);
-        $matched = $matchedStmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $insertEngagement = $this->pdo->prepare("
-            INSERT INTO campaign_department_partner_engagements
-                (partner_id, campaign_id, engagement_type, notes)
-            VALUES (?, ?, 'ai_recommended', ?)
-        ");
-        $confirmMatched = $this->pdo->prepare("
-            UPDATE campaign_ai_recommendation_partners
-            SET is_confirmed = 1, confirmed_at = NOW()
-            WHERE id = ?
-        ");
-
         foreach ($matched as $partner) {
             $partnerId = (int) ($partner['partner_id'] ?? 0);
-
-            // No partner_id means this is only an AI suggestion/snapshot. Do not
-            // promote it into campaign_department_partners (All Partners).
             if ($partnerId <= 0) {
                 continue;
             }
 
-            // Guard against stale partner ids. Only link partners that actually
-            // exist in the manually managed master partner table.
-            $existsStmt = $this->pdo->prepare("
-                SELECT 1 FROM campaign_department_partners
-                WHERE id = ?
-                LIMIT 1
-            ");
-            $existsStmt->execute([$partnerId]);
-            if (!$existsStmt->fetchColumn()) {
+            $partnerExists->execute([$partnerId]);
+            if (!$partnerExists->fetchColumn()) {
+                // Stale AI match: do not manufacture a replacement master partner.
+                continue;
+            }
+
+            $engagementExists->execute([$partnerId, $campaignId]);
+            if ($engagementExists->fetchColumn()) {
                 continue;
             }
 
@@ -1073,14 +1062,11 @@ class AiRecommendationPlanningController
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
             $insertEngagement->execute([$partnerId, $campaignId, $engagementMeta]);
-            $confirmMatched->execute([(int) $partner['id']]);
             $count++;
         }
 
-        // Keep campaign_ai_recommendation_partner_suggestions as AI proposals only.
-        // They remain visible in the recommendation details, but accepting the
-        // recommendation does NOT insert them into campaign_department_partners.
-
+        // campaign_ai_recommendation_partner_suggestions intentionally remain
+        // suggestions only. Nothing is inserted into campaign_department_partners.
         return $count;
     }
 
