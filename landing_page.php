@@ -294,30 +294,99 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             color: var(--text-muted);
         }
 
-        .hero-stats {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 16px;
+        .hero-announcement-body {
+            min-height: 190px;
+            padding: 4px 2px 0;
         }
 
-        .hero-stat {
-            text-align: center;
-            padding: 16px;
-            background: var(--background);
-            border-radius: 12px;
-        }
-
-        .hero-stat-value {
-            font-size: 28px;
+        .hero-announcement-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            margin-bottom: 12px;
+            border-radius: 999px;
+            background: #dcfce7;
+            color: #166534;
+            font-size: 11px;
             font-weight: 800;
-            color: var(--primary);
+            letter-spacing: .45px;
+            text-transform: uppercase;
         }
 
-        .hero-stat-label {
+        .hero-announcement-title {
+            margin: 0 0 10px;
+            color: var(--secondary);
+            font-size: 22px;
+            line-height: 1.25;
+            font-weight: 800;
+        }
+
+        .hero-announcement-content {
+            margin: 0 0 16px;
+            color: #475569;
+            font-size: 14px;
+            line-height: 1.65;
+            white-space: pre-line;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .hero-announcement-date {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
             font-size: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .hero-announcement-empty {
+            min-height: 170px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .hero-announcement-nav {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .hero-announcement-nav.visible {
+            display: flex;
+        }
+
+        .hero-announcement-nav button {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #fff;
+            color: var(--primary);
+            cursor: pointer;
+            transition: .2s ease;
+        }
+
+        .hero-announcement-nav button:hover {
+            background: var(--background);
+            transform: translateY(-1px);
+        }
+
+        .hero-announcement-counter {
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 700;
         }
 
         .floating-card {
@@ -1030,19 +1099,15 @@ require_once __DIR__ . '/header/includes/path_helper.php';
                                 <div class="hero-card-subtitle">Latest community advisories & updates</div>
                             </div>
                         </div>
-                        <div class="hero-stats">
-                            <div class="hero-stat">
-                                <div class="hero-stat-value">24</div>
-                                <div class="hero-stat-label">Active</div>
+                        <div class="hero-announcement-body" id="heroAnnouncementBody">
+                            <div class="hero-announcement-empty">
+                                <div><i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i>Loading latest announcement...</div>
                             </div>
-                            <div class="hero-stat">
-                                <div class="hero-stat-value">1.2K</div>
-                                <div class="hero-stat-label">Reached</div>
-                            </div>
-                            <div class="hero-stat">
-                                <div class="hero-stat-value">89%</div>
-                                <div class="hero-stat-label">Success</div>
-                            </div>
+                        </div>
+                        <div class="hero-announcement-nav" id="heroAnnouncementNav">
+                            <button type="button" aria-label="Previous announcement" onclick="moveHeroAnnouncement(-1)"><i class="fas fa-chevron-left"></i></button>
+                            <span class="hero-announcement-counter" id="heroAnnouncementCounter">1 / 1</span>
+                            <button type="button" aria-label="Next announcement" onclick="moveHeroAnnouncement(1)"><i class="fas fa-chevron-right"></i></button>
                         </div>
                     </div>
                     <div class="floating-card floating-card-1">
@@ -1379,6 +1444,40 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
         }
 
+        let heroAnnouncements = [];
+        let heroAnnouncementIndex = 0;
+
+        function renderHeroAnnouncement() {
+            const body = document.getElementById('heroAnnouncementBody');
+            const nav = document.getElementById('heroAnnouncementNav');
+            const counter = document.getElementById('heroAnnouncementCounter');
+            if (!body) return;
+
+            if (!heroAnnouncements.length) {
+                body.innerHTML = '<div class="hero-announcement-empty"><div><i class="fas fa-bullhorn" style="font-size:28px;margin-bottom:10px;color:#94a3b8;"></i><br>No active announcements right now.</div></div>';
+                if (nav) nav.classList.remove('visible');
+                return;
+            }
+
+            heroAnnouncementIndex = (heroAnnouncementIndex + heroAnnouncements.length) % heroAnnouncements.length;
+            const a = heroAnnouncements[heroAnnouncementIndex];
+            body.innerHTML = `
+                <div class="hero-announcement-status"><i class="fas fa-circle" style="font-size:7px;"></i> Active Announcement</div>
+                <h3 class="hero-announcement-title">${escapeLandingHtml(a.announcement_title || 'Community Announcement')}</h3>
+                <p class="hero-announcement-content">${escapeLandingHtml(a.announcement_content || '')}</p>
+                <div class="hero-announcement-date"><i class="fas fa-calendar-alt"></i> Effective ${escapeLandingHtml(a.effectivity_from || '')} to ${escapeLandingHtml(a.effectivity_to || '')}</div>
+            `;
+
+            if (counter) counter.textContent = `${heroAnnouncementIndex + 1} / ${heroAnnouncements.length}`;
+            if (nav) nav.classList.toggle('visible', heroAnnouncements.length > 1);
+        }
+
+        function moveHeroAnnouncement(step) {
+            if (!heroAnnouncements.length) return;
+            heroAnnouncementIndex += step;
+            renderHeroAnnouncement();
+        }
+
         let landingSlideIndex = 0;
         let landingSlides = [];
         let landingSlideTimer = null;
@@ -1425,6 +1524,10 @@ require_once __DIR__ . '/header/includes/path_helper.php';
                 }
 
                 const anns = data.announcements || [];
+                heroAnnouncements = anns;
+                heroAnnouncementIndex = 0;
+                renderHeroAnnouncement();
+
                 announcementList.innerHTML = anns.length ? anns.map(a => `
                     <article class="announcement-item">
                         <h3>${escapeLandingHtml(a.announcement_title)}</h3>
@@ -1435,6 +1538,10 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             } catch (err) {
                 slider.innerHTML = '<div class="landing-slider-empty">Featured content is temporarily unavailable.</div>';
                 announcementList.innerHTML = '<div class="announcement-empty">Announcements are temporarily unavailable.</div>';
+                const heroBody = document.getElementById('heroAnnouncementBody');
+                const heroNav = document.getElementById('heroAnnouncementNav');
+                if (heroBody) heroBody.innerHTML = '<div class="hero-announcement-empty">Announcements are temporarily unavailable.</div>';
+                if (heroNav) heroNav.classList.remove('visible');
                 console.error('Landing public feed error:', err);
             }
         }
