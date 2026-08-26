@@ -47,4 +47,29 @@ return [
         'handler' => [BudgetController::class, 'getByCampaign'],
         'middleware' => JWTMiddleware::class,
     ],
+
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/campaigns/{id}/budget-analysis',
+        'handler' => [BudgetController::class, 'analysis'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/api/v1/campaigns/{id}/budget-workflow',
+        'handler' => [BudgetController::class, 'getWorkflowStatus'],
+        'middleware' => JWTMiddleware::class,
+    ],
+    [
+        'method' => 'POST',
+        'path' => '/api/v1/campaigns/{id}/budget-workflow',
+        'handler' => [BudgetController::class, 'workflowAction'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
+    [
+        'method' => 'PUT',
+        'path' => '/api/v1/campaigns/{id}/budget-revision',
+        'handler' => [BudgetController::class, 'replaceCampaignBudget'],
+        'middleware' => [JWTMiddleware::class, ViewerBlockMiddleware::class],
+    ],
 ];

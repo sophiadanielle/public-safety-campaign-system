@@ -24,6 +24,44 @@ class CampaignController
         private int $jwtExpirySeconds
     ) {
         $this->autoMLService = new AutoMLService($pdo);
+        $this->ensureBudgetWorkflowSchema();
+    }
+
+    private function ensureBudgetWorkflowSchema(): void
+    {
+        try {
+            $this->pdo->exec("ALTER TABLE campaign_budgets ADD COLUMN budget_destination VARCHAR(255) NULL AFTER related_action");
+        } catch (\PDOException $e) {
+            // Already migrated.
+        }
+        try {
+            $this->pdo->exec("
+                CREATE TABLE IF NOT EXISTS campaign_budget_workflows (
+                    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    campaign_id INT UNSIGNED NOT NULL,
+                    planning_status ENUM('draft','approved','finalized') NOT NULL DEFAULT 'draft',
+                    review_status ENUM('none','pending','approved','rejected') NOT NULL DEFAULT 'none',
+                    rejection_reason TEXT NULL,
+                    pre_edit_snapshot LONGTEXT NULL,
+                    approved_by INT UNSIGNED NULL,
+                    approved_at DATETIME NULL,
+                    finalized_by INT UNSIGNED NULL,
+                    finalized_at DATETIME NULL,
+                    reviewed_by INT UNSIGNED NULL,
+                    reviewed_at DATETIME NULL,
+                    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uq_campaign_budget_workflow_campaign (campaign_id),
+                    KEY idx_budget_workflow_planning (planning_status),
+                    KEY idx_budget_workflow_review (review_status),
+                    CONSTRAINT fk_budget_workflow_campaign FOREIGN KEY (campaign_id)
+                        REFERENCES campaign_department_campaigns(id) ON DELETE CASCADE ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+        } catch (\PDOException $e) {
+            error_log('CampaignController::ensureBudgetWorkflowSchema - ' . $e->getMessage());
+        }
     }
     
     /**
@@ -1485,26 +1523,6 @@ class CampaignController
                 error_log('CampaignController::destroy - content_usage delete failed: ' . $e->getMessage());
             }
             
-            // If this campaign was created from an AI recommendation, deleting the
-            // campaign must also return that recommendation to its pre-accept state.
-            // The FK on converted_campaign_id only performs ON DELETE SET NULL; it does
-            // not clear approval_status / accepted_at / accepted_by, which previously
-            // left a stale ACCEPTED badge after the campaign itself had been deleted.
-            try {
-                $stmt = $this->pdo->prepare("
-                    UPDATE `campaign_department_ai_recommendations`
-                    SET converted_campaign_id = NULL,
-                        approval_status = 'recommended',
-                        accepted_at = NULL,
-                        accepted_by = NULL,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE converted_campaign_id = :id
-                ");
-                $stmt->execute(['id' => $id]);
-            } catch (\PDOException $e) {
-                error_log('CampaignController::destroy - AI recommendation reset failed: ' . $e->getMessage());
-            }
-
             // Delete the campaign
             $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_campaigns` WHERE id = :id');
             $stmt->execute(['id' => $id]);
@@ -1623,9 +1641,19 @@ class CampaignController
             $availablePartners = $this->pdo->query("SELECT id, name, organization_type FROM campaign_department_partners WHERE COALESCE(status,'active') <> 'archived' ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
             $segments = $this->pdo->query('SELECT id, segment_name, geographic_scope, location_reference, sector_type, risk_level, is_archived FROM campaign_department_audience_segments ORDER BY is_archived ASC, segment_name ASC')->fetchAll(PDO::FETCH_ASSOC);
 
+            $workflowStmt = $this->pdo->prepare('SELECT * FROM campaign_budget_workflows WHERE campaign_id = :cid LIMIT 1');
+            $workflowStmt->execute(['cid' => $campaignId]);
+            $budgetWorkflow = $workflowStmt->fetch(PDO::FETCH_ASSOC) ?: [
+                'campaign_id' => $campaignId,
+                'planning_status' => count($budgets) > 0 ? 'finalized' : 'draft',
+                'review_status' => 'none',
+                'rejection_reason' => null,
+            ];
+
             return ['data' => [
                 'reports' => $reports,
                 'budget_items' => $budgets,
+                'budget_workflow' => $budgetWorkflow,
                 'audiences' => $audiences,
                 'participants' => $participants,
                 'partners' => $partners,
@@ -1670,10 +1698,24 @@ class CampaignController
                 if ($segmentId > 0) $insertAudience->execute(['cid' => $campaignId, 'sid' => $segmentId]);
             }
 
+            // Budget workflow: manual planning is Draft until explicitly approved and finalized.
+            // If a finalized budget is edited through the campaign planner, preserve the last
+            // finalized values so Financial & Budgeting can review the revision as Pending.
+            $workflowStmt = $this->pdo->prepare('SELECT * FROM campaign_budget_workflows WHERE campaign_id = :cid LIMIT 1 FOR UPDATE');
+            $workflowStmt->execute(['cid' => $campaignId]);
+            $budgetWorkflow = $workflowStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+            $wasFinalized = ($budgetWorkflow['planning_status'] ?? '') === 'finalized';
+            $preEditSnapshot = (string)($budgetWorkflow['pre_edit_snapshot'] ?? '');
+            if ($wasFinalized && (($budgetWorkflow['review_status'] ?? 'none') !== 'pending' || $preEditSnapshot === '')) {
+                $snapStmt = $this->pdo->prepare("SELECT * FROM campaign_budgets WHERE campaign_id = :cid AND COALESCE(is_archived,0)=0 ORDER BY sort_order ASC, id ASC");
+                $snapStmt->execute(['cid' => $campaignId]);
+                $preEditSnapshot = json_encode($snapStmt->fetchAll(PDO::FETCH_ASSOC), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
+            }
+
             // Replace manual budget items only; AI-converted rows are preserved.
             $stmt = $this->pdo->prepare('DELETE FROM campaign_budgets WHERE campaign_id = :cid AND source_recommendation_id IS NULL');
             $stmt->execute(['cid' => $campaignId]);
-            $insertBudget = $this->pdo->prepare('INSERT INTO campaign_budgets (campaign_id,item_name,item_type,quantity,unit_cost,funding_source,notes,created_by,is_archived,category,item_description,sessions_or_days,unit_label,is_estimate,sort_order) VALUES (:cid,:name,:type,:qty,:cost,:funding,:notes,:uid,0,:category,:description,:sessions,:unit_label,0,:sort_order)');
+            $insertBudget = $this->pdo->prepare('INSERT INTO campaign_budgets (campaign_id,item_name,item_type,quantity,unit_cost,funding_source,notes,created_by,is_archived,category,item_description,sessions_or_days,unit_label,related_action,budget_destination,is_estimate,sort_order) VALUES (:cid,:name,:type,:qty,:cost,:funding,:notes,:uid,0,:category,:description,:sessions,:unit_label,:related_action,:budget_destination,0,:sort_order)');
             $totalBudget = 0.0;
             $sort = 0;
             foreach ($budgetItems as $item) {
@@ -1697,14 +1739,30 @@ class CampaignController
                     'description' => trim((string)($item['item_description'] ?? '')) ?: null,
                     'sessions' => $sessions,
                     'unit_label' => trim((string)($item['unit_label'] ?? '')) ?: null,
+                    'related_action' => trim((string)($item['related_action'] ?? '')) ?: null,
+                    'budget_destination' => trim((string)($item['budget_destination'] ?? '')) ?: null,
                     'sort_order' => $sort,
                 ]);
             }
 
-            // Include any preserved AI-converted budget rows in the campaign-level compatibility total.
+            // Include preserved AI-converted rows in the campaign-level compatibility total.
             $totalStmt = $this->pdo->prepare('SELECT COALESCE(SUM(quantity * unit_cost * COALESCE(NULLIF(sessions_or_days,0),1)),0) FROM campaign_budgets WHERE campaign_id = :cid AND COALESCE(is_archived,0)=0');
             $totalStmt->execute(['cid' => $campaignId]);
             $totalBudget = (float)$totalStmt->fetchColumn();
+
+            if ($budgetWorkflow) {
+                if ($wasFinalized) {
+                    $stmt = $this->pdo->prepare("UPDATE campaign_budget_workflows SET planning_status='finalized', review_status='pending', rejection_reason=NULL, pre_edit_snapshot=:snapshot, reviewed_by=NULL, reviewed_at=NULL WHERE campaign_id=:cid");
+                    $stmt->execute(['snapshot' => $preEditSnapshot, 'cid' => $campaignId]);
+                } else {
+                    // Any edit before finalization returns the budget plan to Draft for re-approval.
+                    $stmt = $this->pdo->prepare("UPDATE campaign_budget_workflows SET planning_status='draft', review_status='none', rejection_reason=NULL, approved_by=NULL, approved_at=NULL WHERE campaign_id=:cid");
+                    $stmt->execute(['cid' => $campaignId]);
+                }
+            } else {
+                $stmt = $this->pdo->prepare("INSERT INTO campaign_budget_workflows (campaign_id,planning_status,review_status) VALUES (:cid,'draft','none')");
+                $stmt->execute(['cid' => $campaignId]);
+            }
 
             // Manual participants.
             $stmt = $this->pdo->prepare('DELETE FROM campaign_department_campaign_participants WHERE campaign_id = :cid');
