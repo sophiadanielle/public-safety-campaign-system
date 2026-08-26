@@ -311,13 +311,25 @@ try {
                     <label style="font-size: 12px; font-weight: 600; color: #64748b; display: block; margin-bottom: 4px;">Location</label>
                     <select id="filterLocation" onchange="filterSegments()" style="width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
                         <option value="">All Locations</option>
-                        <option value="Barangay Batasan Hills">Batasan Hills</option>
-                        <option value="Barangay Commonwealth">Commonwealth</option>
-                        <option value="Barangay Holy Spirit">Holy Spirit</option>
-                        <option value="Barangay Payatas">Payatas</option>
-                        <option value="Barangay Bagong Silangan">Bagong Silangan</option>
-                        <option value="Barangay Tandang Sora">Tandang Sora</option>
-                        <option value="Barangay Fairview">Fairview</option>
+                        <option value="Dahlia">Dahlia</option>
+                        <option value="Pabong Landas">Pabong Landas</option>
+                        <option value="Heavenly Drive">Heavenly Drive</option>
+                        <option value="Patnubay">Patnubay</option>
+                        <option value="Yakal">Yakal</option>
+                        <option value="Dao">Dao</option>
+                        <option value="Phine">Phine</option>
+                        <option value="Duhat">Duhat</option>
+                        <option value="Narra">Narra</option>
+                        <option value="Acacia">Acacia</option>
+                        <option value="Tamarind">Tamarind</option>
+                        <option value="Molave">Molave</option>
+                        <option value="Mahogany">Mahogany</option>
+                        <option value="Reyes Ave">Reyes Ave</option>
+                        <option value="Pili">Pili</option>
+                        <option value="Eden">Eden</option>
+                        <option value="Paraiso Langka">Paraiso Langka</option>
+                        <option value="Apitong">Apitong</option>
+                        <option value="Lawaan">Lawaan</option>
                     </select>
                 </div>
                 <div>
@@ -408,14 +420,26 @@ try {
                 <div class="form-field">
                     <label style="font-weight: 600; margin-bottom: 6px; display: block;">Location Reference</label>
                     <select id="modal_location_reference" style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
-                        <option value="">Select Barangay...</option>
-                        <option value="Barangay Batasan Hills">Barangay Batasan Hills</option>
-                        <option value="Barangay Commonwealth">Barangay Commonwealth</option>
-                        <option value="Barangay Holy Spirit">Barangay Holy Spirit</option>
-                        <option value="Barangay Payatas">Barangay Payatas</option>
-                        <option value="Barangay Bagong Silangan">Barangay Bagong Silangan</option>
-                        <option value="Barangay Tandang Sora">Barangay Tandang Sora</option>
-                        <option value="Barangay Fairview">Barangay Fairview</option>
+                        <option value="">Select Location...</option>
+                        <option value="Dahlia">Dahlia</option>
+                        <option value="Pabong Landas">Pabong Landas</option>
+                        <option value="Heavenly Drive">Heavenly Drive</option>
+                        <option value="Patnubay">Patnubay</option>
+                        <option value="Yakal">Yakal</option>
+                        <option value="Dao">Dao</option>
+                        <option value="Phine">Phine</option>
+                        <option value="Duhat">Duhat</option>
+                        <option value="Narra">Narra</option>
+                        <option value="Acacia">Acacia</option>
+                        <option value="Tamarind">Tamarind</option>
+                        <option value="Molave">Molave</option>
+                        <option value="Mahogany">Mahogany</option>
+                        <option value="Reyes Ave">Reyes Ave</option>
+                        <option value="Pili">Pili</option>
+                        <option value="Eden">Eden</option>
+                        <option value="Paraiso Langka">Paraiso Langka</option>
+                        <option value="Apitong">Apitong</option>
+                        <option value="Lawaan">Lawaan</option>
                     </select>
                 </div>
                 <div class="form-field">
@@ -484,25 +508,28 @@ try {
                 </select>
             </div>
             <div class="form-field">
-                <label>Location Reference (Quezon City Barangay)</label>
+                <label>Location Reference</label>
                 <select id="location_reference">
-                    <option value="">Select Barangay...</option>
-                    <option value="Barangay Batasan Hills">Barangay Batasan Hills</option>
-                    <option value="Barangay Commonwealth">Barangay Commonwealth</option>
-                    <option value="Barangay Holy Spirit">Barangay Holy Spirit</option>
-                    <option value="Barangay Payatas">Barangay Payatas</option>
-                    <option value="Barangay Bagong Silangan">Barangay Bagong Silangan</option>
-                    <option value="Barangay Tandang Sora">Barangay Tandang Sora</option>
-                    <option value="Barangay UP Campus">Barangay UP Campus</option>
-                    <option value="Barangay Diliman">Barangay Diliman</option>
-                    <option value="Barangay Matandang Balara">Barangay Matandang Balara</option>
-                    <option value="Barangay Loyola Heights">Barangay Loyola Heights</option>
-                    <option value="Barangay Cubao">Barangay Cubao</option>
-                    <option value="Barangay Kamuning">Barangay Kamuning</option>
-                    <option value="Barangay Project 6">Barangay Project 6</option>
-                    <option value="Barangay Project 8">Barangay Project 8</option>
-                    <option value="Barangay Fairview">Barangay Fairview</option>
-                    <option value="Barangay Nagkaisang Nayon">Barangay Nagkaisang Nayon</option>
+                    <option value="">Select Location...</option>
+                    <option value="Dahlia">Dahlia</option>
+                    <option value="Pabong Landas">Pabong Landas</option>
+                    <option value="Heavenly Drive">Heavenly Drive</option>
+                    <option value="Patnubay">Patnubay</option>
+                    <option value="Yakal">Yakal</option>
+                    <option value="Dao">Dao</option>
+                    <option value="Phine">Phine</option>
+                    <option value="Duhat">Duhat</option>
+                    <option value="Narra">Narra</option>
+                    <option value="Acacia">Acacia</option>
+                    <option value="Tamarind">Tamarind</option>
+                    <option value="Molave">Molave</option>
+                    <option value="Mahogany">Mahogany</option>
+                    <option value="Reyes Ave">Reyes Ave</option>
+                    <option value="Pili">Pili</option>
+                    <option value="Eden">Eden</option>
+                    <option value="Paraiso Langka">Paraiso Langka</option>
+                    <option value="Apitong">Apitong</option>
+                    <option value="Lawaan">Lawaan</option>
                 </select>
             </div>
             <div class="form-field">
@@ -549,43 +576,11 @@ try {
         <div class="status" id="createStatus" style="margin-top:12px;"></div>
     </section>
 
-    <!-- Audience Members View -->
-    <section id="audience-members" class="card" style="margin-bottom:32px;">
-        <h2 class="section-title">
-            <span class="section-step">Step 3</span>
-            Segment Members
-        </h2>
-        <div class="section-description">
-            <strong>What this shows:</strong> This connects residents to segments, enabling campaign targeting, attendance tracking, participation analysis, and message personalization across the system. Members represent actual residents whose membership affects targeting behavior system-wide. You can see who is included in each segment, their contact information, and location details.
-            <br><br>
-            <strong>When to use:</strong> Review segment members after creating a segment or importing members to ensure the correct residents are included. This membership data is used by Campaign Management for targeting, Scheduling/Events for attendance tracking, and Reporting & Analytics for participation analysis. Verify members before using segments in campaigns or events.
-        </div>
-        <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
-            <div class="form-field">
-                <label>Select Segment <span style="color:#dc2626;">*</span></label>
-                <select id="viewMembersSegmentId" style="font-size:15px; padding:12px 16px;">
-                    <option value="">-- Choose a segment to view its members --</option>
-                </select>
-                <div class="helper-text">💡 <strong>Need help?</strong> Don't see any segments? Go to "All Segments" section above to create your first segment, or wait a moment for segments to load. Segments are reusable across Campaign Management, Content Distribution, and Scheduling modules.</div>
-            </div>
-            <div class="form-field" style="margin-top:8px;">
-                <button class="btn btn-primary" onclick="viewSegmentMembers()" style="width:100%; padding:14px 20px; font-size:15px; font-weight:600;">
-                    <i class="fas fa-users" style="margin-right:8px;"></i>View Segment Members
-                </button>
-            </div>
-        </div>
-        <div class="empty-state" id="audienceMembersEmptyState" style="display:none;">
-            <div class="empty-state-icon"><i class="fas fa-user-friends"></i></div>
-            <p style="font-size:16px; font-weight:600; margin:0 0 8px 0; color:#475569;">No segment selected yet</p>
-            <p style="margin:0; font-size:14px; line-height:1.6;">Choose a segment above and click <strong>"View Segment Members"</strong> to see the list of residents in that segment. Member data affects targeting behavior system-wide for campaigns, content distribution, and events. If a segment has no members yet, you can add them using the "Import Members" section below.</p>
-        </div>
-        <div id="audienceMembersContainer" style="margin-top: 20px;"></div>
-    </section>
 
     <!-- Participation History -->
     <section id="segment-analytics" class="card" style="margin-bottom:32px;">
         <h2 class="section-title">
-            <span class="section-step">Step 4</span>
+            <span class="section-step">Step 3</span>
             Participation History
         </h2>
         <div class="section-description">
@@ -842,7 +837,6 @@ function renderSegmentsTable() {
                 <tr>
                     <th>ID</th>
                     <th>Segment Name</th>
-                    <th>QTY</th>
                     <th>Geographic Scope</th>
                     <th>Location</th>
                     <th>Sector Type</th>
@@ -862,7 +856,6 @@ function renderSegmentsTable() {
             <tr>
                 <td>#${segmentId}</td>
                 <td><strong>${segmentName}</strong></td>
-                <td><strong>${Number(seg.qty || 0).toLocaleString()}</strong></td>
                 <td>${seg.geographic_scope || '—'}</td>
                 <td>${getSegmentLocations(seg).length ? getSegmentLocations(seg).join(', ') : '—'}</td>
                 <td>${seg.sector_type || '—'}</td>
