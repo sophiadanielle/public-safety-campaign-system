@@ -24,7 +24,9 @@ class CampaignPartnerMatchingService
     public function getActivePartners(): array
     {
         $statusExpr = $this->hasColumn('campaign_department_partners', 'status') ? 'status' : "'active' AS status";
-        $where = $this->hasColumn('campaign_department_partners', 'status') ? "WHERE status IS NULL OR status != 'archived'" : '';
+        $where = $this->hasColumn('campaign_department_partners', 'status')
+            ? "WHERE (status IS NULL OR status != 'archived') AND NOT (name LIKE 'AI Recommended - %' AND contact_person IS NULL AND contact_email IS NULL AND contact_phone IS NULL)"
+            : "WHERE NOT (name LIKE 'AI Recommended - %' AND contact_person IS NULL AND contact_email IS NULL AND contact_phone IS NULL)";
         $stmt = $this->pdo->query("
             SELECT id, name, organization_type, {$statusExpr}, contact_person, contact_email, contact_phone
             FROM campaign_department_partners

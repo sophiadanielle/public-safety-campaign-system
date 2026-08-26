@@ -70,6 +70,11 @@ class PartnerController
             $where[] = "(status IS NULL OR status != 'archived')";
         }
         
+        // AI recommendation suggestions are planning data, not master partner records.
+        // Hide legacy placeholder rows created by older AI acceptance code so they do
+        // not appear as blank "AI Recommended - Other" entries in All Partners.
+        $where[] = "NOT (name LIKE 'AI Recommended - %' AND contact_person IS NULL AND contact_email IS NULL AND contact_phone IS NULL)";
+
         $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
         
         $sql = "SELECT id, name, organization_type, contact_person, contact_email, contact_phone, 

@@ -1023,7 +1023,7 @@ class AiRecommendationPlanningController
         // AI recommendations may suggest organizations, but they must NEVER create
         // master records in partners.php -> All Partners. Only partner matches that
         // already point to a real campaign_department_partners.id are linked here.
-        $stmt = $this->pdo->prepare("\n            SELECT *\n            FROM campaign_ai_recommendation_partners\n            WHERE recommendation_id = ?\n              AND partner_id IS NOT NULL\n              AND partner_id > 0\n            ORDER BY id ASC\n        ");
+        $stmt = $this->pdo->prepare("\n            SELECT arp.*\n            FROM campaign_ai_recommendation_partners arp\n            INNER JOIN campaign_department_partners p ON p.id = arp.partner_id\n            WHERE arp.recommendation_id = ?\n              AND arp.partner_id IS NOT NULL\n              AND arp.partner_id > 0\n              AND NOT (p.name LIKE 'AI Recommended - %'\n                       AND p.contact_person IS NULL\n                       AND p.contact_email IS NULL\n                       AND p.contact_phone IS NULL)\n            ORDER BY arp.id ASC\n        ");
         $stmt->execute([$recommendationId]);
         $matched = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1031,7 +1031,7 @@ class AiRecommendationPlanningController
             return 0;
         }
 
-        $partnerExists = $this->pdo->prepare('SELECT id FROM campaign_department_partners WHERE id = ? LIMIT 1');
+        $partnerExists = $this->pdo->prepare("SELECT id FROM campaign_department_partners WHERE id = ? AND NOT (name LIKE 'AI Recommended - %' AND contact_person IS NULL AND contact_email IS NULL AND contact_phone IS NULL) LIMIT 1");
         $engagementExists = $this->pdo->prepare("\n            SELECT id FROM campaign_department_partner_engagements\n            WHERE partner_id = ? AND campaign_id = ?\n            LIMIT 1\n        ");
         $insertEngagement = $this->pdo->prepare("\n            INSERT INTO campaign_department_partner_engagements\n                (partner_id, campaign_id, engagement_type, notes)\n            VALUES (?, ?, 'ai_recommended', ?)\n        ");
 
@@ -1249,42 +1249,197 @@ class AiRecommendationPlanningController
 
     private function copyAiAudienceToCampaign(int $recommendationId, int $campaignId, array $rec): int
     {
+        $this->ensureAiAudienceSegmentColumns();
         $this->pdo->prepare('DELETE FROM campaign_department_campaign_audience WHERE campaign_id = ?')->execute([$campaignId]);
 
         $audienceText = trim((string) ($rec['ai_target_audience'] ?? ''));
         if ($audienceText === '') {
             $audienceText = 'Residents and households in affected areas';
         }
-        $location = $this->firstLocation($rec['affected_locations'] ?? null) ?: 'Barangay San Agustin';
+
+        $locations = $this->normalizeAiAudienceLocations($rec['affected_locations'] ?? null);
+        if (empty($locations)) {
+            $locations = ['Barangay San Agustin'];
+        }
+
         $priority = strtolower((string) ($rec['priority_level'] ?? 'medium'));
         $risk = $priority === 'high' || $priority === 'critical' ? 'High' : ($priority === 'low' ? 'Low' : 'Medium');
         $sectors = $this->inferAudienceSectors($audienceText);
-        if (empty($sectors)) $sectors = ['Households'];
+        if (empty($sectors)) {
+            $sectors = ['Households'];
+        }
 
-        $find = $this->pdo->prepare("\n            SELECT id FROM campaign_department_audience_segments\n            WHERE is_archived = 0 AND sector_type = ? AND LOWER(COALESCE(location_reference,'')) = LOWER(?)\n            ORDER BY id DESC LIMIT 1\n        ");
-        $insertSegment = $this->pdo->prepare("\n            INSERT INTO campaign_department_audience_segments\n                (segment_name, geographic_scope, location_reference, sector_type, risk_level,\n                 basis_of_segmentation, criteria, is_archived)\n            VALUES (?, 'Barangay', ?, ?, ?, 'Incident pattern reference', ?, 0)\n        ");
+        // Use an explicit AI audience quantity when one exists. If Gemini did not give
+        // a numeric target, use the source report count as a conservative data-backed
+        // minimum. The value is always at least 1, so AI-created segments never start at 0.
+        $recommendedTotalQty = $this->estimateAiAudienceQuantity($rec, $audienceText);
+        $combinationCount = max(1, count($sectors) * count($locations));
+        $qtyPerSegmentLocation = max(1, (int) ceil($recommendedTotalQty / $combinationCount));
+
+        $findBySector = $this->pdo->prepare("\n            SELECT id, segment_name, COALESCE(qty, 0) AS qty, location_reference, geographies_json\n            FROM campaign_department_audience_segments\n            WHERE COALESCE(is_archived, 0) = 0 AND sector_type = ?\n            ORDER BY id DESC\n        ");
+        $updateSegment = $this->pdo->prepare("\n            UPDATE campaign_department_audience_segments\n            SET qty = COALESCE(qty, 0) + ?,\n                geographies_json = ?,\n                location_reference = COALESCE(NULLIF(location_reference, ''), ?),\n                risk_level = ?,\n                basis_of_segmentation = 'Incident pattern reference',\n                criteria = ?,\n                is_archived = 0,\n                updated_at = CURRENT_TIMESTAMP\n            WHERE id = ?\n        ");
+        $insertSegment = $this->pdo->prepare("\n            INSERT INTO campaign_department_audience_segments\n                (segment_name, qty, geographic_scope, location_reference, sector_type, risk_level,\n                 geographies_json, basis_of_segmentation, criteria, is_archived)\n            VALUES (?, ?, 'Barangay', ?, ?, ?, ?, 'Incident pattern reference', ?, 0)\n        ");
         $link = $this->pdo->prepare('INSERT IGNORE INTO campaign_department_campaign_audience (campaign_id, segment_id) VALUES (?, ?)');
 
-        $linked = 0;
+        $linkedIds = [];
         foreach ($sectors as $sector) {
-            $find->execute([$sector, $location]);
-            $segmentId = (int) $find->fetchColumn();
-            if ($segmentId <= 0) {
-                $segmentName = 'AI Target - ' . $sector . ' - Rec #' . $recommendationId;
+            foreach ($locations as $location) {
+                $findBySector->execute([$sector]);
+                $candidates = $findBySector->fetchAll(PDO::FETCH_ASSOC);
+                $existing = $this->findAiSegmentForLocation($candidates, $location);
+
                 $criteria = json_encode([
                     'source' => 'ai_recommendation',
                     'recommendation_id' => $recommendationId,
                     'target_audience' => $audienceText,
+                    'recommended_qty_total' => $recommendedTotalQty,
+                    'qty_added_for_this_location' => $qtyPerSegmentLocation,
+                    'qty_basis' => $this->aiAudienceQuantityBasis($rec, $audienceText),
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-                $insertSegment->execute([$segmentName, $location, $sector, $risk, $criteria]);
-                $segmentId = (int) $this->pdo->lastInsertId();
-            }
-            if ($segmentId > 0) {
-                $link->execute([$campaignId, $segmentId]);
-                $linked++;
+
+                if ($existing) {
+                    $segmentId = (int) $existing['id'];
+                    $mergedLocations = $this->mergeSegmentLocations(
+                        $existing['geographies_json'] ?? null,
+                        $existing['location_reference'] ?? null,
+                        $location
+                    );
+                    $updateSegment->execute([
+                        $qtyPerSegmentLocation,
+                        json_encode($mergedLocations, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                        $location,
+                        $risk,
+                        $criteria,
+                        $segmentId,
+                    ]);
+                } else {
+                    $segmentName = 'AI Target - ' . $sector . ' - Rec #' . $recommendationId;
+                    $insertSegment->execute([
+                        $segmentName,
+                        $qtyPerSegmentLocation,
+                        $location,
+                        $sector,
+                        $risk,
+                        json_encode([$location], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                        $criteria,
+                    ]);
+                    $segmentId = (int) $this->pdo->lastInsertId();
+                }
+
+                if ($segmentId > 0) {
+                    $link->execute([$campaignId, $segmentId]);
+                    $linkedIds[$segmentId] = true;
+                }
             }
         }
-        return $linked;
+
+        return count($linkedIds);
+    }
+
+    private function ensureAiAudienceSegmentColumns(): void
+    {
+        try {
+            if (!$this->columnExists('campaign_department_audience_segments', 'qty')) {
+                $this->pdo->exec("ALTER TABLE campaign_department_audience_segments ADD COLUMN qty INT UNSIGNED NOT NULL DEFAULT 0 AFTER segment_name");
+            }
+        } catch (\Throwable $e) {
+            error_log('AI audience qty column ensure failed: ' . $e->getMessage());
+        }
+
+        try {
+            if (!$this->columnExists('campaign_department_audience_segments', 'geographies_json')) {
+                $this->pdo->exec("ALTER TABLE campaign_department_audience_segments ADD COLUMN geographies_json JSON NULL AFTER risk_level");
+            }
+        } catch (\Throwable $e) {
+            error_log('AI audience geographies_json column ensure failed: ' . $e->getMessage());
+        }
+    }
+
+    private function normalizeAiAudienceLocations(mixed $value): array
+    {
+        $locations = [];
+        foreach ($this->decodeList($value) as $location) {
+            if (!is_scalar($location)) {
+                continue;
+            }
+            $name = trim((string) $location);
+            if ($name !== '') {
+                $locations[] = $name;
+            }
+        }
+        return array_values(array_unique($locations));
+    }
+
+    private function mergeSegmentLocations(mixed $json, mixed $primary, string $newLocation): array
+    {
+        $locations = [];
+        if (is_string($json) && trim($json) !== '') {
+            $decoded = json_decode($json, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $location) {
+                    if (is_scalar($location) && trim((string) $location) !== '') {
+                        $locations[] = trim((string) $location);
+                    }
+                }
+            }
+        }
+        if (is_scalar($primary) && trim((string) $primary) !== '') {
+            $locations[] = trim((string) $primary);
+        }
+        $locations[] = trim($newLocation);
+        return array_values(array_unique(array_filter($locations)));
+    }
+
+    private function findAiSegmentForLocation(array $candidates, string $location): ?array
+    {
+        $needle = mb_strtolower(trim($location));
+        foreach ($candidates as $candidate) {
+            $candidateLocations = $this->mergeSegmentLocations(
+                $candidate['geographies_json'] ?? null,
+                $candidate['location_reference'] ?? null,
+                ''
+            );
+            foreach ($candidateLocations as $candidateLocation) {
+                if (mb_strtolower(trim((string) $candidateLocation)) === $needle) {
+                    return $candidate;
+                }
+            }
+        }
+        return null;
+    }
+
+    private function estimateAiAudienceQuantity(array $rec, string $audienceText): int
+    {
+        // Prefer a number explicitly written in the AI target audience text.
+        if (preg_match('/\\b(\\d{1,6})\\s*(?:people|persons|participants|residents|students|youth|households|families|beneficiaries|attendees|members)\\b/i', $audienceText, $m)) {
+            return max(1, (int) $m[1]);
+        }
+
+        $snapshot = $rec['data_snapshot'] ?? null;
+        if (is_string($snapshot) && trim($snapshot) !== '') {
+            $snapshot = json_decode($snapshot, true);
+        }
+        if (is_array($snapshot)) {
+            foreach (['target_audience_qty', 'audience_qty', 'audience_size', 'target_count', 'estimated_participants', 'participant_count', 'expected_attendance', 'attendance_count', 'beneficiary_count'] as $key) {
+                if (isset($snapshot[$key]) && is_numeric($snapshot[$key]) && (int) $snapshot[$key] > 0) {
+                    return (int) $snapshot[$key];
+                }
+            }
+        }
+
+        // When Gemini gives no numeric audience target, use source report count as the
+        // conservative minimum represented by the evidence rather than writing zero.
+        return max(1, (int) ($rec['report_count'] ?? 1));
+    }
+
+    private function aiAudienceQuantityBasis(array $rec, string $audienceText): string
+    {
+        if (preg_match('/\\b(\\d{1,6})\\s*(?:people|persons|participants|residents|students|youth|households|families|beneficiaries|attendees|members)\\b/i', $audienceText)) {
+            return 'Explicit numeric target from AI target audience';
+        }
+        return ((int) ($rec['report_count'] ?? 0) > 0)
+            ? 'Conservative minimum derived from recommendation source report count'
+            : 'Minimum AI segment quantity fallback';
     }
 
     private function inferAudienceSectors(string $text): array
