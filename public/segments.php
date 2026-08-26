@@ -1460,6 +1460,7 @@ async function viewSegment(segmentId) {
                         </div>
                     </div>
                     <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+                        <span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">QTY: ${Number(seg.qty || 0).toLocaleString()}</span>
                         ${seg.geographic_scope ? `<span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;">${seg.geographic_scope}</span>` : ''}
                         ${seg.sector_type ? `<span style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;">${seg.sector_type}</span>` : ''}
                         ${seg.risk_level ? `<span style="background: ${riskStyle.bg}; color: ${riskStyle.color}; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600;">${seg.risk_level}</span>` : ''}
