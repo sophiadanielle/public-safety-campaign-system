@@ -1333,8 +1333,32 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
  * needs that ID for details/generate/accept requests, so resolve the exact rows by
  * the same recommendation_hash used by store_recommendations_in_db().
  */
+/**
+ * Repair stale acceptance state left behind when an AI-created campaign is deleted.
+ * The FK uses ON DELETE SET NULL for converted_campaign_id, but approval_status and
+ * accepted_at/accepted_by are ordinary columns and otherwise remain 'accepted'.
+ */
+function heal_stale_ai_acceptance_states(PDO $pdo): void
+{
+    try {
+        $pdo->exec(
+            "UPDATE campaign_department_ai_recommendations r
+             LEFT JOIN campaign_department_campaigns c ON c.id = r.converted_campaign_id
+             SET r.approval_status = 'recommended',
+                 r.accepted_at = NULL,
+                 r.accepted_by = NULL,
+                 r.converted_campaign_id = NULL
+             WHERE r.approval_status = 'accepted'
+               AND (r.converted_campaign_id IS NULL OR c.id IS NULL)"
+        );
+    } catch (Throwable $e) {
+        error_log('Failed to heal stale AI acceptance states: ' . $e->getMessage());
+    }
+}
+
 function attach_persisted_recommendation_ids(PDO $pdo, array $recommendations): array
 {
+    heal_stale_ai_acceptance_states($pdo);
     if (empty($recommendations)) {
         return $recommendations;
     }
@@ -1382,6 +1406,7 @@ function attach_persisted_recommendation_ids(PDO $pdo, array $recommendations): 
 function load_cached_recommendations(PDO $pdo): ?array
 {
     try {
+        heal_stale_ai_acceptance_states($pdo);
         $stmt = $pdo->query(
             "SELECT * FROM campaign_department_ai_recommendations
              WHERE is_test_data = 0

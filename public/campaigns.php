@@ -2333,7 +2333,7 @@ function renderAiRecommendationsTable() {
         badge.textContent = `${prio.label} (${Number(rec.priority_score || 0).toFixed(0)})`;
         priorityCell.appendChild(badge);
 
-        const isAccepted = rec.converted_campaign_id || rec.approval_status === 'accepted';
+        const isAccepted = Number(rec.converted_campaign_id || 0) > 0;
         if (isAccepted) {
             const acceptedBadge = document.createElement('span');
             const cId = rec.converted_campaign_id ? ' #' + rec.converted_campaign_id : '';

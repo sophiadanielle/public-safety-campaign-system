@@ -1485,6 +1485,24 @@ class CampaignController
                 error_log('CampaignController::destroy - content_usage delete failed: ' . $e->getMessage());
             }
             
+            // If this campaign came from an AI recommendation, deleting the campaign must
+            // also release that recommendation so it becomes available again. The foreign key
+            // only clears converted_campaign_id (ON DELETE SET NULL); it does not clear the
+            // acceptance fields by itself.
+            try {
+                $stmt = $this->pdo->prepare(
+                    "UPDATE `campaign_department_ai_recommendations`
+                     SET approval_status = 'recommended',
+                         accepted_at = NULL,
+                         accepted_by = NULL,
+                         converted_campaign_id = NULL
+                     WHERE converted_campaign_id = :id"
+                );
+                $stmt->execute(['id' => $id]);
+            } catch (\PDOException $e) {
+                error_log('CampaignController::destroy - AI recommendation reset failed: ' . $e->getMessage());
+            }
+
             // Delete the campaign
             $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_campaigns` WHERE id = :id');
             $stmt->execute(['id' => $id]);
