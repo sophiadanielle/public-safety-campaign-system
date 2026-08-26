@@ -1485,6 +1485,26 @@ class CampaignController
                 error_log('CampaignController::destroy - content_usage delete failed: ' . $e->getMessage());
             }
             
+            // If this campaign was created from an AI recommendation, deleting the
+            // campaign must also return that recommendation to its pre-accept state.
+            // The FK on converted_campaign_id only performs ON DELETE SET NULL; it does
+            // not clear approval_status / accepted_at / accepted_by, which previously
+            // left a stale ACCEPTED badge after the campaign itself had been deleted.
+            try {
+                $stmt = $this->pdo->prepare("
+                    UPDATE `campaign_department_ai_recommendations`
+                    SET converted_campaign_id = NULL,
+                        approval_status = 'recommended',
+                        accepted_at = NULL,
+                        accepted_by = NULL,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE converted_campaign_id = :id
+                ");
+                $stmt->execute(['id' => $id]);
+            } catch (\PDOException $e) {
+                error_log('CampaignController::destroy - AI recommendation reset failed: ' . $e->getMessage());
+            }
+
             // Delete the campaign
             $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_campaigns` WHERE id = :id');
             $stmt->execute(['id' => $id]);
