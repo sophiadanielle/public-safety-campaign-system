@@ -765,6 +765,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
         border-bottom: none;
     }
     
+    .data-table tbody tr:hover {
         background: #f8fafc;
         transform: scale(1.01);
     }
@@ -1312,7 +1313,7 @@ require_once __DIR__ . '/../sidebar/includes/block_viewer_access.php';
                             <p class="planner-help">Enter the campaign details manually. The campaign remains <strong>Draft</strong> and still follows the existing Secretary/Captain approval workflow.</p>
                             <div class="planner-grid">
                                 <div class="form-field"><label for="title">Campaign Title *</label><input type="text" id="title" required placeholder="Enter campaign title..."></div>
-                                <div class="form-field"><label for="category">Category *</label><input id="category" list="manualCategoryOptions" required placeholder="e.g. Crime, Disaster, Fire Safety"><datalist id="manualCategoryOptions"><option value="crime"><option value="disaster"><option value="fire"><option value="flood"><option value="earthquake"><option value="health"><option value="road safety"><option value="general"></datalist></div>
+                                <div class="form-field"><label for="category">Category *</label><input id="category" list="manualCategoryOptions" required placeholder="e.g. Crime, Disaster, Fire Safety"><datalist id="manualCategoryOptions"><option value="crime"><option value="disaster"><option value="fire"><option value="flood"><option value="earthquake"><option value="health"><option value="education"><option value="road safety"><option value="general"></datalist></div>
                                 <div class="form-field"><label for="start_datetime">Start Date & Time</label><input id="start_datetime" type="datetime-local"></div>
                                 <div class="form-field"><label for="end_datetime">End Date & Time</label><input id="end_datetime" type="datetime-local"></div>
                                 <div class="form-field full"><label for="objectives">Objectives *</label><textarea id="objectives" rows="4" placeholder="Primary objectives and goals..."></textarea></div>
@@ -2299,8 +2300,12 @@ function getPriorityBadge(level, score) {
 }
 
 function getCategoryBadge(source) {
-    if (source === 'disaster') {
+    const normalized = String(source || '').trim().toLowerCase();
+    if (normalized === 'disaster') {
         return { className: 'badge-disaster', label: 'Disaster', icon: 'fa-exclamation-triangle', color: '#dc2626' };
+    }
+    if (normalized === 'education') {
+        return { className: 'badge-education', label: 'Education', icon: 'fa-graduation-cap', color: '#0f766e' };
     }
     return { className: 'badge-crime', label: 'Crime', icon: 'fa-shield-alt', color: '#667eea' };
 }

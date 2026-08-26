@@ -527,6 +527,8 @@ class AiRecommendationPlanningController
             $budget = (float) $budget;
         }
 
+        $acceptedCategory = $this->acceptedCampaignCategory($rec);
+
         $stmt = $this->pdo->prepare("
             INSERT INTO campaign_department_campaigns
                 (title, description, category, geographic_scope, status,
@@ -538,7 +540,7 @@ class AiRecommendationPlanningController
         $stmt->execute([
             trim((string) ($rec['campaign_title'] ?? '')),
             $rec['campaign_description'] ?? $rec['description'] ?? null,
-            $rec['category'] ?? null,
+            $acceptedCategory,
             'barangay',
             $startDate,
             $endDate,
@@ -553,6 +555,60 @@ class AiRecommendationPlanningController
         ]);
 
         return (int) $this->pdo->lastInsertId();
+    }
+
+    private function acceptedCampaignCategory(array $rec): string
+    {
+        $trend = strtolower(trim((string) ($rec['trend_key'] ?? '')));
+        $source = $this->recommendationSourceType($rec);
+
+        if ($source === 'disaster' || str_starts_with($trend, 'disaster:')) {
+            return 'disaster';
+        }
+
+        if (str_contains($trend, 'youth-safety') || str_contains($trend, 'drug-related')) {
+            return 'education';
+        }
+
+        if (preg_match('/violent|homicide|assault|domestic|sexual|kidnapp|robbery|theft|burglary|vehicle-theft|carnapp|public-disorder|vandalism/', $trend)) {
+            return 'crime';
+        }
+
+        $actions = $this->decodeList($rec['ai_recommended_actions'] ?? null);
+        $text = strtolower(trim(implode(' ', array_filter([
+            (string) ($rec['campaign_title'] ?? ''),
+            (string) ($rec['ai_target_audience'] ?? ''),
+            implode(' ', array_map(static fn($v) => is_scalar($v) ? (string) $v : '', $actions)),
+        ]))));
+
+        $educational = (bool) preg_match('/\b(awareness|educat|seminar|workshop|training|orientation|leadership|peer-led|peer education|student|students|school|schools|youth|kabataan|prevention program|information campaign|responsible citizenship)\b/u', $text);
+        $enforcement = (bool) preg_match('/\b(patrol|enforcement|apprehend|apprehension|arrest|surveillance|hotspot operation|police operation|checkpoint|raid|law enforcement)\b/u', $text);
+
+        return ($educational && !$enforcement) ? 'education' : 'crime';
+    }
+
+    private function recommendationSourceType(array $recommendation): string
+    {
+        $ids = $this->decodeList($recommendation['cluster_report_ids'] ?? $recommendation['source_report_ids'] ?? null);
+        foreach ($ids as $raw) {
+            if (is_array($raw)) {
+                $source = strtolower(trim((string) ($raw['source_type'] ?? $raw['source'] ?? '')));
+                if ($source === 'emergency') $source = 'disaster';
+                if (in_array($source, ['crime', 'disaster'], true)) {
+                    return $source;
+                }
+            }
+        }
+
+        $trend = strtolower((string) ($recommendation['trend_key'] ?? ''));
+        if (str_starts_with($trend, 'disaster:')) {
+            return 'disaster';
+        }
+
+        // Backward compatibility for older recommendations where category was
+        // also used as the source field.
+        $legacy = strtolower((string) ($recommendation['category'] ?? ''));
+        return $legacy === 'disaster' ? 'disaster' : 'crime';
     }
 
     private function assignedStaffSnapshot(int $recommendationId): ?string
@@ -1445,7 +1501,7 @@ class AiRecommendationPlanningController
     private function generateReportSnapshots(int $recommendationId, array $recommendation): array
     {
         $ids = $this->decodeList($recommendation['cluster_report_ids'] ?? $recommendation['source_report_ids'] ?? null);
-        $category = strtolower((string) ($recommendation['category'] ?? 'crime'));
+        $sourceType = $this->recommendationSourceType($recommendation);
         $stored = 0;
         $warnings = [];
 
@@ -1480,7 +1536,7 @@ class AiRecommendationPlanningController
         ");
 
         foreach ($ids as $rawId) {
-            $normalized = $this->normalizeReportId($rawId, $category);
+            $normalized = $this->normalizeReportId($rawId, $sourceType);
             if ($normalized['external_report_id'] === '') {
                 $warnings[] = 'A supporting report ID could not be resolved.';
                 continue;

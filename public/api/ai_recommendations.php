@@ -671,7 +671,7 @@ function aggregate_recommendation_actions(string $trendKey, array $records): arr
             $actions[] = 'Coordinate with banks for enhanced security measures';
         }
         if (str_contains($trendKey, 'drug')) {
-            $actions[] = 'Strengthen anti-drug operations and community rehabilitation';
+            $actions[] = 'Strengthen community-based drug prevention, referral, and rehabilitation coordination';
             $actions[] = 'Conduct drug awareness and prevention programs in schools';
         }
         if (str_contains($trendKey, 'domestic')) {
@@ -1011,6 +1011,50 @@ function generate_campaign_title_from_cluster(string $trendKey, array $records, 
     return 'Disaster Preparedness and Community Resilience Campaign';
 }
 
+function classify_campaign_category(
+    string $trendKey,
+    string $campaignTitle,
+    ?string $targetAudience,
+    array $actions,
+    string $source
+): string {
+    $trend = strtolower(trim($trendKey));
+    $source = strtolower(trim($source));
+
+    // Disaster preparedness remains a Disaster campaign even when its delivery
+    // method includes seminars, drills, or awareness sessions.
+    if ($source === 'disaster' || str_starts_with($trend, 'disaster:')) {
+        return 'disaster';
+    }
+
+    // These are prevention/awareness programs. Their evidence may come from
+    // crime reports, but the campaign itself is educational rather than an
+    // enforcement operation.
+    if (str_contains($trend, 'youth-safety') || str_contains($trend, 'drug-related')) {
+        return 'education';
+    }
+
+    // Direct crime-response themes stay under Crime.
+    if (preg_match('/violent|homicide|assault|domestic|sexual|kidnapp|robbery|theft|burglary|vehicle-theft|carnapp|public-disorder|vandalism/', $trend)) {
+        return 'crime';
+    }
+
+    $text = strtolower(trim(implode(' ', array_filter([
+        $campaignTitle,
+        (string) ($targetAudience ?? ''),
+        implode(' ', array_map(static fn($v) => is_scalar($v) ? (string) $v : '', $actions)),
+    ]))));
+
+    $hasEducationPurpose = (bool) preg_match('/\b(awareness|educat|seminar|workshop|training|orientation|leadership|peer-led|peer education|student|students|school|schools|youth|kabataan|prevention program|information campaign|responsible citizenship)\b/u', $text);
+    $hasEnforcementPurpose = (bool) preg_match('/\b(patrol|enforcement|apprehend|apprehension|arrest|surveillance|hotspot operation|police operation|checkpoint|raid|law enforcement)\b/u', $text);
+
+    if ($hasEducationPurpose && !$hasEnforcementPurpose) {
+        return 'education';
+    }
+
+    return 'crime';
+}
+
 function extract_json_from_text(string $text): ?array
 {
     $text = trim($text);
@@ -1191,6 +1235,7 @@ function store_recommendations_in_db(PDO $pdo, array $recommendations): void
              :ai_reasoning, :ai_recommended_actions, :ai_target_audience,
              :generated_by, :hash, :snapshot, :is_test_data)
             ON DUPLICATE KEY UPDATE
+             category = VALUES(category),
              campaign_title = VALUES(campaign_title),
              main_trend = VALUES(main_trend),
              description = VALUES(description),
@@ -1273,11 +1318,36 @@ function load_cached_recommendations(PDO $pdo): ?array
         }
 
         $recommendations = [];
+        $categoryUpdate = $pdo->prepare('UPDATE campaign_department_ai_recommendations SET category = ? WHERE id = ? AND category <> ?');
         foreach ($rows as $row) {
             $rec = json_decode((string) ($row['data_snapshot'] ?? ''), true);
             if (!is_array($rec)) {
                 $rec = [];
             }
+            $sourceType = strtolower((string) ($rec['source_type'] ?? ''));
+            if (!in_array($sourceType, ['crime', 'disaster'], true)) {
+                $trendForSource = strtolower((string) ($rec['trend_key'] ?? $row['trend_key'] ?? ''));
+                $sourceType = str_starts_with($trendForSource, 'disaster:') ? 'disaster' : 'crime';
+            }
+            $cachedActions = $rec['ai_recommended_actions'] ?? $row['ai_recommended_actions'] ?? [];
+            if (is_string($cachedActions)) {
+                $decodedActions = json_decode($cachedActions, true);
+                $cachedActions = is_array($decodedActions) ? $decodedActions : [$cachedActions];
+            }
+            if (!is_array($cachedActions)) $cachedActions = [];
+            $normalizedCategory = classify_campaign_category(
+                (string) ($rec['trend_key'] ?? $row['trend_key'] ?? ''),
+                (string) ($rec['campaign_title'] ?? $row['campaign_title'] ?? ''),
+                isset($rec['ai_target_audience']) ? (string) $rec['ai_target_audience'] : (isset($row['ai_target_audience']) ? (string) $row['ai_target_audience'] : null),
+                $cachedActions,
+                $sourceType
+            );
+            $rec['category'] = $normalizedCategory;
+            $rec['source_type'] = $sourceType;
+            if (strtolower((string) ($row['category'] ?? '')) !== $normalizedCategory) {
+                $categoryUpdate->execute([$normalizedCategory, (int) $row['id'], $normalizedCategory]);
+            }
+
             $rec['id'] = (int) $row['id'];
             $rec['approval_status'] = $row['approval_status'] ?? 'recommended';
             $rec['converted_campaign_id'] = !empty($row['converted_campaign_id']) ? (int) $row['converted_campaign_id'] : null;
@@ -1456,8 +1526,19 @@ try {
 
         $isTest = false;
 
+        $campaignCategory = classify_campaign_category(
+            $trendKey,
+            $campaignTitle,
+            $targetAudience,
+            $actions,
+            (string) $cluster['source']
+        );
+
         $rec = [
-            'category' => $cluster['source'],
+            // category describes WHAT the campaign is. source_type describes
+            // WHERE the evidence came from (crime/disaster/partner data).
+            'category' => $campaignCategory,
+            'source_type' => $cluster['source'],
             'campaign_title' => $campaignTitle,
             'main_trend' => $cluster['trend_label'],
             'trend_key' => $trendKey,
