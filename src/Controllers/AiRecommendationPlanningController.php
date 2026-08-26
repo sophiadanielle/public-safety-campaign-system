@@ -566,7 +566,12 @@ class AiRecommendationPlanningController
             return 'disaster';
         }
 
-        if (str_contains($trend, 'youth-safety') || str_contains($trend, 'drug-related')) {
+        $titleLower = strtolower(trim((string) ($rec['campaign_title'] ?? '')));
+        if (
+            str_contains($trend, 'youth-safety') ||
+            str_contains($trend, 'drug-related') ||
+            preg_match('/drug[- ]?free|say no to drugs|choose life|anti[- ]?drug awareness|drug prevention|youth|student|school|kabataan/u', $titleLower)
+        ) {
             return 'education';
         }
 

@@ -2299,6 +2299,34 @@ function getPriorityBadge(level, score) {
     return { className: 'priority-low', label: 'Low', color: '#16a34a' };
 }
 
+function normalizeAiCampaignCategory(rec = {}) {
+    const trend = String(rec.trend_key || '').trim().toLowerCase();
+    const sourceType = String(rec.source_type || rec.source || '').trim().toLowerCase();
+    const currentCategory = String(rec.category || '').trim().toLowerCase();
+    const title = String(rec.campaign_title || rec.recommended_campaign_title || '').trim().toLowerCase();
+    const audience = String(rec.ai_target_audience || rec.target_audience || '').trim().toLowerCase();
+    const actionsRaw = Array.isArray(rec.ai_recommended_actions) ? rec.ai_recommended_actions.join(' ') : String(rec.ai_recommended_actions || '');
+    const text = `${title} ${audience} ${actionsRaw}`.toLowerCase();
+
+    if (sourceType === 'disaster' || currentCategory === 'disaster' || trend.startsWith('disaster:')) {
+        return 'disaster';
+    }
+
+    // Campaign category describes WHAT the campaign does, not WHERE its evidence came from.
+    // Drug-prevention and youth campaigns are educational even when triggered by crime reports.
+    if (
+        trend.includes('drug-related') ||
+        trend.includes('youth-safety') ||
+        /drug[- ]?free|say no to drugs|choose life|anti[- ]?drug awareness|drug prevention|youth|student|school|kabataan|education|seminar|workshop|orientation|peer education/.test(text)
+    ) {
+        const enforcementOnly = /patrol|enforcement|apprehend|apprehension|arrest|surveillance|hotspot operation|police operation|checkpoint|raid|law enforcement/.test(text)
+            && !/awareness|educat|seminar|workshop|training|orientation|leadership|student|school|youth|kabataan|prevention/.test(text);
+        if (!enforcementOnly) return 'education';
+    }
+
+    return currentCategory || (sourceType === 'disaster' ? 'disaster' : 'crime');
+}
+
 function getCategoryBadge(source) {
     const normalized = String(source || '').trim().toLowerCase();
     if (normalized === 'disaster') {
@@ -2472,7 +2500,7 @@ function renderAiRecommendationsTable() {
 
         const catCell = document.createElement('td');
         catCell.style.cssText = 'padding: 12px 14px; vertical-align: middle;';
-        const catBadge = getCategoryBadge(rec.category || rec.source || 'crime');
+        const catBadge = getCategoryBadge(normalizeAiCampaignCategory(rec));
         const catSpan = document.createElement('span');
         catSpan.style.cssText = `display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: ${catBadge.color}15; color: ${catBadge.color}; border: 1px solid ${catBadge.color}30; text-transform: uppercase; letter-spacing: 0.3px;`;
         catSpan.innerHTML = `<i class="fas ${catBadge.icon}"></i> ${catBadge.label}`;
@@ -2543,7 +2571,9 @@ async function loadAiRecommendations(forceRefresh = false) {
             throw new Error(payload.error || 'AI recommendations endpoint failed');
         }
 
-        aiRecommendations = Array.isArray(payload?.recommendations) ? payload.recommendations : [];
+        aiRecommendations = Array.isArray(payload?.recommendations)
+            ? payload.recommendations.map(rec => ({ ...rec, category: normalizeAiCampaignCategory(rec) }))
+            : [];
         aiRecommendationsFiltered = [...aiRecommendations];
         aiRecommendationsCurrentPage = 1;
         renderAiRecommendationsTable();
@@ -2586,7 +2616,7 @@ async function openAiRecommendationModal(index, items) {
     closeAiRecommendationModal();
 
     const prio = getPriorityBadge(rec.priority_level, rec.priority_score);
-    const catBadge = getCategoryBadge(rec.category || rec.source || 'crime');
+    const catBadge = getCategoryBadge(normalizeAiCampaignCategory(rec));
 
     const modal = document.createElement('div');
     modal.id = 'aiRecommendationModal';

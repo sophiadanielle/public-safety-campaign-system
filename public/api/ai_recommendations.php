@@ -1030,7 +1030,12 @@ function classify_campaign_category(
     // These are prevention/awareness programs. Their evidence may come from
     // crime reports, but the campaign itself is educational rather than an
     // enforcement operation.
-    if (str_contains($trend, 'youth-safety') || str_contains($trend, 'drug-related')) {
+    $titleLower = strtolower(trim($campaignTitle));
+    if (
+        str_contains($trend, 'youth-safety') ||
+        str_contains($trend, 'drug-related') ||
+        preg_match('/drug[- ]?free|say no to drugs|choose life|anti[- ]?drug awareness|drug prevention|youth|student|school|kabataan/u', $titleLower)
+    ) {
         return 'education';
     }
 
@@ -1369,7 +1374,7 @@ function load_cached_recommendations(PDO $pdo): ?array
         }
 
         $recommendations = [];
-        $categoryUpdate = $pdo->prepare('UPDATE campaign_department_ai_recommendations SET category = ? WHERE id = ? AND category <> ?');
+        $categoryUpdate = $pdo->prepare('UPDATE campaign_department_ai_recommendations SET category = ? WHERE id = ? AND (category IS NULL OR LOWER(category) <> ?)');
         foreach ($rows as $row) {
             $rec = json_decode((string) ($row['data_snapshot'] ?? ''), true);
             if (!is_array($rec)) {
