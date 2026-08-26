@@ -135,7 +135,14 @@ require_once __DIR__ . '/header/includes/path_helper.php';
             display: flex;
             align-items: center;
             padding: 40px 24px 60px;
-            background: linear-gradient(135deg, #f0fdfa 0%, #f8fafc 50%, #ecfeff 100%);
+            /* BACKGROUND.jpg is in the project/web root beside index.php. */
+            background-image:
+                linear-gradient(rgba(248, 250, 252, 0.78), rgba(240, 253, 250, 0.78)),
+                url('/BACKGROUND.jpg');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: scroll;
             position: relative;
             overflow: hidden;
         }
