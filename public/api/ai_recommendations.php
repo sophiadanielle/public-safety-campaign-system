@@ -216,6 +216,140 @@ function normalize_disaster_records(array $payload): array
     return $records;
 }
 
+
+/**
+ * Convert public AlertaraQC partner records into the same lightweight record
+ * shape used by the campaign recommendation engine. We intentionally keep
+ * these as external records (string IDs) so they never collide with local
+ * crime incident primary keys.
+ */
+function alertaraqc_text_blob(array $row): string
+{
+    $parts = [];
+    $walk = static function ($value) use (&$walk, &$parts): void {
+        if (is_scalar($value) && $value !== null) {
+            $parts[] = (string) $value;
+            return;
+        }
+        if (is_array($value)) {
+            foreach ($value as $nested) {
+                $walk($nested);
+            }
+        }
+    };
+    $walk($row);
+    return mb_strtolower(implode(' ', $parts));
+}
+
+function alertaraqc_has_youth_signal(array $row): bool
+{
+    $text = alertaraqc_text_blob($row);
+    return (bool) preg_match('/\\b(youth|student|students|school|schools|teen|teens|teenager|adolescent|adolescents|minor|minors|young people|young person|kabataan|sangguniang kabataan|\\bsk\\b)\\b/u', $text);
+}
+
+function normalize_alertaraqc_youth_records(array $payload, string $recordType): array
+{
+    $rows = normalize_records($payload);
+    $records = [];
+
+    foreach ($rows as $row) {
+        if (!is_array($row) || !alertaraqc_has_youth_signal($row)) {
+            continue;
+        }
+
+        $rawId = $row['event_id'] ?? $row['report_id'] ?? $row['request_id'] ?? $row['alert_id'] ?? $row['id'] ?? md5(serialize($row));
+        $title = $row['event_name'] ?? $row['title'] ?? $row['rule_name'] ?? $row['event_type'] ?? 'Youth safety partner record';
+        $date = $row['event_date'] ?? $row['triggered_at'] ?? $row['created_at'] ?? $row['date'] ?? null;
+        $location = $row['location'] ?? $row['venue'] ?? $row['event_location'] ?? $row['area_name'] ?? 'Barangay San Agustin';
+        $severity = $row['severity'] ?? 'Medium';
+
+        $descriptionParts = [];
+        foreach (['event_outcome', 'survey_results', 'purpose', 'condition', 'notes', 'description', 'incident_description'] as $field) {
+            if (isset($row[$field]) && is_scalar($row[$field]) && trim((string) $row[$field]) !== '') {
+                $descriptionParts[] = trim((string) $row[$field]);
+            }
+        }
+
+        $records[] = [
+            'id' => 'alertaraqc-' . $recordType . '-' . (string) $rawId,
+            'incident_title' => trim((string) $title),
+            'incident_date' => $date,
+            'description' => implode(' | ', $descriptionParts),
+            'severity' => $severity,
+            'status' => $row['status'] ?? 'active',
+            // The recommendations table currently accepts crime/disaster only.
+            // Youth safety/engagement partner evidence is grouped under the crime
+            // prevention side, but remains clearly tagged as an external source.
+            'source' => 'crime',
+            'category_name' => 'Youth Safety and Engagement',
+            'location' => is_scalar($location) ? (string) $location : 'Barangay San Agustin',
+            'partner_source' => 'alertaraqc',
+            'partner_record_type' => $recordType,
+        ];
+    }
+
+    return $records;
+}
+
+function normalize_alertaraqc_risk_records(array $payload): array
+{
+    $rows = normalize_records($payload);
+    $records = [];
+
+    foreach ($rows as $row) {
+        if (!is_array($row)) continue;
+        $rawId = $row['alert_id'] ?? $row['id'] ?? md5(serialize($row));
+        $rule = trim((string) ($row['rule_name'] ?? $row['rule_type'] ?? 'High-Risk Area Alert'));
+        $condition = trim((string) ($row['condition'] ?? ''));
+        $location = $row['location'] ?? $row['area_name'] ?? $row['route'] ?? 'Barangay San Agustin';
+
+        $records[] = [
+            'id' => 'alertaraqc-risk-' . (string) $rawId,
+            'incident_title' => $rule,
+            'incident_date' => $row['triggered_at'] ?? $row['created_at'] ?? null,
+            'description' => $condition,
+            'severity' => $row['severity'] ?? 'High',
+            'status' => $row['status'] ?? 'active',
+            'source' => 'crime',
+            'category_name' => alertaraqc_has_youth_signal($row) ? 'Youth Safety and Engagement' : 'Public Disorder',
+            'location' => is_scalar($location) ? (string) $location : 'Barangay San Agustin',
+            'partner_source' => 'alertaraqc',
+            'partner_record_type' => 'risk_alert',
+        ];
+    }
+
+    return $records;
+}
+
+function fetch_alertaraqc_partner_records(): array
+{
+    $records = [];
+    $endpoints = [
+        'risk_alert' => get_env_value('ALERTARA_RISK_ALERTS_URL') ?? 'https://policy.alertaraqc.com/api/risk_alerts.php?status=active',
+        'awareness_event' => get_env_value('ALERTARA_AWARENESS_EVENTS_URL') ?? 'https://policy.alertaraqc.com/api/awareness_events.php?record_type=event',
+        'awareness_report' => get_env_value('ALERTARA_AWARENESS_REPORTS_URL') ?? 'https://policy.alertaraqc.com/api/awareness_events.php?record_type=report',
+        'patrol_request' => get_env_value('ALERTARA_PATROL_REQUESTS_URL') ?? 'https://policy.alertaraqc.com/api/patrol_requests.php?source_group=campaign',
+    ];
+
+    foreach ($endpoints as $type => $url) {
+        try {
+            $payload = http_json_request($url, 'GET', null, [], 8);
+            if ($type === 'risk_alert') {
+                $records = array_merge($records, normalize_alertaraqc_risk_records($payload));
+            } else {
+                // Awareness/patrol records are used only when they contain an
+                // explicit youth/school signal; this prevents ordinary historical
+                // events from being misclassified as safety incidents.
+                $records = array_merge($records, normalize_alertaraqc_youth_records($payload, $type));
+            }
+        } catch (Throwable $e) {
+            error_log('AlertaraQC ' . $type . ' API fetch failed: ' . $e->getMessage());
+        }
+    }
+
+    return $records;
+}
+
 function incident_title(array $record): string
 {
     $title = $record['incident_title']
@@ -366,6 +500,10 @@ function map_category_to_trend_key(string $categoryName, string $source): string
 {
     $cat = strtolower(trim($categoryName));
 
+    if (preg_match('/youth|student|school|teen|adolescent|kabataan|sangguniang kabataan/', $cat)) {
+        return 'crime:youth-safety';
+    }
+
     if ($source === 'disaster') {
         $disasterMap = [
             'earthquake' => 'disaster:earthquake',
@@ -473,6 +611,7 @@ function infer_trend_key_from_text(array $record, string $source): string
     }
 
     $crimeTextPatterns = [
+        'crime:youth-safety' => ['youth', 'students', 'school', 'teen', 'adolescent', 'kabataan', 'sangguniang kabataan'],
         'crime:violent-assault' => ['assault', 'mauling', 'physical attack', 'fist', 'beaten', 'beating', 'brawl', 'street fight', 'stabbing', 'stabbed', 'gang', 'riot'],
         'crime:violent-homicide' => ['homicide', 'murder', 'killed', 'dead', 'death'],
         'crime:violent-domestic' => ['domestic', 'child abuse', 'elder abuse'],
@@ -506,6 +645,15 @@ function aggregate_recommendation_actions(string $trendKey, array $records): arr
     $isCrime = str_starts_with($trendKey, 'crime:');
 
     if ($isCrime) {
+        if (str_contains($trendKey, 'youth-safety')) {
+            return [
+                'Conduct youth safety, leadership, and responsible citizenship seminars with schools and SK leaders',
+                'Run peer-led sessions on violence prevention, anti-drug awareness, digital safety, and safe reporting',
+                'Organize structured sports, arts, volunteer, and community service activities as positive youth engagement',
+                'Coordinate schools, parents, barangay tanods, and Sangguniang Kabataan for youth-safe spaces and referral support',
+                'Use AlertaraQC risk alerts and youth event/report feedback to identify priority locations and follow-up activities',
+            ];
+        }
         $actions[] = 'Increase police visibility and patrol in affected areas';
         $actions[] = 'Conduct community awareness seminars on prevention';
         $actions[] = 'Coordinate with barangay officials for local response';
@@ -561,6 +709,9 @@ function aggregate_target_audience(string $trendKey, array $records): string
     $isCrime = str_starts_with($trendKey, 'crime:');
 
     if ($isCrime) {
+        if (str_contains($trendKey, 'youth-safety')) {
+            return 'Youth, students, Sangguniang Kabataan leaders, parents, teachers, and school administrators';
+        }
         if (str_contains($trendKey, 'violent') || str_contains($trendKey, 'assault')) {
             return 'General public, barangay officials, transport groups, security personnel';
         }
@@ -597,6 +748,7 @@ function aggregate_target_audience(string $trendKey, array $records): string
 function trend_label_from_key(string $trendKey): string
 {
     $labels = [
+        'crime:youth-safety' => 'Youth safety, leadership, and engagement needs',
         'crime:violent-assault' => 'Assault and physical violence incidents',
         'crime:violent-homicide' => 'Homicide and fatal violence incidents',
         'crime:violent-domestic' => 'Domestic violence and family-related incidents',
@@ -798,7 +950,12 @@ function generate_source_report_ids(array $records): array
     foreach ($records as $rec) {
         $id = extract_report_id($rec);
         $title = incident_title($rec);
-        $ids[] = ['id' => $id, 'title' => $title];
+        $ids[] = [
+            'id' => $id,
+            'external_report_id' => $id,
+            'source_type' => $rec['source'] ?? 'crime',
+            'title' => $title,
+        ];
     }
     return $ids;
 }
@@ -815,6 +972,7 @@ function generate_campaign_title_from_cluster(string $trendKey, array $records, 
     }
 
     $templates = [
+        'crime:youth-safety' => 'Youth Safety, Leadership and Resilience Campaign',
         'crime:violent-assault' => 'Public Safety and Violence Prevention Initiative',
         'crime:violent-homicide' => 'Peace and Order Community Safety Campaign',
         'crime:violent-domestic' => 'Family Protection and Domestic Violence Prevention',
@@ -943,6 +1101,7 @@ function ai_generate_titles_for_clusters(array $clusters): array
     $prompt .= "- Title must describe a PREVENTION or PREPAREDNESS objective, NOT copy incident titles\n";
     $prompt .= "- Do NOT use: 'Community Awareness Campaign Against {X}' templates\n";
     $prompt .= "- Be specific to the actual incidents in the cluster\n";
+    $prompt .= "- If a cluster is explicitly about youth/students/schools, make the campaign youth-focused and emphasize safety, leadership, prevention, and positive engagement\n";
     $prompt .= "- Keep it concise (5-12 words), professional, suitable for LGU public safety\n\n";
     $prompt .= "Return a VALID JSON object with cluster indices as keys. Example:\n";
     $prompt .= '{"0": {"campaign_title": "Public Safety and Violence Prevention Initiative", "description": "Campaign addressing recent assault incidents...", "reasoning": "Multiple assault incidents reported...", "target_audience": "General public...", "actions": ["Action 1", "Action 2"]}}' . "\n\n";
@@ -1173,6 +1332,17 @@ try {
             $allRecords = array_merge($allRecords, $disasterRecords);
         } catch (Throwable $e) {
             error_log('Disaster API fetch failed: ' . $e->getMessage());
+        }
+    }
+
+    // AlertaraQC partner context: active risk alerts plus youth-specific awareness,
+    // post-event, and campaign patrol records. These records participate in the
+    // same scoring/clustering pipeline and can produce a dedicated youth campaign
+    // when the partner data actually contains youth/school signals.
+    if ($sourceFilter === 'all' || $sourceFilter === 'crime') {
+        $partnerRecords = fetch_alertaraqc_partner_records();
+        if (!empty($partnerRecords)) {
+            $allRecords = array_merge($allRecords, $partnerRecords);
         }
     }
 

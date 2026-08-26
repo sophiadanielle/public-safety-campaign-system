@@ -1955,7 +1955,11 @@ function escapeHtml(text) {
 }
 
 // CSV Import
-document.getElementById('importForm').addEventListener('submit', async (e) => {
+// The import form is not rendered in every RBAC/page state. Guard the listener so
+// segments.php does not crash when #importForm is absent.
+const importFormEl = document.getElementById('importForm');
+if (importFormEl) {
+importFormEl.addEventListener('submit', async (e) => {
     e.preventDefault();
     const statusEl = document.getElementById('importStatus');
     statusEl.textContent = 'Importing...';
@@ -2014,6 +2018,7 @@ document.getElementById('importForm').addEventListener('submit', async (e) => {
         statusEl.style.color = '#dc2626';
     }
 });
+}
 
 // Handle hash navigation on page load
 if (window.location.hash) {

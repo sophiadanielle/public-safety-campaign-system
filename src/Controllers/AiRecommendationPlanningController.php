@@ -690,65 +690,127 @@ class AiRecommendationPlanningController
 
     private function insertAcceptedEvents(int $recommendationId, int $campaignId, ?int $userId, array $rec): int
     {
-        $stmt = $this->pdo->query("
-            SELECT * FROM campaign_ai_recommendation_schedule_phases
-            WHERE recommendation_id = " . (int) $recommendationId . "
-            ORDER BY sprint_number ASC, sort_order ASC, id ASC
-        ");
-        $phases = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        if (empty($phases)) {
+        // Use the exact event/seminar proposals shown in the AI recommendation
+        // "Events & Seminars" tab. This keeps what the user reviews in the AI
+        // modal identical to what is created in public/events.php after Accept.
+        $eventPlan = $this->viewService->getEventAndSeminarRecommendations($recommendationId);
+        $recommendedEvents = is_array($eventPlan['recommended_events'] ?? null)
+            ? $eventPlan['recommended_events']
+            : [];
+
+        // Defensive fallback: if the view service cannot build proposals, convert
+        // the generated Date Sprint phases into event rows so an accepted campaign
+        // never loses its scheduled activities.
+        if (empty($recommendedEvents)) {
+            $stmt = $this->pdo->prepare("\n                SELECT * FROM campaign_ai_recommendation_schedule_phases\n                WHERE recommendation_id = ?\n                ORDER BY sprint_number ASC, sort_order ASC, id ASC\n            ");
+            $stmt->execute([$recommendationId]);
+            $phases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($phases as $phase) {
+                if (empty($phase['start_date'])) continue;
+                $locations = $this->decodeList($phase['locations'] ?? null);
+                $title = trim((string) ($phase['sprint_title'] ?? 'Campaign Activity')) ?: 'Campaign Activity';
+                $recommendedEvents[] = [
+                    'sequence' => (int) ($phase['sprint_number'] ?? (count($recommendedEvents) + 1)),
+                    'event_title' => $title,
+                    'event_type' => $this->eventTypeFromTitle($title),
+                    'objective' => $phase['objectives'] ?? null,
+                    'recommended_campaign_action' => null,
+                    'hazard_focus' => $rec['incident_category'] ?? $rec['main_trend'] ?? $rec['category'] ?? 'Public safety',
+                    'target_audience' => $rec['ai_target_audience'] ?? null,
+                    'recommended_date' => $phase['start_date'],
+                    'start_time' => '09:00',
+                    'end_time' => '17:00',
+                    'recommended_venue_or_location' => is_scalar($locations[0] ?? null) ? (string) $locations[0] : ($this->firstLocation($rec['affected_locations'] ?? null) ?? 'Barangay San Agustin'),
+                    'trainer_requirements' => null,
+                    'equipment_requirements' => null,
+                    'volunteer_requirements' => null,
+                    'expected_output' => $phase['outputs'] ?? null,
+                ];
+            }
+        }
+
+        if (empty($recommendedEvents)) {
             return 0;
         }
 
-        $insert = $this->pdo->prepare("
-            INSERT INTO campaign_department_events
-                (name, event_name, event_title, title, event_type, event_description, description,
-                 hazard_focus, date, event_date, start_time, event_time, end_time,
-                 location, venue, starts_at, ends_at, status, event_status, linked_campaign_id, campaign_id,
-                 facilitators, logistics_json, created_by,
-                 ai_recommendation_id, ai_sprint_number, ai_objectives)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', 'scheduled', ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
+        $exists = $this->pdo->prepare("\n            SELECT id FROM campaign_department_events\n            WHERE ai_recommendation_id = ? AND ai_sprint_number = ?\n            LIMIT 1\n        ");
+
+        $insert = $this->pdo->prepare("\n            INSERT INTO campaign_department_events\n                (campaign_id, linked_campaign_id, name, event_name, event_title, title, event_type,\n                 description, event_description, hazard_focus, event_date, date, event_time, start_time, end_time,\n                 location, venue, starts_at, ends_at, status, event_status,\n                 transport_requirements, trainer_requirements, equipment_requirements, volunteer_requirements,\n                 post_event_notes, created_by, ai_recommendation_id, ai_sprint_number, ai_objectives)\n            VALUES\n                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', 'scheduled',\n                 ?, ?, ?, ?, ?, ?, ?, ?, ?)\n        ");
 
         $count = 0;
-        foreach ($phases as $phase) {
-            $startDate = $phase['start_date'] ?? null;
-            if (!$startDate) {
+        foreach ($recommendedEvents as $index => $event) {
+            $sequence = max(1, (int) ($event['sequence'] ?? ($index + 1)));
+            $exists->execute([$recommendationId, $sequence]);
+            if ($exists->fetchColumn()) {
+                // Idempotency: refreshing/accept retries must not duplicate rows in
+                // the Events & Seminars table.
                 continue;
             }
-            $endDate = $phase['end_date'] ?? $startDate;
-            $title = trim((string) ($phase['sprint_title'] ?? 'Campaign Activity'));
 
-            $phaseLocations = $this->decodeList($phase['locations'] ?? null);
-            $venue = is_scalar($phaseLocations[0] ?? null) ? (string) $phaseLocations[0] : null;
-            $desc = ($phase['objectives'] ?? '') . ($phase['activities'] ? "\n\nActivities:\n" . $phase['activities'] : '');
+            $date = $this->dateOnly($event['recommended_date'] ?? null);
+            if (!$date) continue;
+
+            $title = trim((string) ($event['event_title'] ?? 'Campaign Event')) ?: 'Campaign Event';
+            $eventType = strtolower(trim((string) ($event['event_type'] ?? '')));
+            if (!in_array($eventType, ['seminar', 'drill', 'workshop', 'orientation', 'meeting', 'other'], true)) {
+                $eventType = $this->eventTypeFromTitle($title);
+            }
+
+            $startTime = trim((string) ($event['start_time'] ?? '09:00')) ?: '09:00';
+            $endTime = trim((string) ($event['end_time'] ?? '17:00')) ?: '17:00';
+            if (preg_match('/^\d{2}:\d{2}$/', $startTime)) $startTime .= ':00';
+            if (preg_match('/^\d{2}:\d{2}$/', $endTime)) $endTime .= ':00';
+
+            $location = trim((string) ($event['recommended_venue_or_location'] ?? ''));
+            if ($location === '') {
+                $location = $this->firstLocation($rec['affected_locations'] ?? null) ?? 'Barangay San Agustin';
+            }
+
+            $descriptionParts = [];
+            if (!empty($event['objective'])) {
+                $descriptionParts[] = 'Objective: ' . trim((string) $event['objective']);
+            }
+            if (!empty($event['recommended_campaign_action'])) {
+                $descriptionParts[] = 'Recommended campaign action: ' . trim((string) $event['recommended_campaign_action']);
+            }
+            if (!empty($event['target_audience'])) {
+                $descriptionParts[] = 'Target audience: ' . trim((string) $event['target_audience']);
+            }
+            if (!empty($event['expected_output'])) {
+                $descriptionParts[] = 'Expected output: ' . trim((string) $event['expected_output']);
+            }
+            $description = implode("\n\n", $descriptionParts);
 
             $insert->execute([
-                $title,
-                $title,
-                $title,
-                $title,
-                $this->eventTypeFromTitle($title),
-                $desc,
-                $desc,
-                $rec['incident_category'] ?? $rec['main_trend'] ?? $rec['category'] ?? null,
-                $startDate,
-                $startDate,
-                '09:00:00',
-                '09:00:00',
-                '17:00:00',
-                $venue,
-                $venue,
-                $startDate . ' 09:00:00',
-                $endDate . ' 17:00:00',
                 $campaignId,
                 $campaignId,
-                $this->jsonOrNull($phase['assigned_staff'] ?? null),
-                $this->jsonOrNull($phase['assigned_partners'] ?? null),
+                $title,
+                $title,
+                $title,
+                $title,
+                $eventType,
+                $description ?: null,
+                $description ?: null,
+                $event['hazard_focus'] ?? $rec['main_trend'] ?? $rec['incident_category'] ?? $rec['category'] ?? null,
+                $date,
+                $date,
+                $startTime,
+                $startTime,
+                $endTime,
+                $location,
+                $location,
+                $date . ' ' . $startTime,
+                $date . ' ' . $endTime,
+                $event['transport_requirements'] ?? null,
+                $event['trainer_requirements'] ?? null,
+                $event['equipment_requirements'] ?? null,
+                $event['volunteer_requirements'] ?? null,
+                !empty($event['recommendation_reason']) ? trim((string) $event['recommendation_reason']) : null,
                 $userId,
                 $recommendationId,
-                (int) ($phase['sprint_number'] ?? 0),
-                $phase['objectives'] ?? null,
+                $sequence,
+                $event['objective'] ?? null,
             ]);
             $count++;
         }
@@ -828,6 +890,11 @@ class AiRecommendationPlanningController
             'ai_recommendation_id' => 'INT NULL',
             'ai_sprint_number' => 'INT NULL',
             'ai_objectives' => 'TEXT NULL',
+            'transport_requirements' => 'TEXT NULL',
+            'trainer_requirements' => 'TEXT NULL',
+            'equipment_requirements' => 'TEXT NULL',
+            'volunteer_requirements' => 'TEXT NULL',
+            'post_event_notes' => 'TEXT NULL',
         ];
 
         foreach ($columns as $name => $definition) {

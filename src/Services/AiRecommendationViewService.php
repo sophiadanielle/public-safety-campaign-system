@@ -344,7 +344,7 @@ class AiRecommendationViewService
             'existing_events' => $existingEvents,
             'related_events' => $relatedEvents,
             'recommended_events' => $recommendedEvents,
-            'note' => 'AI recommended events are planning proposals only. They are not inserted into the Events & Seminars table until reviewed and created from the Events module.',
+            'note' => 'AI recommended events are planning proposals. When the recommendation is accepted, these events/seminars are inserted into the Events & Seminars table and linked to the approved campaign.',
         ];
     }
 
@@ -915,6 +915,8 @@ class AiRecommendationViewService
             $summary['campaign_title'] ?? '',
             implode(' ', $actions),
         ])));
+        $audienceText = mb_strtolower($audience);
+        $isYouthCampaign = (bool) preg_match('/youth|student|school|teen|adolescent|kabataan|sangguniang kabataan/', $categoryText . ' ' . $audienceText);
 
         if (empty($actions)) {
             $actions = [
@@ -931,8 +933,8 @@ class AiRecommendationViewService
         $templates = [
             [
                 'event_type' => 'orientation',
-                'title' => 'Campaign Kickoff and Public Safety Orientation',
-                'objective' => 'Introduce the recommended campaign, explain the incident trend, and align residents on prevention actions.',
+                'title' => $isYouthCampaign ? 'Youth Safety Campaign Kickoff and Orientation' : 'Campaign Kickoff and Public Safety Orientation',
+                'objective' => $isYouthCampaign ? 'Introduce the youth-focused campaign, explain the safety evidence, and align students, parents, schools, SK leaders, and barangay partners on prevention actions.' : 'Introduce the recommended campaign, explain the incident trend, and align residents on prevention actions.',
                 'action_index' => 0,
                 'offset_days' => 2,
                 'time' => '09:00',
@@ -941,8 +943,8 @@ class AiRecommendationViewService
             ],
             [
                 'event_type' => 'seminar',
-                'title' => $this->topicTitle($summary, 'Community Prevention Seminar'),
-                'objective' => 'Teach practical prevention, reporting, and referral steps based on the supporting reports.',
+                'title' => $isYouthCampaign ? 'Youth Safety, Leadership and Prevention Seminar' : $this->topicTitle($summary, 'Community Prevention Seminar'),
+                'objective' => $isYouthCampaign ? 'Teach youth-friendly prevention, safe reporting, peer leadership, digital safety, and referral steps based on the supporting reports and partner data.' : 'Teach practical prevention, reporting, and referral steps based on the supporting reports.',
                 'action_index' => min(1, count($actions) - 1),
                 'offset_days' => max(5, (int) floor($duration * 0.25)),
                 'time' => '14:00',
@@ -953,7 +955,7 @@ class AiRecommendationViewService
                 'event_type' => preg_match('/disaster|fire|earthquake|flood|storm|evacuat|emergency/', $categoryText) ? 'drill' : 'workshop',
                 'title' => preg_match('/disaster|fire|earthquake|flood|storm|evacuat|emergency/', $categoryText)
                     ? 'Preparedness Drill and Response Simulation'
-                    : 'Hands-on Community Safety Workshop',
+                    : ($isYouthCampaign ? 'Youth Safety Skills and Positive Engagement Workshop' : 'Hands-on Community Safety Workshop'),
                 'objective' => 'Practice the recommended campaign behavior with staff, partners, and residents before wider rollout.',
                 'action_index' => min(2, count($actions) - 1),
                 'offset_days' => max(8, (int) floor($duration * 0.5)),
@@ -963,8 +965,8 @@ class AiRecommendationViewService
             ],
             [
                 'event_type' => 'seminar',
-                'title' => 'Partner and Volunteer Coordination Seminar',
-                'objective' => 'Coordinate partner roles, volunteer support, referral flow, materials, and field deployment responsibilities.',
+                'title' => $isYouthCampaign ? 'School, SK and Partner Coordination Seminar' : 'Partner and Volunteer Coordination Seminar',
+                'objective' => $isYouthCampaign ? 'Coordinate school, SK, parent, volunteer, referral, and barangay safety roles for youth-focused activities.' : 'Coordinate partner roles, volunteer support, referral flow, materials, and field deployment responsibilities.',
                 'action_index' => min(3, count($actions) - 1),
                 'offset_days' => max(10, (int) floor($duration * 0.65)),
                 'time' => '13:30',
@@ -1090,6 +1092,9 @@ class AiRecommendationViewService
 
     private function trainerRequirementForEvent(string $eventType, string $categoryText): string
     {
+        if (preg_match('/youth|student|school|teen|adolescent|kabataan|sangguniang kabataan/', $categoryText)) {
+            return 'SK/youth development facilitator, school representative or guidance counselor, barangay safety officer, documentation staff';
+        }
         if (str_contains($categoryText, 'fire')) {
             return 'BFP/fire safety resource person, barangay safety officer, documentation staff';
         }
