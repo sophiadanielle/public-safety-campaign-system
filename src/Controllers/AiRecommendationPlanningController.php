@@ -375,6 +375,16 @@ class AiRecommendationPlanningController
             $events = $this->insertAcceptedEvents($recommendationId, $campaignId, $userId, $rec);
             $partners = $this->insertAcceptedPartners($recommendationId, $campaignId);
 
+            // Financial & Budgeting requires all seven detailed sections, not only
+            // campaign_budgets line items. Persist the same AI budget analysis the
+            // user reviewed into the campaign-linked budget detail table and mark
+            // the accepted AI budget as finalized.
+            $budgetBreakdown = $this->persistAcceptedBudgetBreakdown(
+                $recommendationId,
+                $campaignId,
+                $userId
+            );
+
             // The All Campaigns modal now uses the same 8-step planner for View/Edit.
             // Copy the accepted AI plan into those campaign-linked planner tables so
             // every AI recommendation becomes a complete approved 8-tab campaign.
@@ -420,7 +430,9 @@ class AiRecommendationPlanningController
                 'staff_skipped_existing' => $staff['skipped'],
                 'events_created' => $events,
                 'partners_linked' => $partners,
-                    'partners_created' => 0,
+                'partners_created' => 0,
+                'budget_detail_sections_saved' => $budgetBreakdown['sections_saved'],
+                'budget_workflow_status' => $budgetBreakdown['workflow_status'],
                 'reports_copied' => $manualPlan['reports'],
                 'participants_copied' => $manualPlan['participants'],
                 'audience_segments_linked' => $manualPlan['audiences'],
@@ -739,6 +751,177 @@ class AiRecommendationPlanningController
         }
 
         return $count;
+    }
+
+    /**
+     * Persist the complete seven-section AI budget breakdown into the same
+     * campaign-linked table used by Plan New Campaign and Financial & Budgeting.
+     */
+    private function persistAcceptedBudgetBreakdown(int $recommendationId, int $campaignId, ?int $userId): array
+    {
+        $analysis = $this->viewService->getBudgetAnalysis($recommendationId);
+
+        $lineItems = [];
+        foreach (($analysis['line_items'] ?? []) as $row) {
+            $lineItems[] = [
+                'item_name' => (string) ($row['item_name'] ?? 'Budget item'),
+                'item_description' => (string) ($row['description'] ?? ''),
+                'category' => (string) ($row['category'] ?? ''),
+                'item_type' => 'ai_recommended',
+                'quantity' => max(1, (int) round((float) ($row['quantity'] ?? 1))),
+                'unit_label' => (string) ($row['unit'] ?? ''),
+                'unit_cost' => (float) ($row['unit_cost'] ?? 0),
+                'sessions_or_days' => max(1, (int) round((float) ($row['sessions_or_days'] ?? 1))),
+                'funding_source' => 'estimated_need',
+                'related_action' => (string) ($row['related_action'] ?? ''),
+                'notes' => trim(implode(' | ', array_filter([
+                    (string) ($row['reason'] ?? ''),
+                    (string) ($row['calculation_basis'] ?? ''),
+                    !empty($row['pricing_source']) ? 'Pricing source: ' . $row['pricing_source'] : '',
+                ]))),
+            ];
+        }
+
+        $categoryBreakdown = [];
+        foreach (($analysis['category_breakdown'] ?? []) as $row) {
+            $categoryBreakdown[] = [
+                'category' => (string) ($row['category'] ?? 'Uncategorized'),
+                'amount' => (float) ($row['total'] ?? 0),
+                'percentage' => (float) ($row['percentage_of_total'] ?? 0),
+                'notes' => ((int) ($row['item_count'] ?? 0)) . ' AI budget line item(s)',
+            ];
+        }
+
+        $actionMapping = [];
+        foreach (($analysis['action_breakdown'] ?? []) as $row) {
+            $itemNames = [];
+            foreach (($row['items'] ?? []) as $item) {
+                if (!empty($item['item_name'])) $itemNames[] = (string) $item['item_name'];
+            }
+            $actionMapping[] = [
+                'action' => (string) ($row['action'] ?? 'Campaign implementation'),
+                'budget_item' => implode(', ', array_values(array_unique($itemNames))),
+                'amount' => (float) ($row['action_budget_total'] ?? 0),
+                'rationale' => 'AI budget items mapped to this recommended campaign action.',
+            ];
+        }
+
+        $locationDestination = [];
+        foreach (($analysis['location_breakdown'] ?? []) as $row) {
+            $locationDestination[] = [
+                'location' => (string) ($row['location'] ?? 'Campaign-wide'),
+                'purpose' => sprintf(
+                    '%d planned activity/activities; approximately %d staff deployment(s)',
+                    (int) ($row['activities'] ?? 0),
+                    (int) ($row['staff_qty'] ?? 0)
+                ),
+                'amount' => (float) ($row['total_estimated_cost'] ?? 0),
+                'notes' => sprintf(
+                    'Materials: ₱%s | Transportation: ₱%s | Other: ₱%s | Basis: %s',
+                    number_format((float) ($row['material_allocation'] ?? 0), 2),
+                    number_format((float) ($row['transportation_cost'] ?? 0), 2),
+                    number_format((float) ($row['other_cost'] ?? 0), 2),
+                    (string) ($row['basis'] ?? 'AI estimated distribution')
+                ),
+            ];
+        }
+
+        $affectedLocations = $this->decodeList($this->requireRecommendation($recommendationId)['affected_locations'] ?? null);
+        $staffLocation = implode(', ', array_map(static fn($v) => is_scalar($v) ? (string) $v : '', $affectedLocations));
+        if (trim($staffLocation) === '') $staffLocation = 'Campaign-wide';
+
+        $staffImpact = [];
+        foreach (($analysis['staff_cost_impact'] ?? []) as $row) {
+            $qty = max(1, (int) ($row['required_qty'] ?? 1));
+            $days = max(1, (int) ($row['deployment_days'] ?? 1));
+            $total = (float) ($row['estimated_support_cost'] ?? 0);
+            $rate = ($qty * $days) > 0 ? round($total / ($qty * $days), 2) : 0.0;
+            $staffImpact[] = [
+                'staff_or_role' => (string) ($row['staff_role'] ?? 'Campaign Staff'),
+                'activity' => 'AI recommended campaign deployment',
+                'location' => $staffLocation,
+                'quantity' => $qty,
+                'rate' => $rate,
+                'days_or_sessions' => $days,
+                'total' => $total,
+                'notes' => sprintf(
+                    'Existing matched QTY: %d | Missing QTY: %d | %s',
+                    (int) ($row['existing_matched_qty'] ?? 0),
+                    (int) ($row['missing_qty'] ?? 0),
+                    (string) ($row['cost_type'] ?? 'AI deployment support estimate')
+                ),
+            ];
+        }
+
+        $partnerImpact = [];
+        $partnerAnalysis = is_array($analysis['partner_contribution_impact'] ?? null)
+            ? $analysis['partner_contribution_impact']
+            : [];
+        foreach (($partnerAnalysis['items'] ?? []) as $row) {
+            $partnerImpact[] = [
+                'partner' => (string) ($row['partner'] ?? 'Suggested partner'),
+                'contribution' => (string) ($row['recommended_contribution'] ?? 'Campaign support'),
+                'type' => (string) ($row['contribution_type'] ?? 'Partner support'),
+                // AI partner support is not deducted unless a verified monetary value exists.
+                'estimated_value' => 0.0,
+                'notes' => trim(implode(' | ', array_filter([
+                    (string) ($row['estimated_budget_impact'] ?? ''),
+                    !empty($row['verification_status']) ? 'Status: ' . $row['verification_status'] : '',
+                ]))),
+            ];
+        }
+
+        $contingencyAnalysis = is_array($analysis['contingency'] ?? null) ? $analysis['contingency'] : [];
+        $contingency = [
+            'contingency_percentage' => (float) ($contingencyAnalysis['contingency_percentage'] ?? 0),
+            'contingency_amount' => (float) ($contingencyAnalysis['contingency_amount'] ?? 0),
+            'reason' => (string) ($contingencyAnalysis['reason'] ?? ''),
+            'may_cover' => array_values(is_array($contingencyAnalysis['may_cover'] ?? null) ? $contingencyAnalysis['may_cover'] : []),
+        ];
+
+        $detailStmt = $this->pdo->prepare(
+            'INSERT INTO campaign_department_campaign_budget_details
+            (campaign_id,detailed_line_items_json,category_breakdown_json,action_budget_mapping_json,location_budget_destination_json,staff_deployment_cost_impact_json,partner_contribution_impact_json,contingency_json,created_by,updated_by)
+            VALUES (:cid,:line_items,:categories,:actions,:locations,:staff,:partners,:contingency,:uid,:uid)
+            ON DUPLICATE KEY UPDATE
+                detailed_line_items_json=VALUES(detailed_line_items_json),
+                category_breakdown_json=VALUES(category_breakdown_json),
+                action_budget_mapping_json=VALUES(action_budget_mapping_json),
+                location_budget_destination_json=VALUES(location_budget_destination_json),
+                staff_deployment_cost_impact_json=VALUES(staff_deployment_cost_impact_json),
+                partner_contribution_impact_json=VALUES(partner_contribution_impact_json),
+                contingency_json=VALUES(contingency_json),
+                updated_by=VALUES(updated_by), updated_at=CURRENT_TIMESTAMP'
+        );
+        $detailStmt->execute([
+            'cid' => $campaignId,
+            'line_items' => json_encode($lineItems, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'categories' => json_encode($categoryBreakdown, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'actions' => json_encode($actionMapping, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'locations' => json_encode($locationDestination, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'staff' => json_encode($staffImpact, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'partners' => json_encode($partnerImpact, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'contingency' => json_encode($contingency, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'uid' => $userId,
+        ]);
+
+        // An accepted AI campaign is already approved, so its reviewed AI budget
+        // enters Financial & Budgeting as Finalized immediately.
+        $workflowStmt = $this->pdo->prepare(
+            "INSERT INTO campaign_budget_workflows
+                (campaign_id,planning_status,review_status,approved_by,approved_at,finalized_by,finalized_at)
+             VALUES (?, 'finalized', 'none', ?, NOW(), ?, NOW())
+             ON DUPLICATE KEY UPDATE
+                planning_status='finalized', review_status='none', rejection_reason=NULL,
+                approved_by=VALUES(approved_by), approved_at=VALUES(approved_at),
+                finalized_by=VALUES(finalized_by), finalized_at=VALUES(finalized_at)"
+        );
+        $workflowStmt->execute([$campaignId, $userId, $userId]);
+
+        return [
+            'sections_saved' => 7,
+            'workflow_status' => 'finalized',
+        ];
     }
 
     private function insertAcceptedStaff(int $recommendationId, ?int $userId): array
@@ -1596,6 +1779,7 @@ class AiRecommendationPlanningController
             'sessions_or_days' => 'INT NULL',
             'unit_label' => 'VARCHAR(80) NULL',
             'related_action' => 'TEXT NULL',
+            'budget_destination' => 'VARCHAR(255) NULL',
             'recommendation_reason' => 'TEXT NULL',
             'pricing_source' => 'VARCHAR(120) NULL',
             'pricing_confidence' => 'VARCHAR(40) NULL',

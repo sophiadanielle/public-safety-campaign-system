@@ -2333,7 +2333,7 @@ function renderAiRecommendationsTable() {
         badge.textContent = `${prio.label} (${Number(rec.priority_score || 0).toFixed(0)})`;
         priorityCell.appendChild(badge);
 
-        const isAccepted = rec.converted_campaign_id || rec.approval_status === 'accepted';
+        const isAccepted = Number(rec.converted_campaign_id || 0) > 0;
         if (isAccepted) {
             const acceptedBadge = document.createElement('span');
             const cId = rec.converted_campaign_id ? ' #' + rec.converted_campaign_id : '';
@@ -8092,6 +8092,64 @@ async function viewBudgetDetails(campaignId) {
         const resp = await manualApiJson(apiBase + `/api/v1/campaigns/${campaignId}/manual-planning`);
         details = resp.data?.budget_details || {};
     } catch (_) { details = {}; }
+
+    // Accepted AI campaigns created before the seven-section persistence fix may
+    // only have campaign_budgets line items. Fill any missing sections from the
+    // Financial & Budgeting analysis endpoint so old accepted campaigns are also
+    // immediately complete in the View modal.
+    const needsDerivedDetails = !Array.isArray(details.category_breakdown) || !details.category_breakdown.length
+        || !Array.isArray(details.action_budget_mapping) || !details.action_budget_mapping.length
+        || !Array.isArray(details.location_budget_destination) || !details.location_budget_destination.length
+        || !Array.isArray(details.staff_deployment_cost_impact) || !details.staff_deployment_cost_impact.length
+        || !Array.isArray(details.partner_contribution_impact)
+        || !details.contingency || Object.keys(details.contingency).length === 0;
+    if (needsDerivedDetails) {
+        try {
+            const analysisResp = await manualApiJson(apiBase + `/api/v1/campaigns/${campaignId}/budget-analysis`);
+            const a = analysisResp.data || {};
+            if (!Array.isArray(details.category_breakdown) || !details.category_breakdown.length) {
+                details.category_breakdown = (a.category_breakdown || []).map(x => ({
+                    category: x.category || 'Uncategorized', amount: Number(x.total || 0),
+                    percentage: Number(x.percentage_of_total || 0),
+                    notes: `${Number(x.item_count || 0)} budget line item(s)`
+                }));
+            }
+            if (!Array.isArray(details.action_budget_mapping) || !details.action_budget_mapping.length) {
+                details.action_budget_mapping = (a.action_breakdown || []).map(x => ({
+                    action: x.action || 'Campaign implementation',
+                    budget_item: (x.items || []).map(i => i.item_name).filter(Boolean).join(', '),
+                    amount: Number(x.action_budget_total || 0),
+                    rationale: 'Budget items mapped to this campaign action.'
+                }));
+            }
+            if (!Array.isArray(details.location_budget_destination) || !details.location_budget_destination.length) {
+                details.location_budget_destination = (a.location_breakdown || []).map(x => ({
+                    location: x.location || 'Campaign-wide',
+                    purpose: `${Number(x.activities || 0)} planned activity/activities; ${Number(x.staff_qty || 0)} staff`,
+                    amount: Number(x.total_estimated_cost || 0),
+                    notes: `Materials ₱${Number(x.material_allocation || 0).toLocaleString('en-PH')} | Transportation ₱${Number(x.transportation_cost || 0).toLocaleString('en-PH')} | Other ₱${Number(x.other_cost || 0).toLocaleString('en-PH')}`
+                }));
+            }
+            if (!Array.isArray(details.staff_deployment_cost_impact) || !details.staff_deployment_cost_impact.length) {
+                details.staff_deployment_cost_impact = (a.staff_cost_impact || []).map(x => {
+                    const qty = Math.max(1, Number(x.required_qty || 1));
+                    const days = Math.max(1, Number(x.deployment_days || 1));
+                    const total = Number(x.estimated_support_cost || 0);
+                    return { staff_or_role:x.staff_role || 'Campaign Staff', activity:'Campaign deployment', location:x.deployment_location || a.campaign?.location || 'Campaign-wide', quantity:qty, rate:(qty*days)?total/(qty*days):0, days_or_sessions:days, total, notes:`Existing matched: ${Number(x.existing_matched_qty||0)} | Missing: ${Number(x.missing_qty||0)} | ${x.cost_type||''}` };
+                });
+            }
+            if (!Array.isArray(details.partner_contribution_impact) || !details.partner_contribution_impact.length) {
+                details.partner_contribution_impact = ((a.partner_contribution_impact || {}).items || []).map(x => ({
+                    partner:x.partner || 'Partner', contribution:x.recommended_contribution || 'Campaign support', type:x.contribution_type || 'Partner support', estimated_value:0, notes:`${x.estimated_budget_impact||''}${x.verification_status?' | Status: '+x.verification_status:''}`
+                }));
+            }
+            if (!details.contingency || Object.keys(details.contingency).length === 0) {
+                details.contingency = a.contingency || {};
+            }
+        } catch (e) {
+            console.warn('Unable to derive missing detailed budget sections:', e);
+        }
+    }
     const campaignTitle = items[0].campaign_title || 'Campaign #' + campaignId;
     const money=v=>'₱'+Number(v||0).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
     let totalBudget=0;
@@ -8922,6 +8980,26 @@ async function deleteCampaign(campaignId) {
         }
         
         alert('Campaign deleted successfully!');
+
+        // Immediately clear stale ACCEPTED badges in the in-memory recommendation
+        // list, then reload the cached AI rows from the API so deletion is reflected
+        // without requiring a full browser refresh or AI regeneration.
+        const resetRecommendationIds = Array.isArray(data.reset_ai_recommendation_ids)
+            ? data.reset_ai_recommendation_ids.map(Number)
+            : [];
+        if (resetRecommendationIds.length && Array.isArray(aiRecommendations)) {
+            aiRecommendations = aiRecommendations.map(rec => resetRecommendationIds.includes(Number(rec.id))
+                ? { ...rec, approval_status: 'recommended', converted_campaign_id: null, accepted_at: null, accepted_by: null }
+                : rec);
+            aiRecommendationsFiltered = [...aiRecommendations];
+            renderAiRecommendationsTable();
+        }
+        if (typeof loadAiRecommendations === 'function') {
+            aiRecommendations = [];
+            aiRecommendationsFiltered = [];
+            await loadAiRecommendations(false);
+        }
+
         refreshAllCampaignViews();
     } catch (err) {
         alert('Failed to delete campaign: ' + err.message);

@@ -1455,6 +1455,33 @@ class CampaignController
         // Delete related records first (foreign key constraints)
         $this->pdo->beginTransaction();
         try {
+            // Capture every AI recommendation identity linked to this campaign BEFORE
+            // related budget/event rows are deleted. This makes the reset reliable even
+            // for older accepted campaigns where converted_campaign_id was already NULL.
+            $linkedAiRecommendationIds = [];
+            try {
+                $stmt = $this->pdo->prepare('SELECT id FROM campaign_department_ai_recommendations WHERE converted_campaign_id = :id');
+                $stmt->execute(['id' => $id]);
+                $linkedAiRecommendationIds = array_merge($linkedAiRecommendationIds, array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN)));
+            } catch (\Throwable $e) {
+                error_log('CampaignController::destroy - direct AI link lookup failed: ' . $e->getMessage());
+            }
+            try {
+                $stmt = $this->pdo->prepare('SELECT DISTINCT source_recommendation_id FROM campaign_budgets WHERE campaign_id = :id AND source_recommendation_id IS NOT NULL');
+                $stmt->execute(['id' => $id]);
+                $linkedAiRecommendationIds = array_merge($linkedAiRecommendationIds, array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN)));
+            } catch (\Throwable $e) {
+                error_log('CampaignController::destroy - budget AI link lookup failed: ' . $e->getMessage());
+            }
+            try {
+                $stmt = $this->pdo->prepare('SELECT DISTINCT ai_recommendation_id FROM campaign_department_events WHERE (campaign_id = :id1 OR linked_campaign_id = :id2) AND ai_recommendation_id IS NOT NULL');
+                $stmt->execute(['id1' => $id, 'id2' => $id]);
+                $linkedAiRecommendationIds = array_merge($linkedAiRecommendationIds, array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN)));
+            } catch (\Throwable $e) {
+                error_log('CampaignController::destroy - event AI link lookup failed: ' . $e->getMessage());
+            }
+            $linkedAiRecommendationIds = array_values(array_unique(array_filter($linkedAiRecommendationIds, static fn($v) => $v > 0)));
+
             // Delete campaign schedules
             $stmt = $this->pdo->prepare('DELETE FROM `campaign_department_campaign_schedules` WHERE campaign_id = :id');
             $stmt->execute(['id' => $id]);
@@ -1485,13 +1512,12 @@ class CampaignController
                 error_log('CampaignController::destroy - content_usage delete failed: ' . $e->getMessage());
             }
             
-            // If this campaign came from an AI recommendation, deleting the campaign must
-            // also release that recommendation so it becomes available again. The foreign key
-            // only clears converted_campaign_id (ON DELETE SET NULL); it does not clear the
-            // acceptance fields by itself.
+            // Release all linked AI recommendations BEFORE deleting the campaign.
+            // Use both the direct converted_campaign_id and the captured recommendation
+            // IDs from budget/events so stale historical links cannot remain Accepted.
             try {
                 $stmt = $this->pdo->prepare(
-                    "UPDATE `campaign_department_ai_recommendations`
+                    "UPDATE campaign_department_ai_recommendations
                      SET approval_status = 'recommended',
                          accepted_at = NULL,
                          accepted_by = NULL,
@@ -1499,7 +1525,20 @@ class CampaignController
                      WHERE converted_campaign_id = :id"
                 );
                 $stmt->execute(['id' => $id]);
-            } catch (\PDOException $e) {
+
+                if (!empty($linkedAiRecommendationIds)) {
+                    $placeholders = implode(',', array_fill(0, count($linkedAiRecommendationIds), '?'));
+                    $stmt = $this->pdo->prepare(
+                        "UPDATE campaign_department_ai_recommendations
+                         SET approval_status = 'recommended',
+                             accepted_at = NULL,
+                             accepted_by = NULL,
+                             converted_campaign_id = NULL
+                         WHERE id IN ({$placeholders})"
+                    );
+                    $stmt->execute($linkedAiRecommendationIds);
+                }
+            } catch (\Throwable $e) {
                 error_log('CampaignController::destroy - AI recommendation reset failed: ' . $e->getMessage());
             }
 
@@ -1512,7 +1551,10 @@ class CampaignController
             // Log audit entry
             $this->logAudit($user['id'] ?? null, 'campaign', 'delete', $id, ['title' => $campaign['title'] ?? '']);
             
-            return ['message' => 'Campaign deleted successfully'];
+            return [
+                'message' => 'Campaign deleted successfully',
+                'reset_ai_recommendation_ids' => $linkedAiRecommendationIds,
+            ];
         } catch (\Throwable $e) {
             $this->pdo->rollBack();
             error_log('CampaignController::destroy - Error: ' . $e->getMessage());
