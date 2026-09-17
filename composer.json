@@ -3,7 +3,7 @@
   "description": "Public safety campaign scaffold (PHP 8+, MySQL, JWT).",
   "type": "project",
   "require": {
-    "php": "^8.0",
+    "php": "^8.2",
     "firebase/php-jwt": "^6.10",
     "phpmailer/phpmailer": "^7.0",
     "laravel/mcp": "^0.8.1"
